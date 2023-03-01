@@ -1,0 +1,18 @@
+[submodule "repo/ViT/vit-pytorch"]
+	path = repo/ViT/vit-pytorch
+	url = https://github.com/yhyu13/vit-pytorch.git
+[submodule "repo/Nerf/instant-ngp"]
+	path = repo/Nerf/instant-ngp
+	url = https://github.com/yhyu13/instant-ngp.git
+[submodule "repo/Nerf/taichi-ngp-renderer"]
+	path = repo/Nerf/taichi-ngp-renderer
+	url = https://github.com/yhyu13/taichi-ngp-renderer.git
+[submodule "repo/ChatGPT/PromptCraft-Robotics"]
+	path = repo/ChatGPT/PromptCraft-Robotics
+	url = https://github.com/microsoft/PromptCraft-Robotics.git
+[submodule "repo/ChatGPT/chatgpt-prompt-evaluator"]
+	path = repo/ChatGPT/chatgpt-prompt-evaluator
+	url = https://github.com/alignedai/chatgpt-prompt-evaluator.git
+[submodule "repo/ChatGPT/ChatGPT-Prompts"]
+	path = repo/ChatGPT/ChatGPT-Prompts
+	url = https://github.com/yokoffing/ChatGPT-Prompts.git

@@ -16,3 +16,15 @@
 [submodule "repo/ChatGPT/ChatGPT-Prompts"]
 	path = repo/ChatGPT/ChatGPT-Prompts
 	url = https://github.com/yokoffing/ChatGPT-Prompts.git
+[submodule "repo/StableDiffusion/stable-diffusion-nvidia-docker"]
+	path = repo/StableDiffusion/stable-diffusion-nvidia-docker
+	url = https://github.com/NickLucche/stable-diffusion-nvidia-docker.git
+[submodule "repo/Docker/nvidia-docker"]
+	path = repo/Docker/nvidia-docker
+	url = https://github.com/NVIDIA/nvidia-docker.git
+[submodule "repo/Docker/cuda"]
+	path = repo/Docker/cuda
+	url = https://gitlab.com/nvidia/container-images/cuda.git
+[submodule "repo/StableDiffusion/stable-disffusion-playeground"]
+	path = repo/StableDiffusion/stable-disffusion-playeground
+	url = https://gitee.com/yhyu13/stable-disffusion-playeground.git

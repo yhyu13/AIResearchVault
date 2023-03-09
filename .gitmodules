@@ -28,3 +28,9 @@
 [submodule "repo/StableDiffusion/stable-disffusion-playeground"]
 	path = repo/StableDiffusion/stable-disffusion-playeground
 	url = https://gitee.com/yhyu13/stable-disffusion-playeground.git
+[submodule "repo/BrainCog/braincog"]
+	path = repo/BrainCog/braincog
+	url = https://openi.pcl.ac.cn/BrainCogLab/braincog.git
+[submodule "repo/BCI/MetaBCI"]
+	path = repo/BCI/MetaBCI
+	url = https://github.com/TBC-TJU/MetaBCI.git

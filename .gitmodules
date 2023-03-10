@@ -34,3 +34,6 @@
 [submodule "repo/BCI/MetaBCI"]
 	path = repo/BCI/MetaBCI
 	url = https://github.com/TBC-TJU/MetaBCI.git
+[submodule "repo/StableDiffusion/sd-scripts"]
+	path = repo/StableDiffusion/sd-scripts
+	url = https://github.com/kohya-ss/sd-scripts.git

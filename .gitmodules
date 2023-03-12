@@ -37,3 +37,9 @@
 [submodule "repo/StableDiffusion/sd-scripts"]
 	path = repo/StableDiffusion/sd-scripts
 	url = https://github.com/kohya-ss/sd-scripts.git
+[submodule "repo/StableDiffusion/kohya_ss"]
+	path = repo/StableDiffusion/kohya_ss
+	url = https://github.com/bmaltais/kohya_ss.git
+[submodule "repo/StableDiffusion/kohya_ss-docker"]
+	path = repo/StableDiffusion/kohya_ss-docker
+	url = https://github.com/P2Enjoy/kohya_ss-docker.git

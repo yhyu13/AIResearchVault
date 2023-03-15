@@ -55,3 +55,6 @@
 [submodule "repo/BrainCog/timm"]
 	path = repo/BrainCog/timm
 	url = https://github.com/pprp/timm.git
+[submodule "repo/StableDiffusion/ComfyUI"]
+	path = repo/StableDiffusion/ComfyUI
+	url = https://github.com/comfyanonymous/ComfyUI.git

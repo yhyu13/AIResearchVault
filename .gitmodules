@@ -52,3 +52,6 @@
 [submodule "repo/ChatGPT/GLM-130B"]
 	path = repo/ChatGPT/GLM-130B
 	url = https://github.com/THUDM/GLM-130B.git
+[submodule "repo/BrainCog/timm"]
+	path = repo/BrainCog/timm
+	url = https://github.com/pprp/timm.git

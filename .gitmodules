@@ -46,3 +46,9 @@
 [submodule "repo/ChatGPT/stanford_alpaca"]
 	path = repo/ChatGPT/stanford_alpaca
 	url = https://github.com/tatsu-lab/stanford_alpaca.git
+[submodule "repo/ChatGPT/ChatGLM-6B"]
+	path = repo/ChatGPT/ChatGLM-6B
+	url = https://github.com/THUDM/ChatGLM-6B.git
+[submodule "repo/ChatGPT/GLM-130B"]
+	path = repo/ChatGPT/GLM-130B
+	url = https://github.com/THUDM/GLM-130B.git

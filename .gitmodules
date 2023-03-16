@@ -58,3 +58,6 @@
 [submodule "repo/StableDiffusion/ComfyUI"]
 	path = repo/StableDiffusion/ComfyUI
 	url = https://github.com/comfyanonymous/ComfyUI.git
+[submodule "repo/AIVtuber/AI-Vtuber"]
+	path = repo/AIVtuber/AI-Vtuber
+	url = https://github.com/XzaiCloud/AI-Vtuber.git

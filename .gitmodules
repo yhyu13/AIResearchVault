@@ -46,11 +46,11 @@
 [submodule "repo/ChatGPT/stanford_alpaca"]
 	path = repo/ChatGPT/stanford_alpaca
 	url = https://github.com/tatsu-lab/stanford_alpaca.git
-[submodule "repo/ChatGPT/ChatGLM-6B"]
-	path = repo/ChatGPT/ChatGLM-6B
+[submodule "repo/ChatGLM/ChatGLM-6B"]
+	path = repo/ChatGLM/ChatGLM-6B
 	url = https://github.com/THUDM/ChatGLM-6B.git
-[submodule "repo/ChatGPT/GLM-130B"]
-	path = repo/ChatGPT/GLM-130B
+[submodule "repo/ChatGLM/GLM-130B"]
+	path = repo/ChatGLM/GLM-130B
 	url = https://github.com/THUDM/GLM-130B.git
 [submodule "repo/BrainCog/timm"]
 	path = repo/BrainCog/timm
@@ -61,3 +61,6 @@
 [submodule "repo/AIVtuber/AI-Vtuber"]
 	path = repo/AIVtuber/AI-Vtuber
 	url = https://github.com/XzaiCloud/AI-Vtuber.git
+[submodule "repo/ChatGLM/chatglm_webui"]
+	path = repo/ChatGLM/chatglm_webui
+	url = https://github.com/OedoSoldier/chatglm_webui.git

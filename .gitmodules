@@ -79,3 +79,6 @@
 [submodule "repo/SNN/SpikeGPT"]
 	path = repo/SNN/SpikeGPT
 	url = https://github.com/ridgerchu/SpikeGPT.git
+[submodule "repo/Nerf/nerfstudio"]
+	path = repo/Nerf/nerfstudio
+	url = https://github.com/nerfstudio-project/nerfstudio.git

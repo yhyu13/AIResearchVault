@@ -64,3 +64,9 @@
 [submodule "repo/ChatGLM/chatglm_webui"]
 	path = repo/ChatGLM/chatglm_webui
 	url = https://github.com/OedoSoldier/chatglm_webui.git
+[submodule "repo/cuda/tiny-cuda-nn"]
+	path = repo/cuda/tiny-cuda-nn
+	url = https://github.com/NVlabs/tiny-cuda-nn.git
+[submodule "repo/ChatGPT/chatGPTBox"]
+	path = repo/ChatGPT/chatGPTBox
+	url = https://github.com/josStorer/chatGPTBox.git

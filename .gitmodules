@@ -82,3 +82,6 @@
 [submodule "repo/Nerf/nerfstudio"]
 	path = repo/Nerf/nerfstudio
 	url = https://github.com/nerfstudio-project/nerfstudio.git
+[submodule "repo/cuda/hash-grid-encoding"]
+	path = repo/cuda/hash-grid-encoding
+	url = https://github.com/Ending2015a/hash-grid-encoding.git

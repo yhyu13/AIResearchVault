@@ -106,3 +106,6 @@
 [submodule "repo/NTK/NTK"]
 	path = repo/NTK/NTK
 	url = https://github.com/rajatvd/NTK.git
+[submodule "repo/Pangu/pcl_pangu"]
+	path = repo/Pangu/pcl_pangu
+	url = https://openi.pcl.ac.cn/PCL-Platform.Intelligence/pcl_pangu.git

@@ -85,3 +85,24 @@
 [submodule "repo/cuda/hash-grid-encoding"]
 	path = repo/cuda/hash-grid-encoding
 	url = https://github.com/Ending2015a/hash-grid-encoding.git
+[submodule "repo/NTK/scikit-ntk"]
+	path = repo/NTK/scikit-ntk
+	url = https://github.com/392781/scikit-ntk.git
+[submodule "repo/NTK/NTK-study"]
+	path = repo/NTK/NTK-study
+	url = https://github.com/genglinliu/NTK-study.git
+[submodule "repo/NTK/nngeometry"]
+	path = repo/NTK/nngeometry
+	url = https://github.com/tfjgeorge/nngeometry.git
+[submodule "repo/NTK/TENAS"]
+	path = repo/NTK/TENAS
+	url = https://github.com/VITA-Group/TENAS.git
+[submodule "repo/NTK/NTK4A"]
+	path = repo/NTK/NTK4A
+	url = https://github.com/thegregyang/NTK4A.git
+[submodule "repo/NTK/PINNsNTK"]
+	path = repo/NTK/PINNsNTK
+	url = https://github.com/PredictiveIntelligenceLab/PINNsNTK.git
+[submodule "repo/NTK/NTK"]
+	path = repo/NTK/NTK
+	url = https://github.com/rajatvd/NTK.git

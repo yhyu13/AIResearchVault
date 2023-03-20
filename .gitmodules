@@ -109,3 +109,6 @@
 [submodule "repo/Pangu/pcl_pangu"]
 	path = repo/Pangu/pcl_pangu
 	url = https://openi.pcl.ac.cn/PCL-Platform.Intelligence/pcl_pangu.git
+[submodule "repo/Nerf/NeRF-Editing"]
+	path = repo/Nerf/NeRF-Editing
+	url = https://github.com/IGLICT/NeRF-Editing.git

@@ -121,3 +121,6 @@
 [submodule "repo/Nerf/3d-cinemagraphy"]
 	path = repo/Nerf/3d-cinemagraphy
 	url = https://github.com/xingyi-li/3d-cinemagraphy.git
+[submodule "repo/AIOptimization/FlexGen"]
+	path = repo/AIOptimization/FlexGen
+	url = https://github.com/FMInference/FlexGen

@@ -112,3 +112,6 @@
 [submodule "repo/Nerf/NeRF-Editing"]
 	path = repo/Nerf/NeRF-Editing
 	url = https://github.com/IGLICT/NeRF-Editing.git
+[submodule "repo/AIPhysics/PhySO"]
+	path = repo/AIPhysics/PhySO
+	url = https://github.com/WassimTenachi/PhySO.git

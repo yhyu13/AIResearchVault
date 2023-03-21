@@ -115,3 +115,9 @@
 [submodule "repo/AIPhysics/PhySO"]
 	path = repo/AIPhysics/PhySO
 	url = https://github.com/WassimTenachi/PhySO.git
+[submodule "repo/Nerf/nerfshop"]
+	path = repo/Nerf/nerfshop
+	url = https://github.com/graphdeco-inria/nerfshop.git
+[submodule "repo/Nerf/3d-cinemagraphy"]
+	path = repo/Nerf/3d-cinemagraphy
+	url = https://github.com/xingyi-li/3d-cinemagraphy.git

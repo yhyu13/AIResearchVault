@@ -124,3 +124,9 @@
 [submodule "repo/AIOptimization/FlexGen"]
 	path = repo/AIOptimization/FlexGen
 	url = https://github.com/FMInference/FlexGen
+[submodule "repo/Prompting/gpt-4-for-code"]
+	path = repo/Prompting/gpt-4-for-code
+	url = https://github.com/anysphere/gpt-4-for-code.git
+[submodule "repo/Prompting/Learn_Prompting"]
+	path = repo/Prompting/Learn_Prompting
+	url = https://github.com/trigaten/Learn_Prompting.git

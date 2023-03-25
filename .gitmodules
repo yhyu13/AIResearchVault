@@ -130,3 +130,6 @@
 [submodule "repo/Prompting/Learn_Prompting"]
 	path = repo/Prompting/Learn_Prompting
 	url = https://github.com/trigaten/Learn_Prompting.git
+[submodule "repo/NTK/GP4A"]
+	path = repo/NTK/GP4A
+	url = https://github.com/thegregyang/GP4A.git

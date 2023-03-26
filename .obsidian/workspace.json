@@ -140,10 +140,18 @@
   },
   "active": "ecdc56e9a0bed060",
   "lastOpenFiles": [
-    "document/AI Theory/NTK/【2018.06】Neural Tangent Kernel Convergence and Generalization in Neural Networks.pdf",
+    "document/Neuron Science Inspired/SNN/ANN-SNN Conversion/[2023.03]Optimal ANN-SNN Conversion for High-accuracy and Ultra-low-latency Spiking Neural Networks.pdf",
+    "document/Neuron Science Inspired/SNN/ANN-SNN Conversion/[2022.10]Low Latency Conversion of Artificial Neural Network Models to Rate-encoded Spiking Neural Networks.pdf",
+    "document/Neuron Science Inspired/SNN/ANN-SNN Conversion/[2022.03]Rethinking Pretraining as a Bridge from ANNs to SNNs.pdf",
+    "document/Neuron Science Inspired/SNN/Hardware/[2022.02]Implementing Spiking Neural Networks on Neuromorphic Architectures A Review.pdf",
+    "document/Neuron Science Inspired/SNN/[2023.02]SpikeGPT Generative Pre-trained Language Model with Spiking Neural Networks.pdf",
+    "document/Neuron Science Inspired/SNN/[2022.05]Spiking Neural Networks and Their Applications A Review.pdf",
+    "document/Neuron Science Inspired/SNN/[2022.11]Spikformer When SNN meet transformer.pdf",
+    "document/Neuron Science Inspired/SNN/[2022.03]Optimized Potential Initialization for Low-latency Spiking Neural Networks.pdf",
+    "document/Neuron Science Inspired/SNN/[2019.01]Deep Learning in Spiking Neural Networks.pdf",
+    "document/Neuron Science Inspired/SNN/Hardware",
+    "document/Neuron Science Inspired/SNN/ANN-SNN Conversion",
     "document/AI Theory/NTK/【2018.06】Neural Tangent Kernel Convergence and Generalization in Neural Networks.md",
-    "document/AI Theory/NTK/【2021.02】META-LEARNING WITH NEURAL TANGENT KERNELS.pdf",
-    "document/AI Theory/NTK/【2021.02】META-LEARNING WITH NEURAL TANGENT KERNELS.md",
-    "document/AI Theory/NTK/[2021.02]META-LEARNING WITH NEURAL TANGENT KERNELS.pdf"
+    "document/AI Theory/NTK/【2021.02】META-LEARNING WITH NEURAL TANGENT KERNELS.md"
   ]
 }

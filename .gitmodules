@@ -133,3 +133,6 @@
 [submodule "repo/NTK/GP4A"]
 	path = repo/NTK/GP4A
 	url = https://github.com/thegregyang/GP4A.git
+[submodule "repo/ChatGPT/ChatPaper"]
+	path = repo/ChatGPT/ChatPaper
+	url = https://github.com/kaixindelele/ChatPaper.git

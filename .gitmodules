@@ -135,7 +135,8 @@
 	url = https://github.com/thegregyang/GP4A.git
 [submodule "repo/ChatGPT/ChatPaper"]
 	path = repo/ChatGPT/ChatPaper
-	url = https://github.com/kaixindelele/ChatPaper.git
+	url = https://github.com/yhyu13/ChatPaper.git
+	branch = gui
 [submodule "repo/LLaMA/Alpaca-CoT"]
 	path = repo/LLaMA/Alpaca-CoT
 	url = https://github.com/PhoebusSi/Alpaca-CoT.git
@@ -145,3 +146,6 @@
 [submodule "repo/OpenAI/Gymnasium"]
 	path = repo/OpenAI/Gymnasium
 	url = https://github.com/Farama-Foundation/Gymnasium.git
+[submodule "repo/ChatGPT/chatgpt_academic"]
+	path = repo/ChatGPT/chatgpt_academic
+	url = https://github.com/binary-husky/chatgpt_academic.git

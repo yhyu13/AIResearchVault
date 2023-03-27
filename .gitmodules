@@ -136,3 +136,9 @@
 [submodule "repo/ChatGPT/ChatPaper"]
 	path = repo/ChatGPT/ChatPaper
 	url = https://github.com/kaixindelele/ChatPaper.git
+[submodule "repo/LLaMA/Alpaca-CoT"]
+	path = repo/LLaMA/Alpaca-CoT
+	url = https://github.com/PhoebusSi/Alpaca-CoT.git
+[submodule "repo/LLaMA/stanford_alpaca"]
+	path = repo/LLaMA/stanford_alpaca
+	url = https://github.com/tatsu-lab/stanford_alpaca.git

@@ -142,3 +142,6 @@
 [submodule "repo/LLaMA/stanford_alpaca"]
 	path = repo/LLaMA/stanford_alpaca
 	url = https://github.com/tatsu-lab/stanford_alpaca.git
+[submodule "repo/OpenAI/Gymnasium"]
+	path = repo/OpenAI/Gymnasium
+	url = https://github.com/Farama-Foundation/Gymnasium.git

@@ -149,3 +149,9 @@
 [submodule "repo/ChatGPT/chatgpt_academic"]
 	path = repo/ChatGPT/chatgpt_academic
 	url = https://github.com/binary-husky/chatgpt_academic.git
+[submodule "repo/ChatYuan/ChatYuan"]
+	path = repo/ChatYuan/ChatYuan
+	url = https://github.com/clue-ai/ChatYuan.git
+[submodule "repo/ChatGPT/awesome-totally-open-chatgpt"]
+	path = repo/ChatGPT/awesome-totally-open-chatgpt
+	url = https://github.com/nichtdax/awesome-totally-open-chatgpt.git

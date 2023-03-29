@@ -155,3 +155,9 @@
 [submodule "repo/ChatGPT/awesome-totally-open-chatgpt"]
 	path = repo/ChatGPT/awesome-totally-open-chatgpt
 	url = https://github.com/nichtdax/awesome-totally-open-chatgpt.git
+[submodule "repo/LLaMA/BELLE"]
+	path = repo/LLaMA/BELLE
+	url = https://github.com/LianjiaTech/BELLE.git
+[submodule "repo/ChatGLM/ChatGLM-chinese-insturct"]
+	path = repo/ChatGLM/ChatGLM-chinese-insturct
+	url = https://github.com/27182812/ChatGLM-chinese-insturct.git

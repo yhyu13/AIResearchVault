@@ -4,6 +4,7 @@ import subprocess
 import sys
 import locale
 import pickle
+import re
 
 class MyState:
     def __init__(self, proxy, url, dir, name):
@@ -48,6 +49,7 @@ def run_curl_pdf(sender, data):
     url = dpg.get_value("url_input")
     pdf_dir = dpg.get_value("pdf_dir")
     pdf_filename = dpg.get_value("pdf_input")
+    pdf_filename = remove_invalid_chars(pdf_filename)
     pdf = os.path.join(pdf_dir, pdf_filename)
     if not pdf.endswith('.pdf'):
         pdf += '.pdf'
@@ -72,6 +74,13 @@ def run_curl_pdf(sender, data):
         print("Script failed with return code", result.returncode)
         print(result.stderr.decode(system_cmd_encoding))
 
+
+def remove_invalid_chars(filename):
+    # Define a regular expression pattern to match invalid characters
+    pattern = r'[\\/*?:"<>|()]'
+
+    # Replace all invalid characters with an underscore
+    return re.sub(pattern, '_', filename)
 
 def write_to_textbox(textbox_id):
     def write(text):

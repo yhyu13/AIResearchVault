@@ -161,3 +161,12 @@
 [submodule "repo/ChatGLM/ChatGLM-chinese-insturct"]
 	path = repo/ChatGLM/ChatGLM-chinese-insturct
 	url = https://github.com/27182812/ChatGLM-chinese-insturct.git
+[submodule "repo/Multi-Modal/unidiffuser"]
+	path = repo/Multi-Modal/unidiffuser
+	url = https://github.com/thu-ml/unidiffuser.git
+[submodule "repo/Multi-Modal/simpletransformers"]
+	path = repo/Multi-Modal/simpletransformers
+	url = https://github.com/ThilinaRajapakse/simpletransformers.git
+[submodule "repo/Multi-Modal/torchscale"]
+	path = repo/Multi-Modal/torchscale
+	url = https://github.com/microsoft/torchscale.git

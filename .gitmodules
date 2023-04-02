@@ -170,3 +170,6 @@
 [submodule "repo/Multi-Modal/torchscale"]
 	path = repo/Multi-Modal/torchscale
 	url = https://github.com/microsoft/torchscale.git
+[submodule "repo/LLaMA/Chinese-LLaMA-Alpaca"]
+	path = repo/LLaMA/Chinese-LLaMA-Alpaca
+	url = https://github.com/ymcui/Chinese-LLaMA-Alpaca.git

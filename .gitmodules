@@ -173,3 +173,6 @@
 [submodule "repo/LLaMA/Chinese-LLaMA-Alpaca"]
 	path = repo/LLaMA/Chinese-LLaMA-Alpaca
 	url = https://github.com/ymcui/Chinese-LLaMA-Alpaca.git
+[submodule "repo/Prompting/camel"]
+	path = repo/Prompting/camel
+	url = https://github.com/lightaime/camel.git

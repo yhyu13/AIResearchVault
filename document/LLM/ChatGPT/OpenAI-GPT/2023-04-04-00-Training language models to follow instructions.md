@@ -1,0 +1,43 @@
+## Paper:5
+
+
+
+
+1. Title: Training language models to follow instructions
+                 
+                 2. Authors: Long Ouyang, Jeff Wu, Xu Jiang, Diogo Almeida, Carroll L. Wainwright, Pamela Mishkin, Chong Zhang, Sandhini Agarwal, Katarina Slama, Alex Ray, John Schulman, Jacob Hilton, Fraser Kelton, Luke Miller, Maddie Simens, Amanda Askell, Peter Welinder, Paul Christiano, Jan Leike, Ryan Lowe
+                 
+                 3. Affiliation: OpenAI
+
+                 
+                 4. Keywords: Natural Language Processing, Fine-tuning, Reinforcement Learning, Human Feedback, Language Models,
+                 
+                 5. Urls: https://arxiv.org/abs/2203.02155
+
+                 
+                 6. Summary:
+                    - (1): 本文的研究背景是解决当下语言模型在任务执行中存在的不恰当行为的问题。
+                    - (2): 以往的方法，如扩大语言模型规模，并不一定能解决在任务中生成不真实，有毒或无用的文本输出的问题。作者通过本文提出的基于人类反馈的细调方法，介绍了一种有效的解决方案，并取得了可靠的结果。
+                    - (3): 本文提出的研究方法利用了labeler演示以及GPT-3，然后采用监督学习和人类反馈的强化学习方法，对语言模型进行细调，称之为InstructGPT。 
+                    - (4): 通过在其prompt数据集上对InstructGPT和GPT-3进行人类评估，结果表明，拥有100x较少参数的InstructGPT模型的输出优于175B GPT-3的输出；此外，InstructGPT模型在真实性和霸凌性输出生成方面也有所改善，且在公开NLP数据集上未出现明显性能退化。但是，此方法仍有一些简单的错误，表明其还有提高的空间。
+7. Methods: 
+
+- (1): 本文提出了一种名为InstructGPT的基于人类反馈的细调方法，用于训练语言模型在执行任务时遵循指令，与监督学习和强化学习相结合。作者首先使用labeler演示和GPT-3对数据进行预训练，随后引入人类反馈。在接收到人类反馈后，将指令-响应提供给InstructGPT，通过监督学习进行细调，以获得更符合任务要求的输出。接着，在任务执行时，使用强化学习方法结合人类反馈进行调整，以改进模型在任务中的表现。
+
+- (2): InstructGPT的细调目标是优化生成概率分布，使得模型根据给定指令生成相应的文本输出。在监督学习中，使用Cross-Entropy Loss作为损失函数，以指令为输入，训练模型在给定指令下生成正确的响应，使模型尽可能地接近人类期望的文本输出。
+
+- (3): 在强化学习中，InstructGPT结合人类反馈进行调整。即，根据给定指令生成响应后，将响应提供给人类评估者，然后根据评估者的反馈使用REINFORCE算法进行更新。如果评估者认为文本输出不够好，更新则会惩罚生成概率分布；相反，若反馈较好，更新则会鼓励生成概率分布，以达到更好的指令-响应匹配。
+
+
+
+
+
+8. Conclusion: 
+
+- (1): 本研究的意义在于提出了一种基于人类反馈的细调方法，用于训练语言模型在任务执行中遵循指令。通过这种方法，可以更好地控制语言模型的输出，提高任务完成质量和效率。
+
+- (2): 创新点：本文提出了一种基于人类反馈的细调方法，相较于传统的扩大模型规模等方法，更加高效。性能：作者在实验中通过人类评估结果表明，InstructGPT模型的输出优于GPT-3模型的输出，并且在性格表现、高度霸凌行为输出方面有所改善。工作量：相较于传统方法，InstructGPT减少了训练模型的工作量，且未出现在公开NLP数据集上的明显性能退化。但是，本方法仍然存在一些简单的错误，需要进一步提高。
+
+
+
+

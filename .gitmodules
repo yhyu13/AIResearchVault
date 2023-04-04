@@ -176,3 +176,9 @@
 [submodule "repo/Prompting/camel"]
 	path = repo/Prompting/camel
 	url = https://github.com/lightaime/camel.git
+[submodule "repo/Prompting/language-planner"]
+	path = repo/Prompting/language-planner
+	url = https://github.com/huangwl18/language-planner.git
+[submodule "repo/LLaMA/LMFlow"]
+	path = repo/LLaMA/LMFlow
+	url = https://github.com/OptimalScale/LMFlow.git

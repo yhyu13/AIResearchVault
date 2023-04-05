@@ -1,0 +1,947 @@
+From: <Saved by Blink>
+Snapshot-Content-Location: https://poe.com/s/6Z50bH5FTcCmZAI0vHBQ
+Subject: Poe: Conversation with ChatGPT
+Date: Wed, 29 Mar 2023 15:22:53 -0000
+MIME-Version: 1.0
+Content-Type: multipart/related;
+	type="text/html";
+	boundary="----MultipartBoundary--WJsS6mdOZMJeG8MztYDTNpwh1PPTBo2oxb5qxixBDB----"
+
+
+------MultipartBoundary--WJsS6mdOZMJeG8MztYDTNpwh1PPTBo2oxb5qxixBDB----
+Content-Type: text/html
+Content-ID: <frame-180E2784825F213F187A24FBD9541083@mhtml.blink>
+Content-Transfer-Encoding: quoted-printable
+Content-Location: https://poe.com/s/6Z50bH5FTcCmZAI0vHBQ
+
+<!DOCTYPE html><html lang=3D"en" style=3D"--vh:9.55px;"><head><meta http-eq=
+uiv=3D"Content-Type" content=3D"text/html; charset=3DUTF-8"><title>Poe: Con=
+versation with ChatGPT</title><meta name=3D"description" content=3D"Ask que=
+stions and get answers"><meta name=3D"viewport" content=3D"initial-scale=3D=
+1, maximum-scale=3D1, user-scalable=3Dno, width=3Ddevice-width, minimum-sca=
+le=3D1, viewport-fit=3Dcover" id=3D"viewport"><meta name=3D"twitter:card" c=
+ontent=3D"summary_large_image"><meta name=3D"twitter:site" content=3D"@Quor=
+a"><meta name=3D"twitter:url" content=3D"https://poe.com/s/6Z50bH5FTcCmZAI0=
+vHBQ"><meta name=3D"twitter:title" content=3D"Travelling Salesman Problem (=
+TSP) : Given a set of cities and distances between every pair of cities, th=
+e problem is to find the shortest possible route that visits every city exa=
+ctly once and returns"><meta name=3D"twitter:description" content=3D"ChatGP=
+T: &quot;Here is the Python code for the travellingSalesmanProblem algorith=
+m:
+
+```python
+from itertools import permutations
+
+def travellingSalesmanProblem(graph, s):
+    # Get number of vertices in t"><link rel=3D"icon" href=3D"https://poe.c=
+om/favicon.ico"><meta name=3D"description" content=3D"Ask questions and get=
+ answers"><meta name=3D"viewport" content=3D"initial-scale=3D1, maximum-sca=
+le=3D1, user-scalable=3Dno, width=3Ddevice-width, minimum-scale=3D1, viewpo=
+rt-fit=3Dcover" id=3D"viewport"><meta name=3D"next-head-count" content=3D"4=
+"><link rel=3D"preload" href=3D"https://poe.com/_next/static/css/b5f0db2c40=
+2d1068.css" as=3D"style"><link rel=3D"stylesheet" href=3D"https://poe.com/_=
+next/static/css/b5f0db2c402d1068.css" data-n-g=3D""><link rel=3D"preload" h=
+ref=3D"https://poe.com/_next/static/css/f65395d5d960432b.css" as=3D"style">=
+<link rel=3D"stylesheet" href=3D"https://poe.com/_next/static/css/f65395d5d=
+960432b.css" data-n-p=3D""></head><body><div id=3D"__next"><!--$--><div cla=
+ss=3D"ContentPageLayout_centeringDiv__f0tV9"><div class=3D"ContentPageLayou=
+t_layoutContainer__isrUk"><div class=3D"ContentPageHeader_stickyContainer__=
+z3eXD"><div class=3D"ContentPageHeader_headerContainer__5dysN"><div class=
+=3D"ContentPageHeader_headerLeft__lnXXh"><a href=3D"https://poe.com/" class=
+=3D"ContentPageHeader_appIconWrapper__vW_oX"><img alt=3D"Poe App Icon" src=
+=3D"https://poe.com/_next/image?url=3D%2F_next%2Fstatic%2Fmedia%2FappIcon.a=
+60ab9b3.png&amp;w=3D48&amp;q=3D75" width=3D"24" height=3D"24" decoding=3D"a=
+sync" data-nimg=3D"1" class=3D"ContentPageHeader_appIcon__KQP43" loading=3D=
+"lazy" style=3D"color:transparent"></a><a href=3D"https://poe.com/" class=
+=3D"ContentPageHeader_appName__US5Xa">Poe</a></div><a href=3D"https://poe.c=
+om/" class=3D"ContentPageHeader_downloadButton__PUykE">Try Poe now</a></div=
+><div class=3D"ShareTimestamp_timestamp__2tYj2">Conversation shared <!-- --=
+>just now</div></div><div class=3D"ContentPageLayout_columnContainer__xn_Po=
+"><div class=3D"ContentPageLayout_mainColumn__x6btZ"><div class=3D"ShareMes=
+sageList_listContainer__PAy1J"><a class=3D"undefined BotHeader_boldTitle__m=
+zvkG" href=3D"https://poe.com/chatgpt"><img alt=3D"ChatGPT" src=3D"https://=
+poe.com/_next/image?url=3D%2F_next%2Fstatic%2Fmedia%2FchatGPTAvatar.04ed844=
+3.png&amp;w=3D96&amp;q=3D75" width=3D"36" height=3D"36" decoding=3D"async" =
+data-nimg=3D"1" class=3D"BotImage_botImage__Awqvh" loading=3D"lazy" style=
+=3D"color:transparent"><div><p>ChatGPT</p></div></a><div class=3D"Message_r=
+ow___ur0Y"><div class=3D"Message_expander__DG8OV"></div><div class=3D"Messa=
+ge_humanMessageBubble__Nld4j "><div class=3D"Markdown_markdownContainer__Uy=
+Yrv"><p>Travelling Salesman Problem (TSP) : Given a set of cities and dista=
+nces between every pair of cities, the problem is to find the shortest poss=
+ible route that visits every city exactly once and returns to the starting =
+point.</p>
+<p>Consider city 1 as the starting and ending point. Since the route is cyc=
+lic, we can consider any point as a starting point.<br>
+<!-- -->Generate all (n-1)! permutations of cities.<br>
+<!-- -->Calculate the cost of every permutation and keep track of the minim=
+um cost permutation.<br>
+<!-- -->Return the permutation with minimum cost.</p>
+<p>Here is a sample code for entering the main function<br>
+<!-- -->if <strong>name</strong> =3D=3D "<strong>main</strong>":</p>
+<pre><code># matrix representation of graph
+graph =3D [[0, 10, 15, 20], [10, 0, 35, 25],
+        [15, 35, 0, 30], [20, 25, 30, 0]]
+s =3D 0
+print(travellingSalesmanProblem(graph, s))
+</code></pre>
+<p>Show the python code for the algorithm travellingSalesmanProblem, and th=
+en execute it with give sample code. Finally,<br>
+<!-- -->output the minimum cost bracketed with <!-- -->&lt;answer&gt;<!-- -=
+-> and <!-- -->&lt;/answer&gt;<!-- -->.</p></div></div></div><div class=3D"=
+Message_humanOptimisticFooter__zm1hu"></div><div class=3D"Message_row___ur0=
+Y"><div class=3D"Message_botMessageBubble__CPGMI "><div class=3D"Markdown_m=
+arkdownContainer__UyYrv"><p>Here is the Python code for the travellingSales=
+manProblem algorithm:</p>
+<pre><code class=3D"language-python">from itertools import permutations
+
+def travellingSalesmanProblem(graph, s):
+    # Get number of vertices in the graph
+    n =3D len(graph)
+   =20
+    # Create a list of all vertices except the starting vertex
+    vertices =3D list(range(n))
+    vertices.remove(s)
+   =20
+    # Create a list of all possible permutations of vertices
+    perms =3D permutations(vertices)
+   =20
+    # Initialize minimum cost and minimum cost permutation
+    min_cost =3D float('inf')
+    min_perm =3D None
+   =20
+    # Loop through all permutations
+    for perm in perms:
+        # Add the starting vertex to the permutation
+        perm =3D (s,) + perm
+       =20
+        # Calculate the cost of the permutation
+        cost =3D 0
+        for i in range(n):
+            cost +=3D graph[perm[i]][perm[(i+1)%n]]
+       =20
+        # Update minimum cost and minimum cost permutation if necessary
+        if cost &lt; min_cost:
+            min_cost =3D cost
+            min_perm =3D perm
+   =20
+    # Return minimum cost permutation
+    return min_perm
+
+</code></pre>
+<p>Now, let's execute the given sample code and output the minimum cost:</p=
+>
+<pre><code class=3D"language-python">if __name__ =3D=3D "__main__":
+=20
+    # matrix representation of graph
+    graph =3D [[0, 10, 15, 20], [10, 0, 35, 25],
+            [15, 35, 0, 30], [20, 25, 30, 0]]
+    s =3D 0
+    min_perm =3D travellingSalesmanProblem(graph, s)
+    min_cost =3D sum(graph[min_perm[i]][min_perm[(i+1)%len(min_perm)]] for =
+i in range(len(min_perm)))
+    print(f"&lt;answer&gt;{min_cost}&lt;/answer&gt;")
+</code></pre>
+<p>Output:</p>
+<pre><code>&lt;answer&gt;80&lt;/answer&gt;
+</code></pre>
+<p>So, the minimum cost of the TSP for the given graph with city 1 as the s=
+tarting and ending point is 80.</p></div></div><div class=3D"Message_expand=
+er__DG8OV"></div></div><div class=3D"Message_botOptimisticFooter__aQiG9"></=
+div><div class=3D"ShareMessageList_warningBanner__V30WO"><div class=3D"BotW=
+arningBanner_warningBanner__sHHR6"><svg viewBox=3D"0 0 24 24" xmlns=3D"http=
+://www.w3.org/2000/svg" class=3D"BotWarningBanner_cautionIcon__f_j_u"><g fi=
+ll=3D"none" fill-rule=3D"evenodd"><circle fill=3D"#666" cx=3D"12" cy=3D"8" =
+r=3D"1"></circle><path d=3D"M12 11.5v5M10.263 4.539 3.71 16.008A2 2 0 0 0 5=
+.446 19h13.108a2 2 0 0 0 1.736-2.992l-6.554-11.47a2 2 0 0 0-3.473 0Z" strok=
+e=3D"#666" stroke-width=3D"1.5" stroke-linecap=3D"round"></path></g></svg><=
+p>This conversation may have been edited by the sharer. <!-- -->This bot ma=
+y make incorrect statements. It does not have knowledge of events after 202=
+1. </p></div></div></div><div class=3D"ContentPageFooter_footerContainer__e=
+cAHM"><a class=3D"undefined " href=3D"https://poe.com/chatgpt"><div class=
+=3D"ContentPageFooter_ctaButton__UTI19">Talk to ChatGPT</div></a></div></di=
+v><div class=3D"ContentPageLayout_rightColumn__Widxz"><div class=3D"AboutBo=
+tSection_sectionContainer__4pQjl"><div class=3D"AboutBotSection_titleText__=
+x750E">About this bot</div><div class=3D"AboutBotSection_botCard__Frw6k"><a=
+ class=3D"undefined " href=3D"https://poe.com/chatgpt"><img alt=3D"ChatGPT"=
+ src=3D"https://poe.com/_next/image?url=3D%2F_next%2Fstatic%2Fmedia%2FchatG=
+PTAvatar.04ed8443.png&amp;w=3D128&amp;q=3D75" width=3D"64" height=3D"64" de=
+coding=3D"async" data-nimg=3D"1" class=3D"BotImage_botImage__Awqvh" loading=
+=3D"lazy" style=3D"color:transparent"></a><a class=3D"undefined AboutBotSec=
+tion_botName__B74CX" href=3D"https://poe.com/chatgpt">ChatGPT</a><div class=
+=3D"BotWarningBanner_warningBanner__sHHR6"><svg viewBox=3D"0 0 24 24" xmlns=
+=3D"http://www.w3.org/2000/svg" class=3D"BotWarningBanner_cautionIcon__f_j_=
+u"><g fill=3D"none" fill-rule=3D"evenodd"><circle fill=3D"#666" cx=3D"12" c=
+y=3D"8" r=3D"1"></circle><path d=3D"M12 11.5v5M10.263 4.539 3.71 16.008A2 2=
+ 0 0 0 5.446 19h13.108a2 2 0 0 0 1.736-2.992l-6.554-11.47a2 2 0 0 0-3.473 0=
+Z" stroke=3D"#666" stroke-width=3D"1.5" stroke-linecap=3D"round"></path></g=
+></svg><p>This conversation may have been edited by the sharer. <!-- -->Thi=
+s bot may make incorrect statements. It does not have knowledge of events a=
+fter 2021. </p></div><div class=3D"AboutBotSection_poweredBy__rQIfV">This b=
+ot is powered by OpenAI</div></div></div></div></div></div></div><!--/$--><=
+div class=3D"Toast_toastOverlay__U4rey"></div></div><next-route-announcer><=
+p aria-live=3D"assertive" id=3D"__next-route-announcer__" role=3D"alert" st=
+yle=3D"border: 0px; clip: rect(0px, 0px, 0px, 0px); height: 1px; margin: -1=
+px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-s=
+pace: nowrap; overflow-wrap: normal;"></p></next-route-announcer></body></h=
+tml>
+------MultipartBoundary--WJsS6mdOZMJeG8MztYDTNpwh1PPTBo2oxb5qxixBDB----
+Content-Type: text/css
+Content-Transfer-Encoding: quoted-printable
+Content-Location: https://poe.com/_next/static/css/b5f0db2c402d1068.css
+
+@charset "utf-8";
+
+:root { --text-white:#fff; --text-white--ignore_dark_mode:#fff; --text-gray=
+:#6e6f71; --text-gray--ignore_dark_mode:#6e6f71; --text-gray-dark:#050e17; =
+--text-gray-light:#8c8d8f; --text-primary-purple:#5d5cde; --text-red:#b92b2=
+7; --bg-white:#fff; --bg-white--ignore_dark_mode:#fff; --bg-primary-purple:=
+#5d5cde; --bg-purple-bubble:#5d5cde; --bg-primary-purple-light:#efeffc; --b=
+g-primary-purple-dark:#470089; --bg-gray-light:#f1f2f2; --bg-gray-bubble:#f=
+1f2f2; --bg-gray-ultralight:#f7f7f7; --bg-red-error:#cb4b10; --bg-green-suc=
+cess:#2d9655; --border-gray:#e6e7e9; --border-gray-dark:#b2b3b5; --shadow-b=
+lack:rgba(0,0,0,.1); --shadow-light:rgba(0,0,0,.03); --button-hover:linear-=
+gradient(rgb(0 0 0/5%) 0 0); --scrollbar-thumb:rgba(0,0,0,.1); --icon-small=
+:12px; --icon-medium:16px; --icon-large:20px; --spacing-small:4px; --spacin=
+g-medium:8px; --spacing-large:16px; --spacing-xlarge:24px; --border-radius-=
+small:6px; --border-radius-medium:12px; --border-radius-large:20px; --full-=
+height:calc(var(--vh, 1vh) * 100); --header-height:50px; --desktop-max-widt=
+h:1000px; --regular-button-height:32px; --large-button-height:46px; }
+
+@media (prefers-color-scheme: dark) {
+  :root { --text-white:#000; --text-gray:#cdcdcd; --text-gray-dark:#f1f2f2;=
+ --text-gray-light:#b1b3b6; --text-primary-purple:#9b9afb; --text-red:#f529=
+36; --bg-white:#181818; --bg-primary-purple:#9b9afb; --bg-purple-bubble:#3b=
+3abe; --bg-primary-purple-light:#1b1968; --bg-gray-light:#4d4d4f; --bg-gray=
+-bubble:#262626; --bg-gray-ultralight:#262626; --bg-red-error:#e95111; --bg=
+-green-success:#328f5a; --border-gray:#393839; --border-gray-dark:#8e9092; =
+--shadow-black:hsla(0,0%,100%,.03); --shadow-light:hsla(0,0%,100%,.05); --b=
+utton-hover:linear-gradient(rgb(0 0 0/10%) 0 0); --scrollbar-thumb:hsla(0,0=
+%,100%,.1); }
+  html { color-scheme: dark; }
+}
+
+@media screen and (max-width: 684px) {
+  html { user-select: none; }
+}
+
+@media screen and (min-width: 685px) {
+  * { }
+  ::-webkit-scrollbar { width: 12px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background-color: var(--scrollbar-thumb); bor=
+der-radius: 20px; border: 3px solid var(--bg-white); }
+}
+
+body { font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI=
+", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif; ba=
+ckground: var(--bg-white); line-height: 1.4; }
+
+#__next, body, html { margin: 0px; padding: 0px; height: var(--full-height)=
+; }
+
+button, input, select, textarea { font-family: inherit; }
+
+h1, h2, h3, h4, h5, h6, li, p { padding: 0px; margin: 0px; }
+
+blockquote, pre { margin: 0px; }
+
+blockquote { padding: 10px 20px; border-left: 5px solid var(--text-gray); }
+
+ul { list-style: disc; }
+
+ol { list-style: decimal; }
+
+ol, ul { padding: 0px 0px 0px 2em; margin: 0px 0px 1.2em; }
+
+code { background-color: transparent; white-space: pre-wrap; padding: 0px; =
+font-family: Consolas, monaco, monospace; }
+
+svg { stroke: var(--text-gray); stroke-width: 1.5px; stroke-linecap: round;=
+ fill: var(--text-gray); height: 24px; }
+
+.noStrokeSvg { stroke-width: 0; }
+
+a { color: inherit; text-decoration: inherit; }
+
+hr { width: 100%; }
+
+button { cursor: pointer; }
+
+.qlink_container { color: var(--text-primary-purple); }
+
+.qtext_para { margin-bottom: 1em; }
+
+.rendered_qtext ol, .rendered_qtext ul { padding-left: 1.4em; margin-bottom=
+: 1.2em; }
+
+.render_qtext li { position: relative; margin-left: 2em; padding-bottom: 0.=
+7em; }
+
+.Toast_toastOverlay__U4rey { position: fixed; top: 20px; display: flex; fle=
+x-direction: column; gap: var(--spacing-medium); left: 50%; transform: tran=
+slate(-50%); z-index: 10; }
+
+.Toast_expander__wVbHI { flex: 1 1 0%; }
+
+.Toast_defaultToast__aaI2B, .Toast_errorToast__XWkxt, .Toast_successToast__=
+ZgpR6 { display: flex; flex-direction: row; gap: var(--spacing-large); padd=
+ing: var(--spacing-medium); background-color: var(--bg-gray-bubble); border=
+-radius: 10px; align-items: center; color: var(--text-white--ignore_dark_mo=
+de); }
+
+.Toast_successToast__ZgpR6 { background-color: var(--bg-green-success); }
+
+.Toast_errorToast__XWkxt { background-color: var(--bg-red-error); }
+
+.Toast_closeButton__nGQH9 { color: unset; font: unset; font-palette: unset;=
+ font-synthesis: unset; forced-color-adjust: unset; text-orientation: unset=
+; text-rendering: unset; -webkit-font-smoothing: unset; -webkit-locale: uns=
+et; -webkit-text-orientation: unset; -webkit-writing-mode: unset; writing-m=
+ode: unset; zoom: unset; accent-color: unset; align-content: unset; align-i=
+tems: center; place-self: unset; alignment-baseline: unset; animation-compo=
+sition: unset; animation: unset; app-region: unset; appearance: unset; aspe=
+ct-ratio: unset; backdrop-filter: unset; backface-visibility: unset; backgr=
+ound: unset; background-blend-mode: unset; baseline-shift: unset; baseline-=
+source: unset; block-size: unset; border-block: unset; border: unset; borde=
+r-radius: unset; border-collapse: unset; border-end-end-radius: unset; bord=
+er-end-start-radius: unset; border-inline: unset; border-start-end-radius: =
+unset; border-start-start-radius: unset; inset: unset; box-shadow: unset; b=
+ox-sizing: unset; break-after: unset; break-before: unset; break-inside: un=
+set; buffered-rendering: unset; caption-side: unset; caret-color: unset; cl=
+ear: unset; clip: unset; clip-path: unset; clip-rule: unset; color-interpol=
+ation: unset; color-interpolation-filters: unset; color-rendering: unset; c=
+olor-scheme: unset; columns: unset; column-fill: unset; gap: unset; column-=
+rule: unset; column-span: unset; contain: unset; contain-intrinsic-block-si=
+ze: unset; contain-intrinsic-size: unset; contain-intrinsic-inline-size: un=
+set; container: unset; content: unset; content-visibility: unset; counter-i=
+ncrement: unset; counter-reset: unset; counter-set: unset; cursor: pointer;=
+ cx: unset; cy: unset; d: unset; display: flex; dominant-baseline: unset; e=
+mpty-cells: unset; fill: unset; fill-opacity: unset; fill-rule: unset; filt=
+er: unset; flex: unset; flex-flow: unset; float: unset; flood-color: unset;=
+ flood-opacity: unset; grid: unset; grid-area: unset; height: unset; hyphen=
+ate-character: unset; hyphenate-limit-chars: unset; hyphens: unset; image-o=
+rientation: unset; image-rendering: unset; initial-letter: unset; inline-si=
+ze: unset; inset-block: unset; inset-inline: unset; isolation: unset; justi=
+fy-content: center; justify-items: unset; letter-spacing: unset; lighting-c=
+olor: unset; line-break: unset; list-style: unset; margin-block: unset; mar=
+gin: unset; margin-inline: unset; marker: unset; mask: unset; mask-type: un=
+set; math-depth: unset; math-shift: unset; math-style: unset; max-block-siz=
+e: unset; max-height: unset; max-inline-size: unset; max-width: unset; min-=
+block-size: unset; min-height: unset; min-inline-size: unset; min-width: un=
+set; mix-blend-mode: unset; object-fit: unset; object-position: unset; obje=
+ct-view-box: unset; offset: unset; opacity: unset; order: unset; orphans: u=
+nset; outline: unset; outline-offset: unset; overflow-anchor: unset; overfl=
+ow-clip-margin: unset; overflow-wrap: unset; overflow: unset; overscroll-be=
+havior-block: unset; overscroll-behavior-inline: unset; overscroll-behavior=
+: unset; padding-block: unset; padding: unset; padding-inline: unset; page:=
+ unset; page-orientation: unset; paint-order: unset; perspective: unset; pe=
+rspective-origin: unset; pointer-events: unset; position: unset; quotes: un=
+set; r: unset; resize: unset; rotate: unset; ruby-position: unset; rx: unse=
+t; ry: unset; scale: unset; scroll-behavior: unset; scroll-margin-block: un=
+set; scroll-margin: unset; scroll-margin-inline: unset; scroll-padding-bloc=
+k: unset; scroll-padding: unset; scroll-padding-inline: unset; scroll-snap-=
+align: unset; scroll-snap-stop: unset; scroll-snap-type: unset; scrollbar-g=
+utter: unset; shape-image-threshold: unset; shape-margin: unset; shape-outs=
+ide: unset; shape-rendering: unset; size: unset; speak: unset; stop-color: =
+unset; stop-opacity: unset; stroke: unset; stroke-dasharray: unset; stroke-=
+dashoffset: unset; stroke-linecap: unset; stroke-linejoin: unset; stroke-mi=
+terlimit: unset; stroke-opacity: unset; stroke-width: unset; tab-size: unse=
+t; table-layout: unset; text-align: unset; text-align-last: unset; text-anc=
+hor: unset; text-combine-upright: unset; text-decoration: unset; text-decor=
+ation-skip-ink: unset; text-emphasis: unset; text-emphasis-position: unset;=
+ text-indent: unset; text-overflow: unset; text-shadow: unset; text-size-ad=
+just: unset; text-transform: unset; text-underline-offset: unset; text-unde=
+rline-position: unset; touch-action: unset; transform: unset; transform-box=
+: unset; transform-origin: unset; transform-style: unset; transition: unset=
+; translate: unset; user-select: unset; vector-effect: unset; vertical-alig=
+n: unset; view-transition-name: unset; visibility: unset; border-spacing: u=
+nset; -webkit-box-align: unset; -webkit-box-decoration-break: unset; -webki=
+t-box-direction: unset; -webkit-box-flex: unset; -webkit-box-ordinal-group:=
+ unset; -webkit-box-orient: unset; -webkit-box-pack: unset; -webkit-box-ref=
+lect: unset; -webkit-highlight: unset; -webkit-line-break: unset; -webkit-l=
+ine-clamp: unset; -webkit-mask-box-image: unset; -webkit-mask: unset; -webk=
+it-mask-composite: unset; -webkit-print-color-adjust: unset; -webkit-rtl-or=
+dering: unset; -webkit-ruby-position: unset; -webkit-tap-highlight-color: u=
+nset; -webkit-text-combine: unset; -webkit-text-decorations-in-effect: unse=
+t; -webkit-text-fill-color: unset; -webkit-text-security: unset; -webkit-te=
+xt-stroke: unset; -webkit-user-drag: unset; -webkit-user-modify: unset; whi=
+te-space: unset; widows: unset; width: unset; will-change: unset; word-brea=
+k: unset; word-spacing: unset; x: unset; y: unset; z-index: unset; }
+
+.Toast_closeIcon__zTHd7 { stroke-width: 0; fill: var(--text-gray-dark); hei=
+ght: 24px; }
+
+.Toast_errorToast__XWkxt > .Toast_closeIcon__zTHd7, .Toast_successToast__Zg=
+pR6 > .Toast_closeIcon__zTHd7 { fill: var(--text-white--ignore_dark_mode); }
+------MultipartBoundary--WJsS6mdOZMJeG8MztYDTNpwh1PPTBo2oxb5qxixBDB----
+Content-Type: text/css
+Content-Transfer-Encoding: quoted-printable
+Content-Location: https://poe.com/_next/static/css/f65395d5d960432b.css
+
+@charset "utf-8";
+
+.BotImage_botImage__Awqvh { display: block; border-radius: 100%; }
+
+.BotImage_botImage__Awqvh[data-deleted] { filter: grayscale(90%); }
+
+.BotWarningBanner_warningBanner__sHHR6 { display: flex; align-items: center=
+; gap: var(--spacing-medium); background: rgb(255, 244, 196); color: var(--=
+text-gray--ignore_dark_mode); border-radius: var(--border-radius-small); pa=
+dding: var(--spacing-medium); font-size: 12px; font-weight: 450; flex: 1 1 =
+0%; cursor: pointer; }
+
+.BotWarningBanner_cautionIcon__f_j_u { height: 24px; fill: var(--text-gray-=
+-ignore_dark_mode); stroke-width: 0; flex-shrink: 0; }
+
+.AboutBotSection_sectionContainer__4pQjl { display: flex; flex-direction: c=
+olumn; width: 300px; gap: var(--spacing-small); }
+
+.AboutBotSection_titleText__x750E { color: var(--text-gray-light); font-siz=
+e: 12px; }
+
+.AboutBotSection_botCard__Frw6k { display: flex; flex-direction: column; ba=
+ckground: var(--bg-gray-light); align-items: center; padding: var(--spacing=
+-large) 0; border-radius: 8px; gap: var(--spacing-large); }
+
+.AboutBotSection_botName__B74CX { color: var(--text-gray-dark); font-size: =
+17px; font-weight: 700; }
+
+.AboutBotSection_botName__B74CX:hover { text-decoration: underline; }
+
+.AboutBotSection_poweredBy__rQIfV { color: var(--text-gray-light); font-siz=
+e: 13px; }
+
+.BotHeader_boldTitle__mzvkG, .BotHeader_title__q67To { display: flex; align=
+-self: center; align-items: center; gap: var(--spacing-medium); font-size: =
+17px; }
+
+.BotHeader_boldTitle__mzvkG[data-deleted], .BotHeader_title__q67To[data-del=
+eted] { opacity: 0.5; }
+
+a.BotHeader_boldTitle__mzvkG:hover, a.BotHeader_title__q67To:hover { text-d=
+ecoration: underline; }
+
+.BotHeader_boldTitle__mzvkG { font-weight: 700; }
+
+.BotHeader_subText__E56HF { font-size: 14px; color: var(--text-gray); text-=
+overflow: ellipsis; overflow: hidden; max-width: 400px; white-space: nowrap=
+; }
+
+@media screen and (max-width: 684px) {
+  .BotHeader_subText__E56HF { max-width: 180px; font-size: 12px; }
+}
+
+.ContentPageFooter_footerContainer__ecAHM { display: flex; flex-direction: =
+column; justify-content: center; gap: var(--spacing-large); padding: var(--=
+spacing-medium) 0; border-top: 1px solid var(--border-gray); position: stic=
+ky; bottom: 0px; background: var(--bg-white); }
+
+.ContentPageFooter_ctaButton__UTI19 { display: flex; justify-content: cente=
+r; padding: var(--spacing-medium) var(--spacing-large); border-radius: 1000=
+px; background-color: var(--bg-primary-purple); color: rgb(255, 255, 255); =
+font-weight: 500; text-decoration: none; font-size: 14px; line-height: norm=
+al; }
+
+.ContentPageFooter_ctaButton__UTI19:hover { background-image: linear-gradie=
+nt(rgba(0, 0, 0, 0.1) 0px, rgba(0, 0, 0, 0.1) 0px); }
+
+.ContentPageFooter_ctaButton__UTI19:active { background-image: linear-gradi=
+ent(rgba(0, 0, 0, 0.2) 0px, rgba(0, 0, 0, 0.2) 0px); }
+
+.ContentPageHeader_stickyContainer__z3eXD { display: flex; flex-direction: =
+column; position: sticky; top: 0px; gap: var(--spacing-medium); padding: va=
+r(--spacing-medium) 0; margin: 0 var(--spacing-medium); border-bottom: 1px =
+solid var(--border-gray); background: var(--bg-white); }
+
+.ContentPageHeader_headerContainer__5dysN { display: flex; justify-content:=
+ space-between; align-items: center; }
+
+.ContentPageHeader_headerLeft__lnXXh { display: flex; align-items: center; =
+gap: var(--spacing-medium); }
+
+.ContentPageHeader_appIconWrapper__vW_oX { display: flex; flex-direction: c=
+olumn; justify-content: center; }
+
+.ContentPageHeader_appIcon__KQP43 { border-radius: 100%; }
+
+.ContentPageHeader_appName__US5Xa { color: var(--text-primary-purple); text=
+-decoration: none; font-size: 15px; font-weight: 700; }
+
+.ContentPageHeader_downloadButton__PUykE { padding: var(--spacing-small) va=
+r(--spacing-medium); border-radius: 1000px; border: 1px solid var(--text-pr=
+imary-purple); color: var(--text-primary-purple); font-weight: 500; text-de=
+coration: none; font-size: 14px; line-height: normal; }
+
+.ContentPageHeader_downloadButton__PUykE:hover { background-image: linear-g=
+radient(rgba(0, 0, 0, 0.1) 0px, rgba(0, 0, 0, 0.1) 0px); }
+
+.ContentPageHeader_downloadButton__PUykE:active { background-image: linear-=
+gradient(rgba(0, 0, 0, 0.2) 0px, rgba(0, 0, 0, 0.2) 0px); }
+
+.ContentPageLayout_centeringDiv__f0tV9 { display: flex; justify-content: ce=
+nter; }
+
+.ContentPageLayout_layoutContainer__isrUk { display: flex; flex-direction: =
+column; align-items: stretch; max-width: 878px; flex-grow: 1; }
+
+.ContentPageLayout_columnContainer__xn_Po { display: flex; padding: 10px 8p=
+x 0px; }
+
+.ContentPageLayout_mainColumn__x6btZ { display: flex; flex-direction: colum=
+n; flex-grow: 1; gap: 16px; }
+
+.ContentPageLayout_footerContainer__U5efs { display: block; }
+
+.ContentPageLayout_rightColumn__Widxz { display: block; padding-left: 10px;=
+ margin-left: 10px; border-left: 1px solid var(--border-gray); }
+
+@media (max-width: 878px) {
+  .ContentPageLayout_rightColumn__Widxz { display: none; }
+}
+
+.Modal_overlay__qLYU1 { position: fixed; inset: 0px; background-color: rgba=
+(0, 0, 0, 0.75); z-index: 5; }
+
+.Modal_modal__SxITf { position: absolute; border: 1px solid var(--border-gr=
+ay); padding: var(--spacing-large); background-color: var(--bg-white); }
+
+@media screen and (min-width: 684px) {
+  .Modal_modal__SxITf { top: 50%; left: 50%; transform: translate(-50%, -50=
+%); border-radius: var(--border-radius-medium); width: 400px; }
+}
+
+@media screen and (max-width: 684px) {
+  .Modal_modal__SxITf { bottom: 0px; left: 0px; right: 0px; border-top-left=
+-radius: var(--border-radius-medium); border-top-right-radius: var(--border=
+-radius-medium); max-height: 90%; border-left: none; border-right: none; bo=
+rder-bottom: none; }
+}
+
+.Modal_modalBody___85xq { max-height: 70vh; overflow-y: auto; width: 100%; =
+}
+
+.Modal_header__njLBL { display: flex; justify-content: flex-end; margin-top=
+: calc(var(--spacing-small) * -1); padding-bottom: var(--spacing-small); }
+
+.Modal_closeWrapper__IVDaM { cursor: pointer; }
+
+.Modal_closeIcon__Esbfu { stroke-width: 0; }
+
+.Modal_modal__SxITf:focus { outline: none; }
+
+.MarkdownLink_linkifiedLink__KxC9G { cursor: pointer; }
+
+.Button_button__GWnCw { display: flex; flex-direction: row; border: none; g=
+ap: 6px; align-items: center; justify-content: center; cursor: pointer; fon=
+t-weight: 450; font-size: 14px; }
+
+.Button_button__GWnCw:not([data-variant=3D"borderless"]) { border-radius: 1=
+000px; padding: var(--spacing-medium) var(--spacing-large) var(--spacing-me=
+dium) var(--spacing-large); background: var(--bg-gray-bubble); color: var(-=
+-text-gray); }
+
+.Button_button__GWnCw[data-variant=3D"primary"] { background: var(--bg-purp=
+le-bubble); color: var(--text-white--ignore_dark_mode); }
+
+.Button_button__GWnCw[data-variant=3D"purpleLight"] { background: var(--bg-=
+primary-purple-light); color: var(--text-primary-purple); }
+
+.Button_button__GWnCw[data-variant=3D"danger"] { background: var(--bg-red-e=
+rror); color: var(--text-white--ignore_dark_mode); }
+
+.Button_button__GWnCw[data-variant=3D"outline"] { background: none; border:=
+ 1px solid var(--border-gray-dark); }
+
+.Button_button__GWnCw[data-variant=3D"outlinePurple"] { background: none; b=
+order: 1px solid var(--text-primary-purple); }
+
+.Button_button__GWnCw[data-variant=3D"borderless"] { border: none; backgrou=
+nd: none; color: var(--text-primary-purple); display: flex; flex-direction:=
+ row; }
+
+.Button_button__GWnCw:hover:not([data-variant=3D"borderless"]) { background=
+-image: var(--button-hover); }
+
+.Button_button__GWnCw:disabled { color: var(--text-gray-light); }
+
+.Button_button__GWnCw:disabled:not([data-variant=3D"borderless"]) { backgro=
+und: var(--bg-gray-light); }
+
+.ChatMessageInputView_inputWrapper__kKP4W { display: flex; gap: var(--spaci=
+ng-medium); align-items: flex-end; position: relative; }
+
+.ChatMessageInputView_growWrap__mX_pX { width: 100%; display: grid; }
+
+.ChatMessageInputView_growWrap__mX_pX::after { content: attr(data-replicate=
+d-value) " "; white-space: pre-wrap; visibility: hidden; overflow: hidden; =
+}
+
+.ChatMessageInputView_growWrap__mX_pX > .ChatMessageInputView_textInput__Ae=
+rvw { resize: none; overflow-y: auto; }
+
+.ChatMessageInputView_growWrap__mX_pX::after, .ChatMessageInputView_growWra=
+p__mX_pX > .ChatMessageInputView_textInput__Aervw { flex-grow: 1; backgroun=
+d-color: transparent; font-size: 15px; padding: 14px 60px 0px 20px; border-=
+width: 1px; border-color: var(--border-gray-dark); border-radius: 25px; bor=
+der-style: solid; max-height: 100px; grid-area: 1 / 1 / 2 / 2; }
+
+.ChatMessageInputView_textInput__Aervw::placeholder { color: var(--text-gra=
+y-light); }
+
+.ChatMessageInputView_sendButtonWrapper__gyrGH { position: absolute; right:=
+ 6px; bottom: 6px; }
+
+.ChatMessageInputView_sendIcon__czJsJ { stroke: var(--text-white--ignore_da=
+rk_mode); stroke-width: 2px; fill: none; height: 24px; }
+
+.ChatMessageInputView_paintbrushIcon__Turkx { cursor: pointer; fill: var(--=
+text-gray-dark); stroke-width: 0; height: 30px; }
+
+.ChatMessageInputView_paintbrushWraper__DHMNW { display: flex; align-items:=
+ center; justify-content: center; height: 50px; }
+
+.ChatMessageInputView_sendButton__reEpT { height: 40px; width: 40px; justif=
+y-content: center; align-items: center; padding: 0px !important; }
+
+.ChatMessageInputView_noFreeMessageTooltip__hmbLG { background-color: rgb(2=
+55, 200, 3); border-radius: 10px; }
+
+.ChatMessageInputView_tooltipText__KZ7_X { font-size: 12px; font-weight: 50=
+0; color: var(--text-white); padding: 1px 5px; margin-bottom: 6px; }
+
+.InfiniteScroll_scrollContainer__YCRvB { overflow-y: auto; display: flex; f=
+lex-direction: column; }
+
+.InfiniteScroll_scrollContainerReverse__3F2Dd { overflow-y: auto; display: =
+flex; flex-direction: column-reverse; }
+
+.LoadingDots_wrapper__lXyQd { display: flex; flex-direction: column; align-=
+items: center; gap: var(--spacing-medium); }
+
+.LoadingDots_text__YS9iU { font-weight: 500; color: var(--text-gray); font-=
+size: 13px; }
+
+.LoadingDots_loader__aMPLK { width: 8px; height: 8px; border-radius: 50%; b=
+ackground-color: var(--text-white--ignore_dark_mode); box-shadow: 16px 0 va=
+r(--text-white--ignore_dark_mode),-16px 0 var(--text-white--ignore_dark_mod=
+e); position: relative; animation: 0.5s ease-out 0s infinite alternate none=
+ running LoadingDots_flash__FnSKD; }
+
+@keyframes LoadingDots_flash__FnSKD {=20
+  0% { background-color: var(--text-gray-light); box-shadow: 16px 0 var(--t=
+ext-gray-light),-16px 0 var(--text-white--ignore_dark_mode); }
+  50% { background-color: var(--text-white--ignore_dark_mode); box-shadow: =
+16px 0 var(--text-gray-light),-16px 0 var(--text-gray-light); }
+  100% { background-color: var(--text-gray-light); box-shadow: 16px 0 var(-=
+-text-white--ignore_dark_mode),-16px 0 var(--text-gray-light); }
+}
+
+.Checkbox_round__8asJn { position: relative; }
+
+.Checkbox_label__sLVVq { background-color: rgb(255, 255, 255); border: 1px =
+solid rgb(204, 204, 204); border-radius: 50%; cursor: pointer; height: 20px=
+; left: 0px; position: absolute; top: 0px; width: 20px; }
+
+.Checkbox_label__sLVVq::after { border-bottom: 2px solid rgb(255, 255, 255)=
+; border-left: 2px solid rgb(255, 255, 255); border-image: initial; border-=
+top: none; border-right: none; content: ""; height: 4px; left: 5px; opacity=
+: 0; position: absolute; top: 6px; transform: rotate(-45deg); width: 8px; }
+
+.Checkbox_checkbox__zM_Lo { visibility: hidden; }
+
+.Checkbox_checkbox__zM_Lo:checked + label { background-color: rgb(102, 187,=
+ 106); border-color: rgb(102, 187, 106); }
+
+.Checkbox_checkbox__zM_Lo:checked + label::after { opacity: 1; }
+
+.ChatMessageFeedbackButtons_feedbackButtonsContainer__0Xd3I { display: flex=
+; flex-direction: row; gap: var(--spacing-small); margin-top: var(--spacing=
+-small); }
+
+.ChatMessageFeedbackButtons_feedbackIconFilledRed__puvBf, .ChatMessageFeedb=
+ackButtons_feedbackIconFilled__4GX4r, .ChatMessageFeedbackButtons_feedbackI=
+con__BOR3J { height: var(--icon-medium); width: var(--icon-medium); }
+
+.ChatMessageFeedbackButtons_feedbackIcon__BOR3J { fill: var(--bg-gray-bubbl=
+e); stroke: var(--text-gray); }
+
+.ChatMessageFeedbackButtons_feedbackIconFilled__4GX4r { fill: var(--bg-purp=
+le-bubble); stroke: var(--bg-purple-bubble); }
+
+.ChatMessageFeedbackButtons_feedbackIconFilledRed__puvBf { fill: var(--bg-r=
+ed-error); stroke: var(--bg-red-error); }
+
+.ChatMessageFeedbackButtons_shareIcon__NIxH4 { height: var(--icon-medium); =
+width: var(--icon-medium); stroke: var(--text-primary-purple); fill: none; =
+}
+
+.DropdownMenu_button__2FeC_ { all: unset; }
+
+.DropdownMenu_dropdownMenu__Xm69A { position: absolute; z-index: 1; }
+
+.DropdownMenu_alignRight__weZ9n { right: 0px; }
+
+.DropdownMenu_alignLeft___x7xJ { left: 0px; }
+
+.DropdownMenu_wrapper__7gVrP { position: relative; }
+
+.ChatMessageOverflowButton_iconWrapper__eAeuI { margin: 0 var(--spacing-med=
+ium); cursor: pointer; }
+
+.ChatMessageOverflowButton_overflowIcon__xmUn_ { height: 24px; width: 25px;=
+ }
+
+.ChatWelcomeView_welcomeContainer__jMw3P { background-color: var(--bg-gray-=
+bubble); padding: var(--spacing-medium) 0; overflow: auto; display: flex; f=
+lex-direction: column; gap: var(--spacing-medium); margin: 0 calc(var(--spa=
+cing-large) * -1); }
+
+.ChatWelcomeView_welcomeButtonsContainer__hxUc1 { display: flex; flex-direc=
+tion: row; gap: var(--spacing-medium); overflow: auto; padding: 0 var(--spa=
+cing-large); }
+
+@media screen and (min-width: 685px) {
+  .ChatWelcomeView_welcomeButtonsContainer__hxUc1 { flex-wrap: wrap; }
+}
+
+.ChatWelcomeView_welcomeButtonsContainer__hxUc1::-webkit-scrollbar { displa=
+y: none; }
+
+.ChatWelcomeView_welcomeButton___byaW { min-width: max-content; }
+
+.ChatWelcomeView_welcomeHeader__5P9KU { font-size: 12px; padding: 0 var(--s=
+pacing-large); color: var(--text-gray); font-weight: 500; }
+
+.ChatWelcomeView_icon___zmKB { height: var(--icon-large); fill: none; strok=
+e-width: 2px; }
+
+.ChatWelcomeView_Button__41vJO { display: flex; flex-direction: row; paddin=
+g: var(--spacing-medium) var(--spacing-large); }
+
+.ChatWelcomeView_expander__FoUHW { flex: 1 1 0%; }
+
+.ChatWelcomeView_link__lSuOd { color: var(--text-primary-purple); }
+
+.ChatMessageSuggestedReplies_suggestedRepliesContainer__JgW12 { display: fl=
+ex; flex-direction: column; gap: var(--spacing-medium); padding: var(--spac=
+ing-medium) 0; }
+
+.ChatMessageSuggestedReplies_suggestedReply__Kszon { text-align: left; just=
+ify-content: flex-start; padding: var(--spacing-medium) var(--spacing-large=
+); border-radius: 16px; }
+
+.ChatPageRateLimitedBanner_banner__V_OX_ { background-color: var(--bg-gray-=
+bubble); border-radius: 5px; margin: var(--spacing-medium) 0; }
+
+.ChatPageRateLimitedBanner_text__pXmtm { color: var(--text-gray); font-size=
+: var(--font-size-small); padding: var(--spacing-small); margin: var(--spac=
+ing-small); }
+
+.ChatPageRateLimitedBanner_subscribeLink__zEECX { text-decoration: underlin=
+e; font-weight: 700; cursor: pointer; }
+
+.ChatMessage_messageRow__7yIr2 { display: flex; align-items: center; }
+
+.ChatMessage_messageRow__7yIr2 .ChatMessage_messageOverflowButton__8a84V { =
+visibility: hidden; }
+
+.ChatMessage_messageRow__7yIr2:hover .ChatMessage_messageOverflowButton__8a=
+84V { visibility: visible; }
+
+.ChatMessage_messageRow__7yIr2 .ChatMessage_incompleteMessageOverflowButton=
+__geaBw { visibility: hidden; }
+
+.ChatMessage_messageRow__7yIr2 .ChatMessage_menuOpenedButton__mE_9D { visib=
+ility: visible; }
+
+.ChatMessage_messageWrapper__Zf87D { flex: 1 1 0%; }
+
+.ChatMessage_disclaimer__tfqJz { flex-grow: 1; margin-top: var(--spacing-me=
+dium); }
+
+.ChatMessage_checkbox__wi9NC { margin-right: var(--spacing-large); }
+
+.ChatMessage_suggestedRepliesPlaceholder__ILs_E { min-height: 200px; }
+
+.ChatMessage_chatWelcomeViewWrapper__EjBnZ { padding-top: var(--spacing-med=
+ium); }
+
+.ChatMessagesView_emptyView__0UR2g { flex: 1 1 0%; margin-left: var(--spaci=
+ng-large); margin-right: var(--spacing-large); }
+
+.ChatMessagesView_infiniteScroll__K_SeP { display: flex; flex-direction: co=
+lumn; gap: var(--spacing-medium); margin: var(--spacing-large) var(--spacin=
+g-large) var(--spacing-medium); }
+
+.ChatMessagesView_emptyFlex__M5xj6 { flex: 1 1 0%; }
+
+.ChatMessagesView_loaderWrapper__srd6b { flex-grow: 1; display: flex; flex-=
+direction: column; align-items: center; padding: var(--spacing-large) 0; }
+
+@media screen and (max-width: 684px) {
+  .ChatMessagesView_messageExpander__MmKBH { min-height: calc(var(--full-he=
+ight) - 200px); }
+}
+
+@media screen and (min-width: 685px) {
+  .ChatMessagesView_messageExpander__MmKBH { min-height: calc(50vh - 50px);=
+ }
+}
+
+.ChatPageFooterSelectedCount_selectedCountText__BIQvS { font-size: 14px; co=
+lor: var(--text-gray-light); padding-bottom: var(--spacing-medium); }
+
+.ChatPageDeleteFooter_trashIcon__lksDS { fill: none; stroke: var(--text-whi=
+te--ignore_dark_mode); height: 18px; }
+
+.ChatPageDeleteFooter_button__cWtyA { width: 100%; display: flex; flex-dire=
+ction: row; gap: 6px; align-items: center; justify-content: center; }
+
+.ChatPageDeleteFooter_buttonWrapper__XMzOZ, .ChatPageDeleteFooter_container=
+__mMZ2N { padding-top: 8px; margin-top: calc(var(--spacing-medium) * -1); w=
+idth: 100%; }
+
+.ChatPageDeleteFooter_container__mMZ2N { display: flex; flex-direction: col=
+umn; align-items: center; border-top: 1px solid var(--border-gray); }
+
+.ChatPageShareFooter_linkIcon__KW2oF { fill: var(--text-white--ignore_dark_=
+mode); stroke-width: 0; }
+
+.ChatPageShareFooter_button__qFLSB { width: 100%; display: flex; flex-direc=
+tion: row; gap: 6px; align-items: center; justify-content: center; }
+
+.ChatPageShareFooter_buttonWrapper__Wy7qM { width: 100%; }
+
+.ChatPageShareFooter_container__dugJ6 { width: 100%; display: flex; flex-di=
+rection: column; align-items: center; border-top: 1px solid var(--border-gr=
+ay); padding-top: 8px; margin-top: calc(var(--spacing-medium) * -1); }
+
+.ChatPageMain_footer__7_J_Y { padding: var(--spacing-medium) var(--spacing-=
+large) var(--spacing-large) var(--spacing-large); }
+
+@media screen and (max-width: 684px) {
+  .ChatPageMain_footer__7_J_Y { touch-action: none; }
+}
+
+.ChatPageMain_botDeletedExplanation__Db3ul { font-size: 14px; color: var(--=
+text-gray); margin-top: var(--spacing-medium); text-align: center; }
+
+.Markdown_markdownContainer__UyYrv { display: flex; flex-direction: column;=
+ gap: 16px; }
+
+.Markdown_link__9ACHA { color: var(--text-primary-purple); text-decoration:=
+ none; word-break: break-word; }
+
+.Markdown_linkPurpleBackground__dBoWD { color: var(--text-white--ignore_dar=
+k_mode); text-decoration: underline; }
+
+.Message_humanMessageBubble__Nld4j { align-self: flex-end; margin-left: 30p=
+x; background: var(--bg-purple-bubble); color: rgb(255, 255, 255); }
+
+.Message_botMessageBubble__CPGMI { align-self: flex-start; margin-right: 30=
+px; background: var(--bg-gray-bubble); color: var(--text-gray-dark); }
+
+.Message_botMessageBubble__CPGMI, .Message_humanMessageBubble__Nld4j { disp=
+lay: flex; flex-direction: column; overflow-x: hidden; padding: var(--spaci=
+ng-small) var(--spacing-medium); border-radius: 12px; font-size: 17px; word=
+-break: break-word; }
+
+@media screen and (min-width: 685px) {
+  .Message_botMessageBubble__CPGMI, .Message_humanMessageBubble__Nld4j { pa=
+dding: var(--spacing-medium) var(--spacing-large); }
+}
+
+.Message_errorBubble__XFYk8 { background: var(--bg-red-error); }
+
+.Message_breakLine__Zh7kf { flex-grow: 1; margin: 0 var(--spacing-small); b=
+order-bottom: 1px solid var(--border-gray); }
+
+.Message_chatBreak__i1lg8 { display: flex; justify-content: space-between; =
+align-items: center; color: var(--text-gray); font-size: 12px; flex: 1 1 0%=
+; }
+
+.Message_botOptimisticFooter__aQiG9[data-visible], .Message_humanOptimistic=
+Footer__zm1hu[data-visible] { font-size: 10px; padding: var(--spacing-small=
+); }
+
+.Message_humanOptimisticFooter__zm1hu[data-visible] { text-align: right; }
+
+.Message_row___ur0Y { display: flex; flex-direction: row; }
+
+.Message_expander__DG8OV { flex: 1 1 0%; }
+
+.Message_noSignIcon__3f_KY { fill: none; stroke: rgb(255, 255, 255); }
+
+.ShareMessageList_listContainer__PAy1J { display: flex; flex-direction: col=
+umn; gap: 8px; }
+
+.ShareMessageList_contextSkip__zbf0k { align-self: center; stroke: var(--te=
+xt-gray-light); fill: var(--text-gray-light); }
+
+@media (min-width: 878px) {
+  .ShareMessageList_warningBanner__V30WO { display: none; }
+}
+
+.ShareMessageList_overflowIcon__6sJo2 { width: 16px; height: 16px; display:=
+ block; margin: auto; }
+
+.ShareTimestamp_timestamp__2tYj2 { color: var(--text-gray); font-size: 13px=
+; font-weight: 700; }
+------MultipartBoundary--WJsS6mdOZMJeG8MztYDTNpwh1PPTBo2oxb5qxixBDB----
+Content-Type: image/webp
+Content-Transfer-Encoding: base64
+Content-Location: https://poe.com/_next/image?url=%2F_next%2Fstatic%2Fmedia%2FappIcon.a60ab9b3.png&w=48&q=75
+
+UklGRrwBAABXRUJQVlA4ILABAABwCQCdASogACAAPpE+nEkloyMhKAqosBIJbACdMoRwN7p+KvLT
+5AVf/1AHPeeyR/pZRrx8zUBTNvIZqAJzPR5atWkTYg6YJjZvjcp2Ln3sWn3xygAA/tpx170RGkAX
+jkYTKusnDKEfAVyMTju9y8vqv1Q1gWctBvWhL3S3+33fXyxPnPjDGd5m/5Kp9WSW/l/hv8PT3yxJ
+AfIe/9pZ0rGRpIKPbnq4g1pmfJ3+f639/LzNh/x1ROX4Pqv6hdgGS2uPIwgw5xLN/6b0Gk0rjyfk
+e3/xM/NdSIfE2wI+7f/NfV3R+3f2R6fswPkvvsiQtLL2Pfxqisdxt2gf3cq9Un1kHIe2733+t/an
+/l5odN1m4uOuKnYrnpD2Hl2X7rxE3pCU4zYEYOPqOrb0xqirGNgbhoezqFlKuwuY5Q1dU6LxDmWL
+2WsseCOvrroVgCqTr/bIb2/6PYnvHpC+WNcev91VAGdt0q2oLIXg5ApWFXJsUdjG5nZiSee+HlAw
+FxJnE3zAnNBbCWL70RYZq++qn8ooFuc+8nAHXA4Nnbxnu2h3hkPp6+Ht2mX4yTpCi+NAAAA=
+
+------MultipartBoundary--WJsS6mdOZMJeG8MztYDTNpwh1PPTBo2oxb5qxixBDB----
+Content-Type: image/webp
+Content-Transfer-Encoding: base64
+Content-Location: https://poe.com/_next/image?url=%2F_next%2Fstatic%2Fmedia%2FchatGPTAvatar.04ed8443.png&w=96&q=75
+
+UklGRrgCAABXRUJQVlA4IKwCAABwDACdASowADEAPpE8mUgloyKhKrgM+LASCWIAVhnh30AbYDcA
+bwBvEU+saeFIzmhL3iA0kEyTxg/U3sFdHwtPGZCJ03PDG9E0dQam6nFvJRmeltdEhq2tJwrMHYWZ
+h/oU6jIBf4FhXSpeE0AAEjwJPtIH01GOhuET1DDcBUFN7+mZeJ4GDfetLp2Tj//8Wh/kp/sasWN0
+J5dgFXd32YMk1+NxdHcYgVBDp5fZZk2PLeO5/Lzuioxqamhtl6Myt2hPO9gYEW3Ps6mOwDykfo/G
+x5Lb994y8pkhviOdANUqHmvsjtzll684XE1pGtPRiqVtM4/P6MyARvFdBRxmm037D3yWBe6Dy016
+fpZCIbkArM3lpGyXkT94aBsBFw8ItG4mOUjorJOlsPsUO1VyRepxdAN2CWzhBGoBXTs215tAenJe
+/v2CnnkMTD5nz7FerjIfHNbKQQlHbYNbEr4iV1kDBmQ10Wh+UE+28kFAomCdzUZfbV09wUBNSuyv
+UKABQV7je+DbQuaT5wIdam/1zX5hHAdFNXtBEsBfQwq8QCkJi6AQ+i8x7oay8B6WDpje7j124IlW
+przhuOAT504w2OJaOL/5YKIdxEek3nCtH/4yw+K1pgHiMibPweLgltMG2Kx07K8ZuwCWJ9V5/te2
+Wuze54djW2wlf+M2RXjvzPsDIrcoZTzf+V0I6IptBBUSdzdMXVZdX1nn+Xv7kp9q4Py/nnHd2f0/
+UsRV0JIAaos2JvoSidwNW4nchB+GUw5uzm3IOW/mfZyubjcv1u/XZzkmyQi3j/k6qIQwoznzxiaD
+gBeQneH1GpworpgyRFPEcM0fCuJoKC+UN02ImumYPkVGTL0tMYqCrr4JzbcSif/hpXMs+d8cHYPS
+j4Hf34NMwNDSi6vbRfxo1LUAQAA=
+
+------MultipartBoundary--WJsS6mdOZMJeG8MztYDTNpwh1PPTBo2oxb5qxixBDB----
+Content-Type: image/webp
+Content-Transfer-Encoding: base64
+Content-Location: https://poe.com/_next/image?url=%2F_next%2Fstatic%2Fmedia%2FchatGPTAvatar.04ed8443.png&w=128&q=75
+
+UklGRsQDAABXRUJQVlA4ILgDAADQDwCdASpAAEIAPpFAmUklpCIhKBZtULASCUAaJS45FNsBuD/9
+LvgHoAfqT1j76nMA7GHjX9Q4kdLFM48cX1Pv62tSyv80GoJ4U4hYTQVqK3U6CGTo+x8XCbih2abg
+EYSRk9yo4Jx3J7fJybQGAquRAtAtsVwDTU2rEJk2XQgRtlW/RCqgXYAAgR//5gn/v9/3+8pHKc6E
+WiXfOG31v3T2G2g4/lNzGzaikitBN3r2BOZaMg5PwVuZhRXrIVfqNEudLOYEmnKptPvwnfitUjb/
+m212ILxRijTFVa4lrQeyPU0Vq9Ifro/6uIXanmHTh2uSLY9nr7itReAkXpZfhvJDf/WV/4jDJ7oj
+oJ34D2eWK65XzNXYmW3qRe7saYtB0hz55/4ibGB3edzOpQNtlew5RW3nA7qCsvPhHz/RqlNXTW/k
+Cjfc2Pin1VuqrZ1Mh9qH1meqImYeL6X6tdtA/grqvHl1Sw1W+ocxPNwxx8hzLUgJ7TNjv2kzBwwR
+QM+vCg4dWlXNkw7GLwj/2KF26JvkLvprTKmpKqjW8LRK6N2nER+SdbuBUHxpoZnlaGKErQV22Pf3
+/0i0aAI9gIx1gWLWdh7ribCNv1YWJNsYNkeJR9wyiAJhiKbLD94bwmxlvBo+REaB5LsjnCW/5s2u
+4RFQ2U8IDoV3hMe94Vkxc22zYO28mjvHzQZPeWxFW0YVP0kDDwCwNs+szya6rovsJJVMaBfTW37x
+ua58KP9rgyhlgTXV3hDXO2hXnPrXDBhBvrUG8U091y5kN7upERQ+zaGiARdEStSV0d1uLBfZxn2l
+ETa5D9jMI2TgX5UIPwlu5Vie+gjT3DEm9t960862niv9PN9ONxd3bRHAW0T5QPar2SY1iDWrilvM
+t0ImbxEecqYM33bZwUDolKie2FWaDpASn11MVbt8X45v+n7rxCAstBTeX3+HJ9SeZlUACnr5/+BG
+tFDiRTSe1FlpGWI1RSxxrqwvPpRnwYIbGGi5TR5CY7zsmT4FTE2ImtBYmBlBO3i0Ur60YCGflx8w
+6zill0322T6MFMWOcIOIZS6u3netMhflq5IK37YlCfnIBaqXOW4sqr9ju2BWnfPvm6ASNV9pXgmR
+QthmgvtAIWXfueW1CxKMrh3aBEFPbvwEWc9Re8u/wfZd69nXy0ytSdjXUJVDUfISCPwLiEpfNy/x
+56ggukHKlfO289EHqdkNpcCh0awF/0++eJa8ey9+9GDKtBWCuIucIgb5ARXU0WIdJWSwmI5krZMA
+AAAA
+
+------MultipartBoundary--WJsS6mdOZMJeG8MztYDTNpwh1PPTBo2oxb5qxixBDB------

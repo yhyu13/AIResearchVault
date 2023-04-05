@@ -59,7 +59,9 @@ def run_curl_pdf(sender, data):
     my_state.dir = pdf_dir
     my_state.name = pdf_filename
 
-    cmd = f'''curl -o "{pdf}" "{url}"'''
+    curl_path = "C:\Windows\System32\curl.exe" if bWin32 else "curl"
+
+    cmd = f'''{curl_path} -o "{pdf}" "{url}"'''
     if proxy != '':
         cmd += f''' -x "{proxy}"'''
     cmd = cmd.replace("\\", "/")
@@ -67,12 +69,19 @@ def run_curl_pdf(sender, data):
     
     dpg.set_value("cmd_out", cmd)
 
-    result = subprocess.run([cmd], capture_output=True, shell=True)
-    if result.returncode == 0:
+    subp = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    subp.wait()
+
+    return_code = subp.poll()
+    stdout, stderr = subp.communicate()
+
+    if return_code == 0:
         print("Script succeeded")
+        # print("Standard output:")
+        # print(stdout.decode(system_cmd_encoding))
     else:
-        print("Script failed with return code", result.returncode)
-        print(result.stderr.decode(system_cmd_encoding))
+        print("Script failed with return code ", return_code)
+        print(stderr.decode(system_cmd_encoding))
 
 
 def remove_invalid_chars(filename):

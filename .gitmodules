@@ -194,3 +194,6 @@
 [submodule "repo/LLaMA/FastChat"]
 	path = repo/LLaMA/FastChat
 	url = https://github.com/lm-sys/FastChat.git
+[submodule "repo/ChatGPT/chatdoc"]
+	path = repo/ChatGPT/chatdoc
+	url = https://github.com/daodao97/chatdoc.git

@@ -191,3 +191,6 @@
 [submodule "repo/ChatGPT/ChatGPT"]
 	path = repo/ChatGPT/ChatGPT
 	url = https://github.com/nzwaneveld/ChatGPT.git
+[submodule "repo/LLaMA/FastChat"]
+	path = repo/LLaMA/FastChat
+	url = https://github.com/lm-sys/FastChat.git

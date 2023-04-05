@@ -182,3 +182,9 @@
 [submodule "repo/LLaMA/LMFlow"]
 	path = repo/LLaMA/LMFlow
 	url = https://github.com/OptimalScale/LMFlow.git
+[submodule "repo/Nerf/nerfmeshes"]
+	path = repo/Nerf/nerfmeshes
+	url = https://github.com/qway/nerfmeshes.git
+[submodule "repo/Nerf/MeshDiffusion"]
+	path = repo/Nerf/MeshDiffusion
+	url = https://github.com/lzzcd001/MeshDiffusion.git

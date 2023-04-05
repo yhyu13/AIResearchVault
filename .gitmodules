@@ -43,9 +43,6 @@
 [submodule "repo/StableDiffusion/kohya_ss-docker"]
 	path = repo/StableDiffusion/kohya_ss-docker
 	url = https://github.com/P2Enjoy/kohya_ss-docker.git
-[submodule "repo/ChatGPT/stanford_alpaca"]
-	path = repo/ChatGPT/stanford_alpaca
-	url = https://github.com/tatsu-lab/stanford_alpaca.git
 [submodule "repo/ChatGLM/ChatGLM-6B"]
 	path = repo/ChatGLM/ChatGLM-6B
 	url = https://github.com/THUDM/ChatGLM-6B.git
@@ -188,3 +185,9 @@
 [submodule "repo/Nerf/MeshDiffusion"]
 	path = repo/Nerf/MeshDiffusion
 	url = https://github.com/lzzcd001/MeshDiffusion.git
+[submodule "repo/Nerf/nvdiffrec"]
+	path = repo/Nerf/nvdiffrec
+	url = https://github.com/NVlabs/nvdiffrec.git
+[submodule "repo/ChatGPT/ChatGPT"]
+	path = repo/ChatGPT/ChatGPT
+	url = https://github.com/nzwaneveld/ChatGPT.git

@@ -197,3 +197,6 @@
 [submodule "repo/ChatGPT/chatdoc"]
 	path = repo/ChatGPT/chatdoc
 	url = https://github.com/daodao97/chatdoc.git
+[submodule "repo/ChatGPT/ChatGPT_JCM"]
+	path = repo/ChatGPT/ChatGPT_JCM
+	url = https://github.com/202252197/ChatGPT_JCM.git

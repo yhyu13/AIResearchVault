@@ -215,3 +215,15 @@
 [submodule "repo/OpenAI/openai-python"]
 	path = repo/OpenAI/openai-python
 	url = https://github.com/openai/openai-python.git
+[submodule "repo/LLMApp/babyagi"]
+	path = repo/LLMApp/babyagi
+	url = https://github.com/yoheinakajima/babyagi.git
+[submodule "repo/LLMApp/Auto-GPT"]
+	path = repo/LLMApp/Auto-GPT
+	url = https://github.com/Torantulino/Auto-GPT.git
+[submodule "repo/Multi-Modal/segment-anything"]
+	path = repo/Multi-Modal/segment-anything
+	url = https://github.com/facebookresearch/segment-anything.git
+[submodule "repo/Multi-Modal/CLIP-SAM"]
+	path = repo/Multi-Modal/CLIP-SAM
+	url = https://github.com/maxi-w/CLIP-SAM.git

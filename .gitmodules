@@ -227,3 +227,18 @@
 [submodule "repo/Multi-Modal/CLIP-SAM"]
 	path = repo/Multi-Modal/CLIP-SAM
 	url = https://github.com/maxi-w/CLIP-SAM.git
+[submodule "repo/LLMApp/ChatGPT-Next-Web"]
+	path = repo/LLMApp/ChatGPT-Next-Web
+	url = https://github.com/Yidadaa/ChatGPT-Next-Web.git
+[submodule "repo/LLaMA/LLM-Adapters"]
+	path = repo/LLaMA/LLM-Adapters
+	url = https://github.com/AGI-Edgerunners/LLM-Adapters.git
+[submodule "repo/AIOptimization/flash-attention"]
+	path = repo/AIOptimization/flash-attention
+	url = https://github.com/HazyResearch/flash-attention.git
+[submodule "repo/Prompting/ama_prompting"]
+	path = repo/Prompting/ama_prompting
+	url = https://github.com/HazyResearch/ama_prompting.git
+[submodule "repo/LLMApp/chathub"]
+	path = repo/LLMApp/chathub
+	url = https://github.com/chathub-dev/chathub.git

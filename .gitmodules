@@ -200,3 +200,18 @@
 [submodule "repo/ChatGPT/ChatGPT_JCM"]
 	path = repo/ChatGPT/ChatGPT_JCM
 	url = https://github.com/202252197/ChatGPT_JCM.git
+[submodule "repo/ChatGLM/ChatGLM-MNN"]
+	path = repo/ChatGLM/ChatGLM-MNN
+	url = https://github.com/wangzhaode/ChatGLM-MNN.git
+[submodule "repo/LLMApp/wenda"]
+	path = repo/LLMApp/wenda
+	url = https://github.com/l15y/wenda.git
+[submodule "repo/Multi-Modal/SwissArmyTransformer"]
+	path = repo/Multi-Modal/SwissArmyTransformer
+	url = https://github.com/THUDM/SwissArmyTransformer.git
+[submodule "repo/OpenAI/openai-cookbook"]
+	path = repo/OpenAI/openai-cookbook
+	url = https://github.com/openai/openai-cookbook.git
+[submodule "repo/OpenAI/openai-python"]
+	path = repo/OpenAI/openai-python
+	url = https://github.com/openai/openai-python.git

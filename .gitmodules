@@ -242,3 +242,12 @@
 [submodule "repo/LLMApp/chathub"]
 	path = repo/LLMApp/chathub
 	url = https://github.com/chathub-dev/chathub.git
+[submodule "repo/BCI/EEG/Python-EEG-Handbook"]
+	path = repo/BCI/EEG/Python-EEG-Handbook
+	url = https://github.com/ZitongLu1996/Python-EEG-Handbook.git
+[submodule "repo/BCI/EEG/EEGdenoiseNet"]
+	path = repo/BCI/EEG/EEGdenoiseNet
+	url = https://github.com/ncclabsustech/EEGdenoiseNet.git
+[submodule "repo/BCI/EEG/RELAX"]
+	path = repo/BCI/EEG/RELAX
+	url = https://github.com/NeilwBailey/RELAX.git

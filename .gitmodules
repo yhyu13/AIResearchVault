@@ -251,3 +251,9 @@
 [submodule "repo/BCI/EEG/RELAX"]
 	path = repo/BCI/EEG/RELAX
 	url = https://github.com/NeilwBailey/RELAX.git
+[submodule "repo/LLMApp/visual-openllm"]
+	path = repo/LLMApp/visual-openllm
+	url = https://github.com/visual-openllm/visual-openllm.git
+[submodule "repo/Multi-Modal/mm-cot"]
+	path = repo/Multi-Modal/mm-cot
+	url = https://github.com/amazon-science/mm-cot.git

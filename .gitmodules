@@ -159,13 +159,13 @@
 	path = repo/ChatGLM/ChatGLM-chinese-insturct
 	url = https://github.com/27182812/ChatGLM-chinese-insturct.git
 [submodule "repo/Multi-Modal/unidiffuser"]
-	path = repo/Multi-Modal/unidiffuser
+	path = repo/Architecture/unidiffuser
 	url = https://github.com/thu-ml/unidiffuser.git
 [submodule "repo/Multi-Modal/simpletransformers"]
-	path = repo/Multi-Modal/simpletransformers
+	path = repo/Architecture/simpletransformers
 	url = https://github.com/ThilinaRajapakse/simpletransformers.git
 [submodule "repo/Multi-Modal/torchscale"]
-	path = repo/Multi-Modal/torchscale
+	path = repo/Architecture/torchscale
 	url = https://github.com/microsoft/torchscale.git
 [submodule "repo/LLaMA/Chinese-LLaMA-Alpaca"]
 	path = repo/LLaMA/Chinese-LLaMA-Alpaca
@@ -207,7 +207,7 @@
 	path = repo/LLMApp/wenda
 	url = https://github.com/l15y/wenda.git
 [submodule "repo/Multi-Modal/SwissArmyTransformer"]
-	path = repo/Multi-Modal/SwissArmyTransformer
+	path = repo/Architecture/SwissArmyTransformer
 	url = https://github.com/THUDM/SwissArmyTransformer.git
 [submodule "repo/OpenAI/openai-cookbook"]
 	path = repo/OpenAI/openai-cookbook
@@ -257,3 +257,15 @@
 [submodule "repo/Multi-Modal/mm-cot"]
 	path = repo/Multi-Modal/mm-cot
 	url = https://github.com/amazon-science/mm-cot.git
+[submodule "repo/Conference/CVPR2023-Papers-with-Code"]
+	path = repo/Conference/CVPR2023-Papers-with-Code
+	url = https://github.com/amusi/CVPR2023-Papers-with-Code.git
+[submodule "repo/Career/AI-Job-Notes"]
+	path = repo/Career/AI-Job-Notes
+	url = https://github.com/amusi/AI-Job-Notes.git
+[submodule "repo/Career/Deep-Learning-Interview-Book"]
+	path = repo/Career/Deep-Learning-Interview-Book
+	url = https://github.com/amusi/Deep-Learning-Interview-Book.git
+[submodule "repo/Multi-Modal/Painter"]
+	path = repo/Multi-Modal/Painter
+	url = https://github.com/baaivision/Painter.git

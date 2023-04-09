@@ -47,6 +47,9 @@ def run_curl_pdf(sender, data):
 
     proxy = dpg.get_value("proxy_input")
     url = dpg.get_value("url_input")
+    if not url.endswith('.pdf'):
+        print(f'{url} does not ends with .pdf!')
+        return
     pdf_dir = dpg.get_value("pdf_dir")
     pdf_filename = dpg.get_value("pdf_input")
     pdf_filename = remove_invalid_chars(pdf_filename)

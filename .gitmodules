@@ -269,3 +269,6 @@
 [submodule "repo/Multi-Modal/Painter"]
 	path = repo/Multi-Modal/Painter
 	url = https://github.com/baaivision/Painter.git
+[submodule "repo/OpenAI/evals"]
+	path = repo/OpenAI/evals
+	url = https://github.com/openai/evals.git

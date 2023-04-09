@@ -69,19 +69,31 @@ def run_curl_pdf(sender, data):
     
     dpg.set_value("cmd_out", cmd)
 
-    subp = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    subp.wait()
-
-    return_code = subp.poll()
-    stdout, stderr = subp.communicate()
-
+    result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=not bWin32) 
+    return_code = result.returncode 
+    stdout, stderr = result.stdout.decode(), result.stderr.decode() 
+    
     if return_code == 0:
         print("Script succeeded")
-        # print("Standard output:")
-        # print(stdout.decode(system_cmd_encoding))
     else:
         print("Script failed with return code ", return_code)
-        print(stderr.decode(system_cmd_encoding))
+        print(stderr)
+        print("Standard output:")
+        print(stdout)
+
+    # subp = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    # subp.wait()
+
+    # return_code = subp.poll()
+    # stdout, stderr = subp.communicate()
+
+    # if return_code == 0:
+    #     print("Script succeeded")
+    #     # print("Standard output:")
+    #     # print(stdout.decode(system_cmd_encoding))
+    # else:
+    #     print("Script failed with return code ", return_code)
+    #     print(stderr.decode(system_cmd_encoding))
 
 
 def remove_invalid_chars(filename):

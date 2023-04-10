@@ -284,3 +284,9 @@
 [submodule "repo/AIMotion/MotionDiffuse"]
 	path = repo/AIGC/Text2Motion/MotionDiffuse
 	url = https://github.com/mingyuan-zhang/MotionDiffuse.git
+[submodule "repo/LLMApp/fauxpilot"]
+	path = repo/LLMApp/fauxpilot
+	url = https://github.com/fauxpilot/fauxpilot.git
+[submodule "repo/LLMApp/JARVIS"]
+	path = repo/LLMApp/JARVIS
+	url = https://github.com/microsoft/JARVIS.git

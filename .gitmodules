@@ -8,13 +8,13 @@
 	path = repo/Nerf/taichi-ngp-renderer
 	url = https://github.com/yhyu13/taichi-ngp-renderer.git
 [submodule "repo/ChatGPT/PromptCraft-Robotics"]
-	path = repo/ChatGPT/PromptCraft-Robotics
+	path = repo/LLM/ChatGPT/PromptCraft-Robotics
 	url = https://github.com/microsoft/PromptCraft-Robotics.git
 [submodule "repo/ChatGPT/chatgpt-prompt-evaluator"]
-	path = repo/ChatGPT/chatgpt-prompt-evaluator
+	path = repo/LLM/ChatGPT/chatgpt-prompt-evaluator
 	url = https://github.com/alignedai/chatgpt-prompt-evaluator.git
 [submodule "repo/ChatGPT/ChatGPT-Prompts"]
-	path = repo/ChatGPT/ChatGPT-Prompts
+	path = repo/LLM/ChatGPT/ChatGPT-Prompts
 	url = https://github.com/yokoffing/ChatGPT-Prompts.git
 [submodule "repo/StableDiffusion/stable-diffusion-nvidia-docker"]
 	path = repo/StableDiffusion/stable-diffusion-nvidia-docker
@@ -44,10 +44,10 @@
 	path = repo/StableDiffusion/kohya_ss-docker
 	url = https://github.com/P2Enjoy/kohya_ss-docker.git
 [submodule "repo/ChatGLM/ChatGLM-6B"]
-	path = repo/ChatGLM/ChatGLM-6B
+	path = repo/LLM/ChatGLM/ChatGLM-6B
 	url = https://github.com/THUDM/ChatGLM-6B.git
 [submodule "repo/ChatGLM/GLM-130B"]
-	path = repo/ChatGLM/GLM-130B
+	path = repo/LLM/ChatGLM/GLM-130B
 	url = https://github.com/THUDM/GLM-130B.git
 [submodule "repo/BrainCog/timm"]
 	path = repo/BrainCog/timm
@@ -59,7 +59,7 @@
 	path = repo/AIVtuber/AI-Vtuber
 	url = https://github.com/XzaiCloud/AI-Vtuber.git
 [submodule "repo/ChatGLM/chatglm_webui"]
-	path = repo/ChatGLM/chatglm_webui
+	path = repo/LLM/ChatGLM/chatglm_webui
 	url = https://github.com/OedoSoldier/chatglm_webui.git
 [submodule "repo/cuda/tiny-cuda-nn"]
 	path = repo/cuda/tiny-cuda-nn
@@ -135,10 +135,10 @@
 	url = https://github.com/yhyu13/ChatPaper.git
 	branch = gui
 [submodule "repo/LLaMA/Alpaca-CoT"]
-	path = repo/LLaMA/Alpaca-CoT
+	path = repo/LLM/LLaMA/Alpaca-CoT
 	url = https://github.com/PhoebusSi/Alpaca-CoT.git
 [submodule "repo/LLaMA/stanford_alpaca"]
-	path = repo/LLaMA/stanford_alpaca
+	path = repo/LLM/LLaMA/stanford_alpaca
 	url = https://github.com/tatsu-lab/stanford_alpaca.git
 [submodule "repo/OpenAI/Gymnasium"]
 	path = repo/OpenAI/Gymnasium
@@ -147,16 +147,16 @@
 	path = repo/LLMApp/chatgpt_academic
 	url = https://github.com/binary-husky/chatgpt_academic.git
 [submodule "repo/ChatYuan/ChatYuan"]
-	path = repo/ChatYuan/ChatYuan
+	path = repo/LLM/ChatYuan/ChatYuan
 	url = https://github.com/clue-ai/ChatYuan.git
 [submodule "repo/ChatGPT/awesome-totally-open-chatgpt"]
-	path = repo/ChatGPT/awesome-totally-open-chatgpt
+	path = repo/LLM/ChatGPT/awesome-totally-open-chatgpt
 	url = https://github.com/nichtdax/awesome-totally-open-chatgpt.git
 [submodule "repo/LLaMA/BELLE"]
-	path = repo/LLaMA/BELLE
+	path = repo/LLM/LLaMA/BELLE
 	url = https://github.com/LianjiaTech/BELLE.git
 [submodule "repo/ChatGLM/ChatGLM-chinese-insturct"]
-	path = repo/ChatGLM/ChatGLM-chinese-insturct
+	path = repo/LLM/ChatGLM/ChatGLM-chinese-insturct
 	url = https://github.com/27182812/ChatGLM-chinese-insturct.git
 [submodule "repo/Multi-Modal/unidiffuser"]
 	path = repo/Architecture/unidiffuser
@@ -168,7 +168,7 @@
 	path = repo/Architecture/torchscale
 	url = https://github.com/microsoft/torchscale.git
 [submodule "repo/LLaMA/Chinese-LLaMA-Alpaca"]
-	path = repo/LLaMA/Chinese-LLaMA-Alpaca
+	path = repo/LLM/LLaMA/Chinese-LLaMA-Alpaca
 	url = https://github.com/ymcui/Chinese-LLaMA-Alpaca.git
 [submodule "repo/Prompting/camel"]
 	path = repo/Prompting/camel
@@ -177,7 +177,7 @@
 	path = repo/Prompting/language-planner
 	url = https://github.com/huangwl18/language-planner.git
 [submodule "repo/LLaMA/LMFlow"]
-	path = repo/LLaMA/LMFlow
+	path = repo/LLM/LLaMA/LMFlow
 	url = https://github.com/OptimalScale/LMFlow.git
 [submodule "repo/Nerf/nerfmeshes"]
 	path = repo/Nerf/nerfmeshes
@@ -189,10 +189,10 @@
 	path = repo/Nerf/nvdiffrec
 	url = https://github.com/NVlabs/nvdiffrec.git
 [submodule "repo/ChatGPT/ChatGPT"]
-	path = repo/ChatGPT/ChatGPT
+	path = repo/LLM/ChatGPT/ChatGPT
 	url = https://github.com/nzwaneveld/ChatGPT.git
 [submodule "repo/LLaMA/FastChat"]
-	path = repo/LLaMA/FastChat
+	path = repo/LLM/LLaMA/FastChat
 	url = https://github.com/lm-sys/FastChat.git
 [submodule "repo/ChatGPT/chatdoc"]
 	path = repo/LLMApp/chatdoc
@@ -201,7 +201,7 @@
 	path = repo/LLMApp/ChatGPT_JCM
 	url = https://github.com/202252197/ChatGPT_JCM.git
 [submodule "repo/ChatGLM/ChatGLM-MNN"]
-	path = repo/ChatGLM/ChatGLM-MNN
+	path = repo/LLM/ChatGLM/ChatGLM-MNN
 	url = https://github.com/wangzhaode/ChatGLM-MNN.git
 [submodule "repo/LLMApp/wenda"]
 	path = repo/LLMApp/wenda
@@ -231,7 +231,7 @@
 	path = repo/LLMApp/ChatGPT-Next-Web
 	url = https://github.com/Yidadaa/ChatGPT-Next-Web.git
 [submodule "repo/LLaMA/LLM-Adapters"]
-	path = repo/LLaMA/LLM-Adapters
+	path = repo/LLM/LLaMA/LLM-Adapters
 	url = https://github.com/AGI-Edgerunners/LLM-Adapters.git
 [submodule "repo/AIOptimization/flash-attention"]
 	path = repo/AIOptimization/flash-attention
@@ -272,3 +272,6 @@
 [submodule "repo/OpenAI/evals"]
 	path = repo/OpenAI/evals
 	url = https://github.com/openai/evals.git
+[submodule "repo/LLM/CoT/Chain-of-ThoughtsPapers"]
+	path = repo/LLM/CoT/Chain-of-ThoughtsPapers
+	url = https://github.com/Timothyxxx/Chain-of-ThoughtsPapers.git

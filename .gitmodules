@@ -65,7 +65,7 @@
 	path = repo/cuda/tiny-cuda-nn
 	url = https://github.com/NVlabs/tiny-cuda-nn.git
 [submodule "repo/ChatGPT/chatGPTBox"]
-	path = repo/ChatGPT/chatGPTBox
+	path = repo/LLMApp/chatGPTBox
 	url = https://github.com/josStorer/chatGPTBox.git
 [submodule "repo/SNN/SNN-Daily-Arxiv"]
 	path = repo/SNN/SNN-Daily-Arxiv
@@ -131,7 +131,7 @@
 	path = repo/NTK/GP4A
 	url = https://github.com/thegregyang/GP4A.git
 [submodule "repo/ChatGPT/ChatPaper"]
-	path = repo/ChatGPT/ChatPaper
+	path = repo/LLMApp/ChatPaper
 	url = https://github.com/yhyu13/ChatPaper.git
 	branch = gui
 [submodule "repo/LLaMA/Alpaca-CoT"]
@@ -144,7 +144,7 @@
 	path = repo/OpenAI/Gymnasium
 	url = https://github.com/Farama-Foundation/Gymnasium.git
 [submodule "repo/ChatGPT/chatgpt_academic"]
-	path = repo/ChatGPT/chatgpt_academic
+	path = repo/LLMApp/chatgpt_academic
 	url = https://github.com/binary-husky/chatgpt_academic.git
 [submodule "repo/ChatYuan/ChatYuan"]
 	path = repo/ChatYuan/ChatYuan
@@ -195,10 +195,10 @@
 	path = repo/LLaMA/FastChat
 	url = https://github.com/lm-sys/FastChat.git
 [submodule "repo/ChatGPT/chatdoc"]
-	path = repo/ChatGPT/chatdoc
+	path = repo/LLMApp/chatdoc
 	url = https://github.com/daodao97/chatdoc.git
 [submodule "repo/ChatGPT/ChatGPT_JCM"]
-	path = repo/ChatGPT/ChatGPT_JCM
+	path = repo/LLMApp/ChatGPT_JCM
 	url = https://github.com/202252197/ChatGPT_JCM.git
 [submodule "repo/ChatGLM/ChatGLM-MNN"]
 	path = repo/ChatGLM/ChatGLM-MNN

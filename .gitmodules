@@ -290,3 +290,6 @@
 [submodule "repo/LLMApp/JARVIS"]
 	path = repo/LLMApp/JARVIS
 	url = https://github.com/microsoft/JARVIS.git
+[submodule "repo/LLM/CoT/ThoughtSource"]
+	path = repo/LLM/CoT/ThoughtSource
+	url = https://github.com/OpenBioLink/ThoughtSource.git

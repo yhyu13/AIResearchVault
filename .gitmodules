@@ -299,3 +299,12 @@
 [submodule "repo/AIGC/InvokeAI"]
 	path = repo/AIGC/InvokeAI
 	url = https://github.com/invoke-ai/InvokeAI.git
+[submodule "repo/LLM/LLaMA/nomic"]
+	path = repo/LLM/LLaMA/nomic
+	url = https://github.com/nomic-ai/nomic.git
+[submodule "repo/LLM/LLaMA/alpaca-lora"]
+	path = repo/LLM/LLaMA/alpaca-lora
+	url = https://github.com/tloen/alpaca-lora.git
+[submodule "repo/LLM/LLaMA/gpt4all-ui"]
+	path = repo/LLM/LLaMA/gpt4all-ui
+	url = https://github.com/nomic-ai/gpt4all-ui.git

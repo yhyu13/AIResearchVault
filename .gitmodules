@@ -294,5 +294,8 @@
 	path = repo/LLM/CoT/ThoughtSource
 	url = https://github.com/OpenBioLink/ThoughtSource.git
 [submodule "repo/LLaMA/gpt4all"]
-	path = repo/LLaMA/gpt4all
+	path = repo/LLM/LLaMA/gpt4all
 	url = https://github.com/nomic-ai/gpt4all.git
+[submodule "repo/AIGC/InvokeAI"]
+	path = repo/AIGC/InvokeAI
+	url = https://github.com/invoke-ai/InvokeAI.git

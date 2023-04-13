@@ -308,3 +308,6 @@
 [submodule "repo/LLM/LLaMA/gpt4all-ui"]
 	path = repo/LLM/LLaMA/gpt4all-ui
 	url = https://github.com/nomic-ai/gpt4all-ui.git
+[submodule "repo/LLM/LLaMA/codealpaca"]
+	path = repo/LLM/LLaMA/codealpaca
+	url = https://github.com/sahil280114/codealpaca.git

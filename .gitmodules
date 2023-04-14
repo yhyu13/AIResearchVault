@@ -294,13 +294,13 @@
 	path = repo/LLM/CoT/ThoughtSource
 	url = https://github.com/OpenBioLink/ThoughtSource.git
 [submodule "repo/LLaMA/gpt4all"]
-	path = repo/LLM/LLaMA/gpt4all
+	path = repo/LLM/LLaMA/gpt4all_repo/gpt4all
 	url = https://github.com/nomic-ai/gpt4all.git
 [submodule "repo/AIGC/InvokeAI"]
 	path = repo/AIGC/InvokeAI
 	url = https://github.com/invoke-ai/InvokeAI.git
 [submodule "repo/LLM/LLaMA/nomic"]
-	path = repo/LLM/LLaMA/nomic
+	path = repo/LLM/LLaMA/gpt4all_repo/nomic
 	url = https://github.com/nomic-ai/nomic.git
 [submodule "repo/LLM/LLaMA/alpaca-lora"]
 	path = repo/LLM/LLaMA/alpaca-lora
@@ -311,3 +311,11 @@
 [submodule "repo/LLM/LLaMA/codealpaca"]
 	path = repo/LLM/LLaMA/codealpaca
 	url = https://github.com/sahil280114/codealpaca.git
+[submodule "repo/LLM/LLaMA/llama.cpp"]
+	path = repo/LLM/LLaMA/llama.cpp
+	url = https://github.com/ggerganov/llama.cpp.git
+	branch = flash-attn
+[submodule "repo/LLM/LLaMA/gpt4all_repo/gpt4all-ui"]
+	path = repo/LLM/LLaMA/gpt4all_repo/gpt4all-ui
+	url = https://github.com/yhyu13/gpt4all-ui.git
+	branch = dev

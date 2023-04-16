@@ -319,3 +319,9 @@
 	path = repo/LLM/LLaMA/gpt4all_repo/gpt4all-ui
 	url = https://github.com/yhyu13/gpt4all-ui.git
 	branch = dev
+[submodule "repo/LLM/ChatGLM/ChatGlm-Uni"]
+	path = repo/LLM/ChatGLM/ChatGlm-Uni
+	url = https://github.com/StarRing2022/ChatGlm-Uni.git
+[submodule "repo/LLM/ChatGLM/CodeGeeX"]
+	path = repo/LLM/ChatGLM/CodeGeeX
+	url = https://github.com/THUDM/CodeGeeX.git

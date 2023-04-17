@@ -6,7 +6,6 @@ kanban-plugin: basic
 
 ## TODO
 
-- [ ] --- annotation-target:: ---
 
 
 ## 1
@@ -16,7 +15,6 @@ kanban-plugin: basic
 
 ## 2
 
-- [ ] !【2022.11】Computable Artificial General Intelligence
 
 
 ## 3

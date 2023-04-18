@@ -325,3 +325,6 @@
 [submodule "repo/LLM/ChatGLM/CodeGeeX"]
 	path = repo/LLM/ChatGLM/CodeGeeX
 	url = https://github.com/THUDM/CodeGeeX.git
+[submodule "repo/LLM/LLaMA/MiniGPT-4"]
+	path = repo/LLM/LLaMA/MiniGPT-4
+	url = https://github.com/Vision-CAIR/MiniGPT-4.git

@@ -10,11 +10,12 @@ kanban-plugin: basic
 
 ## 1
 
-- [ ] !【2023.02】A Categorical Archive of ChatGPT FailuresChatGPT
+- [ ] [[【2020.05】Language Models are Few-Shot Learners]]
 
 
 ## 2
 
+- [ ] [[!【2023.02】A Categorical Archive of ChatGPT FailuresChatGPT]]
 
 
 ## 3

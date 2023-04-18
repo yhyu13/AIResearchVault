@@ -316,7 +316,7 @@
 	url = https://github.com/ggerganov/llama.cpp.git
 	branch = flash-attn
 [submodule "repo/LLM/LLaMA/gpt4all_repo/gpt4all-ui"]
-	path = repo/LLM/LLaMA/gpt4all_repo/gpt4all-ui
+	path = repo/LLMApp/llama_cpp/gpt4all-ui
 	url = https://github.com/yhyu13/gpt4all-ui.git
 	branch = dev
 [submodule "repo/LLM/ChatGLM/ChatGlm-Uni"]
@@ -328,3 +328,6 @@
 [submodule "repo/LLM/LLaMA/MiniGPT-4"]
 	path = repo/LLM/LLaMA/MiniGPT-4
 	url = https://github.com/Vision-CAIR/MiniGPT-4.git
+[submodule "repo/LLMApp/llama_cpp/go-llama.cpp-ui"]
+	path = repo/LLMApp/llama_cpp/go-llama.cpp-ui
+	url = https://github.com/wailovet/go-llama.cpp-ui.git

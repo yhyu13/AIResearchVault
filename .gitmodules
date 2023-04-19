@@ -331,3 +331,6 @@
 [submodule "repo/LLMApp/llama_cpp/go-llama.cpp-ui"]
 	path = repo/LLMApp/llama_cpp/go-llama.cpp-ui
 	url = https://github.com/wailovet/go-llama.cpp-ui.git
+[submodule "repo/LLM/LLaMA/ZeYangGPT-Uni"]
+	path = repo/LLM/LLaMA/ZeYangGPT-Uni
+	url = https://github.com/StarRing2022/ZeYangGPT-Uni.git

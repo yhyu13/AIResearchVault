@@ -12,6 +12,7 @@ kanban-plugin: basic
 ## 1
 
 - [ ] [[【2020.05】Language Models are Few-Shot Learners]]
+- [ ] [[GPT4 on Active Learning]]
 
 
 ## 2

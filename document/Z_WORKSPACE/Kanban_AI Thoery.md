@@ -10,13 +10,13 @@ kanban-plugin: basic
 - [ ] ![[[2020.03]Mean-field inference methods for neural networks.pdf]]
 - [ ] ![[[2021.05]Hard Choices and Hard Limits for Artificial Intelligence.pdf]]
 - [ ] ![[[2020.10]Achilles Heels for AGI_ASI via Decision Theoretic Adversaries.pdf]]
-- [ ] ![[【2020.02】Trustworthy AI.pdf]]
 
 
 ## 1
 
 - [ ] [[【2020.12】Information Bottleneck Theory and Applications in Deep Learning]]
 - [ ] [[GP4 On Mean-field theory]]
+- [ ] [[【2020.02】Trustworthy AI]]
 
 
 ## 2

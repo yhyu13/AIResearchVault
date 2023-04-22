@@ -78,25 +78,17 @@ def run_curl_pdf(sender, data):
     
     if return_code == 0:
         print("Script succeeded")
+
+        pdf_size = os.path.getsize(pdf)
+        if pdf_size > 500:
+            print(f"PDF file size is above 500B, pdf_size: {pdf_size}B!")
+        else:
+            print(f"Warning : PDF file size is below 500B, pdf_size: {pdf_size}B")
     else:
         print("Script failed with return code ", return_code)
         print(stderr)
         print("Standard output:")
         print(stdout)
-
-    # subp = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    # subp.wait()
-
-    # return_code = subp.poll()
-    # stdout, stderr = subp.communicate()
-
-    # if return_code == 0:
-    #     print("Script succeeded")
-    #     # print("Standard output:")
-    #     # print(stdout.decode(system_cmd_encoding))
-    # else:
-    #     print("Script failed with return code ", return_code)
-    #     print(stderr.decode(system_cmd_encoding))
 
 
 def remove_invalid_chars(filename):

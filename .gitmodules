@@ -334,3 +334,15 @@
 [submodule "repo/LLM/LLaMA/ZeYangGPT-Uni"]
 	path = repo/LLM/LLaMA/ZeYangGPT-Uni
 	url = https://github.com/StarRing2022/ZeYangGPT-Uni.git
+[submodule "repo/LLM/LLaMA/Chinese-Vicuna"]
+	path = repo/LLM/LLaMA/Chinese-Vicuna
+	url = https://github.com/Facico/Chinese-Vicuna.git
+[submodule "repo/LLM/Debug/Visualizer"]
+	path = repo/LLM/Debug/Visualizer
+	url = https://github.com/luo3300612/Visualizer.git
+[submodule "repo/LLM/Debug/Text-Attention-Heatmap-Visualization"]
+	path = repo/LLM/Debug/Text-Attention-Heatmap-Visualization
+	url = https://github.com/jiesutd/Text-Attention-Heatmap-Visualization.git
+[submodule "repo/LLMApp/text-generation-webui"]
+	path = repo/LLMApp/text-generation-webui
+	url = https://github.com/oobabooga/text-generation-webui.git

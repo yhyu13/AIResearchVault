@@ -235,14 +235,6 @@ $$
 A = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)
 $$
 
-2. **Define interactions**: The interaction between components in the attention mechanism is the relationship between the attention weights $A_{ij}$ and their corresponding query $Q_i$ and key $K_jCertainly! Let's apply the principles and steps of mean-field theory to optimize the attention span in Transformer models. Please note that this is a high-level example, and more investigation and refinement may be needed to develop practical applications.
-
-1. **Define the system**: We'll use the same representation as before, with attention weights $A_{ij}$ representing the importance of token $j$ for token $i$. The attention mechanism in Transformers is calculated using the following equation:
-
-$$
-A = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)
-$$
-
 2. **Define interactions**: The interaction between components in the attention mechanism is the relationship between the attention weights $A_{ij}$ and their corresponding query $Q_i$ and key $K_j$ components.
 
 3. **Introduce a mean field**: We can introduce a mean field to represent the average attention span (context) over all tokens. This can be defined as the mean attention weight at a distance $d$:

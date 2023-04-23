@@ -15,13 +15,14 @@ kanban-plugin: basic
 ## 1
 
 - [ ] [[【2020.12】Information Bottleneck Theory and Applications in Deep Learning]]
-- [ ] [[GP4 On Mean-field theory]]
 - [ ] [[【2020.02】Trustworthy AI]]
+- [ ] [[【2022.01】When and why PINNs fail to train A neural tangent kernel perspective]]
 
 
 ## 2
 
 - [ ] [[!【2015.03】Deep Learning and the Information Bottleneck Principle]]
+- [ ] [[GP4 On Mean-field theory]]
 
 
 ## 3

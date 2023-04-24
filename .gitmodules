@@ -345,7 +345,8 @@
 	url = https://github.com/jiesutd/Text-Attention-Heatmap-Visualization.git
 [submodule "repo/LLMApp/text-generation-webui"]
 	path = repo/LLMApp/text-generation-webui
-	url = https://github.com/oobabooga/text-generation-webui.git
+	url = https://github.com/yhyu13/text-generation-webui.git
+	branch = dev
 [submodule "repo/LLM/LLaMA/GPTQ-for-LLaMa"]
 	path = repo/LLM/LLaMA/GPTQ-for-LLaMa
 	url = https://github.com/oobabooga/GPTQ-for-LLaMa.git

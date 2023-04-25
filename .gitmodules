@@ -353,3 +353,6 @@
 [submodule "repo/LLM/Prompting/PromptKG"]
 	path = repo/LLM/Prompting/PromptKG
 	url = https://github.com/zjunlp/PromptKG.git
+[submodule "repo/LLMApp/AutoGPT-Next-Web"]
+	path = repo/LLMApp/AutoGPT-Next-Web
+	url = https://github.com/Dogtiti/AutoGPT-Next-Web.git

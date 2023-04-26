@@ -357,3 +357,6 @@
 [submodule "repo/LLMApp/AutoGPT-Next-Web"]
 	path = repo/LLMApp/AutoGPT-Next-Web
 	url = https://github.com/Dogtiti/AutoGPT-Next-Web.git
+[submodule "repo/LLM/Moss/MOSS"]
+	path = repo/LLM/Moss/MOSS
+	url = https://github.com/OpenLMLab/MOSS.git

@@ -1,1 +1,1 @@
-https://huggingface.co/BlinkDL/rwkv-4-raven.git
+https://huggingface.co/THUDM/chatglm-6b.git

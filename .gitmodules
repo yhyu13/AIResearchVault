@@ -150,7 +150,7 @@
 	path = repo/LLM/ChatYuan/ChatYuan
 	url = https://github.com/clue-ai/ChatYuan.git
 [submodule "repo/ChatGPT/awesome-totally-open-chatgpt"]
-	path = repo/LLM/ChatGPT/awesome-totally-open-chatgpt
+	path = repo/Awesome-repo/awesome-totally-open-chatgpt
 	url = https://github.com/nichtdax/awesome-totally-open-chatgpt.git
 [submodule "repo/LLaMA/BELLE"]
 	path = repo/LLM/LLaMA/BELLE
@@ -274,7 +274,7 @@
 	path = repo/OpenAI/evals
 	url = https://github.com/openai/evals.git
 [submodule "repo/LLM/CoT/Chain-of-ThoughtsPapers"]
-	path = repo/LLM/CoT/Chain-of-ThoughtsPapers
+	path = repo/Awesome-repo/Chain-of-ThoughtsPapers
 	url = https://github.com/Timothyxxx/Chain-of-ThoughtsPapers.git
 [submodule "repo/AIMotion/motion-latent-diffusion"]
 	path = repo/AIGC/Text2Motion/motion-latent-diffusion
@@ -364,7 +364,7 @@
 	path = repo/LLM/Moss/MOSS-DockerFile
 	url = https://github.com/linonetwo/MOSS-DockerFile.git
 [submodule "repo/Multi-Modal/awesome-segment-anything"]
-	path = repo/Multi-Modal/awesome-segment-anything
+	path = repo/Awesome-repo/awesome-segment-anything
 	url = https://github.com/Hedlen/awesome-segment-anything.git
 [submodule "repo/Multi-Modal/Track-Anything"]
 	path = repo/Multi-Modal/Track-Anything

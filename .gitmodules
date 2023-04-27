@@ -360,3 +360,15 @@
 [submodule "repo/LLM/Moss/MOSS"]
 	path = repo/LLM/Moss/MOSS
 	url = https://github.com/OpenLMLab/MOSS.git
+[submodule "repo/LLM/Moss/MOSS-DockerFile"]
+	path = repo/LLM/Moss/MOSS-DockerFile
+	url = https://github.com/linonetwo/MOSS-DockerFile.git
+[submodule "repo/Multi-Modal/awesome-segment-anything"]
+	path = repo/Multi-Modal/awesome-segment-anything
+	url = https://github.com/Hedlen/awesome-segment-anything.git
+[submodule "repo/Multi-Modal/Track-Anything"]
+	path = repo/Multi-Modal/Track-Anything
+	url = https://github.com/gaomingqi/Track-Anything.git
+[submodule "repo/Multi-Modal/Caption-Anything"]
+	path = repo/Multi-Modal/Caption-Anything
+	url = https://github.com/ttengwang/Caption-Anything.git

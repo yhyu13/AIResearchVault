@@ -372,3 +372,18 @@
 [submodule "repo/Multi-Modal/Caption-Anything"]
 	path = repo/Multi-Modal/Caption-Anything
 	url = https://github.com/ttengwang/Caption-Anything.git
+[submodule "repo/AIOptimization/JittorLLMs"]
+	path = repo/AIOptimization/JittorLLMs
+	url = https://github.com/Jittor/JittorLLMs.git
+[submodule "repo/AIOptimization/gptq"]
+	path = repo/AIOptimization/gptq
+	url = https://github.com/IST-DASLab/gptq.git
+[submodule "repo/AIOptimization/ggml/llama.cpp"]
+	path = repo/AIOptimization/ggml/llama.cpp
+	url = https://github.com/ggerganov/llama.cpp.git
+[submodule "repo/AIOptimization/ggml/whisper.cpp"]
+	path = repo/AIOptimization/ggml/whisper.cpp
+	url = https://github.com/ggerganov/whisper.cpp.git
+[submodule "repo/AIOptimization/ggml/ggml"]
+	path = repo/AIOptimization/ggml/ggml
+	url = https://github.com/ggerganov/ggml.git

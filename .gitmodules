@@ -397,3 +397,6 @@
 [submodule "repo/Multi-Modal/ultralytics"]
 	path = repo/Multi-Modal/ultralytics
 	url = https://github.com/yhyu13/ultralytics.git
+[submodule "repo/LLMApp/FastGPT"]
+	path = repo/LLMApp/FastGPT
+	url = https://github.com/c121914yu/FastGPT.git

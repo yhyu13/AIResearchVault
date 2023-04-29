@@ -390,3 +390,9 @@
 [submodule "repo/Awesome-repo/Awesome-Vision-Attentions"]
 	path = repo/Awesome-repo/Awesome-Vision-Attentions
 	url = https://github.com/MenghaoGuo/Awesome-Vision-Attentions.git
+[submodule "repo/Multi-Modal/LLaVA"]
+	path = repo/Multi-Modal/LLaVA
+	url = https://github.com/haotian-liu/LLaVA.git
+[submodule "repo/Multi-Modal/ultralytics"]
+	path = repo/Multi-Modal/ultralytics
+	url = https://github.com/yhyu13/ultralytics.git

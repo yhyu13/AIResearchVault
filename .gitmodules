@@ -403,3 +403,6 @@
 [submodule "repo/Awesome-repo/TSFpaper"]
 	path = repo/Awesome-repo/TSFpaper
 	url = https://github.com/ddz16/TSFpaper.git
+[submodule "repo/Awesome-repo/awesome-bci"]
+	path = repo/Awesome-repo/awesome-bci
+	url = https://github.com/NeuroTechX/awesome-bci.git

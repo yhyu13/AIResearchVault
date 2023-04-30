@@ -7,6 +7,7 @@ kanban-plugin: basic
 ## TODO
 
 - [ ] ![[![2023.04]API-Bank_ A Benchmark for Tool-Augmented LLMs.pdf]]
+- [ ] [[【2023.03】Are LLMs the Master of All Trades_ _ Exploring Domain-Agnostic Reasoning Skills of LLMs]]
 
 
 ## 1

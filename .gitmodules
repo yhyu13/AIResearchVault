@@ -407,3 +407,15 @@
 	path = repo/LLMApp/AgentGPT
 	url = https://github.com/yhyu13/AgentGPT.git
 	branch = dev
+[submodule "repo/LLM-Infastructure/conceptnet5"]
+	path = repo/LLM-Infastructure/conceptnet5
+	url = https://github.com/commonsense/conceptnet5.git
+[submodule "repo/LLM-Infastructure/conceptnet5_docker"]
+	path = repo/LLM-Infastructure/conceptnet5_docker
+	url = https://github.com/tae898/conceptnet5.git
+[submodule "repo/LLM-Infastructure/langchain"]
+	path = repo/LLM-Infastructure/langchain
+	url = https://github.com/hwchase17/langchain.git
+[submodule "repo/LLM-Infastructure/GPTCache"]
+	path = repo/LLM-Infastructure/GPTCache
+	url = https://github.com/zilliztech/GPTCache.git

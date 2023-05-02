@@ -405,4 +405,5 @@
 	url = https://github.com/NeuroTechX/awesome-bci.git
 [submodule "repo/LLMApp/AgentGPT"]
 	path = repo/LLMApp/AgentGPT
-	url = https://github.com/reworkd/AgentGPT.git
+	url = https://github.com/yhyu13/AgentGPT.git
+	branch = dev

@@ -206,7 +206,8 @@
 	url = https://github.com/wangzhaode/ChatGLM-MNN.git
 [submodule "repo/LLMApp/wenda"]
 	path = repo/LLMApp/wenda
-	url = https://github.com/l15y/wenda.git
+	url = https://github.com/yhyu13/wenda.git
+	branch = dev
 [submodule "repo/Multi-Modal/SwissArmyTransformer"]
 	path = repo/Architecture/SwissArmyTransformer
 	url = https://github.com/THUDM/SwissArmyTransformer.git
@@ -419,3 +420,12 @@
 [submodule "repo/LLM-Infastructure/GPTCache"]
 	path = repo/LLM-Infastructure/GPTCache
 	url = https://github.com/zilliztech/GPTCache.git
+[submodule "repo/LLM/ChatRWKV/rwkv.cpp"]
+	path = repo/LLM/ChatRWKV/rwkv.cpp
+	url = https://github.com/saharNooby/rwkv.cpp.git
+[submodule "repo/LLM/ChatRWKV/ChatRWKV"]
+	path = repo/LLM/ChatRWKV/ChatRWKV
+	url = https://github.com/BlinkDL/ChatRWKV.git
+[submodule "repo/LLM-Infastructure/osschat"]
+	path = repo/LLM-Infastructure/osschat
+	url = https://github.com/kaiyuanshe/osschat.git

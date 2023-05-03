@@ -430,3 +430,6 @@
 [submodule "repo/LLM-Infastructure/osschat"]
 	path = repo/LLM-Infastructure/osschat
 	url = https://github.com/kaiyuanshe/osschat.git
+[submodule "repo/LLM-Infastructure/rpaframework"]
+	path = repo/LLM-Infastructure/rpaframework
+	url = https://github.com/robocorp/rpaframework.git

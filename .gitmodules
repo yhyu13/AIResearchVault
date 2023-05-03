@@ -436,3 +436,9 @@
 [submodule "repo/DeepMind/deepmind-research"]
 	path = repo/DeepMind/deepmind-research
 	url = https://github.com/deepmind/deepmind-research.git
+[submodule "repo/OpenAI/plugins-quickstart"]
+	path = repo/OpenAI/plugins-quickstart
+	url = https://github.com/openai/plugins-quickstart.git
+[submodule "repo/OpenAI/chatgpt-retrieval-plugin"]
+	path = repo/OpenAI/chatgpt-retrieval-plugin
+	url = https://github.com/openai/chatgpt-retrieval-plugin.git

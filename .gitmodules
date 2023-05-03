@@ -433,3 +433,6 @@
 [submodule "repo/LLM-Infastructure/rpaframework"]
 	path = repo/LLM-Infastructure/rpaframework
 	url = https://github.com/robocorp/rpaframework.git
+[submodule "repo/DeepMind/deepmind-research"]
+	path = repo/DeepMind/deepmind-research
+	url = https://github.com/deepmind/deepmind-research.git

@@ -358,7 +358,8 @@
 	url = https://github.com/zjunlp/PromptKG.git
 [submodule "repo/LLM/Moss/MOSS"]
 	path = repo/LLM/Moss/MOSS
-	url = https://github.com/OpenLMLab/MOSS.git
+	url = https://github.com/yhyu13/MOSS.git
+	branch = dev
 [submodule "repo/LLM/Moss/MOSS-DockerFile"]
 	path = repo/LLM/Moss/MOSS-DockerFile
 	url = https://github.com/linonetwo/MOSS-DockerFile.git

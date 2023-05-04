@@ -17,7 +17,7 @@
 	path = repo/LLM/ChatGPT/ChatGPT-Prompts
 	url = https://github.com/yokoffing/ChatGPT-Prompts.git
 [submodule "repo/StableDiffusion/stable-diffusion-nvidia-docker"]
-	path = repo/AIGC/StableDiffusion/stable-diffusion-nvidia-docker
+	path = repo/AIGC/text22D/stable-diffusion-nvidia-docker
 	url = https://github.com/NickLucche/stable-diffusion-nvidia-docker.git
 [submodule "repo/Docker/nvidia-docker"]
 	path = repo/Docker/nvidia-docker
@@ -26,7 +26,7 @@
 	path = repo/Docker/cuda
 	url = https://gitlab.com/nvidia/container-images/cuda.git
 [submodule "repo/StableDiffusion/stable-disffusion-playeground"]
-	path = repo/AIGC/StableDiffusion/stable-disffusion-playeground
+	path = repo/AIGC/text22D/stable-disffusion-playeground
 	url = https://gitee.com/yhyu13/stable-disffusion-playeground.git
 [submodule "repo/BrainCog/braincog"]
 	path = repo/BrainCog/braincog
@@ -35,13 +35,13 @@
 	path = repo/BCI/MetaBCI
 	url = https://github.com/TBC-TJU/MetaBCI.git
 [submodule "repo/StableDiffusion/sd-scripts"]
-	path = repo/AIGC/StableDiffusion/sd-scripts
+	path = repo/AIGC/text22D/sd-scripts
 	url = https://github.com/kohya-ss/sd-scripts.git
 [submodule "repo/StableDiffusion/kohya_ss"]
-	path = repo/AIGC/StableDiffusion/kohya_ss
+	path = repo/AIGC/text22D/kohya_ss
 	url = https://github.com/bmaltais/kohya_ss.git
 [submodule "repo/StableDiffusion/kohya_ss-docker"]
-	path = repo/AIGC/StableDiffusion/kohya_ss-docker
+	path = repo/AIGC/text22D/kohya_ss-docker
 	url = https://github.com/P2Enjoy/kohya_ss-docker.git
 [submodule "repo/ChatGLM/ChatGLM-6B"]
 	path = repo/LLM/ChatGLM/ChatGLM-6B
@@ -53,7 +53,7 @@
 	path = repo/BrainCog/timm
 	url = https://github.com/pprp/timm.git
 [submodule "repo/StableDiffusion/ComfyUI"]
-	path = repo/AIGC/StableDiffusion/ComfyUI
+	path = repo/AIGC/text22D/ComfyUI
 	url = https://github.com/comfyanonymous/ComfyUI.git
 [submodule "repo/AIVtuber/AI-Vtuber"]
 	path = repo/AIVtuber/AI-Vtuber
@@ -299,7 +299,7 @@
 	path = repo/LLM/LLaMA/gpt4all_repo/gpt4all
 	url = https://github.com/nomic-ai/gpt4all.git
 [submodule "repo/AIGC/InvokeAI"]
-	path = repo/AIGC/InvokeAI
+	path = repo/AIGC/text22D/InvokeAI
 	url = https://github.com/invoke-ai/InvokeAI.git
 [submodule "repo/LLM/LLaMA/nomic"]
 	path = repo/LLM/LLaMA/gpt4all_repo/nomic
@@ -442,3 +442,12 @@
 [submodule "repo/OpenAI/chatgpt-retrieval-plugin"]
 	path = repo/OpenAI/chatgpt-retrieval-plugin
 	url = https://github.com/openai/chatgpt-retrieval-plugin.git
+[submodule "repo/LLM/CoT/chain-of-thought-hub"]
+	path = repo/LLM/CoT/chain-of-thought-hub
+	url = https://github.com/FranxYao/chain-of-thought-hub.git
+[submodule "repo/AIGC/text22D/diffusion"]
+	path = repo/AIGC/text22D/diffusion
+	url = https://github.com/mosaicml/diffusion.git
+[submodule "repo/AIGC/text23D/Sin3DGen"]
+	path = repo/AIGC/text23D/Sin3DGen
+	url = https://github.com/wyysf-98/Sin3DGen.git

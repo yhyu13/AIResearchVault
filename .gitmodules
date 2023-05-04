@@ -457,3 +457,9 @@
 [submodule "repo/LLMApp/gpt4free_repo/gpt4free"]
 	path = repo/LLMApp/gpt4free_repo/gpt4free
 	url = https://github.com/xtekky/gpt4free.git
+[submodule "repo/LLM/BLOOM/LLMZoo"]
+	path = repo/LLM/BLOOM/LLMZoo
+	url = https://github.com/FreedomIntelligence/LLMZoo.git
+[submodule "repo/AIOptimization/AutoGPTQ"]
+	path = repo/AIOptimization/AutoGPTQ
+	url = https://github.com/PanQiWei/AutoGPTQ.git

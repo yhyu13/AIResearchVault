@@ -8,6 +8,8 @@ kanban-plugin: basic
 
 - [ ] ![[![2023.04]API-Bank_ A Benchmark for Tool-Augmented LLMs.pdf]]
 - [ ] [[【2023.03】Are LLMs the Master of All Trades_ _ Exploring Domain-Agnostic Reasoning Skills of LLMs]]
+- [ ] [[【2023.05】Finding Neurons in a Haystack_ Case Studies with Sparse Probing]]
+- [ ] [[!【2023.03】A Theory of Emergent In-Context Learning as Implicit Structure Induction]]
 
 
 ## 1

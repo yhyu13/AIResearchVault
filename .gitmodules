@@ -451,3 +451,9 @@
 [submodule "repo/AIGC/text23D/Sin3DGen"]
 	path = repo/AIGC/text23D/Sin3DGen
 	url = https://github.com/wyysf-98/Sin3DGen.git
+[submodule "repo/LLMApp/gpt4free"]
+	path = repo/LLMApp/gpt4free_repo/gpt4free_uncensored/gpt4free
+	url = https://github.com/gptforfree/gpt4free.git
+[submodule "repo/LLMApp/gpt4free_repo/gpt4free"]
+	path = repo/LLMApp/gpt4free_repo/gpt4free
+	url = https://github.com/xtekky/gpt4free.git

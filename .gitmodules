@@ -463,3 +463,21 @@
 [submodule "repo/AIOptimization/AutoGPTQ"]
 	path = repo/AIOptimization/AutoGPTQ
 	url = https://github.com/PanQiWei/AutoGPTQ.git
+[submodule "repo/Awesome-repo/awesome-neuro-ai-papers"]
+	path = repo/Awesome-repo/awesome-neuro-ai-papers
+	url = https://github.com/CYHSM/awesome-neuro-ai-papers.git
+[submodule "repo/Architecture/torch_tem"]
+	path = repo/Architecture/torch_tem
+	url = https://github.com/jbakermans/torch_tem.git
+[submodule "repo/Awesome-repo/chinese-open-science-network.github.io"]
+	path = repo/Awesome-repo/chinese-open-science-network.github.io
+	url = https://github.com/OpenSci-CN/chinese-open-science-network.github.io.git
+[submodule "repo/Awesome-repo/read-papers"]
+	path = repo/Awesome-repo/read-papers
+	url = https://github.com/NorbertZheng/read-papers.git
+[submodule "repo/LLMApp/web-llm"]
+	path = repo/LLMApp/web-llm
+	url = https://github.com/mlc-ai/web-llm.git
+[submodule "repo/Architecture/spikformer"]
+	path = repo/Architecture/spikformer
+	url = https://github.com/ZK-Zhou/spikformer.git

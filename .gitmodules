@@ -462,7 +462,8 @@
 	url = https://github.com/FreedomIntelligence/LLMZoo.git
 [submodule "repo/AIOptimization/AutoGPTQ"]
 	path = repo/AIOptimization/AutoGPTQ
-	url = https://github.com/PanQiWei/AutoGPTQ.git
+	url = https://github.com/yhyu13/AutoGPTQ.git
+	branch = cuda_dev
 [submodule "repo/Awesome-repo/awesome-neuro-ai-papers"]
 	path = repo/Awesome-repo/awesome-neuro-ai-papers
 	url = https://github.com/CYHSM/awesome-neuro-ai-papers.git
@@ -480,4 +481,3 @@
 	url = https://github.com/mlc-ai/web-llm.git
 [submodule "repo/Architecture/spikformer"]
 	path = repo/Architecture/spikformer
-	url = https://github.com/ZK-Zhou/spikformer.git

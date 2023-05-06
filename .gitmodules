@@ -481,3 +481,9 @@
 	url = https://github.com/mlc-ai/web-llm.git
 [submodule "repo/Architecture/spikformer"]
 	path = repo/Architecture/spikformer
+[submodule "repo/Architecture/recurrent-memory-transformer-pytorch"]
+	path = repo/Architecture/recurrent-memory-transformer-pytorch
+	url = https://github.com/yhyu13/recurrent-memory-transformer-pytorch.git
+[submodule "repo/LLMApp/cataclysm"]
+	path = repo/LLMApp/cataclysm
+	url = https://github.com/Mattie/cataclysm.git

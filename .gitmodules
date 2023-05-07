@@ -145,7 +145,8 @@
 	url = https://github.com/Farama-Foundation/Gymnasium.git
 [submodule "repo/ChatGPT/chatgpt_academic"]
 	path = repo/LLMApp/chatgpt_academic
-	url = https://github.com/binary-husky/chatgpt_academic.git
+	url = https://github.com/yhyu13/chatgpt_academic.git
+	branch = dev
 [submodule "repo/ChatYuan/ChatYuan"]
 	path = repo/LLM/ChatYuan/ChatYuan
 	url = https://github.com/clue-ai/ChatYuan.git
@@ -488,3 +489,6 @@
 [submodule "repo/LLMApp/cataclysm"]
 	path = repo/LLMApp/cataclysm
 	url = https://github.com/Mattie/cataclysm.git
+[submodule "repo/LLM/Otter/Otter"]
+	path = repo/LLM/Otter/Otter
+	url = https://github.com/Luodian/Otter.git

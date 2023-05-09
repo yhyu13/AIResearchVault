@@ -145,7 +145,7 @@
 	url = https://github.com/Farama-Foundation/Gymnasium.git
 [submodule "repo/ChatGPT/chatgpt_academic"]
 	path = repo/LLMApp/chatgpt_academic
-	url = https://github.com/yhyu13/chatgpt_academic.git
+	url = https://github.com/yhyu13/gpt_academic.git
 	branch = dev
 [submodule "repo/ChatYuan/ChatYuan"]
 	path = repo/LLM/ChatYuan/ChatYuan

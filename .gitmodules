@@ -493,3 +493,6 @@
 [submodule "repo/LLM/Otter/Otter"]
 	path = repo/LLM/Otter/Otter
 	url = https://github.com/Luodian/Otter.git
+[submodule "repo/LLM/Mosiac/llm-foundry"]
+	path = repo/LLM/Mosiac/llm-foundry
+	url = https://github.com/mosaicml/llm-foundry.git

@@ -511,3 +511,6 @@
 [submodule "repo/LLM-Infastructure/mojo"]
 	path = repo/LLM-Infastructure/mojo
 	url = https://github.com/modularml/mojo.git
+[submodule "repo/LLM-Infastructure/RPA-Python"]
+	path = repo/LLM-Infastructure/RPA-Python
+	url = https://github.com/tebelorg/RPA-Python.git

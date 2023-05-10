@@ -496,3 +496,18 @@
 [submodule "repo/LLM/Mosiac/llm-foundry"]
 	path = repo/LLM/Mosiac/llm-foundry
 	url = https://github.com/mosaicml/llm-foundry.git
+[submodule "repo/LLM-Infastructure/one-api"]
+	path = repo/LLM-Infastructure/one-api
+	url = https://github.com/songquanpeng/one-api.git
+[submodule "repo/Multi-Modal/ImageBind"]
+	path = repo/Multi-Modal/ImageBind
+	url = https://github.com/facebookresearch/ImageBind.git
+[submodule "repo/OpenAI/automated-interpretability"]
+	path = repo/OpenAI/automated-interpretability
+	url = https://github.com/openai/automated-interpretability.git
+[submodule "repo/OpenAI/shap-e"]
+	path = repo/OpenAI/shap-e
+	url = https://github.com/openai/shap-e.git
+[submodule "repo/LLM-Infastructure/mojo"]
+	path = repo/LLM-Infastructure/mojo
+	url = https://github.com/modularml/mojo.git

@@ -17,6 +17,7 @@ kanban-plugin: basic
 - [ ] [[【2020.12】Information Bottleneck Theory and Applications in Deep Learning]]
 - [ ] [[【2020.02】Trustworthy AI]]
 - [ ] [[【2022.01】When and why PINNs fail to train A neural tangent kernel perspective]]
+- [ ] [[!【2022.07】Toward Transparent AI_ A Survey on Interpreting the Inner Structures of Deep Neural Networks]]
 
 
 ## 2

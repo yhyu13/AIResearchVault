@@ -410,7 +410,7 @@
 [submodule "repo/LLMApp/AgentGPT"]
 	path = repo/LLMApp/AgentGPT
 	url = https://github.com/yhyu13/AgentGPT.git
-	branch = dev
+	branch = local_dev
 [submodule "repo/LLM-Infastructure/conceptnet5"]
 	path = repo/LLM-Infastructure/conceptnet5
 	url = https://github.com/commonsense/conceptnet5.git

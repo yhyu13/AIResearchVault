@@ -226,7 +226,7 @@
 	url = https://github.com/yhyu13/Auto-GPT.git
 	branch = dev
 [submodule "repo/Multi-Modal/segment-anything"]
-	path = repo/Multi-Modal/segment-anything
+	path = repo/FacebookAI/segment-anything
 	url = https://github.com/facebookresearch/segment-anything.git
 [submodule "repo/Multi-Modal/CLIP-SAM"]
 	path = repo/Multi-Modal/CLIP-SAM
@@ -500,7 +500,7 @@
 	path = repo/LLM-Infastructure/one-api
 	url = https://github.com/songquanpeng/one-api.git
 [submodule "repo/Multi-Modal/ImageBind"]
-	path = repo/Multi-Modal/ImageBind
+	path = repo/FacebookAI/ImageBind
 	url = https://github.com/facebookresearch/ImageBind.git
 [submodule "repo/OpenAI/automated-interpretability"]
 	path = repo/OpenAI/automated-interpretability

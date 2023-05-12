@@ -514,3 +514,6 @@
 [submodule "repo/LLM-Infastructure/RPA-Python"]
 	path = repo/LLM-Infastructure/RPA-Python
 	url = https://github.com/tebelorg/RPA-Python.git
+[submodule "repo/LLMApp/WebCPM"]
+	path = repo/LLMApp/WebCPM
+	url = https://github.com/thunlp/WebCPM.git

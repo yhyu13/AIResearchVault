@@ -517,3 +517,6 @@
 [submodule "repo/LLMApp/WebCPM"]
 	path = repo/LLMApp/WebCPM
 	url = https://github.com/thunlp/WebCPM.git
+[submodule "repo/LLM/LLaMA/Dromedary"]
+	path = repo/LLM/LLaMA/Dromedary
+	url = https://github.com/IBM/Dromedary.git

@@ -529,3 +529,6 @@
 [submodule "repo/LLM-Infastructure/semantic-kernel"]
 	path = repo/LLM-Infastructure/semantic-kernel
 	url = https://github.com/microsoft/semantic-kernel.git
+[submodule "repo/LLM/LLaMA/llmtune"]
+	path = repo/LLM/LLaMA/llmtune
+	url = https://github.com/kuleshov-group/llmtune.git

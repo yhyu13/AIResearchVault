@@ -538,3 +538,6 @@
 [submodule "repo/BCI/Deep-Learning-for-BCI"]
 	path = repo/BCI/Deep-Learning-for-BCI
 	url = https://github.com/xiangzhang1015/Deep-Learning-for-BCI.git
+[submodule "repo/LLMApp/tree-of-thought-puzzle-solver"]
+	path = repo/LLMApp/tree-of-thought-puzzle-solver
+	url = https://github.com/jieyilong/tree-of-thought-puzzle-solver.git

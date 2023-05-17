@@ -532,3 +532,9 @@
 [submodule "repo/LLM/LLaMA/llmtune"]
 	path = repo/LLM/LLaMA/llmtune
 	url = https://github.com/kuleshov-group/llmtune.git
+[submodule "repo/Architecture/efficient-attention"]
+	path = repo/Architecture/efficient-attention
+	url = https://github.com/HKUNLP/efficient-attention.git
+[submodule "repo/BCI/Deep-Learning-for-BCI"]
+	path = repo/BCI/Deep-Learning-for-BCI
+	url = https://github.com/xiangzhang1015/Deep-Learning-for-BCI.git

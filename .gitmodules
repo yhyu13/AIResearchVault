@@ -539,5 +539,20 @@
 	path = repo/BCI/Deep-Learning-for-BCI
 	url = https://github.com/xiangzhang1015/Deep-Learning-for-BCI.git
 [submodule "repo/LLMApp/tree-of-thought-puzzle-solver"]
-	path = repo/LLMApp/tree-of-thought-puzzle-solver
+	path = repo/LLM/CoT/tree-of-thought-puzzle-solver
 	url = https://github.com/jieyilong/tree-of-thought-puzzle-solver.git
+[submodule "repo/LLM-Infastructure/lamini"]
+	path = repo/LLM-Infastructure/lamini
+	url = https://github.com/lamini-ai/lamini.git
+[submodule "repo/LLMApp/MC-Planner"]
+	path = repo/LLM/Other/MC-Planner
+	url = https://github.com/CraftJarvis/MC-Planner.git
+[submodule "repo/LLMApp/bloop"]
+	path = repo/LLMApp/bloop
+	url = https://github.com/BloopAI/bloop.git
+[submodule "repo/LLM/CoT/pal"]
+	path = repo/LLM/CoT/pal
+	url = https://github.com/reasoning-machines/pal.git
+[submodule "repo/LLM/ChatGLM/VisualGLM-6B"]
+	path = repo/LLM/ChatGLM/VisualGLM-6B
+	url = https://github.com/THUDM/VisualGLM-6B.git

@@ -559,3 +559,6 @@
 [submodule "repo/LLM/LLaMA/LLaMA-Adapter"]
 	path = repo/LLM/LLaMA/LLaMA-Adapter
 	url = https://github.com/ZrrSkywalker/LLaMA-Adapter
+[submodule "repo/LLM/CoT/ReAct"]
+	path = repo/LLM/CoT/ReAct
+	url = https://github.com/ysymyth/ReAct.git

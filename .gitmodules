@@ -562,3 +562,15 @@
 [submodule "repo/LLM/CoT/ReAct"]
 	path = repo/LLM/CoT/ReAct
 	url = https://github.com/ysymyth/ReAct.git
+[submodule "repo/AIPhysics/brax"]
+	path = repo/AIPhysics/brax
+	url = https://github.com/google/brax.git
+[submodule "repo/AIPhysics/simple_superTrack"]
+	path = repo/AIPhysics/simple_superTrack
+	url = https://github.com/kistf001/simple_superTrack.git
+[submodule "repo/AIPhysics/diffmimic"]
+	path = repo/AIPhysics/diffmimic
+	url = https://github.com/jiawei-ren/diffmimic.git
+[submodule "repo/LLM/RLHF/safe-rlhf"]
+	path = repo/LLM/RLHF/safe-rlhf
+	url = https://github.com/PKU-Alignment/safe-rlhf.git

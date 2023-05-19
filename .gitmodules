@@ -574,3 +574,6 @@
 [submodule "repo/LLM/RLHF/safe-rlhf"]
 	path = repo/LLM/RLHF/safe-rlhf
 	url = https://github.com/PKU-Alignment/safe-rlhf.git
+[submodule "repo/LLM-Infastructure/unilm"]
+	path = repo/LLM-Infastructure/unilm
+	url = https://github.com/microsoft/unilm.git

@@ -577,3 +577,12 @@
 [submodule "repo/LLM-Infastructure/unilm"]
 	path = repo/LLM-Infastructure/unilm
 	url = https://github.com/microsoft/unilm.git
+[submodule "repo/LLMApp/AgentLLM"]
+	path = repo/LLMApp/AgentLLM
+	url = https://github.com/yhyu13/AgentLLM.git
+[submodule "repo/LLM-Robotics/tidybot"]
+	path = repo/LLM-Robotics/tidybot
+	url = https://github.com/jimmyyhwu/tidybot.git
+[submodule "repo/LLM-Robotics/Inagaki_2023_GPT4OT2"]
+	path = repo/LLM-Robotics/Inagaki_2023_GPT4OT2
+	url = https://github.com/labauto/Inagaki_2023_GPT4OT2.git

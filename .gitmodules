@@ -586,3 +586,15 @@
 [submodule "repo/LLM-Robotics/Inagaki_2023_GPT4OT2"]
 	path = repo/LLM-Robotics/Inagaki_2023_GPT4OT2
 	url = https://github.com/labauto/Inagaki_2023_GPT4OT2.git
+[submodule "repo/LLM/nanogpt/NanoGPT-Pytorch2.0-Implementation"]
+	path = repo/LLM/nanogpt/NanoGPT-Pytorch2.0-Implementation
+	url = https://github.com/JerryYin777/NanoGPT-Pytorch2.0-Implementation.git
+[submodule "repo/LLM/nanogpt/nanoGPTplus"]
+	path = repo/LLM/nanogpt/nanoGPTplus
+	url = https://github.com/Andrei-Aksionov/nanoGPTplus.git
+[submodule "repo/LLM/nanogpt/testGPT"]
+	path = repo/LLM/nanogpt/testGPT
+	url = https://github.com/AttentionX/testGPT.git
+[submodule "repo/LLM/nanogpt/nanoGPT"]
+	path = repo/LLM/nanogpt/nanoGPT
+	url = https://github.com/karpathy/nanoGPT.git

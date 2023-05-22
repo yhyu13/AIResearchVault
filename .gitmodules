@@ -598,3 +598,6 @@
 [submodule "repo/LLM/nanogpt/nanoGPT"]
 	path = repo/LLM/nanogpt/nanoGPT
 	url = https://github.com/karpathy/nanoGPT.git
+[submodule "repo/LLM/CoT/tree-of-thoughts"]
+	path = repo/LLM/CoT/tree-of-thoughts
+	url = https://github.com/yhyu13/tree-of-thoughts.git

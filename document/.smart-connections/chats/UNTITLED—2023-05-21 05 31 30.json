@@ -1,0 +1,20 @@
+[
+  [
+    {
+      "role": "user",
+      "content": "describe this paper\n"
+    }
+  ],
+  [
+    {
+      "role": "assistant",
+      "content": "I'm sorry, I cannot describe a paper without knowing its title or content. Please provide more information."
+    }
+  ],
+  [
+    {
+      "role": "user",
+      "content": "AI tasks encompass a wide range of domains and fields. While numerous AI models have been designed\nfor specific tasks and applications, they often require considerable human efforts in finding the right model\narchitecture, optimization algorithm, and hyperparameters. Recent advances in large language models\n(LLMs) like ChatGPT show remarkable capabilities in various aspects of reasoning, comprehension,\nand interaction. Consequently, we propose developing task-oriented prompts and automatically utilizing\nLLMs to automate the training pipeline. To implement this concept, we present the AutoML-GPT,\nwhich employs GPT as the bridge to diverse AI models and dynamically trains models with optimized\nhyperparameters. AutoML-GPT dynamically takes user requests from the model and data cards and\ncomposes the corresponding prompt paragraph. Ultimately, with this prompt paragraph, AutoML-GPT\nwill automatically conduct the experiments from data processing to model architecture, hyperparameter\ntuning, and predicted training log. By leveraging AutoML-GPT’s robust language capabilities and the\navailable AI models, AutoML-GPT can tackle numerous intricate AI tasks across various tasks and datasets.\nThis approach achieves remarkable results in computer vision, natural language processing, and other\nchallenging areas. Extensive experiments and ablation studies demonstrate that our method can be general,\neffective, and beneficial for many AI tasks."
+    }
+  ]
+]

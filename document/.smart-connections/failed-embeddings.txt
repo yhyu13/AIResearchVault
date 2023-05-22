@@ -1,0 +1,159 @@
+
+AI Math/【2022.05】HyperTree Proof Search for Neural Theorem Proving.md
+AI Math/【2022.12】A Survey of Deep Learning for Mathematical Reasoning.md
+AI Physics/【2023.03】Deep symbolic regression for physics guided by units constraints toward the automated discovery of physical laws.md
+AI Theory/!【2015.01】Causality in thought.md
+AI Theory/AI Theory.md
+AI Theory/Bottleneck/!【2015.03】Deep Learning and the Information Bottleneck Principle.md
+AI Theory/Explainable/![2023.05]【OpenAI】Language models can explain neurons in language models.md
+AI Theory/Explainable/![2023.05]【OpenAI】Language models can explain neurons in language models.md#AUTHORS
+AI Theory/Explainable/![2023.05]【OpenAI】Language models can explain neurons in language models.md#Introduction
+AI Theory/Explainable/![2023.05]【OpenAI】Language models can explain neurons in language models.md#Overall algorithm
+AI Theory/Explainable/![2023.05]【OpenAI】Language models can explain neurons in language models.md#Overall algorithm#Algorithm parameters and details
+AI Theory/Explainable/![2023.05]【OpenAI】Language models can explain neurons in language models.md#Overall algorithm#Step 1: Generate explanations of the neuron's behavior
+AI Theory/Explainable/![2023.05]【OpenAI】Language models can explain neurons in language models.md#Overall algorithm#Step 2: Simulate the neuron's behavior using the explanations
+AI Theory/Explainable/![2023.05]【OpenAI】Language models can explain neurons in language models.md#Overall algorithm#Step 3: Score the explanations by comparing the simulated and actual neuron behavior
+AI Theory/Explainable/![2023.05]【OpenAI】Language models can explain neurons in language models.md#Overall algorithm#Step 3: Score the explanations by comparing the simulated and actual neuron behavior#Validating against ablation scoring
+AI Theory/Explainable/![2023.05]【OpenAI】Language models can explain neurons in language models.md#Overall algorithm#Step 3: Score the explanations by comparing the simulated and actual neuron behavior#Validating against human scoring
+AI Theory/Explainable/![2023.05]【OpenAI】Language models can explain neurons in language models.md#Setting
+AI Theory/MLP/TiDE/【Transformer&CNN&TiDE】从CNN到ViT，再从ViT到TiDE，回顾近十年顶刊和会议发表的关于Attention自注意力、Conv卷积机制以及最新诞生的TiDE模型的发展历程_daphne odera�的博客-CSDN博客.md
+AI Theory/MLP/TiDE/【Transformer&CNN&TiDE】从CNN到ViT，再从ViT到TiDE，回顾近十年顶刊和会议发表的关于Attention自注意力、Conv卷积机制以及最新诞生的TiDE模型的发展历程_daphne odera�的博客-CSDN博客.md#**前言：**
+AI Theory/MLP/TiDE/【Transformer&CNN&TiDE】从CNN到ViT，再从ViT到TiDE，回顾近十年顶刊和会议发表的关于Attention自注意力、Conv卷积机制以及最新诞生的TiDE模型的发展历程_daphne odera�的博客-CSDN博客.md#1、_**[Transformer in Transformer](https://arxiv.org/pdf/2103.00112.pdf "Transformer in Transformer")**_（_**NIPS 2021）**_
+AI Theory/MLP/TiDE/【Transformer&CNN&TiDE】从CNN到ViT，再从ViT到TiDE，回顾近十年顶刊和会议发表的关于Attention自注意力、Conv卷积机制以及最新诞生的TiDE模型的发展历程_daphne odera�的博客-CSDN博客.md#1、 _**[Attention Augmented Convolutional Networks](https://arxiv.org/abs/1904.09925 "Attention Augmented Convolutional Networks")**_（_**ICCV 2019）**_
+AI Theory/MLP/TiDE/【Transformer&CNN&TiDE】从CNN到ViT，再从ViT到TiDE，回顾近十年顶刊和会议发表的关于Attention自注意力、Conv卷积机制以及最新诞生的TiDE模型的发展历程_daphne odera�的博客-CSDN博客.md#1、 _**[End-to-End Object Detection with Transformers](https://arxiv.org/abs/2005.12872 "End-to-End Object Detection with Transformers")（ECCV 2020，DERT）**_
+AI Theory/MLP/TiDE/【Transformer&CNN&TiDE】从CNN到ViT，再从ViT到TiDE，回顾近十年顶刊和会议发表的关于Attention自注意力、Conv卷积机制以及最新诞生的TiDE模型的发展历程_daphne odera�的博客-CSDN博客.md#2、 _**[Generative Pretraining from Pixels](https://cdn.openai.com/papers/Generative_Pretraining_from_Pixels_V2.pdf "Generative Pretraining from Pixels")（ICML 2020**__**）**_
+AI Theory/MLP/TiDE/【Transformer&CNN&TiDE】从CNN到ViT，再从ViT到TiDE，回顾近十年顶刊和会议发表的关于Attention自注意力、Conv卷积机制以及最新诞生的TiDE模型的发展历程_daphne odera�的博客-CSDN博客.md#2、 _**[Stand-Alone Self-Attention in Vision Models](https://arxiv.org/abs/1906.05909 "Stand-Alone Self-Attention in Vision Models")（NIPS 2019）**_
+AI Theory/MLP/TiDE/【Transformer&CNN&TiDE】从CNN到ViT，再从ViT到TiDE，回顾近十年顶刊和会议发表的关于Attention自注意力、Conv卷积机制以及最新诞生的TiDE模型的发展历程_daphne odera�的博客-CSDN博客.md#3、_****[CMT: Convolutional Neural Networks Meet Vision Transformers](http://cmt/ "CMT: Convolutional Neural Networks Meet Vision Transformers")（CVPR 2022，CMT）****_
+AI Theory/MLP/TiDE/【Transformer&CNN&TiDE】从CNN到ViT，再从ViT到TiDE，回顾近十年顶刊和会议发表的关于Attention自注意力、Conv卷积机制以及最新诞生的TiDE模型的发展历程_daphne odera�的博客-CSDN博客.md#3、 _**[AN IMAGE IS WORTH 16X16 WORDS: TRANSFORMERS FOR IMAGE RECOGNITION AT SCALE](https://arxiv.org/abs/2010.11929 "AN IMAGE IS WORTH 16X16 WORDS: TRANSFORMERS FOR IMAGE RECOGNITION AT SCALE")（ICLR 2021，VIT）**_
+AI Theory/MLP/TiDE/【Transformer&CNN&TiDE】从CNN到ViT，再从ViT到TiDE，回顾近十年顶刊和会议发表的关于Attention自注意力、Conv卷积机制以及最新诞生的TiDE模型的发展历程_daphne odera�的博客-CSDN博客.md#4、_**[Conformer: Convolution-augmented Transformer for Speech Recognition](https://arxiv.org/abs/2005.08100 "Conformer: Convolution-augmented Transformer for Speech Recognition")（2020，Conformer）**_
+AI Theory/MLP/TiDE/【Transformer&CNN&TiDE】从CNN到ViT，再从ViT到TiDE，回顾近十年顶刊和会议发表的关于Attention自注意力、Conv卷积机制以及最新诞生的TiDE模型的发展历程_daphne odera�的博客-CSDN博客.md#一、CV中的[Transformer](https://so.csdn.net/so/search?q=Transformer&spm=1001.2101.3001.7020)介绍
+AI Theory/NTK/PINN/PINN.md
+AI Theory/NTK/PINN/【2022.01】When and why PINNs fail to train A neural tangent kernel perspective.md
+AI Theory/NTK/Practition/【2021.03】Neural Architecture Search on ImageNet in Four GPU Hours A Theoretically Inspired Perspective.md
+AI Theory/NTK/【2020.06】NTK 区域下的 DNN.md
+AI Theory/NTK/【2020.07】Phase diagram for two-layer ReLU neural networks at infinite-width limit.md
+AI Theory/NTK/【2022.10】Deep learning versus kernel learning an empiricalstudy of loss landscape geometry and the timeevolution of the Neural Tangent Kernel.md#Basic Information:
+AI Theory/NTK/【2022.10】Deep learning versus kernel learning an empiricalstudy of loss landscape geometry and the timeevolution of the Neural Tangent Kernel.md#方法：
+AI Theory/NTK/【2022.10】Deep learning versus kernel learning an empiricalstudy of loss landscape geometry and the timeevolution of the Neural Tangent Kernel.md#结论：
+AI Theory/NTK/【2022.10】Deep learning versus kernel learning an empiricalstudy of loss landscape geometry and the timeevolution of the Neural Tangent Kernel.md#背景：
+AI Theory/NTK/【2022.10】How Infinitely Wide Neural Networks Can Benefit from Multi-task Learning.md
+AI Theory/Strong AI/2023-04-15-19-Human ≠ AGI  Acknowledgments .md
+AI Theory/Strong AI/2023-04-15-19-So What is its Greatest Value for us_.md
+AI Theory/Strong AI/【2021.05】Hard Choices and Hard Limits for Artificial Intelligence.md
+AI Theory/Transformer/!【2022.10】Transformers Learn Shortcuts to Automata.md#Paper:1
+AI Theory/Transformer/!【2022.10】Transformers Learn Shortcuts to Automata.md#Paper:75
+AI Theory/Transformer/!【2022.10】Transformers Learn Shortcuts to Automata.md#Paper:79
+AI Theory/Transformer/【2022.07】Transformers are Adaptable Task Planners.md
+AI-Human Harmony/!【2023.02】Machine Love.md
+LLM/Advancement/Dataset/Unanswerable Questions/Unanswerable Questions.md
+LLM/ChatGPT/OpenAI-GPT/【2022.01】Text and Code Embeddings by Contrastive Pre-Training.md#Paper:216
+LLM/ChatGPT/OpenAI-GPT/【2022.01】Text and Code Embeddings by Contrastive Pre-Training.md#Paper:220
+LLM/ChatGPT/OpenAI-GPT/【2023.03】GPT-4 Technical paper.md#Paper:213
+LLM/ChatGPT/OpenAI-GPT/【2023.03】GPT-4 Technical paper.md#Paper:217
+LLM/ChatGPT/【2022】GPT3-THE ULTIMATE GUIDE BUILDING NLP PRODUCTS WITH OPENAI API.md
+LLM/ChatGPT/【2023.02】ChatGPT for Robotics Design Principles and Model Abilities.md
+LLM/ChatGPT/【2023.03】HuggingGPT_ Solving AI Tasks with ChatGPT and its Friends in HuggingFace.md
+LLM/ChatGPT/【2023.03】Visual ChatGPT Talking, Drawing and Editing with Visual Foundation Models.md
+LLM/Claude/Claude+ 思维连剪短问答测试.md
+LLM/Claude/Claude.md
+LLM/Claude/YohanYu on Poe Explainable Ai --- YohanYu关于Poe：可解释AI.md
+LLM/Claude/YohanYu on Poe Explainable Ai --- YohanYu关于Poe：可解释AI.md#Create a dummy model that returns some random attention weights
+LLM/Claude/YohanYu on Poe Explainable Ai --- YohanYu关于Poe：可解释AI.md#Define a class to represent a maze
+LLM/Claude/YohanYu on Poe Explainable Ai --- YohanYu关于Poe：可解释AI.md#[0.2213  0.8765  0.2342 ... 0.1112  0.9321  0.1134]]
+LLM/GPT-4/!【2023.03】Advances in apparent conceptual physics reasoning in GPT-4.md#Conclusion
+LLM/GPT-4/!【2023.03】Advances in apparent conceptual physics reasoning in GPT-4.md#Conclusion#Paper:226
+LLM/GPT-4/!【2023.03】Advances in apparent conceptual physics reasoning in GPT-4.md#Methods
+LLM/GPT-4/!【2023.03】Advances in apparent conceptual physics reasoning in GPT-4.md#Summary
+LLM/GPT-4/!【2023.03】GPT is becoming a Turing machine Here are some ways to program it.md#提示设计触发大语言模型执行循环结构算法的能力研究#Paper:225
+LLM/GPT-4/!【2023.03】GPT is becoming a Turing machine Here are some ways to program it.md#提示设计触发大语言模型执行循环结构算法的能力研究#创新点与性能
+LLM/GPT-4/!【2023.03】GPT is becoming a Turing machine Here are some ways to program it.md#提示设计触发大语言模型执行循环结构算法的能力研究#方法
+LLM/GPT-4/!【2023.03】GPT is becoming a Turing machine Here are some ways to program it.md#提示设计触发大语言模型执行循环结构算法的能力研究#结论
+LLM/GPT-4/!【2023.03】Mind meets machine_ Unravelling GPT-4's cognitive psychology.md#Conclusion
+LLM/GPT-4/!【2023.03】Mind meets machine_ Unravelling GPT-4's cognitive psychology.md#Conclusion#Paper:227
+LLM/GPT-4/!【2023.03】Mind meets machine_ Unravelling GPT-4's cognitive psychology.md#Methods
+LLM/GPT-4/!【2023.03】Mind meets machine_ Unravelling GPT-4's cognitive psychology.md#Summary
+LLM/GPT-4/!【2023.03】【Microsoft】Sparks of Artificial General Intelligence Early experiments with GPT-4.md
+LLM/GPT-4/!【2023.04】AI becomes a masterbrain scientist.md
+LLM/GPT-4/!【2023.04】AI-assisted coding_ Experiments with GPT-4.md
+LLM/GPT-4/!【2023.04】Summary of ChatGPT_GPT-4 Research and Perspective Towards the Future of Large Language Models.md
+LLM/GPT-4/!【2023.04】Summary of ChatGPT_GPT-4 Research and Perspective Towards the Future of Large Language Models.md#Conclusion
+LLM/GPT-4/!【2023.04】Summary of ChatGPT_GPT-4 Research and Perspective Towards the Future of Large Language Models.md#Conclusion#Paper:228
+LLM/GPT-4/!【2023.04】Summary of ChatGPT_GPT-4 Research and Perspective Towards the Future of Large Language Models.md#Methods
+LLM/GPT-4/!【2023.04】Summary of ChatGPT_GPT-4 Research and Perspective Towards the Future of Large Language Models.md#Summary
+LLM/GPT-4/GPT4_CoT/ChatGPT 宋朝王安石变法.md
+LLM/GPT-4/GPT4_CoT/GPT4 思维连剪短问答测试.md
+LLM/GPT-4/GPT4_CoT/GPT4_CoT.md
+LLM/GPT-4/GPT4_Solving_NP_Problems/GPT4_Solving_NP_Problems.md
+LLM/GPT-4/GPT4_Solving_NP_Problems/Poe_ Conversation with ChatGPT_TSP_deduction.md
+LLM/GPT-4/GPT4_Solving_NP_Problems/Poe_ Conversation with ChatGPT_TSP_memorizing.md
+LLM/GPT-4/【2023.03】Machine Psychology Investigating Emergent Capabilities and Behavior in Large Language Models Using Psychological Methods.md
+LLM/GPT-4/【2023.03】Machine Psychology Investigating Emergent Capabilities and Behavior in Large Language Models Using Psychological Methods.md#机器心理学：使用心理学实验研究大型语言模型行为能力#Paper:232
+LLM/GPT-4/【2023.03】Machine Psychology Investigating Emergent Capabilities and Behavior in Large Language Models Using Psychological Methods.md#机器心理学：使用心理学实验研究大型语言模型行为能力#方法论思路
+LLM/GPT-4/【2023.03】Machine Psychology Investigating Emergent Capabilities and Behavior in Large Language Models Using Psychological Methods.md#机器心理学：使用心理学实验研究大型语言模型行为能力#方法论标准
+LLM/GPT-4/【2023.03】Machine Psychology Investigating Emergent Capabilities and Behavior in Large Language Models Using Psychological Methods.md#机器心理学：使用心理学实验研究大型语言模型行为能力#研究方法
+LLM/GPT-4/【2023.03】Machine Psychology Investigating Emergent Capabilities and Behavior in Large Language Models Using Psychological Methods.md#机器心理学：使用心理学实验研究大型语言模型行为能力#研究背景
+LLM/GPT-4/【2023.03】Machine Psychology Investigating Emergent Capabilities and Behavior in Large Language Models Using Psychological Methods.md#机器心理学：使用心理学实验研究大型语言模型行为能力#结论
+LLM/GPT-4/【2023.03】Ten Quick Tips for Harnessing the Power of ChatGPT_GPT-4 in Computational Biology.md#Paper:231
+LLM/GPT-4/【2023.03】Ten Quick Tips for Harnessing the Power of ChatGPT_GPT-4 in Computational Biology.md#介绍
+LLM/GPT-4/【2023.03】Ten Quick Tips for Harnessing the Power of ChatGPT_GPT-4 in Computational Biology.md#局限和创新点
+LLM/GPT-4/【2023.03】Ten Quick Tips for Harnessing the Power of ChatGPT_GPT-4 in Computational Biology.md#数据和方法
+LLM/GPT-4/【2023.03】Ten Quick Tips for Harnessing the Power of ChatGPT_GPT-4 in Computational Biology.md#未来工作
+LLM/GPT-4/【2023.03】Ten Quick Tips for Harnessing the Power of ChatGPT_GPT-4 in Computational Biology.md#结论
+LLM/GPT-4/【2023.03】Ten Quick Tips for Harnessing the Power of ChatGPT_GPT-4 in Computational Biology.md#背景
+LLM/LLM Survey/!【2023.03】A Comprehensive Survey on Pretrained Foundation Models_ A History from BERT to ChatGPT.md
+LLM/LLM Survey/LLM Survey.md
+LLM/LLM Survey/【2023.03】A Survey of Large Language Models.md
+LLM/LLM Survey/【2023.04】A Bibliometric Review of Large Language Models Research from 2017 to 2023.md
+LLM/LLaMA/LLaMA.md
+LLM/LLaMA/【2023.03】Exploring the Impact of Instruction Data Scaling on Large Language Models.md
+LLM/NARModel/NARModel.md
+LLM/NARModel/【2022.04】A Survey on Non-Autoregressive Generation for Neural Machine Translation and Beyond.md
+LLM/NARModel/【2023.03】Diffusion Models for Non-autoregressive Text Generation A Survey.md
+LLM/PaLM2/【2023.05】PaLM 2 Technical Report.md
+LLM/【2023.02】The Capacity for Moral Self-Correction in Large.md
+LLM/【2023.03】Language Models can Solve Computer Tasks.md
+LLM/【2023.04】Eight Things to Know about Large Language Models.md
+LLM/【2023.04】Scientists' Perspectives on the Potential for Generative AI in their Fields.md
+Masters/Masters.md
+Masters/ThomasMuller/2205.07058.md
+Masters/ThomasMuller/2210.10108.md
+Masters/ThomasMuller/hart20practical.md
+Masters/ThomasMuller/majercik21dynamic.md
+Masters/ThomasMuller/mueller18neural-v4.md
+Masters/ThomasMuller/mueller20neural.md
+Masters/ThomasMuller/mueller21realtime.md
+Masters/ThomasMuller/mueller22instant.md
+Masters/ThomasMuller/munkberg21extracting.md
+Masters/ThomasMuller/nimierdavid22unbiased.md
+Masters/ThomasMuller/sdmm-paper.md
+Masters/ThomasMuller/takikawa22variable.md
+Masters/ThomasMuller/vorba19guiding-chapter10.md
+Masters/ThomasMuller/【2016.11】Efficient Rendering of Heterogeneous Polydisperse Granular Media.md
+Masters/ThomasMuller/【2017.01】Practical Path Guiding for Efficient Light-Transport Simulation.md
+Masters/ThomasMuller/【2017.11】Deep Scattering Rendering Atmospheric Clouds with Radiance-Predicting Neural Networks.md
+Masters/ThomasMuller/【2018.11】A radiative transfer framework for non-exponential media.md
+NeRF/NeRF.md
+NeRF/【2022.05】Instant Neural Graphics Primitives with a Multiresolution Hash Encoding.md
+NeRF/【2022.05】NeRF-Editing Geometry Editing of Neural Radiance Fields.md
+NeRF/【2022.09】DREAM FUSION  TEXT- TO -3D USING 2D D IFFUSION.md
+NeRF/【2022.12】NeRF Neural Radiance Field in 3D Vision A Comprehensive Review.md
+NeRF/【2023.03】NeRFshop Interactive Editing of Neural Radiance Fields.md
+Neuron Science Inspired/!【2017.06】Neuroscience-Inspired Artificial Intelligence.md#渐进学习实现从仿真到现实机器人任务的迁移#Paper:124
+Neuron Science Inspired/!【2017.06】Neuroscience-Inspired Artificial Intelligence.md#渐进学习实现从仿真到现实机器人任务的迁移#实验结果和评估
+Neuron Science Inspired/!【2017.06】Neuroscience-Inspired Artificial Intelligence.md#渐进学习实现从仿真到现实机器人任务的迁移#方法
+Neuron Science Inspired/!【2017.06】Neuroscience-Inspired Artificial Intelligence.md#渐进学习实现从仿真到现实机器人任务的迁移#结论
+Neuron Science Inspired/!【2017.06】Neuroscience-Inspired Artificial Intelligence.md#渐进学习实现从仿真到现实机器人任务的迁移#结论#复杂性:方法包含训练各模块、调整参数和考虑仿真实环境差异等步骤,实施难度较高。
+Neuron Science Inspired/!【2023.01】AI of Brain and Cognitive Sciences From the Perspective of First Principles.md
+Neuron Science Inspired/!【2023.01】AI of Brain and Cognitive Sciences From the Perspective of First Principles.md#Paper:122
+Neuron Science Inspired/!【2023.01】AI of Brain and Cognitive Sciences From the Perspective of First Principles.md#研究人工智能中的脑和认知科学应用#摘要
+Neuron Science Inspired/!【2023.01】AI of Brain and Cognitive Sciences From the Perspective of First Principles.md#研究人工智能中的脑和认知科学应用#方法
+Neuron Science Inspired/!【2023.01】AI of Brain and Cognitive Sciences From the Perspective of First Principles.md#研究人工智能中的脑和认知科学应用#结论
+Neuron Science Inspired/BrainCog/!【2022.07】BrainCog A Spiking Neural Network based.md
+Neuron Science Inspired/BrainCog/BrainCog.md
+Neuron Science Inspired/Study of the Neuron Network And Brain/【2018.08】Neural System Identification with Spike-triggered Non-negative Matrix Factorization.md#系统分析神经电路:spike-triggered non-negative matrix factorization方法的应用#Paper:128
+Neuron Science Inspired/Study of the Neuron Network And Brain/【2018.08】Neural System Identification with Spike-triggered Non-negative Matrix Factorization.md#系统分析神经电路:spike-triggered non-negative matrix factorization方法的应用#spike-triggered non-negative matrix factorization (STNMF)方法
+Neuron Science Inspired/Study of the Neuron Network And Brain/【2018.08】Neural System Identification with Spike-triggered Non-negative Matrix Factorization.md#系统分析神经电路:spike-triggered non-negative matrix factorization方法的应用#研究背景
+Neuron Science Inspired/Study of the Neuron Network And Brain/【2018.08】Neural System Identification with Spike-triggered Non-negative Matrix Factorization.md#系统分析神经电路:spike-triggered non-negative matrix factorization方法的应用#结论
+Neuron Science Inspired/Study of the Neuron Network And Brain/【2018.08】Neural System Identification with Spike-triggered Non-negative Matrix Factorization.md#系统分析神经电路:spike-triggered non-negative matrix factorization方法的应用#视网膜神经电路的辨识
+Z_WORKSPACE/Kanban_LLM.md
+Z_WORKSPACE/Kanban_LLM.md#TODO

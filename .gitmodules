@@ -604,3 +604,6 @@
 [submodule "repo/LLMApp/CommanderGPT"]
 	path = repo/LLMApp/CommanderGPT
 	url = https://github.com/yhyu13/CommanderGPT.git
+[submodule "repo/LLMApp/LaWGPT"]
+	path = repo/LLMApp/LaWGPT
+	url = https://github.com/pengxiao-song/LaWGPT.git

@@ -601,3 +601,6 @@
 [submodule "repo/LLM/CoT/tree-of-thoughts"]
 	path = repo/LLM/CoT/tree-of-thoughts
 	url = https://github.com/yhyu13/tree-of-thoughts.git
+[submodule "repo/LLMApp/CommanderGPT"]
+	path = repo/LLMApp/CommanderGPT
+	url = https://github.com/yhyu13/CommanderGPT.git

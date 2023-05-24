@@ -610,3 +610,6 @@
 [submodule "repo/LLM/CoT/tree-of-thought-llm"]
 	path = repo/LLM/CoT/tree-of-thought-llm
 	url = https://github.com/yhyu13/tree-of-thought-llm.git
+[submodule "repo/LLM-Infastructure/langflow"]
+	path = repo/LLM-Infastructure/langflow
+	url = https://github.com/yhyu13/langflow.git

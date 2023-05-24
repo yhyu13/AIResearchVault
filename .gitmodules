@@ -607,3 +607,6 @@
 [submodule "repo/LLMApp/LaWGPT"]
 	path = repo/LLMApp/LaWGPT
 	url = https://github.com/pengxiao-song/LaWGPT.git
+[submodule "repo/LLM/CoT/tree-of-thought-llm"]
+	path = repo/LLM/CoT/tree-of-thought-llm
+	url = https://github.com/yhyu13/tree-of-thought-llm.git

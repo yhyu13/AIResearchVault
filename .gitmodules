@@ -613,3 +613,6 @@
 [submodule "repo/LLM-Infastructure/langflow"]
 	path = repo/LLM-Infastructure/langflow
 	url = https://github.com/yhyu13/langflow.git
+[submodule "repo/AIOptimization/peft"]
+	path = repo/AIOptimization/peft
+	url = https://github.com/huggingface/peft.git

@@ -616,3 +616,6 @@
 [submodule "repo/AIOptimization/peft"]
 	path = repo/AIOptimization/peft
 	url = https://github.com/huggingface/peft.git
+[submodule "repo/AIGC/game changer/DragGAN"]
+	path = repo/AIGC/game changer/DragGAN
+	url = https://github.com/yhyu13/DragGAN.git

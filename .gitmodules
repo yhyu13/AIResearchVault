@@ -619,3 +619,6 @@
 [submodule "repo/AIGC/game changer/DragGAN"]
 	path = repo/AIGC/game changer/DragGAN
 	url = https://github.com/yhyu13/DragGAN.git
+[submodule "repo/LLM-Infastructure/langchain-tutorials"]
+	path = repo/LLM-Infastructure/langchain-tutorials
+	url = https://github.com/gkamradt/langchain-tutorials.git

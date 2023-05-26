@@ -418,10 +418,10 @@
 	path = repo/LLM-Infastructure/conceptnet5_docker
 	url = https://github.com/tae898/conceptnet5.git
 [submodule "repo/LLM-Infastructure/langchain"]
-	path = repo/LLM-Infastructure/langchain
+	path = repo/LLM-Infastructure/LangChain-Eco/langchain
 	url = https://github.com/hwchase17/langchain.git
 [submodule "repo/LLM-Infastructure/GPTCache"]
-	path = repo/LLM-Infastructure/GPTCache
+	path = repo/LLM-Infastructure/LangChain-Eco/GPTCache
 	url = https://github.com/zilliztech/GPTCache.git
 [submodule "repo/LLM/ChatRWKV/rwkv.cpp"]
 	path = repo/LLM/ChatRWKV/rwkv.cpp
@@ -611,7 +611,7 @@
 	path = repo/LLM/CoT/tree-of-thought-llm
 	url = https://github.com/yhyu13/tree-of-thought-llm.git
 [submodule "repo/LLM-Infastructure/langflow"]
-	path = repo/LLM-Infastructure/langflow
+	path = repo/LLM-Infastructure/LangChain-Eco/langflow
 	url = https://github.com/yhyu13/langflow.git
 [submodule "repo/AIOptimization/peft"]
 	path = repo/AIOptimization/peft
@@ -620,5 +620,5 @@
 	path = repo/AIGC/game changer/DragGAN
 	url = https://github.com/yhyu13/DragGAN.git
 [submodule "repo/LLM-Infastructure/langchain-tutorials"]
-	path = repo/LLM-Infastructure/langchain-tutorials
+	path = repo/LLM-Infastructure/LangChain-Eco/langchain-tutorials
 	url = https://github.com/gkamradt/langchain-tutorials.git

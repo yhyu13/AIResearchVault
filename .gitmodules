@@ -622,3 +622,6 @@
 [submodule "repo/LLM-Infastructure/langchain-tutorials"]
 	path = repo/LLM-Infastructure/LangChain-Eco/langchain-tutorials
 	url = https://github.com/gkamradt/langchain-tutorials.git
+[submodule "repo/cuda/cuda-python"]
+	path = repo/cuda/cuda-python
+	url = https://github.com/NVIDIA/cuda-python.git

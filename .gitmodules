@@ -624,4 +624,4 @@
 	url = https://github.com/gkamradt/langchain-tutorials.git
 [submodule "repo/cuda/cuda-python"]
 	path = repo/cuda/cuda-python
-	url = https://github.com/NVIDIA/cuda-python.git
+	url = https://github.com/yhyu13/cuda-python.git

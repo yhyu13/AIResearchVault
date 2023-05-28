@@ -412,16 +412,16 @@
 	url = https://github.com/yhyu13/AgentGPT.git
 	branch = local_dev
 [submodule "repo/LLM-Infastructure/conceptnet5"]
-	path = repo/LLM-Infastructure/conceptnet5
+	path = repo/LLM-infrastructure/conceptnet5
 	url = https://github.com/commonsense/conceptnet5.git
 [submodule "repo/LLM-Infastructure/conceptnet5_docker"]
-	path = repo/LLM-Infastructure/conceptnet5_docker
+	path = repo/LLM-infrastructure/conceptnet5_docker
 	url = https://github.com/tae898/conceptnet5.git
 [submodule "repo/LLM-Infastructure/langchain"]
-	path = repo/LLM-Infastructure/LangChain-Eco/langchain
+	path = repo/LLM-infrastructure/LangChain-Eco/langchain
 	url = https://github.com/hwchase17/langchain.git
 [submodule "repo/LLM-Infastructure/GPTCache"]
-	path = repo/LLM-Infastructure/LangChain-Eco/GPTCache
+	path = repo/LLM-infrastructure/LangChain-Eco/GPTCache
 	url = https://github.com/zilliztech/GPTCache.git
 [submodule "repo/LLM/ChatRWKV/rwkv.cpp"]
 	path = repo/LLM/ChatRWKV/rwkv.cpp
@@ -430,10 +430,10 @@
 	path = repo/LLM/ChatRWKV/ChatRWKV
 	url = https://github.com/BlinkDL/ChatRWKV.git
 [submodule "repo/LLM-Infastructure/osschat"]
-	path = repo/LLM-Infastructure/osschat
+	path = repo/LLM-infrastructure/osschat
 	url = https://github.com/kaiyuanshe/osschat.git
 [submodule "repo/LLM-Infastructure/rpaframework"]
-	path = repo/LLM-Infastructure/rpaframework
+	path = repo/LLM-infrastructure/rpaframework
 	url = https://github.com/robocorp/rpaframework.git
 [submodule "repo/DeepMind/deepmind-research"]
 	path = repo/DeepMind/deepmind-research
@@ -497,7 +497,7 @@
 	path = repo/LLM/Mosiac/llm-foundry
 	url = https://github.com/mosaicml/llm-foundry.git
 [submodule "repo/LLM-Infastructure/one-api"]
-	path = repo/LLM-Infastructure/one-api
+	path = repo/LLM-infrastructure/one-api
 	url = https://github.com/songquanpeng/one-api.git
 [submodule "repo/Multi-Modal/ImageBind"]
 	path = repo/FacebookAI/ImageBind
@@ -509,10 +509,10 @@
 	path = repo/OpenAI/shap-e
 	url = https://github.com/openai/shap-e.git
 [submodule "repo/LLM-Infastructure/mojo"]
-	path = repo/LLM-Infastructure/mojo
+	path = repo/LLM-infrastructure/mojo
 	url = https://github.com/modularml/mojo.git
 [submodule "repo/LLM-Infastructure/RPA-Python"]
-	path = repo/LLM-Infastructure/RPA-Python
+	path = repo/LLM-infrastructure/RPA-Python
 	url = https://github.com/tebelorg/RPA-Python.git
 [submodule "repo/LLMApp/WebCPM"]
 	path = repo/LLMApp/WebCPM
@@ -527,7 +527,7 @@
 	path = repo/LLMApp/langchain-ChatGLM
 	url = https://github.com/imClumsyPanda/langchain-ChatGLM.git
 [submodule "repo/LLM-Infastructure/semantic-kernel"]
-	path = repo/LLM-Infastructure/semantic-kernel
+	path = repo/LLM-infrastructure/semantic-kernel
 	url = https://github.com/microsoft/semantic-kernel.git
 [submodule "repo/LLM/LLaMA/llmtune"]
 	path = repo/LLM/LLaMA/llmtune
@@ -542,7 +542,7 @@
 	path = repo/LLM/CoT/tree-of-thought-puzzle-solver
 	url = https://github.com/jieyilong/tree-of-thought-puzzle-solver.git
 [submodule "repo/LLM-Infastructure/lamini"]
-	path = repo/LLM-Infastructure/lamini
+	path = repo/LLM-infrastructure/lamini
 	url = https://github.com/lamini-ai/lamini.git
 [submodule "repo/LLMApp/MC-Planner"]
 	path = repo/LLM/Other/MC-Planner
@@ -575,7 +575,7 @@
 	path = repo/LLM/RLHF/safe-rlhf
 	url = https://github.com/PKU-Alignment/safe-rlhf.git
 [submodule "repo/LLM-Infastructure/unilm"]
-	path = repo/LLM-Infastructure/unilm
+	path = repo/LLM-infrastructure/unilm
 	url = https://github.com/microsoft/unilm.git
 [submodule "repo/LLMApp/AgentLLM"]
 	path = repo/LLMApp/AgentLLM
@@ -611,7 +611,7 @@
 	path = repo/LLM/CoT/tree-of-thought-llm
 	url = https://github.com/yhyu13/tree-of-thought-llm.git
 [submodule "repo/LLM-Infastructure/langflow"]
-	path = repo/LLM-Infastructure/LangChain-Eco/langflow
+	path = repo/LLM-infrastructure/LangChain-Eco/langflow
 	url = https://github.com/yhyu13/langflow.git
 [submodule "repo/AIOptimization/peft"]
 	path = repo/AIOptimization/peft
@@ -620,7 +620,7 @@
 	path = repo/AIGC/game changer/DragGAN
 	url = https://github.com/yhyu13/DragGAN.git
 [submodule "repo/LLM-Infastructure/langchain-tutorials"]
-	path = repo/LLM-Infastructure/LangChain-Eco/langchain-tutorials
+	path = repo/LLM-infrastructure/LangChain-Eco/langchain-tutorials
 	url = https://github.com/gkamradt/langchain-tutorials.git
 [submodule "repo/cuda/cuda-python"]
 	path = repo/cuda/cuda-python
@@ -629,7 +629,7 @@
 	path = repo/LLM/LLaMA/baize-chatbot
 	url = https://github.com/project-baize/baize-chatbot.git
 [submodule "repo/AI库/tinygrad"]
-	path = repo/AI库/tinygrad
+	path = repo/AI-Infrastructure/tinygrad
 	url = https://github.com/geohot/tinygrad.git
 [submodule "repo/LLM/ChatGPT/Mr.-Ranedeer-AI-Tutor"]
 	path = repo/LLM/ChatGPT/Mr.-Ranedeer-AI-Tutor

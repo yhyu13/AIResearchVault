@@ -628,3 +628,9 @@
 [submodule "repo/LLM/LLaMA/baize-chatbot"]
 	path = repo/LLM/LLaMA/baize-chatbot
 	url = https://github.com/project-baize/baize-chatbot.git
+[submodule "repo/AI库/tinygrad"]
+	path = repo/AI库/tinygrad
+	url = https://github.com/geohot/tinygrad.git
+[submodule "repo/LLM/ChatGPT/Mr.-Ranedeer-AI-Tutor"]
+	path = repo/LLM/ChatGPT/Mr.-Ranedeer-AI-Tutor
+	url = https://github.com/JushBJJ/Mr.-Ranedeer-AI-Tutor

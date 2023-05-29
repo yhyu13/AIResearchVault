@@ -545,7 +545,7 @@
 	path = repo/LLM-infrastructure/lamini
 	url = https://github.com/lamini-ai/lamini.git
 [submodule "repo/LLMApp/MC-Planner"]
-	path = repo/LLM/Other/MC-Planner
+	path = repo/LLMApp/MC-Planner
 	url = https://github.com/CraftJarvis/MC-Planner.git
 [submodule "repo/LLMApp/bloop"]
 	path = repo/LLMApp/bloop
@@ -634,3 +634,6 @@
 [submodule "repo/LLM/ChatGPT/Mr.-Ranedeer-AI-Tutor"]
 	path = repo/LLM/ChatGPT/Mr.-Ranedeer-AI-Tutor
 	url = https://github.com/JushBJJ/Mr.-Ranedeer-AI-Tutor
+[submodule "repo/LLMApp/Voyager"]
+	path = repo/LLMApp/Voyager
+	url = https://github.com/MineDojo/Voyager.git

@@ -637,3 +637,9 @@
 [submodule "repo/LLMApp/Voyager"]
 	path = repo/LLMApp/Voyager
 	url = https://github.com/MineDojo/Voyager.git
+[submodule "repo/AIGC/Nvidia-ace/Riva/python-clients"]
+	path = repo/AIGC/Nvidia-ace/Riva/python-clients
+	url = https://github.com/nvidia-riva/python-clients.git
+[submodule "repo/AIGC/Nvidia-ace/NeMo"]
+	path = repo/AIGC/Nvidia-ace/NeMo
+	url = https://github.com/NVIDIA/NeMo.git

@@ -655,3 +655,9 @@
 [submodule "repo/AI-Infrastructure/accelerate"]
 	path = repo/AI-Infrastructure/accelerate
 	url = https://github.com/huggingface/accelerate.git
+[submodule "repo/time-series/OS-CNN"]
+	path = repo/time-series/OS-CNN
+	url = https://github.com/Wensi-Tang/OS-CNN.git
+[submodule "repo/time-series/tsai"]
+	path = repo/time-series/tsai
+	url = https://github.com/timeseriesAI/tsai.git

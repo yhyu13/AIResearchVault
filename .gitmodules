@@ -643,3 +643,15 @@
 [submodule "repo/AIGC/Nvidia-ace/NeMo"]
 	path = repo/AIGC/Nvidia-ace/NeMo
 	url = https://github.com/NVIDIA/NeMo.git
+[submodule "repo/AI-Infrastructure/transformers-benchmarks"]
+	path = repo/AI-Infrastructure/transformers-benchmarks
+	url = https://github.com/mli/transformers-benchmarks.git
+[submodule "repo/AI-Infrastructure/transformers"]
+	path = repo/AI-Infrastructure/transformers
+	url = https://github.com/huggingface/transformers.git
+[submodule "repo/AI-Infrastructure/bitsandbytes"]
+	path = repo/AI-Infrastructure/bitsandbytes
+	url = https://github.com/TimDettmers/bitsandbytes.git
+[submodule "repo/AI-Infrastructure/accelerate"]
+	path = repo/AI-Infrastructure/accelerate
+	url = https://github.com/huggingface/accelerate.git

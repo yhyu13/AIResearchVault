@@ -1,8 +1,10 @@
 
 AI Math/【2022.05】HyperTree Proof Search for Neural Theorem Proving.md
 AI Math/【2022.12】A Survey of Deep Learning for Mathematical Reasoning.md
+AI Optimization/!【2023.05】QLoRA_ Efficient Finetuning of Quantized LLMs.md
 AI Physics/【2023.03】Deep symbolic regression for physics guided by units constraints toward the automated discovery of physical laws.md
 AI Theory/!【2015.01】Causality in thought.md
+AI Theory/!【2022.03】On the link between conscious function and general intelligence in humans and machines.md
 AI Theory/AI Theory.md
 AI Theory/Bottleneck/!【2015.03】Deep Learning and the Information Bottleneck Principle.md
 AI Theory/Explainable/![2023.05]【OpenAI】Language models can explain neurons in language models.md
@@ -45,7 +47,23 @@ AI Theory/Transformer/!【2022.10】Transformers Learn Shortcuts to Automata.md#
 AI Theory/Transformer/!【2022.10】Transformers Learn Shortcuts to Automata.md#Paper:79
 AI Theory/Transformer/【2022.07】Transformers are Adaptable Task Planners.md
 AI-Human Harmony/!【2023.02】Machine Love.md
+AI-Human Harmony/Microsoft AI Safety Standard/Microsoft AI Safety Standard.md
+AI-Human Harmony/Microsoft AI Safety Standard/Microsoft RAI Impact Assessment Guide.md
+AI-Human Harmony/Microsoft AI Safety Standard/Microsoft RAI Impact Assessment Template (0).md
+AI-Human Harmony/Microsoft AI Safety Standard/Microsoft Responsible AI Standard v2 General Requirements.md
+AI-Human Harmony/Microsoft AI Safety Standard/RAIS Reference Guide.md
+LLM/Advancement/Architecture/!【2023.05】MEGABYTE_ Predicting Million-byte Sequences with Multiscale Transformers.md
 LLM/Advancement/Dataset/Unanswerable Questions/Unanswerable Questions.md
+LLM/Advancement/Dataset/【2023.05】Empower Large Language Model to Perform Better on Industrial Domain-Specific Question Answering.md
+LLM/Advancement/Dataset/【2023.05】Evaluating the Performance of Large Language Models on GAOKAO Benchmark.md
+LLM/Advancement/Dataset/【2023.05】TheoremQA_ A Theorem-driven Question Answering dataset.md
+LLM/Advancement/Explainable/!【2023.05】The Case Against Explainability.md
+LLM/Advancement/Reasoning Ability/!【2023.05】Can ChatGPT Defend the Truth_ Automatic Dialectical Evaluation Elicits LLMs' Deficiencies in Reasoning.md
+LLM/Advancement/Reasoning Ability/Hallucinating/!【2023.05】Do Language Models Know When They're Hallucinating References_.md
+LLM/Advancement/Reasoning Ability/Hallucinating/Hallucinating.md
+LLM/Advancement/Reasoning Ability/Meta-reasoning/!【2023.05】Logic-LM_ Empowering Large Language Models with Symbolic Solvers for Faithful Logical Reasoning.md
+LLM/Advancement/Reasoning Ability/ToM/!【2023.05】Clever Hans or Neural Theory of Mind_ Stress Testing Social Reasoning in Large Language Models.md
+LLM/Advancement/Reasoning Ability/ToM/ToM.md
 LLM/ChatGPT/OpenAI-GPT/【2022.01】Text and Code Embeddings by Contrastive Pre-Training.md#Paper:216
 LLM/ChatGPT/OpenAI-GPT/【2022.01】Text and Code Embeddings by Contrastive Pre-Training.md#Paper:220
 LLM/ChatGPT/OpenAI-GPT/【2023.03】GPT-4 Technical paper.md#Paper:213
@@ -143,6 +161,7 @@ Neuron Science Inspired/!【2017.06】Neuroscience-Inspired Artificial Intellige
 Neuron Science Inspired/!【2017.06】Neuroscience-Inspired Artificial Intelligence.md#渐进学习实现从仿真到现实机器人任务的迁移#方法
 Neuron Science Inspired/!【2017.06】Neuroscience-Inspired Artificial Intelligence.md#渐进学习实现从仿真到现实机器人任务的迁移#结论
 Neuron Science Inspired/!【2017.06】Neuroscience-Inspired Artificial Intelligence.md#渐进学习实现从仿真到现实机器人任务的迁移#结论#复杂性:方法包含训练各模块、调整参数和考虑仿真实环境差异等步骤,实施难度较高。
+Neuron Science Inspired/!【2019.09】The Tolman-Eichenbaum Machine_ Unifying Space and Relational Memory through Generalization in the Hippocampal Formation.md
 Neuron Science Inspired/!【2023.01】AI of Brain and Cognitive Sciences From the Perspective of First Principles.md
 Neuron Science Inspired/!【2023.01】AI of Brain and Cognitive Sciences From the Perspective of First Principles.md#Paper:122
 Neuron Science Inspired/!【2023.01】AI of Brain and Cognitive Sciences From the Perspective of First Principles.md#研究人工智能中的脑和认知科学应用#摘要
@@ -150,10 +169,15 @@ Neuron Science Inspired/!【2023.01】AI of Brain and Cognitive Sciences From th
 Neuron Science Inspired/!【2023.01】AI of Brain and Cognitive Sciences From the Perspective of First Principles.md#研究人工智能中的脑和认知科学应用#结论
 Neuron Science Inspired/BrainCog/!【2022.07】BrainCog A Spiking Neural Network based.md
 Neuron Science Inspired/BrainCog/BrainCog.md
+Neuron Science Inspired/Hippocampus/!【2020.02】Self-Attentive Associative Memory.md
+Neuron Science Inspired/Study of the Neuron Network And Brain/!【2021.09】The neural architecture of language_ Integrative modeling converges on predictive processing.md
+Neuron Science Inspired/Study of the Neuron Network And Brain/Study of the Neuron Network And Brain.md
 Neuron Science Inspired/Study of the Neuron Network And Brain/【2018.08】Neural System Identification with Spike-triggered Non-negative Matrix Factorization.md#系统分析神经电路:spike-triggered non-negative matrix factorization方法的应用#Paper:128
 Neuron Science Inspired/Study of the Neuron Network And Brain/【2018.08】Neural System Identification with Spike-triggered Non-negative Matrix Factorization.md#系统分析神经电路:spike-triggered non-negative matrix factorization方法的应用#spike-triggered non-negative matrix factorization (STNMF)方法
 Neuron Science Inspired/Study of the Neuron Network And Brain/【2018.08】Neural System Identification with Spike-triggered Non-negative Matrix Factorization.md#系统分析神经电路:spike-triggered non-negative matrix factorization方法的应用#研究背景
 Neuron Science Inspired/Study of the Neuron Network And Brain/【2018.08】Neural System Identification with Spike-triggered Non-negative Matrix Factorization.md#系统分析神经电路:spike-triggered non-negative matrix factorization方法的应用#结论
 Neuron Science Inspired/Study of the Neuron Network And Brain/【2018.08】Neural System Identification with Spike-triggered Non-negative Matrix Factorization.md#系统分析神经电路:spike-triggered non-negative matrix factorization方法的应用#视网膜神经电路的辨识
+Quantum Physics Inspired/!【2021.12】A free energy principle for generic quantum systems.md
 Z_WORKSPACE/Kanban_LLM.md
 Z_WORKSPACE/Kanban_LLM.md#TODO
+time-series/!【2022.06】Omni-Scale CNNs_ a simple and effective kernel size configuration for time series classification.md

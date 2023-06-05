@@ -661,3 +661,9 @@
 [submodule "repo/time-series/tsai"]
 	path = repo/time-series/tsai
 	url = https://github.com/timeseriesAI/tsai.git
+[submodule "repo/LLM-infrastructure/LLM-ToolMaker"]
+	path = repo/LLM-infrastructure/LLM-ToolMaker
+	url = https://github.com/ctlllll/LLM-ToolMaker.git
+[submodule "repo/Architecture/Blockwise-Parallel-Transformer"]
+	path = repo/Architecture/Blockwise-Parallel-Transformer
+	url = https://github.com/kyegomez/Blockwise-Parallel-Transformer.git

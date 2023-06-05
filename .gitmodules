@@ -667,3 +667,12 @@
 [submodule "repo/Architecture/Blockwise-Parallel-Transformer"]
 	path = repo/Architecture/Blockwise-Parallel-Transformer
 	url = https://github.com/kyegomez/Blockwise-Parallel-Transformer.git
+[submodule "repo/AIGC/text22D/StableStudio"]
+	path = repo/AIGC/text22D/StableStudio
+	url = https://github.com/yhyu13/StableStudio.git
+[submodule "repo/LLMApp/gpt-code-ui"]
+	path = repo/LLMApp/gpt-code-ui
+	url = https://github.com/yhyu13/gpt-code-ui
+[submodule "repo/LLMApp/quivr"]
+	path = repo/LLMApp/quivr
+	url = https://github.com/yhyu13/quivr

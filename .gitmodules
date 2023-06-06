@@ -676,3 +676,6 @@
 [submodule "repo/LLMApp/quivr"]
 	path = repo/LLMApp/quivr
 	url = https://github.com/yhyu13/quivr
+[submodule "repo/Architecture/MEGABYTE-pytorch"]
+	path = repo/Architecture/MEGABYTE-pytorch
+	url = https://github.com/lucidrains/MEGABYTE-pytorch.git

@@ -679,3 +679,9 @@
 [submodule "repo/Architecture/MEGABYTE-pytorch"]
 	path = repo/Architecture/MEGABYTE-pytorch
 	url = https://github.com/lucidrains/MEGABYTE-pytorch.git
+[submodule "repo/LLM-infrastructure/mlc-llm"]
+	path = repo/LLM-infrastructure/mlc-llm
+	url = https://github.com/mlc-ai/mlc-llm.git
+[submodule "repo/LLM-infrastructure/mlc-zh"]
+	path = repo/LLM-infrastructure/mlc-zh
+	url = https://github.com/mlc-ai/mlc-zh.git

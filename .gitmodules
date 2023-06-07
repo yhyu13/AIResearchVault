@@ -685,3 +685,24 @@
 [submodule "repo/LLM-infrastructure/mlc-zh"]
 	path = repo/LLM-infrastructure/mlc-zh
 	url = https://github.com/mlc-ai/mlc-zh.git
+[submodule "repo/Awesome-repo/Awesome-LLMOps"]
+	path = repo/Awesome-repo/Awesome-LLMOps
+	url = https://github.com/tensorchord/Awesome-LLMOps.git
+[submodule "repo/LLM-infrastructure/BentoML"]
+	path = repo/LLM-infrastructure/BentoML
+	url = https://github.com/bentoml/BentoML.git
+[submodule "repo/LLM-infrastructure/LMOps"]
+	path = repo/LLM-infrastructure/LMOps
+	url = https://github.com/microsoft/LMOps.git
+[submodule "repo/AI-Infrastructure/phoenix"]
+	path = repo/AI-Infrastructure/phoenix
+	url = https://github.com/Arize-ai/phoenix.git
+[submodule "repo/LLMApp/AGiXT"]
+	path = repo/LLMApp/AGiXT
+	url = https://github.com/Josh-XT/AGiXT.git
+[submodule "repo/LLMApp/SuperAGI"]
+	path = repo/LLMApp/SuperAGI
+	url = https://github.com/TransformerOptimus/SuperAGI.git
+[submodule "repo/LLM-infrastructure/dify"]
+	path = repo/LLM-infrastructure/dify
+	url = https://github.com/langgenius/dify.git

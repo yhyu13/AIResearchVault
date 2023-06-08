@@ -706,3 +706,6 @@
 [submodule "repo/LLM-infrastructure/dify"]
 	path = repo/LLM-infrastructure/dify
 	url = https://github.com/langgenius/dify.git
+[submodule "repo/LLMApp/ChatGLM-6B-Engineering"]
+	path = repo/LLMApp/ChatGLM-6B-Engineering
+	url = https://github.com/LemonQu-GIT/ChatGLM-6B-Engineering

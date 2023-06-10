@@ -172,7 +172,7 @@
 	path = repo/LLM/LLaMA/Chinese-LLaMA-Alpaca
 	url = https://github.com/ymcui/Chinese-LLaMA-Alpaca.git
 [submodule "repo/Prompting/camel"]
-	path = repo/Prompting/camel
+	path = repo/LLM-infrastructure/camel
 	url = https://github.com/lightaime/camel.git
 [submodule "repo/Prompting/language-planner"]
 	path = repo/Prompting/language-planner
@@ -709,3 +709,6 @@
 [submodule "repo/LLMApp/ChatGLM-6B-Engineering"]
 	path = repo/LLMApp/ChatGLM-6B-Engineering
 	url = https://github.com/LemonQu-GIT/ChatGLM-6B-Engineering
+[submodule "repo/Multi-Modal/LAVIS"]
+	path = repo/Multi-Modal/LAVIS
+	url = https://github.com/salesforce/LAVIS.git

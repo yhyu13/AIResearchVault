@@ -712,3 +712,12 @@
 [submodule "repo/Multi-Modal/LAVIS"]
 	path = repo/Multi-Modal/LAVIS
 	url = https://github.com/salesforce/LAVIS.git
+[submodule "repo/AIOptimization/SpQR"]
+	path = repo/AIOptimization/SpQR
+	url = https://github.com/Vahe1994/SpQR.git
+[submodule "repo/Multi-Modal/omnimotion"]
+	path = repo/Multi-Modal/omnimotion
+	url = https://github.com/qianqianwang68/omnimotion.git
+[submodule "repo/AIGC/text23D/Fantasia3D"]
+	path = repo/AIGC/text23D/Fantasia3D
+	url = https://github.com/Gorilla-Lab-SCUT/Fantasia3D.git

@@ -721,3 +721,15 @@
 [submodule "repo/AIGC/text23D/Fantasia3D"]
 	path = repo/AIGC/text23D/Fantasia3D
 	url = https://github.com/Gorilla-Lab-SCUT/Fantasia3D.git
+[submodule "repo/DeepMind/alphadev"]
+	path = repo/DeepMind/alphadev
+	url = https://github.com/deepmind/alphadev.git
+[submodule "repo/DeepMind/alphafold"]
+	path = repo/DeepMind/alphafold
+	url = https://github.com/deepmind/alphafold.git
+[submodule "repo/DeepMind/alphastar"]
+	path = repo/DeepMind/alphastar
+	url = https://github.com/deepmind/alphastar.git
+[submodule "repo/DeepMind/alphatensor"]
+	path = repo/DeepMind/alphatensor
+	url = https://github.com/deepmind/alphatensor.git

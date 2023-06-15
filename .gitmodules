@@ -733,3 +733,6 @@
 [submodule "repo/DeepMind/alphatensor"]
 	path = repo/DeepMind/alphatensor
 	url = https://github.com/deepmind/alphatensor.git
+[submodule "repo/LLMApp/gpt-engineer"]
+	path = repo/LLMApp/gpt-engineer
+	url = https://github.com/AntonOsika/gpt-engineer

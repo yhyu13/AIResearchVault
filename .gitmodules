@@ -735,4 +735,5 @@
 	url = https://github.com/deepmind/alphatensor.git
 [submodule "repo/LLMApp/gpt-engineer"]
 	path = repo/LLMApp/gpt-engineer
-	url = https://github.com/AntonOsika/gpt-engineer
+	url = https://github.com/yhyu13/gpt-engineer
+	branch = local_dev

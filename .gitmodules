@@ -737,3 +737,9 @@
 	path = repo/LLMApp/gpt-engineer
 	url = https://github.com/yhyu13/gpt-engineer
 	branch = local_dev
+[submodule "repo/LLM-infrastructure/guidance"]
+	path = repo/LLM-infrastructure/guidance
+	url = https://github.com/yhyu13/guidance.git
+[submodule "repo/LLMApp/h2ogpt"]
+	path = repo/LLMApp/h2ogpt
+	url = https://github.com/yhyu13/h2ogpt.git

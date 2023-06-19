@@ -746,3 +746,6 @@
 [submodule "repo/AIOptimization/exllama"]
 	path = repo/AIOptimization/exllama
 	url = https://github.com/turboderp/exllama
+[submodule "repo/Awesome-repo/awesome-tensorial-neural-networks"]
+	path = repo/Awesome-repo/awesome-tensorial-neural-networks
+	url = https://github.com/tnbar/awesome-tensorial-neural-networks.git

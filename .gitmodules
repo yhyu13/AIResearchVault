@@ -743,3 +743,6 @@
 [submodule "repo/LLMApp/h2ogpt"]
 	path = repo/LLMApp/h2ogpt
 	url = https://github.com/yhyu13/h2ogpt.git
+[submodule "repo/AIOptimization/exllama"]
+	path = repo/AIOptimization/exllama
+	url = https://github.com/turboderp/exllama

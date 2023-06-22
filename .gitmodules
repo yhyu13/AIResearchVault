@@ -749,3 +749,6 @@
 [submodule "repo/Awesome-repo/awesome-tensorial-neural-networks"]
 	path = repo/Awesome-repo/awesome-tensorial-neural-networks
 	url = https://github.com/tnbar/awesome-tensorial-neural-networks.git
+[submodule "repo/Data-Driven ScienceV2/DeepGreen"]
+	path = repo/Data-Driven ScienceV2/DeepGreen
+	url = https://github.com/sheadan/DeepGreen.git

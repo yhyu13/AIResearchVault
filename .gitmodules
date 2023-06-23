@@ -491,7 +491,7 @@
 	path = repo/LLMApp/cataclysm
 	url = https://github.com/Mattie/cataclysm.git
 [submodule "repo/LLM/Otter/Otter"]
-	path = repo/LLM/Otter/Otter
+	path = repo/Multi-Modal/Otter
 	url = https://github.com/Luodian/Otter.git
 [submodule "repo/LLM/Mosiac/llm-foundry"]
 	path = repo/LLM/Mosiac/llm-foundry
@@ -752,3 +752,6 @@
 [submodule "repo/Data-Driven ScienceV2/DeepGreen"]
 	path = repo/Data-Driven ScienceV2/DeepGreen
 	url = https://github.com/sheadan/DeepGreen.git
+[submodule "repo/AIGC/game changer/vid2avatar"]
+	path = repo/AIGC/game changer/vid2avatar
+	url = https://github.com/MoyGcc/vid2avatar.git

@@ -699,7 +699,7 @@
 	url = https://github.com/Arize-ai/phoenix.git
 [submodule "repo/LLMApp/AGiXT"]
 	path = repo/LLMApp/AGiXT
-	url = https://github.com/Josh-XT/AGiXT.git
+	url = https://github.com/yhyu13/AGiXT.git
 [submodule "repo/LLMApp/SuperAGI"]
 	path = repo/LLMApp/SuperAGI
 	url = https://github.com/TransformerOptimus/SuperAGI.git
@@ -755,3 +755,6 @@
 [submodule "repo/AIGC/game changer/vid2avatar"]
 	path = repo/AIGC/game changer/vid2avatar
 	url = https://github.com/MoyGcc/vid2avatar.git
+[submodule "repo/LLM/Other/LLM-Blender"]
+	path = repo/LLM/Other/LLM-Blender
+	url = https://github.com/yhyu13/LLM-Blender

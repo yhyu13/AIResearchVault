@@ -761,3 +761,9 @@
 [submodule "repo/Multi-Modal/FastSAM"]
 	path = repo/Multi-Modal/FastSAM
 	url = https://github.com/CASIA-IVA-Lab/FastSAM.git
+[submodule "repo/LLM-infrastructure/vllm"]
+	path = repo/LLM-infrastructure/vllm
+	url = https://github.com/vllm-project/vllm.git
+[submodule "repo/Awesome-repo/Awesome-Chinese-LLM"]
+	path = repo/Awesome-repo/Awesome-Chinese-LLM
+	url = https://github.com/HqWu-HITCS/Awesome-Chinese-LLM.git

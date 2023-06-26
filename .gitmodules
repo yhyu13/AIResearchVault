@@ -758,3 +758,6 @@
 [submodule "repo/LLM/Other/LLM-Blender"]
 	path = repo/LLM/Other/LLM-Blender
 	url = https://github.com/yhyu13/LLM-Blender
+[submodule "repo/Multi-Modal/FastSAM"]
+	path = repo/Multi-Modal/FastSAM
+	url = https://github.com/CASIA-IVA-Lab/FastSAM.git

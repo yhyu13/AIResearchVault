@@ -767,3 +767,6 @@
 [submodule "repo/Awesome-repo/Awesome-Chinese-LLM"]
 	path = repo/Awesome-repo/Awesome-Chinese-LLM
 	url = https://github.com/HqWu-HITCS/Awesome-Chinese-LLM.git
+[submodule "repo/LLMApp/Flowise"]
+	path = repo/LLMApp/Flowise
+	url = https://github.com/yhyu13/Flowise.git

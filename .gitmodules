@@ -770,3 +770,6 @@
 [submodule "repo/LLMApp/Flowise"]
 	path = repo/LLMApp/Flowise
 	url = https://github.com/yhyu13/Flowise.git
+[submodule "repo/LLMApp/MetaGPT"]
+	path = repo/LLMApp/MetaGPT
+	url = https://github.com/geekan/MetaGPT.git

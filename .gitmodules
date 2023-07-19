@@ -773,3 +773,6 @@
 [submodule "repo/LLMApp/MetaGPT"]
 	path = repo/LLMApp/MetaGPT
 	url = https://github.com/geekan/MetaGPT.git
+[submodule "repo/Architecture/transformer_in_transformer"]
+	path = repo/Architecture/transformer_in_transformer
+	url = https://github.com/abhishekpanigrahi1996/transformer_in_transformer.git

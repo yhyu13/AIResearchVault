@@ -776,3 +776,6 @@
 [submodule "repo/Architecture/transformer_in_transformer"]
 	path = repo/Architecture/transformer_in_transformer
 	url = https://github.com/abhishekpanigrahi1996/transformer_in_transformer.git
+[submodule "repo/LLM/Moss/MOSS-RLHF"]
+	path = repo/LLM/Moss/MOSS-RLHF
+	url = https://github.com/OpenLMLab/MOSS-RLHF.git

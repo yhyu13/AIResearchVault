@@ -782,3 +782,6 @@
 [submodule "repo/LLM/CoT/SwiftSage"]
 	path = repo/LLM/CoT/SwiftSage
 	url = https://github.com/yuchenlin/SwiftSage.git
+[submodule "repo/AIGC/text22D/Fooocus"]
+	path = repo/AIGC/text22D/Fooocus
+	url = https://github.com/lllyasviel/Fooocus.git

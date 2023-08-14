@@ -779,3 +779,6 @@
 [submodule "repo/LLM/Moss/MOSS-RLHF"]
 	path = repo/LLM/Moss/MOSS-RLHF
 	url = https://github.com/OpenLMLab/MOSS-RLHF.git
+[submodule "repo/LLM/CoT/SwiftSage"]
+	path = repo/LLM/CoT/SwiftSage
+	url = https://github.com/yuchenlin/SwiftSage.git

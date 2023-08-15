@@ -465,7 +465,7 @@
 [submodule "repo/AIOptimization/AutoGPTQ"]
 	path = repo/AIOptimization/AutoGPTQ
 	url = https://github.com/yhyu13/AutoGPTQ.git
-	branch = cuda_dev
+	branch = main
 [submodule "repo/Awesome-repo/awesome-neuro-ai-papers"]
 	path = repo/Awesome-repo/awesome-neuro-ai-papers
 	url = https://github.com/CYHSM/awesome-neuro-ai-papers.git
@@ -772,7 +772,8 @@
 	url = https://github.com/yhyu13/Flowise.git
 [submodule "repo/LLMApp/MetaGPT"]
 	path = repo/LLMApp/MetaGPT
-	url = https://github.com/geekan/MetaGPT.git
+	url = https://github.com/yhyu13/MetaGPT.git
+	branch = local_dev
 [submodule "repo/Architecture/transformer_in_transformer"]
 	path = repo/Architecture/transformer_in_transformer
 	url = https://github.com/abhishekpanigrahi1996/transformer_in_transformer.git

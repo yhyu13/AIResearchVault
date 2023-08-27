@@ -786,3 +786,6 @@
 [submodule "repo/AIGC/text22D/Fooocus"]
 	path = repo/AIGC/text22D/Fooocus
 	url = https://github.com/lllyasviel/Fooocus.git
+[submodule "repo/AIGC/game changer/neuralangelo"]
+	path = repo/AIGC/game changer/neuralangelo
+	url = https://github.com/NVlabs/neuralangelo.git

@@ -792,3 +792,9 @@
 [submodule "repo/AIGC/text22D/StableVideo"]
 	path = repo/AIGC/text22D/StableVideo
 	url = https://github.com/rese1f/StableVideo.git
+[submodule "repo/LLMApp/AgentSims"]
+	path = repo/LLMApp/AgentSims
+	url = https://github.com/yhyu13/AgentSims
+[submodule "repo/LLMApp/modelscope-agent"]
+	path = repo/LLMApp/modelscope-agent
+	url = https://github.com/yhyu13/modelscope-agent

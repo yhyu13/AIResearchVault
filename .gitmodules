@@ -798,3 +798,6 @@
 [submodule "repo/LLMApp/modelscope-agent"]
 	path = repo/LLMApp/modelscope-agent
 	url = https://github.com/yhyu13/modelscope-agent
+[submodule "repo/Awesome-repo/awesome-mixture-of-experts"]
+	path = repo/Awesome-repo/awesome-mixture-of-experts
+	url = https://github.com/XueFuzhao/awesome-mixture-of-experts.git

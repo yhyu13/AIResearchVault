@@ -801,3 +801,9 @@
 [submodule "repo/Awesome-repo/awesome-mixture-of-experts"]
 	path = repo/Awesome-repo/awesome-mixture-of-experts
 	url = https://github.com/XueFuzhao/awesome-mixture-of-experts.git
+[submodule "repo/LLMApp/AgentVerse"]
+	path = repo/LLMApp/AgentVerse
+	url = https://github.com/OpenBMB/AgentVerse.git
+[submodule "repo/LLMApp/ChatDev"]
+	path = repo/LLMApp/ChatDev
+	url = https://github.com/OpenBMB/ChatDev.git

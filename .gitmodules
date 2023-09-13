@@ -807,3 +807,9 @@
 [submodule "repo/LLMApp/ChatDev"]
 	path = repo/LLMApp/ChatDev
 	url = https://github.com/OpenBMB/ChatDev.git
+[submodule "repo/Awesome-repo/awesome-language-agents"]
+	path = repo/Awesome-repo/awesome-language-agents
+	url = https://github.com/ysymyth/awesome-language-agents.git
+[submodule "repo/AIOptimization/Medusa"]
+	path = repo/AIOptimization/Medusa
+	url = https://github.com/FasterDecoding/Medusa.git

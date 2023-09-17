@@ -813,3 +813,6 @@
 [submodule "repo/AIOptimization/Medusa"]
 	path = repo/AIOptimization/Medusa
 	url = https://github.com/FasterDecoding/Medusa.git
+[submodule "repo/Awesome-repo/awesome-ai-agents"]
+	path = repo/Awesome-repo/awesome-ai-agents
+	url = https://github.com/e2b-dev/awesome-ai-agents.git

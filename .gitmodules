@@ -819,3 +819,6 @@
 [submodule "repo/Awesome-repo/LLM-Agent-Paper-List"]
 	path = repo/Awesome-repo/LLM-Agent-Paper-List
 	url = https://github.com/WooooDyy/LLM-Agent-Paper-List.git
+[submodule "repo/LLMApp/agents"]
+	path = repo/LLMApp/agents
+	url = https://github.com/aiwaves-cn/agents.git

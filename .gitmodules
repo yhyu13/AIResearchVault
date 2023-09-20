@@ -822,3 +822,9 @@
 [submodule "repo/LLMApp/agents"]
 	path = repo/LLMApp/agents
 	url = https://github.com/aiwaves-cn/agents.git
+[submodule "repo/Multi-Modal/NExT-GPT"]
+	path = repo/Multi-Modal/NExT-GPT
+	url = https://github.com/NExT-GPT/NExT-GPT.git
+[submodule "repo/AIOptimization/OmniQuant"]
+	path = repo/AIOptimization/OmniQuant
+	url = https://github.com/OpenGVLab/OmniQuant.git

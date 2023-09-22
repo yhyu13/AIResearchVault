@@ -828,3 +828,6 @@
 [submodule "repo/AIOptimization/OmniQuant"]
 	path = repo/AIOptimization/OmniQuant
 	url = https://github.com/OpenGVLab/OmniQuant.git
+[submodule "repo/Awesome-repo/Awesome-Graph-LLM"]
+	path = repo/Awesome-repo/Awesome-Graph-LLM
+	url = https://github.com/XiaoxinHe/Awesome-Graph-LLM

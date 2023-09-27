@@ -834,3 +834,6 @@
 [submodule "repo/LLMApp/one-api"]
 	path = repo/LLMApp/one-api
 	url = https://github.com/songquanpeng/one-api.git
+[submodule "repo/Multi-Modal/AudioLDM"]
+	path = repo/Multi-Modal/AudioLDM
+	url = https://github.com/haoheliu/AudioLDM.git

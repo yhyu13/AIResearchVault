@@ -837,3 +837,9 @@
 [submodule "repo/Multi-Modal/AudioLDM"]
 	path = repo/Multi-Modal/AudioLDM
 	url = https://github.com/haoheliu/AudioLDM.git
+[submodule "repo/Awesome-repo/ArXivQA"]
+	path = repo/Awesome-repo/ArXivQA
+	url = https://github.com/taesiri/ArXivQA.git
+[submodule "repo/LLMApp/autogen"]
+	path = repo/LLMApp/autogen
+	url = https://github.com/microsoft/autogen.git

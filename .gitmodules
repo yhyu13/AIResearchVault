@@ -400,7 +400,7 @@
 	url = https://github.com/yhyu13/ultralytics.git
 [submodule "repo/LLMApp/FastGPT"]
 	path = repo/LLMApp/FastGPT
-	url = https://github.com/c121914yu/FastGPT.git
+	url = https://github.com/labring/FastGPT
 [submodule "repo/Awesome-repo/TSFpaper"]
 	path = repo/Awesome-repo/TSFpaper
 	url = https://github.com/ddz16/TSFpaper.git

@@ -843,3 +843,9 @@
 [submodule "repo/LLMApp/autogen"]
 	path = repo/LLMApp/autogen
 	url = https://github.com/microsoft/autogen.git
+[submodule "repo/LLM/Qwen/Qwen-Agent"]
+	path = repo/LLM/Qwen/Qwen-Agent
+	url = https://github.com/QwenLM/Qwen-Agent.git
+[submodule "repo/LLM/Qwen/Qwen"]
+	path = repo/LLM/Qwen/Qwen
+	url = https://github.com/QwenLM/Qwen.git

@@ -849,3 +849,6 @@
 [submodule "repo/LLM/Qwen/Qwen"]
 	path = repo/LLM/Qwen/Qwen
 	url = https://github.com/QwenLM/Qwen.git
+[submodule "repo/LLMApp/DocsGPT"]
+	path = repo/LLMApp/DocsGPT
+	url = https://github.com/arc53/DocsGPT.git

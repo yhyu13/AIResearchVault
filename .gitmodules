@@ -852,3 +852,6 @@
 [submodule "repo/LLMApp/DocsGPT"]
 	path = repo/LLMApp/DocsGPT
 	url = https://github.com/arc53/DocsGPT.git
+[submodule "repo/AIGC/text22D/AnimateDiff"]
+	path = repo/AIGC/text22D/AnimateDiff
+	url = https://github.com/guoyww/AnimateDiff.git

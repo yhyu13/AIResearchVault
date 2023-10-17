@@ -855,3 +855,6 @@
 [submodule "repo/AIGC/text22D/AnimateDiff"]
 	path = repo/AIGC/text22D/AnimateDiff
 	url = https://github.com/guoyww/AnimateDiff.git
+[submodule "repo/AIGC/text2speech/ttskit"]
+	path = repo/AIGC/text2speech/ttskit
+	url = https://github.com/kuangdd/ttskit.git

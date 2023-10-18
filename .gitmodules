@@ -870,3 +870,6 @@
 [submodule "repo/LLMApp/XAgent"]
 	path = repo/LLMApp/XAgent
 	url = https://github.com/OpenBMB/XAgent.git
+[submodule "repo/LLMApp/MemGPT"]
+	path = repo/LLMApp/MemGPT
+	url = https://github.com/cpacker/MemGPT.git

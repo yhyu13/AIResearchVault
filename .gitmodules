@@ -867,3 +867,6 @@
 [submodule "repo/Career/system-design-101"]
 	path = repo/Career/system-design-101
 	url = https://github.com/ByteByteGoHq/system-design-101.git
+[submodule "repo/LLMApp/XAgent"]
+	path = repo/LLMApp/XAgent
+	url = https://github.com/OpenBMB/XAgent.git

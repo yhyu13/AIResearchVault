@@ -873,3 +873,6 @@
 [submodule "repo/LLMApp/MemGPT"]
 	path = repo/LLMApp/MemGPT
 	url = https://github.com/cpacker/MemGPT.git
+[submodule "repo/Robotics/simulation_unitree"]
+	path = repo/Robotics/simulation_unitree
+	url = https://gitee.com/rugels/simulation_unitree.git

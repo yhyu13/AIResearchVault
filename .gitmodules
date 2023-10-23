@@ -876,3 +876,6 @@
 [submodule "repo/Robotics/simulation_unitree"]
 	path = repo/Robotics/simulation_unitree
 	url = https://gitee.com/rugels/simulation_unitree.git
+[submodule "repo/RL/Eureka"]
+	path = repo/RL/Eureka
+	url = https://github.com/eureka-research/Eureka.git

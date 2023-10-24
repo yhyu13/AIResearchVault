@@ -879,3 +879,6 @@
 [submodule "repo/RL/Eureka"]
 	path = repo/RL/Eureka
 	url = https://github.com/eureka-research/Eureka.git
+[submodule "repo/Awesome-repo/awesome-llm-powered-agent"]
+	path = repo/Awesome-repo/awesome-llm-powered-agent
+	url = https://github.com/hyp1231/awesome-llm-powered-agent.git

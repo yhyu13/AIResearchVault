@@ -882,3 +882,6 @@
 [submodule "repo/Awesome-repo/awesome-llm-powered-agent"]
 	path = repo/Awesome-repo/awesome-llm-powered-agent
 	url = https://github.com/hyp1231/awesome-llm-powered-agent.git
+[submodule "repo/Career/Startup-CTO-Handbook"]
+	path = repo/Career/Startup-CTO-Handbook
+	url = https://github.com/ZachGoldberg/Startup-CTO-Handbook.git

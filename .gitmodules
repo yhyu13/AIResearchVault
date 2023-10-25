@@ -885,3 +885,6 @@
 [submodule "repo/Career/Startup-CTO-Handbook"]
 	path = repo/Career/Startup-CTO-Handbook
 	url = https://github.com/ZachGoldberg/Startup-CTO-Handbook.git
+[submodule "repo/Career/DeepLearning"]
+	path = repo/Career/DeepLearning
+	url = https://github.com/MingchaoZhu/DeepLearning.git

@@ -888,3 +888,6 @@
 [submodule "repo/Career/DeepLearning"]
 	path = repo/Career/DeepLearning
 	url = https://github.com/MingchaoZhu/DeepLearning.git
+[submodule "repo/LLMApp/OpenAgents"]
+	path = repo/LLMApp/OpenAgents
+	url = https://github.com/xlang-ai/OpenAgents.git

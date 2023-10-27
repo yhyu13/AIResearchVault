@@ -903,3 +903,9 @@
 [submodule "repo/Awesome-repo/awesome-transformers"]
 	path = repo/Awesome-repo/awesome-transformers
 	url = https://github.com/abacaj/awesome-transformers.git
+[submodule "repo/Robotics/turtlebot_rl_gazebo"]
+	path = repo/Robotics/turtlebot_rl_gazebo
+	url = https://github.com/gargivaidya/turtlebot_rl_gazebo.git
+[submodule "repo/RL/IsaacGymEnvs"]
+	path = repo/RL/IsaacGymEnvs
+	url = https://github.com/NVIDIA-Omniverse/IsaacGymEnvs.git

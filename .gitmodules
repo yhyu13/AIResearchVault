@@ -897,3 +897,9 @@
 [submodule "repo/AIGC/IDE/nerfstudio"]
 	path = repo/AIGC/IDE/nerfstudio
 	url = https://github.com/nerfstudio-project/nerfstudio.git
+[submodule "repo/Awesome-repo/Awesome-Transformer-Attention"]
+	path = repo/Awesome-repo/Awesome-Transformer-Attention
+	url = https://github.com/cmhungsteve/Awesome-Transformer-Attention.git
+[submodule "repo/Awesome-repo/awesome-transformers"]
+	path = repo/Awesome-repo/awesome-transformers
+	url = https://github.com/abacaj/awesome-transformers.git

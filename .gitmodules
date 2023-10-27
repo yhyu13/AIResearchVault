@@ -891,3 +891,9 @@
 [submodule "repo/LLMApp/OpenAgents"]
 	path = repo/LLMApp/OpenAgents
 	url = https://github.com/xlang-ai/OpenAgents.git
+[submodule "repo/AIGC/IDE/threestudio"]
+	path = repo/AIGC/IDE/threestudio
+	url = https://github.com/threestudio-project/threestudio.git
+[submodule "repo/AIGC/IDE/nerfstudio"]
+	path = repo/AIGC/IDE/nerfstudio
+	url = https://github.com/nerfstudio-project/nerfstudio.git

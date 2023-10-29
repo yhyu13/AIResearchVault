@@ -909,3 +909,6 @@
 [submodule "repo/RL/IsaacGymEnvs"]
 	path = repo/RL/IsaacGymEnvs
 	url = https://github.com/NVIDIA-Omniverse/IsaacGymEnvs.git
+[submodule "repo/Robotics/d2l-ros2"]
+	path = repo/Robotics/d2l-ros2
+	url = https://github.com/fishros/d2l-ros2.git

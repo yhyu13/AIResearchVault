@@ -912,3 +912,6 @@
 [submodule "repo/Robotics/d2l-ros2"]
 	path = repo/Robotics/d2l-ros2
 	url = https://github.com/fishros/d2l-ros2.git
+[submodule "repo/Career/app_deep_learning"]
+	path = repo/Career/app_deep_learning
+	url = https://github.com/jeffheaton/app_deep_learning.git

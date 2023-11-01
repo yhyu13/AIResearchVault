@@ -915,3 +915,6 @@
 [submodule "repo/Career/app_deep_learning"]
 	path = repo/Career/app_deep_learning
 	url = https://github.com/jeffheaton/app_deep_learning.git
+[submodule "repo/Career/ai-notes"]
+	path = repo/Career/ai-notes
+	url = https://github.com/swyxio/ai-notes.git

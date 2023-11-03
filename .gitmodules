@@ -918,3 +918,9 @@
 [submodule "repo/Career/ai-notes"]
 	path = repo/Career/ai-notes
 	url = https://github.com/swyxio/ai-notes.git
+[submodule "repo/OpenAI/consistency_models"]
+	path = repo/OpenAI/consistency_models
+	url = https://github.com/openai/consistency_models.git
+[submodule "repo/LLM/RLEF/Octopus"]
+	path = repo/LLM/RLEF/Octopus
+	url = https://github.com/dongyh20/Octopus.git

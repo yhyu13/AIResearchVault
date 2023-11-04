@@ -133,7 +133,7 @@
 [submodule "repo/ChatGPT/ChatPaper"]
 	path = repo/LLMApp/ChatPaper
 	url = https://github.com/yhyu13/ChatPaper.git
-	branch = gui
+	branch = local_dev
 [submodule "repo/LLaMA/Alpaca-CoT"]
 	path = repo/LLM/LLaMA/Alpaca-CoT
 	url = https://github.com/PhoebusSi/Alpaca-CoT.git

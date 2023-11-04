@@ -924,3 +924,6 @@
 [submodule "repo/LLM/RLEF/Octopus"]
 	path = repo/LLM/RLEF/Octopus
 	url = https://github.com/dongyh20/Octopus.git
+[submodule "repo/LLMApp/langfuse"]
+	path = repo/LLMApp/langfuse
+	url = https://github.com/langfuse/langfuse.git

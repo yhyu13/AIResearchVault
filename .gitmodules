@@ -927,3 +927,9 @@
 [submodule "repo/LLMApp/langfuse"]
 	path = repo/LLMApp/langfuse
 	url = https://github.com/langfuse/langfuse.git
+[submodule "repo/AI-Math/llmstep"]
+	path = repo/AI-Math/llmstep
+	url = https://github.com/wellecks/llmstep.git
+[submodule "repo/AI-Math/LeanDojo"]
+	path = repo/AI-Math/LeanDojo
+	url = https://github.com/lean-dojo/LeanDojo.git

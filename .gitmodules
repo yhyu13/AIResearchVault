@@ -933,3 +933,6 @@
 [submodule "repo/AI-Math/LeanDojo"]
 	path = repo/AI-Math/LeanDojo
 	url = https://github.com/lean-dojo/LeanDojo.git
+[submodule "repo/Awesome-repo/Awesome-LLM-Safety"]
+	path = repo/Awesome-repo/Awesome-LLM-Safety
+	url = https://github.com/ydyjya/Awesome-LLM-Safety.git

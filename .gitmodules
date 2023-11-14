@@ -936,3 +936,6 @@
 [submodule "repo/Awesome-repo/Awesome-LLM-Safety"]
 	path = repo/Awesome-repo/Awesome-LLM-Safety
 	url = https://github.com/ydyjya/Awesome-LLM-Safety.git
+[submodule "repo/LLMApp/ProAgent"]
+	path = repo/LLMApp/ProAgent
+	url = https://github.com/OpenBMB/ProAgent.git

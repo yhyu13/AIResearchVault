@@ -939,3 +939,6 @@
 [submodule "repo/LLMApp/ProAgent"]
 	path = repo/LLMApp/ProAgent
 	url = https://github.com/OpenBMB/ProAgent.git
+[submodule "repo/AIGC/text2audio/audiocraft"]
+	path = repo/AIGC/text2audio/audiocraft
+	url = https://github.com/facebookresearch/audiocraft.git

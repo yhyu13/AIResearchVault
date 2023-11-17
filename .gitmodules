@@ -945,3 +945,18 @@
 [submodule "repo/AIGC/game changer/latent-consistency-model"]
 	path = repo/AIGC/game changer/latent-consistency-model
 	url = https://github.com/luosiallen/latent-consistency-model.git
+[submodule "repo/Awesome-repo/Awesome-LLM-Survey"]
+	path = repo/Awesome-repo/Awesome-LLM-Survey
+	url = https://github.com/HqWu-HITCS/Awesome-LLM-Survey.git
+[submodule "repo/Awesome-repo/Awesome-AI-KnowWhys"]
+	path = repo/Awesome-repo/Awesome-AI-KnowWhys
+	url = https://github.com/yhyu13/Awesome-AI-KnowWhys.git
+[submodule "repo/Awesome-repo/Awesome-LLM"]
+	path = repo/Awesome-repo/Awesome-LLM
+	url = https://github.com/Hannibal046/Awesome-LLM.git
+[submodule "repo/LLM-infrastructure/llm_training_handbook"]
+	path = repo/LLM-infrastructure/llm_training_handbook
+	url = https://github.com/huggingface/llm_training_handbook.git
+[submodule "repo/Architecture/yet-another-retnet"]
+	path = repo/Architecture/yet-another-retnet
+	url = https://github.com/fkodom/yet-another-retnet.git

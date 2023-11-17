@@ -959,4 +959,4 @@
 	url = https://github.com/huggingface/llm_training_handbook.git
 [submodule "repo/Architecture/yet-another-retnet"]
 	path = repo/Architecture/yet-another-retnet
-	url = https://github.com/fkodom/yet-another-retnet.git
+	url = https://github.com/yhyu13/yet-another-retnet.git

@@ -960,3 +960,6 @@
 [submodule "repo/Architecture/yet-another-retnet"]
 	path = repo/Architecture/yet-another-retnet
 	url = https://github.com/yhyu13/yet-another-retnet.git
+[submodule "repo/Awesome-repo/Awesome-Efficient-LLM"]
+	path = repo/Awesome-repo/Awesome-Efficient-LLM
+	url = https://github.com/horseee/Awesome-Efficient-LLM.git

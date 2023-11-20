@@ -963,3 +963,6 @@
 [submodule "repo/Awesome-repo/Awesome-Efficient-LLM"]
 	path = repo/Awesome-repo/Awesome-Efficient-LLM
 	url = https://github.com/horseee/Awesome-Efficient-LLM.git
+[submodule "repo/LLMApp/gpt-crawler"]
+	path = repo/LLMApp/gpt-crawler
+	url = https://github.com/BuilderIO/gpt-crawler.git

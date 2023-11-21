@@ -966,3 +966,6 @@
 [submodule "repo/LLMApp/gpt-crawler"]
 	path = repo/LLMApp/gpt-crawler
 	url = https://github.com/BuilderIO/gpt-crawler.git
+[submodule "repo/LLMApp/draw-a-ui"]
+	path = repo/LLMApp/draw-a-ui
+	url = https://github.com/yhyu13/draw-a-ui.git

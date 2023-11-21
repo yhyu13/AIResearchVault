@@ -969,3 +969,6 @@
 [submodule "repo/LLMApp/draw-a-ui"]
 	path = repo/LLMApp/draw-a-ui
 	url = https://github.com/yhyu13/draw-a-ui.git
+[submodule "repo/LLM/Tools/ToolBench"]
+	path = repo/LLM/Tools/ToolBench
+	url = https://github.com/OpenBMB/ToolBench.git

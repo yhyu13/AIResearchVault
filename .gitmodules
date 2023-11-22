@@ -972,3 +972,6 @@
 [submodule "repo/LLM/Tools/ToolBench"]
 	path = repo/LLM/Tools/ToolBench
 	url = https://github.com/OpenBMB/ToolBench.git
+[submodule "repo/AIGC/Text2Motion/generative-models"]
+	path = repo/AIGC/Text2Motion/generative-models
+	url = https://github.com/Stability-AI/generative-models.git

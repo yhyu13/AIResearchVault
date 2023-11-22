@@ -975,3 +975,6 @@
 [submodule "repo/AIGC/Text2Motion/generative-models"]
 	path = repo/AIGC/Text2Motion/generative-models
 	url = https://github.com/Stability-AI/generative-models.git
+[submodule "repo/AI-Infrastructure/NeMo"]
+	path = repo/AI-Infrastructure/NeMo
+	url = https://github.com/NVIDIA/NeMo.git

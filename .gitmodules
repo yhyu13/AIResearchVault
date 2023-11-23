@@ -978,3 +978,6 @@
 [submodule "repo/AI-Infrastructure/NeMo"]
 	path = repo/AI-Infrastructure/NeMo
 	url = https://github.com/NVIDIA/NeMo.git
+[submodule "repo/Awesome-repo/awesome-diffusion-model-in-rl"]
+	path = repo/Awesome-repo/awesome-diffusion-model-in-rl
+	url = https://github.com/opendilab/awesome-diffusion-model-in-rl.git

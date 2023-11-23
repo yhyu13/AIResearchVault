@@ -983,4 +983,4 @@
 	url = https://github.com/opendilab/awesome-diffusion-model-in-rl.git
 [submodule "repo/AIGC/text2audio/TTS"]
 	path = repo/AIGC/text2audio/TTS
-	url = https://github.com/coqui-ai/TTS.git
+	url = https://github.com/yhyu13/TTS.git

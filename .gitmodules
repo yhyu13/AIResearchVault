@@ -973,7 +973,7 @@
 	path = repo/LLM/Tools/ToolBench
 	url = https://github.com/OpenBMB/ToolBench.git
 [submodule "repo/AIGC/Text2Motion/generative-models"]
-	path = repo/AIGC/Text2Motion/generative-models
+	path = repo/AIGC/game changer/generative-models
 	url = https://github.com/Stability-AI/generative-models.git
 [submodule "repo/AI-Infrastructure/NeMo"]
 	path = repo/AI-Infrastructure/NeMo
@@ -984,3 +984,6 @@
 [submodule "repo/AIGC/text2audio/TTS"]
 	path = repo/AIGC/text2audio/TTS
 	url = https://github.com/yhyu13/TTS.git
+[submodule "repo/AIGC/text2video/StableVideoP13"]
+	path = repo/AIGC/text2video/StableVideoP13
+	url = https://github.com/Jordain/StableVideoP13.git

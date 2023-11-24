@@ -19,8 +19,8 @@ def run_cmd(cmd):
         print(stderr)
 
 def move_repo(sender, data):
-    repo_path = dpg.get_value("repo_path_input")
-    destination = dpg.get_value("destination_input")
+    repo_path = os.path.normpath(dpg.get_value("repo_path_input"))
+    destination = os.path.normpath(dpg.get_value("destination_input"))
     move_submodules = dpg.get_value("move_submodules_checkbox")
 
     if not os.path.exists(destination):
@@ -29,10 +29,10 @@ def move_repo(sender, data):
     if move_submodules:
         for submodule in os.listdir(repo_path):
             if os.path.isdir(os.path.join(repo_path, submodule)):
-                cmd = f"git mv {os.path.join(repo_path, submodule)} {destination}"
+                cmd = f"git mv \"{os.path.join(repo_path, submodule)}\" \"{destination}\""
                 run_cmd(cmd)
     else:
-        cmd = f"git mv {repo_path} {destination}"
+        cmd = f"git mv \"{repo_path}\" \"{destination}\""
         run_cmd(cmd)
 
 def write_to_textbox(textbox_id):

@@ -999,3 +999,6 @@
 [submodule "repo/LLM-infrastructure/LLaMA-Factory"]
 	path = repo/LLM-infrastructure/LLaMA-Factory
 	url = https://github.com/yhyu13/LLaMA-Factory
+[submodule "repo/LLM-infrastructure/exllamav2"]
+	path = repo/LLM-infrastructure/exllamav2
+	url = https://github.com/yhyu13/exllamav2.git

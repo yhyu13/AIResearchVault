@@ -996,3 +996,6 @@
 [submodule "repo/LLM-infrastructure/axolotl"]
 	path = repo/LLM-infrastructure/axolotl
 	url = https://github.com/OpenAccess-AI-Collective/axolotl.git
+[submodule "repo/LLM-infrastructure/LLaMA-Factory"]
+	path = repo/LLM-infrastructure/LLaMA-Factory
+	url = https://github.com/yhyu13/LLaMA-Factory

@@ -990,3 +990,6 @@
 [submodule "repo/Awesome-repo/OpenEDA-ChipGPT-Hub"]
 	path = repo/Awesome-repo/OpenEDA-ChipGPT-Hub
 	url = https://github.com/chenweiphd/OpenEDA-ChipGPT-Hub.git
+[submodule "repo/LLM-infrastructure/instructor"]
+	path = repo/LLM-infrastructure/instructor
+	url = https://github.com/jxnl/instructor.git

@@ -1002,3 +1002,9 @@
 [submodule "repo/LLM-infrastructure/exllamav2"]
 	path = repo/LLM-infrastructure/exllamav2
 	url = https://github.com/yhyu13/exllamav2.git
+[submodule "repo/OpenAI/prm800k"]
+	path = repo/OpenAI/prm800k
+	url = https://github.com/openai/prm800k.git
+[submodule "repo/OpenAI/grade-school-math"]
+	path = repo/OpenAI/grade-school-math
+	url = https://github.com/openai/grade-school-math.git

@@ -1008,3 +1008,6 @@
 [submodule "repo/OpenAI/grade-school-math"]
 	path = repo/OpenAI/grade-school-math
 	url = https://github.com/openai/grade-school-math.git
+[submodule "repo/OpenAI/CLIP"]
+	path = repo/OpenAI/CLIP
+	url = https://github.com/openai/CLIP.git

@@ -1011,3 +1011,6 @@
 [submodule "repo/OpenAI/CLIP"]
 	path = repo/OpenAI/CLIP
 	url = https://github.com/openai/CLIP.git
+[submodule "repo/AIOptimization/exllamav2"]
+	path = repo/AIOptimization/exllamav2
+	url = https://github.com/yhyu13/exllamav2.git

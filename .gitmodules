@@ -1014,3 +1014,15 @@
 [submodule "repo/AIOptimization/exllamav2"]
 	path = repo/AIOptimization/exllamav2
 	url = https://github.com/yhyu13/exllamav2.git
+[submodule "repo/LLM-infrastructure/lmdeploy"]
+	path = repo/LLM-infrastructure/lmdeploy
+	url = https://github.com/yhyu13/lmdeploy.git
+[submodule "repo/AI-Infrastructure/DeepSpeed"]
+	path = repo/AI-Infrastructure/DeepSpeed
+	url = https://github.com/yhyu13/DeepSpeed.git
+[submodule "repo/LLM-infrastructure/ColossalAI"]
+	path = repo/LLM-infrastructure/ColossalAI
+	url = https://github.com/yhyu13/ColossalAI.git
+[submodule "repo/AI-Infrastructure/keras"]
+	path = repo/AI-Infrastructure/keras
+	url = https://github.com/yhyu13/keras.git

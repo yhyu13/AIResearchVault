@@ -1026,3 +1026,9 @@
 [submodule "repo/AI-Infrastructure/keras"]
 	path = repo/AI-Infrastructure/keras
 	url = https://github.com/yhyu13/keras.git
+[submodule "repo/AIGC/text2video/MotionDirector"]
+	path = repo/AIGC/text2video/MotionDirector
+	url = https://github.com/showlab/MotionDirector.git
+[submodule "repo/AIOptimization/gpt-fast"]
+	path = repo/AIOptimization/gpt-fast
+	url = https://github.com/yhyu13/gpt-fast.git

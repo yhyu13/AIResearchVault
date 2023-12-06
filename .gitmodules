@@ -1032,3 +1032,6 @@
 [submodule "repo/AIOptimization/gpt-fast"]
 	path = repo/AIOptimization/gpt-fast
 	url = https://github.com/yhyu13/gpt-fast.git
+[submodule "repo/Architecture/mamba"]
+	path = repo/Architecture/mamba
+	url = https://github.com/yhyu13/mamba.git

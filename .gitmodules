@@ -1035,3 +1035,6 @@
 [submodule "repo/Architecture/mamba"]
 	path = repo/Architecture/mamba
 	url = https://github.com/yhyu13/mamba.git
+[submodule "repo/AIGC/game changer/magic-animate"]
+	path = repo/AIGC/game changer/magic-animate
+	url = https://github.com/magic-research/magic-animate.git

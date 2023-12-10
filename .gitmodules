@@ -1038,3 +1038,6 @@
 [submodule "repo/AIGC/game changer/magic-animate"]
 	path = repo/AIGC/game changer/magic-animate
 	url = https://github.com/magic-research/magic-animate.git
+[submodule "repo/AIGC/text2speech/EmotiVoice"]
+	path = repo/AIGC/text2speech/EmotiVoice
+	url = https://github.com/netease-youdao/EmotiVoice.git

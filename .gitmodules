@@ -1041,3 +1041,6 @@
 [submodule "repo/AIGC/text2speech/EmotiVoice"]
 	path = repo/AIGC/text2speech/EmotiVoice
 	url = https://github.com/netease-youdao/EmotiVoice.git
+[submodule "repo/LLM-infrastructure/captum"]
+	path = repo/LLM-infrastructure/captum
+	url = https://github.com/pytorch/captum.git

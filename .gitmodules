@@ -1044,3 +1044,6 @@
 [submodule "repo/LLM-infrastructure/captum"]
 	path = repo/LLM-infrastructure/captum
 	url = https://github.com/pytorch/captum.git
+[submodule "repo/Multi-Modal/NExT-Chat"]
+	path = repo/Multi-Modal/NExT-Chat
+	url = https://github.com/NExT-ChatV/NExT-Chat.git

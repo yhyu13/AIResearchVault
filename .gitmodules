@@ -1047,3 +1047,6 @@
 [submodule "repo/Multi-Modal/NExT-Chat"]
 	path = repo/Multi-Modal/NExT-Chat
 	url = https://github.com/NExT-ChatV/NExT-Chat.git
+[submodule "repo/OpenAI/weak-to-strong"]
+	path = repo/OpenAI/weak-to-strong
+	url = https://github.com/openai/weak-to-strong.git

@@ -1050,3 +1050,6 @@
 [submodule "repo/OpenAI/weak-to-strong"]
 	path = repo/OpenAI/weak-to-strong
 	url = https://github.com/openai/weak-to-strong.git
+[submodule "repo/Awesome-repo/awesome-oss-llm-ift-rlhf"]
+	path = repo/Awesome-repo/awesome-oss-llm-ift-rlhf
+	url = https://github.com/arjunbansal/awesome-oss-llm-ift-rlhf.git

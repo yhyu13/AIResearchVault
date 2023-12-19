@@ -985,7 +985,7 @@
 	path = repo/AIGC/text2audio/TTS
 	url = https://github.com/yhyu13/TTS.git
 [submodule "repo/AIGC/text2video/StableVideoP13"]
-	path = repo/AIGC/text2video/StableVideoP13
+	path = repo/AIGC/img2video/StableVideoP13
 	url = https://github.com/Jordain/StableVideoP13.git
 [submodule "repo/Awesome-repo/OpenEDA-ChipGPT-Hub"]
 	path = repo/Awesome-repo/OpenEDA-ChipGPT-Hub
@@ -1027,7 +1027,7 @@
 	path = repo/AI-Infrastructure/keras
 	url = https://github.com/yhyu13/keras.git
 [submodule "repo/AIGC/text2video/MotionDirector"]
-	path = repo/AIGC/text2video/MotionDirector
+	path = repo/AIGC/img2video/MotionDirector
 	url = https://github.com/showlab/MotionDirector.git
 [submodule "repo/AIOptimization/gpt-fast"]
 	path = repo/AIOptimization/gpt-fast
@@ -1054,7 +1054,7 @@
 	path = repo/Awesome-repo/awesome-oss-llm-ift-rlhf
 	url = https://github.com/arjunbansal/awesome-oss-llm-ift-rlhf.git
 [submodule "repo/AIGC/text2video/i2vgen-xl"]
-	path = repo/AIGC/text2video/i2vgen-xl
+	path = repo/AIGC/img2video/i2vgen-xl
 	url = https://github.com/damo-vilab/i2vgen-xl.git
 [submodule "repo/LLM-infrastructure/LLMCompiler"]
 	path = repo/LLM-infrastructure/LLMCompiler
@@ -1068,3 +1068,15 @@
 [submodule "repo/LLM/ChatGLM/ChatGLM3"]
 	path = repo/LLM/ChatGLM/ChatGLM3
 	url = https://github.com/yhyu13/ChatGLM3.git
+[submodule "repo/AIGC/img2video/Thin-Plate-Spline-Motion-Model"]
+	path = repo/AIGC/img2video/Thin-Plate-Spline-Motion-Model
+	url = https://github.com/yoyo-nb/Thin-Plate-Spline-Motion-Model.git
+[submodule "repo/AIGC/img2video/VOODOO3D-official"]
+	path = repo/AIGC/img2video/VOODOO3D-official
+	url = https://github.com/MBZUAI-Metaverse/VOODOO3D-official.git
+[submodule "repo/Awesome-repo/Awesome-Video-Diffusion-Models"]
+	path = repo/Awesome-repo/Awesome-Video-Diffusion-Models
+	url = https://github.com/ChenHsing/Awesome-Video-Diffusion-Models.git
+[submodule "repo/AIGC/video2video/Tune-A-Video"]
+	path = repo/AIGC/video2video/Tune-A-Video
+	url = https://github.com/showlab/Tune-A-Video.git

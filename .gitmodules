@@ -1065,3 +1065,6 @@
 [submodule "repo/LLM-infrastructure/detect-pretrain-code"]
 	path = repo/LLM-infrastructure/detect-pretrain-code
 	url = https://github.com/swj0419/detect-pretrain-code.git
+[submodule "repo/LLM/ChatGLM/ChatGLM3"]
+	path = repo/LLM/ChatGLM/ChatGLM3
+	url = https://github.com/yhyu13/ChatGLM3.git

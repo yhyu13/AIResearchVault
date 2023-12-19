@@ -1056,3 +1056,9 @@
 [submodule "repo/AIGC/text2video/i2vgen-xl"]
 	path = repo/AIGC/text2video/i2vgen-xl
 	url = https://github.com/damo-vilab/i2vgen-xl.git
+[submodule "repo/LLM-infrastructure/LLMCompiler"]
+	path = repo/LLM-infrastructure/LLMCompiler
+	url = https://github.com/SqueezeAILab/LLMCompiler.git
+[submodule "repo/LLM-infrastructure/FlagEmbedding"]
+	path = repo/LLM-infrastructure/FlagEmbedding
+	url = https://github.com/FlagOpen/FlagEmbedding.git

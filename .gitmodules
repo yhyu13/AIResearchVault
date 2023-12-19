@@ -1062,3 +1062,6 @@
 [submodule "repo/LLM-infrastructure/FlagEmbedding"]
 	path = repo/LLM-infrastructure/FlagEmbedding
 	url = https://github.com/FlagOpen/FlagEmbedding.git
+[submodule "repo/LLM-infrastructure/detect-pretrain-code"]
+	path = repo/LLM-infrastructure/detect-pretrain-code
+	url = https://github.com/swj0419/detect-pretrain-code.git

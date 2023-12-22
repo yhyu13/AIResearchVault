@@ -1089,3 +1089,6 @@
 [submodule "repo/AIOptimization/hqq"]
 	path = repo/AIOptimization/hqq
 	url = https://github.com/yhyu13/hqq.git
+[submodule "repo/AIOptimization/PowerInfer"]
+	path = repo/AIOptimization/PowerInfer
+	url = https://github.com/yhyu13/PowerInfer

@@ -1086,3 +1086,6 @@
 [submodule "repo/AIGC/game changer/StreamDiffusion"]
 	path = repo/AIGC/game changer/StreamDiffusion
 	url = https://github.com/cumulo-autumn/StreamDiffusion.git
+[submodule "repo/AIOptimization/hqq"]
+	path = repo/AIOptimization/hqq
+	url = https://github.com/yhyu13/hqq.git

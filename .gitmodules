@@ -1080,3 +1080,9 @@
 [submodule "repo/AIGC/video2video/Tune-A-Video"]
 	path = repo/AIGC/video2video/Tune-A-Video
 	url = https://github.com/showlab/Tune-A-Video.git
+[submodule "repo/LLM-infrastructure/alpaca_eval"]
+	path = repo/LLM-infrastructure/alpaca_eval
+	url = https://github.com/yhyu13/alpaca_eval.git
+[submodule "repo/AIGC/game changer/StreamDiffusion"]
+	path = repo/AIGC/game changer/StreamDiffusion
+	url = https://github.com/cumulo-autumn/StreamDiffusion.git

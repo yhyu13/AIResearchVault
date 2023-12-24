@@ -1092,3 +1092,6 @@
 [submodule "repo/AIOptimization/PowerInfer"]
 	path = repo/AIOptimization/PowerInfer
 	url = https://github.com/yhyu13/PowerInfer
+[submodule "repo/Awesome-repo/awesome-RLHF"]
+	path = repo/Awesome-repo/awesome-RLHF
+	url = https://github.com/opendilab/awesome-RLHF.git

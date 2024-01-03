@@ -1095,3 +1095,6 @@
 [submodule "repo/Awesome-repo/awesome-RLHF"]
 	path = repo/Awesome-repo/awesome-RLHF
 	url = https://github.com/opendilab/awesome-RLHF.git
+[submodule "repo/AIGC/game changer/AnyText"]
+	path = repo/AIGC/game changer/AnyText
+	url = https://github.com/tyxsspa/AnyText.git

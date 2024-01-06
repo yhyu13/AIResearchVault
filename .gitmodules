@@ -1098,3 +1098,6 @@
 [submodule "repo/AIGC/game changer/AnyText"]
 	path = repo/AIGC/game changer/AnyText
 	url = https://github.com/tyxsspa/AnyText.git
+[submodule "repo/Awesome-repo/Awesome-Embeded-AI"]
+	path = repo/Awesome-repo/Awesome-Embeded-AI
+	url = https://github.com/Staok/Awesome-Embeded-AI.git

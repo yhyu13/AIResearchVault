@@ -1101,3 +1101,6 @@
 [submodule "repo/Awesome-repo/Awesome-Embeded-AI"]
 	path = repo/Awesome-repo/Awesome-Embeded-AI
 	url = https://github.com/Staok/Awesome-Embeded-AI.git
+[submodule "repo/AIGC/img2video/VideoCrafter"]
+	path = repo/AIGC/img2video/VideoCrafter
+	url = https://github.com/AILab-CVC/VideoCrafter.git

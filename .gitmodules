@@ -1104,3 +1104,9 @@
 [submodule "repo/AIGC/img2video/VideoCrafter"]
 	path = repo/AIGC/img2video/VideoCrafter
 	url = https://github.com/AILab-CVC/VideoCrafter.git
+[submodule "repo/LLMApp/WhisperFusion"]
+	path = repo/LLMApp/WhisperFusion
+	url = https://github.com/collabora/WhisperFusion.git
+[submodule "repo/LLMApp/PolyMind"]
+	path = repo/LLMApp/PolyMind
+	url = https://github.com/itsme2417/PolyMind.git

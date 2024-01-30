@@ -617,7 +617,7 @@
 	path = repo/AIOptimization/peft
 	url = https://github.com/huggingface/peft.git
 [submodule "repo/AIGC/game changer/DragGAN"]
-	path = repo/AIGC/game changer/DragGAN
+	path = repo/AIGC/game-changer/DragGAN
 	url = https://github.com/yhyu13/DragGAN.git
 [submodule "repo/LLM-Infastructure/langchain-tutorials"]
 	path = repo/LLM-infrastructure/LangChain-Eco/langchain-tutorials
@@ -753,7 +753,7 @@
 	path = repo/Data-Driven ScienceV2/DeepGreen
 	url = https://github.com/sheadan/DeepGreen.git
 [submodule "repo/AIGC/game changer/vid2avatar"]
-	path = repo/AIGC/game changer/vid2avatar
+	path = repo/AIGC/game-changer/vid2avatar
 	url = https://github.com/MoyGcc/vid2avatar.git
 [submodule "repo/LLM/Other/LLM-Blender"]
 	path = repo/LLM/Other/LLM-Blender
@@ -787,7 +787,7 @@
 	path = repo/AIGC/text22D/Fooocus
 	url = https://github.com/lllyasviel/Fooocus.git
 [submodule "repo/AIGC/game changer/neuralangelo"]
-	path = repo/AIGC/game changer/neuralangelo
+	path = repo/AIGC/game-changer/neuralangelo
 	url = https://github.com/NVlabs/neuralangelo.git
 [submodule "repo/AIGC/text22D/StableVideo"]
 	path = repo/AIGC/text22D/StableVideo
@@ -943,7 +943,7 @@
 	path = repo/AIGC/text2audio/audiocraft
 	url = https://github.com/facebookresearch/audiocraft.git
 [submodule "repo/AIGC/game changer/latent-consistency-model"]
-	path = repo/AIGC/game changer/latent-consistency-model
+	path = repo/AIGC/game-changer/latent-consistency-model
 	url = https://github.com/luosiallen/latent-consistency-model.git
 [submodule "repo/Awesome-repo/Awesome-LLM-Survey"]
 	path = repo/Awesome-repo/Awesome-LLM-Survey
@@ -973,7 +973,7 @@
 	path = repo/LLM/Tools/ToolBench
 	url = https://github.com/OpenBMB/ToolBench.git
 [submodule "repo/AIGC/Text2Motion/generative-models"]
-	path = repo/AIGC/game changer/generative-models
+	path = repo/AIGC/game-changer/generative-models
 	url = https://github.com/Stability-AI/generative-models.git
 [submodule "repo/AI-Infrastructure/NeMo"]
 	path = repo/AI-Infrastructure/NeMo
@@ -1036,7 +1036,7 @@
 	path = repo/Architecture/mamba
 	url = https://github.com/yhyu13/mamba.git
 [submodule "repo/AIGC/game changer/magic-animate"]
-	path = repo/AIGC/game changer/magic-animate
+	path = repo/AIGC/game-changer/magic-animate
 	url = https://github.com/magic-research/magic-animate.git
 [submodule "repo/AIGC/text2speech/EmotiVoice"]
 	path = repo/AIGC/text2speech/EmotiVoice
@@ -1084,7 +1084,7 @@
 	path = repo/LLM-infrastructure/alpaca_eval
 	url = https://github.com/yhyu13/alpaca_eval.git
 [submodule "repo/AIGC/game changer/StreamDiffusion"]
-	path = repo/AIGC/game changer/StreamDiffusion
+	path = repo/AIGC/game-changer/StreamDiffusion
 	url = https://github.com/cumulo-autumn/StreamDiffusion.git
 [submodule "repo/AIOptimization/hqq"]
 	path = repo/AIOptimization/hqq
@@ -1096,7 +1096,7 @@
 	path = repo/Awesome-repo/awesome-RLHF
 	url = https://github.com/opendilab/awesome-RLHF.git
 [submodule "repo/AIGC/game changer/AnyText"]
-	path = repo/AIGC/game changer/AnyText
+	path = repo/AIGC/game-changer/AnyText
 	url = https://github.com/tyxsspa/AnyText.git
 [submodule "repo/Awesome-repo/Awesome-Embeded-AI"]
 	path = repo/Awesome-repo/Awesome-Embeded-AI
@@ -1110,3 +1110,6 @@
 [submodule "repo/LLMApp/PolyMind"]
 	path = repo/LLMApp/PolyMind
 	url = https://github.com/itsme2417/PolyMind.git
+[submodule "repo/AIGC/game-changer/image-sculpting"]
+	path = repo/AIGC/game-changer/image-sculpting
+	url = https://github.com/vision-x-nyu/image-sculpting.git

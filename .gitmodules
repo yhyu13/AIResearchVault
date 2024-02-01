@@ -1113,3 +1113,6 @@
 [submodule "repo/AIGC/game-changer/image-sculpting"]
 	path = repo/AIGC/game-changer/image-sculpting
 	url = https://github.com/vision-x-nyu/image-sculpting.git
+[submodule "repo/LLMApp/search_with_lepton"]
+	path = repo/LLMApp/search_with_lepton
+	url = https://github.com/leptonai/search_with_lepton.git

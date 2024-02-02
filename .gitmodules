@@ -1116,3 +1116,6 @@
 [submodule "repo/LLMApp/search_with_lepton"]
 	path = repo/LLMApp/search_with_lepton
 	url = https://github.com/leptonai/search_with_lepton.git
+[submodule "repo/LLMApp/lagent"]
+	path = repo/LLMApp/lagent
+	url = https://github.com/InternLM/lagent.git

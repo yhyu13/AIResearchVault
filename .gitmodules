@@ -1119,3 +1119,6 @@
 [submodule "repo/LLMApp/lagent"]
 	path = repo/LLMApp/lagent
 	url = https://github.com/InternLM/lagent.git
+[submodule "repo/LLM/ByteGPT/bgpt"]
+	path = repo/LLM/ByteGPT/bgpt
+	url = https://github.com/sanderwood/bgpt.git

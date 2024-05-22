@@ -1122,3 +1122,6 @@
 [submodule "repo/LLM/ByteGPT/bgpt"]
 	path = repo/LLM/ByteGPT/bgpt
 	url = https://github.com/sanderwood/bgpt.git
+[submodule "repo/LLMApp/farfalle"]
+	path = repo/LLMApp/farfalle
+	url = https://github.com/yhyu13/farfalle.git

@@ -1125,3 +1125,6 @@
 [submodule "repo/LLMApp/farfalle"]
 	path = repo/LLMApp/farfalle
 	url = https://github.com/yhyu13/farfalle.git
+[submodule "repo/LLMApp/functionary"]
+	path = repo/LLMApp/functionary
+	url = https://github.com/yhyu13/functionary.git

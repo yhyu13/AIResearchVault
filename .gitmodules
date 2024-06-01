@@ -1128,3 +1128,9 @@
 [submodule "repo/LLMApp/functionary"]
 	path = repo/LLMApp/functionary
 	url = https://github.com/yhyu13/functionary.git
+[submodule "repo/LLMApp/autoMate"]
+	path = repo/LLMApp/autoMate
+	url = https://github.com/yhyu13/autoMate.git
+[submodule "repo/LLMApp/OS-Copilot"]
+	path = repo/LLMApp/OS-Copilot
+	url = https://github.com/yhyu13/OS-Copilot.git

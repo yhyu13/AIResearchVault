@@ -1134,3 +1134,6 @@
 [submodule "repo/LLMApp/OS-Copilot"]
 	path = repo/LLMApp/OS-Copilot
 	url = https://github.com/yhyu13/OS-Copilot.git
+[submodule "repo/LLM/ChatGLM/GLM-4"]
+	path = repo/LLM/ChatGLM/GLM-4
+	url = https://github.com/yhyu13/GLM-4.git

@@ -1140,3 +1140,15 @@
 [submodule "repo/Multi-Modal/MiniCPM-o"]
 	path = repo/Multi-Modal/MiniCPM-o
 	url = https://github.com/OpenBMB/MiniCPM-o.git
+[submodule "repo/LLMApp/Open-AutoGLM"]
+	path = repo/LLMApp/Open-AutoGLM
+	url = https://github.com/yhyu13/Open-AutoGLM.git
+[submodule "repo/AIVtuber/Open-LLM-VTuber"]
+	path = repo/AIVtuber/Open-LLM-VTuber
+	url = https://github.com/yhyu13/Open-LLM-VTuber
+[submodule "repo/LLMApp/open-webui"]
+	path = repo/LLMApp/open-webui
+	url = https://github.com/yhyu13/open-webui.git
+[submodule "repo/LLMApp/MinerU"]
+	path = repo/LLMApp/MinerU
+	url = https://github.com/yhyu13/MinerU.git

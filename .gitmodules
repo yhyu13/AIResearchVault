@@ -1152,3 +1152,21 @@
 [submodule "repo/LLMApp/MinerU"]
 	path = repo/LLMApp/MinerU
 	url = https://github.com/yhyu13/MinerU.git
+[submodule "repo/Agent/Skills/ag-opencode-skills"]
+	path = repo/Agent/Skills/ag-opencode-skills
+	url = https://github.com/yhyu13/ag-opencode-skills.git
+[submodule "repo/Agent/MCP/GitNexus"]
+	path = repo/Agent/MCP/GitNexus
+	url = https://github.com/yhyu13/GitNexus.git
+[submodule "repo/Agent/oh-my-opencode"]
+	path = repo/Agent/oh-my-opencode
+	url = https://github.com/yhyu13/oh-my-opencode.git
+[submodule "repo/Agent/opencode"]
+	path = repo/Agent/opencode
+	url = https://github.com/yhyu13/opencode.git
+[submodule "repo/Agent/CoPaw"]
+	path = repo/Agent/App/CoPaw
+	url = https://github.com/yhyu13/CoPaw.git
+[submodule "repo/Agent/Skills/HLVM_Skills"]
+	path = repo/Agent/Skills/HLVM_Skills
+	url = https://github.com/yhyu13/HLVM_Skills.git

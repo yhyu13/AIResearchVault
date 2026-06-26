@@ -3,50 +3,35 @@ tags: [routine/AI-tasks, topic/AI-Optimization, day/Friday]
 aliases: []
 ---
 
-# Friday：AI 任务清单 — AI-Optimization 轻量复盘
+# Friday：AI 任务清单 — AI系统优化 轻量复盘
 
-> **人类目标**：测验 + 整理 + 规划  
-> **AI 任务**：提供脚手架、解释障碍、生成问题，绝不替代核心工作。
-
----
-
-## 任务 1：知识测验生成（AI 执行：10题测验 + 答案解析 + 薄弱点分析）
-
-**AI 输出**：...
-
-**你必须做**：...
-
-## 任务 2：周笔记整理（AI 执行：结构化整理 + 交叉引用 + 待办提取）
-
-**AI 输出**：...
-
-**你必须做**：...
-
-## 任务 3：下周规划（AI 执行：目标分解 + 时间估算 + 依赖梳理）
-
-**AI 输出**：...
-
-**你必须做**：...
+> **人类目标**：测验 + 整理 + 规划
+> **AI 任务**：提供脚手架、解释障碍、生成问题。
 
 ---
 
-## 今日 AI 禁区
+### 任务 1：测验
 
-- ❌ 让 AI 替读论文
-- ❌ 让 AI 替写笔记
-- ❌ 让 AI 生成代码路径不验证
-- ❌ 让 AI 替准备面试回答
+**AI 输出**：10题：KV Cache内存计算、PagedAttention块分配、连续批处理vs静态批处理、Throughput vs Latency权衡、vLLM vs TGI差异、CUDA Graph作用、Tensor Parallelism、Pipeline Parallelism、Speculative Decoding、KV Cache量化
+
+### 任务 2：整理
+
+**AI 输出**：笔记：推理优化技术栈（Prefill/Decode/Scheduling/Memory）+ 工具对比（vLLM/TGI/TRT-LLM）+ 部署决策树
+
+### 任务 3：规划
+
+**AI 输出**：下周：Speculative Decoding（投机解码）或 4-bit KV Cache量化
 
 ---
 
 ## 完成检查清单
 
-- [ ] 知识测验生成 已完成
-- [ ] 周笔记整理 已完成
-- [ ] 下周规划 已完成
-- [ ] 所有内容已写入 Obsidian 笔记
+- [ ] 测验 已执行
+- [ ] 整理 已执行
+- [ ] 规划 已执行
+- [ ] 笔记已整理
 
 ---
 
-*AI 执行时间：约 15 分钟*  
+*AI 执行时间：约 10 分钟*
 *人类执行时间：约 2-3 小时*

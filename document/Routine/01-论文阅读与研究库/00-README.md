@@ -47,6 +47,7 @@ created: YYYY-MM-DD
 
 | 主题 | 论文数 | 最近更新 |
 |------|--------|----------|
+| Agent Harness | 1 | 2026-06-29 |
 | LLM | 0 | - |
 | RL | 0 | - |
 | Multi-Modal | 0 | - |

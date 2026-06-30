@@ -1,4 +1,6 @@
 **obsidian/
 document/.smart-connections/*
 dpg/curl_pdf_gui.py.pickle
-**.DS_Store 
+**.DS_Store __pycache__/
+*.pyc
+*.pyo

@@ -51,6 +51,7 @@ aliases: [<algorithm-name>]
 
 | 算法 | 主题 | 状态 | 代码 | 笔记 |
 |------|------|------|------|------|
+| Agent Harness 六组件架构 | LLM Agent × Game AI | ✅ 完成 | `agent_harness_game/` | [[02-Agent-Harness-Game-AI-2026-07-01]] |
 | | | ☐ 待开始 / 🔄 进行中 / ✅ 完成 | | |
 
 ---

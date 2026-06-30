@@ -1170,3 +1170,6 @@
 [submodule "repo/Agent/Skills/HLVM_Skills"]
 	path = repo/Agent/Skills/HLVM_Skills
 	url = https://github.com/yhyu13/HLVM_Skills.git
+[submodule "repo/LLM-infrastructure/rag-anything"]
+	path = repo/LLM-infrastructure/rag-anything
+	url = https://github.com/hkuds/rag-anything.git

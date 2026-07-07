@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agent Harness Game AI 面试自测卡牌</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif; }
+  .option-card { transition: all 0.2s; cursor: pointer; }
+  .option-card:hover { background-color: #f3f4f6; }
+  .option-card.selected { border-color: #3b82f6; background-color: #eff6ff; }
+  .option-card.correct { border-color: #22c55e; background-color: #f0fdf4; }
+  .option-card.wrong { border-color: #ef4444; background-color: #fef2f2; }
+  .hidden { display: none !important; }
+  .fade-in { animation: fadeIn 0.3s ease-in; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .dashboard-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 50; display: none; align-items: center; justify-content: center; }
+  .dashboard-overlay.open { display: flex; }
+  .dashboard-panel { background: white; width: 90%; max-width: 800px; max-height: 90vh; border-radius: 1rem; padding: 1.5rem; overflow-y: auto; }
+  .thumb { width: 3rem; height: 3rem; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.875rem; }
+  .thumb.correct { background: #dcfce7; color: #166534; }
+  .thumb.wrong { background: #fee2e2; color: #991b1b; }
+  .thumb.unanswered { background: #f3f4f6; color: #6b7280; }
+</style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+<div class="max-w-3xl mx-auto px-4 py-6">
+  <!-- Header -->
+  <div class="bg-white rounded-xl shadow-sm p-6 mb-4">
+    <div class="flex items-center justify-between flex-wrap gap-3">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900">Agent Harness Game AI 面试自测</h1>
+        <p class="text-sm text-gray-500 mt-1">基于 Harness 六组件架构 × Game AI 复现 · 单模块聚焦</p>
+      </div>
+      <div class="flex gap-2 flex-wrap">
+        <button onclick="openDashboard()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-medium">📊 题目总览</button>
+        <button onclick="shuffleAllQuestions()" class="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 text-sm font-medium">🎲 随机化</button>
+        <button onclick="resetAll()" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 text-sm font-medium">🔄 重置全部</button>
+      </div>
+    </div>
+    <div class="mt-4 flex items-center gap-4 flex-wrap">
+      <div class="flex-1">
+        <div class="flex justify-between text-sm mb-1">
+          <span id="progress-text" class="text-gray-600">1 / 22</span>
+          <span id="score-text" class="font-semibold text-indigo-600">得分: 0</span>
+        </div>
+        <div class="w-full bg-gray-200 rounded-full h-2.5">
+          <div id="progress-bar" class="bg-indigo-600 h-2.5 rounded-full transition-all" style="width: 0%"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Navigation tabs -->
+  <div class="bg-white rounded-xl shadow-sm p-4 mb-4">
+    <div class="flex gap-2 overflow-x-auto">
+      <button id="tab-single" onclick="switchType('single')" class="px-4 py-2 rounded-lg text-sm font-medium bg-indigo-100 text-indigo-700 whitespace-nowrap">单选题 (10)</button>
+      <button id="tab-multi" onclick="switchType('multi')" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 whitespace-nowrap">多选题 (6)</button>
+      <button id="tab-tf" onclick="switchType('tf')" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 whitespace-nowrap">判断题 (6)</button>
+    </div>
+  </div>
+
+  <!-- Question card -->
+  <div id="question-card" class="bg-white rounded-xl shadow-sm p-6 fade-in">
+    <div id="question-content"></div>
+    <div class="flex justify-between items-center mt-6 pt-4 border-t">
+      <button onclick="prevQuestion()" class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 text-sm font-medium">← 上一题</button>
+      <div class="flex gap-2">
+        <button onclick="resetCurrentQuestion()" class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 text-sm font-medium">重置</button>
+        <button onclick="checkAnswer()" class="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 text-sm font-medium">检查答案</button>
+      </div>
+      <button onclick="nextQuestion()" class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 text-sm font-medium">下一题 →</button>
+    </div>
+  </div>
+
+  <!-- Result panel -->
+  <div id="result-panel" class="hidden bg-white rounded-xl shadow-sm p-6 mt-4 fade-in">
+    <div id="result-content"></div>
+    <div class="flex justify-center gap-3 mt-4">
+      <button onclick="openDashboard()" class="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 text-sm font-medium">返回查看</button>
+      <button onclick="continueLast()" class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 text-sm font-medium">继续做题</button>
+    </div>
+  </div>
+</div>
+
+<!-- Dashboard overlay -->
+<div id="dashboard-overlay" class="dashboard-overlay" onclick="if(event.target===this)closeDashboard()">
+  <div class="dashboard-panel">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-xl font-bold text-gray-900">题目总览</h2>
+      <button onclick="closeDashboard()" class="text-gray-500 hover:text-gray-700 text-2xl leading-none">&times;</button>
+    </div>
+    <div class="flex gap-2 mb-4 flex-wrap">
+      <button onclick="filterDashboard('all')" class="px-3 py-1 rounded-full bg-gray-100 text-sm hover:bg-gray-200">全部</button>
+      <button onclick="filterDashboard('correct')" class="px-3 py-1 rounded-full bg-green-100 text-green-700 text-sm hover:bg-green-200">正确</button>
+      <button onclick="filterDashboard('wrong')" class="px-3 py-1 rounded-full bg-red-100 text-red-700 text-sm hover:bg-red-200">错误</button>
+      <button onclick="filterDashboard('unanswered')" class="px-3 py-1 rounded-full bg-gray-100 text-gray-600 text-sm hover:bg-gray-200">未答</button>
+    </div>
+    <div id="dashboard-grid" class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2"></div>
+    <div class="mt-4 text-sm text-gray-600">
+      <div class="flex gap-4 flex-wrap">
+        <span>单选: <span id="dash-single-stats"></span></span>
+        <span>多选: <span id="dash-multi-stats"></span></span>
+        <span>判断: <span id="dash-tf-stats"></span></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== Question Data =====
+const singleQuestions = [{"question": "Harness 六组件架构中，哪个组件负责 'LLM Agent 的工具调用接口'？", "options": ["Environment Execution (E)", "Tool Calling (T)", "Context Management (C)", "Safety Sandbox (S)"], "correct": 1, "explanations": ["❌ 错误：E 负责环境执行和状态转移，不是工具调用接口。", "✅ 正确：T 对应 Tool Calling，是 LLM Agent 与游戏环境交互的命令接口。", "❌ 错误：C 负责上下文管理和历史轨迹压缩。", "❌ 错误：S 负责安全校验和动作合法性检查。"], "detailLink": "../../02-Agent-Harness-Game-AI-2026-07-01.md"}, {"question": "游戏状态定义中，S = (G, p, I, t) 的 I 代表什么？", "options": ["智能体位置", "网格状态", "库存向量", "当前回合数"], "correct": 2, "explanations": ["❌ 错误：p ∈ ℤ² 才是智能体位置 (x, y)。", "❌ 错误：G ∈ ℤ^{H×W} 才是网格。", "✅ 正确：I ∈ ℕ^{|B|} 是库存向量，记录每种方块的数量。", "❌ 错误：t ∈ ℕ 才是当前回合数。"], "detailLink": "../../02-Agent-Harness-Game-AI-2026-07-01.md"}, {"question": "SimulatedLLM 的 _building_strategy 中，如果 agent 在 target 位置但 inventory 为空，会发生什么？", "options": ["返回 NOOP", "继续检查下一个 target，可能移动", "抛出异常崩溃", "随机选择动作"], "correct": 1, "explanations": ["❌ 错误：只有在所有 target 检查完毕且没有移动方向时才会 fallback 到 random。", "✅ 正确：当前 target 的 if 条件不满足（inventory 空），进入 else 但 x==tx、y==ty 不移动；继续遍历下一个 target，发现不重合则移动 toward 它。", "❌ 错误：_building_strategy 没有抛出异常的逻辑。", "❌ 错误：random 是 for 循环结束后的 fallback，不是立即返回。"], "detailLink": "../../agent_harness_game/agent.py"}, {"question": "SafetySandbox.validate() 中，边界检查是在哪个阶段进行的？", "options": ["第 6 阶段（Rate limiting）", "第 1 阶段（Boundary check for movement）", "第 3 阶段（Inventory check）", "第 5 阶段（Destruction constraints）"], "correct": 1, "explanations": ["❌ 错误：Rate limiting 是最后一步，检查 max_turns。", "✅ 正确：validate 方法中第 1 步就是 Boundary check for movement（nx, ny 边界）。", "❌ 错误：Inventory check 是第 3 阶段。", "❌ 错误：Destruction constraints 是第 5 阶段。"], "detailLink": "../../agent_harness_game/safety.py"}, {"question": "TaskVerifier.evaluate() 中，哪个维度的权重最高（0.4）？", "options": ["block_count", "efficiency", "structure_correctness", "inventory_match"], "correct": 2, "explanations": ["❌ 错误：block_count 权重是 0.2。", "❌ 错误：efficiency 权重是 0.2。", "✅ 正确：structure_correctness 权重是 0.4，最高。", "❌ 错误：inventory_match 权重是 0.2。"], "detailLink": "../../agent_harness_game/verifier.py"}, {"question": "AgentHarness.run() 中，安全校验在 environment.step() 之前执行了几次？", "options": ["0 次", "1 次（仅在 agent.act 中）", "2 次（agent.act + harness.run 二次校验）", "3 次"], "correct": 2, "explanations": ["❌ 错误：安全校验不是 0 次。", "❌ 错误：虽然 agent.act 中做了第 1 次 safety check，但 harness.run 中还有一次 double-check。", "✅ 正确：agent.act 中 safety.validate 一次，harness.run 中 safety.validate 二次，这是论文强调的 'Harness 可靠性'——关键路径冗余校验。", "❌ 错误：没有第 3 次校验。"], "detailLink": "../../agent_harness_game/harness.py"}, {"question": "ContextManager 的 compress_history() 返回的结果中不包含哪个字段？", "options": ["total_steps", "total_reward", "action_distribution", "final_state_render"], "correct": 3, "explanations": ["❌ 错误：compress_history 返回包含 total_steps。", "❌ 错误：compress_history 返回包含 total_reward。", "❌ 错误：compress_history 返回包含 action_distribution。", "✅ 正确：compress_history 不保存 render 后的字符串，final_state_render 是 HarnessResult 中 final_state.render() 提供的。"], "detailLink": "../../agent_harness_game/context.py"}, {"question": "GameState.render() 中，agent 位置用什么字符显示？", "options": ["'P'", "'A'", "'@'", "'X'"], "correct": 1, "explanations": ["❌ 错误：不是 'P'。", "✅ 正确：render() 中 if (x, y) == self.agent_pos 则 line += 'A'。", "❌ 错误：不是 '@'。", "❌ 错误：不是 'X'。"], "detailLink": "../../agent_harness_game/environment.py"}, {"question": "HarnessResult 的 success 字段取决于什么？", "options": ["total_steps > 0", "evaluation.passed", "safety_violations == 0", "total_reward > 0"], "correct": 1, "explanations": ["❌ 错误：total_steps > 0 不是 success 的判断标准。", "✅ 正确：harness.run() 返回 HarnessResult(success=final_eval.passed, ...)。", "❌ 错误：safety_violations 不计入 success。", "❌ 错误：total_reward 是稀疏的，通常为 0。"], "detailLink": "../../agent_harness_game/harness.py"}, {"question": "SandboxEnvironment.step() 中，如果 state.turn >= state.max_turns，返回的 done 值是什么？", "options": ["False", "True", "None", "取决于 action"], "correct": 1, "explanations": ["❌ 错误：达到 max_turns 时 episode 结束。", "✅ 正确：if state.turn >= state.max_turns: return state, 0.0, True, {'reason': 'max_turns_reached'}。", "❌ 错误：done 是 bool 值。", "❌ 错误：done 不取决于 action，只取决于 turn 计数。"], "detailLink": "../../agent_harness_game/environment.py"}];
+const multiQuestions = [{"question": "AgentHarness 六组件中，哪些组件参与了 ReAct 循环的每个 step？（多选）", "options": ["Environment (E) - 获取 observation", "Agent (T) - 生成 thought + action", "Context (C) - 记录 state/action/reward", "Safety (S) - 校验 action", "Verifier (V) - 每步评估", "Logger (L) - 记录事件"], "correct": [0, 1, 2, 3, 5], "explanations": ["✅ 正确：E.get_observation(state) 在每个 step 获取多模态观察。", "✅ 正确：T.generate(prompt) 生成 thought + action。", "✅ 正确：C.record(state, obs, action, reward, info) 记录轨迹。", "✅ 正确：S.validate(state, action) 在 agent.act 和 harness.run 中各校验一次。", "❌ 错误：V 只在 step % 10 == 0 时做 mid-episode check，不是每步。", "✅ 正确：L._log(event) 记录 harness_start、step、safety_violation 等事件。"], "detailLink": "../../02-Agent-Harness-Game-AI-2026-07-01.md"}, {"question": "SafetySandbox.validate() 检查的约束包括哪些？（多选）", "options": ["边界约束", "库存约束", "禁止 block 类型", "挖掘约束（不能挖 grass）", "速率限制（turn-based）", "动作长度限制"], "correct": [0, 1, 2, 3, 4], "explanations": ["✅ 正确：第 1-2 阶段检查 movement 和 place/mine 的边界。", "✅ 正确：第 3 阶段检查 placement 的 inventory。", "✅ 正确：第 4 阶段检查 forbidden_block_types。", "✅ 正确：第 5 阶段检查 cannot_mine_grass_or_empty。", "✅ 正确：第 6 阶段检查 max_turns_exceeded。", "❌ 错误：没有动作长度限制的检查。"], "detailLink": "../../agent_harness_game/safety.py"}, {"question": "EvaluationResult 的 dimensions 包含哪些评估维度？（多选）", "options": ["structure_correctness", "block_count", "efficiency", "inventory_match", "safety_score", "turn_count"], "correct": [0, 1, 2, 3], "explanations": ["✅ 正确：structure_correctness 检查 target blocks 匹配度。", "✅ 正确：block_count 检查 total_blocks 是否在 [min, max] 范围内。", "✅ 正确：efficiency = 1 - turn/max_turns。", "✅ 正确：inventory_match 检查 required_inventory 达成率。", "❌ 错误：没有 safety_score 维度，safety_violations 在 HarnessResult 中单独统计。", "❌ 错误：turn_count 是 details 中的字段，不是独立维度。"], "detailLink": "../../agent_harness_game/verifier.py"}, {"question": "SimulatedLLM 支持的策略包括哪些？（多选）", "options": ["random", "heuristic", "building", "crafting", "planning", "mining"], "correct": [0, 1], "explanations": ["✅ 正确：random 策略随机选择动作。", "✅ 正确：heuristic 策略根据 goal 选择 building 或 crafting 子策略。", "❌ 错误：building 不是独立的策略名，是 heuristic 内部调用的方法。", "❌ 错误：crafting 同理，是 heuristic 内部方法。", "❌ 错误：planning 是 AgentMode 枚举值但 SimulatedLLM 未实现。", "❌ 错误：mining 没有作为独立策略名。"], "detailLink": "../../agent_harness_game/agent.py"}, {"question": "GameState 的 clone() 方法深拷贝了哪些字段？（多选）", "options": ["grid", "agent_pos", "inventory", "turn", "max_turns", "width"], "correct": [0, 2], "explanations": ["✅ 正确：grid = [row[:] for row in self.grid] 是浅拷贝行但深拷贝了每个 row。", "❌ 错误：agent_pos 是 tuple，值类型，不需要深拷贝。", "✅ 正确：inventory = copy.deepcopy(self.inventory)。", "❌ 错误：turn 是 int，值类型。", "❌ 错误：max_turns 是 int，值类型。", "❌ 错误：width 是 property，不是字段。"], "detailLink": "../../agent_harness_game/environment.py"}, {"question": "AgentHarness 的 run() 方法中，哪些事件会被记录到 logs？（多选）", "options": ["harness_start", "safety_violation", "task_completed_early", "step", "harness_end", "agent_thought"], "correct": [0, 1, 2, 3, 4], "explanations": ["✅ 正确：run() 开头记录 harness_start。", "✅ 正确：safety 拦截时记录 safety_violation。", "✅ 正确：mid-episode 通过时记录 task_completed_early。", "✅ 正确：每步记录 step 事件。", "✅ 正确：结束记录 harness_end。", "❌ 错误：agent_thought 没有被单独记录到 logs，thought 只在 agent.act 中生成。"], "detailLink": "../../agent_harness_game/harness.py"}];
+const trueFalseQuestions = [{"question": "SimulatedLLM 的 generate() 方法在 strategy='heuristic' 时，会从 prompt 中提取 goal 和 position。", "correct": true, "explanation": "✅ 正确理解：generate() 中如果 strategy != 'random'，依次调用 _extract_goal(prompt)、_extract_position(prompt)、_extract_inventory(prompt) 来解析当前状态。\n❌ 常见误解：认为 heuristic 策略是硬编码的，不需要解析 prompt。实际上 SimulatedLLM 需要解析 prompt 中的状态信息才能做出决策。", "detailLink": "../../agent_harness_game/agent.py"}, {"question": "TaskVerifier.evaluate() 中，如果 overall_score >= 0.75 且 structure_correctness < 0.75，任务仍然通过。", "correct": false, "explanation": "✅ 正确理解：虽然 overall_score >= 0.75 时 passed 初始为 True，但后续代码明确检查 if task_spec.target_blocks and dims.get('structure_correctness', 1.0) < 0.75: passed = False。结构正确性是强制维度。\n❌ 常见误解：认为只要总体分够高就能通过。实际上结构正确性有单独的 0.75 强制阈值。", "detailLink": "../../agent_harness_game/verifier.py"}, {"question": "SafetySandbox.filter_actions() 会将所有 unsafe action 记录到 violation_log。", "correct": true, "explanation": "✅ 正确理解：filter_actions 遍历每个 action，调用 validate；如果 not ok，将 {turn, action, reason} append 到 violation_log。\n❌ 常见误解：认为 filter_actions 只是过滤，不记录。实际上它会完整记录所有违规。", "detailLink": "../../agent_harness_game/safety.py"}, {"question": "ContextManager 的 history 列表没有长度限制。", "correct": false, "explanation": "✅ 正确理解：record() 中 if len(self.history) > self.max_history: self.history.pop(0)，max_history 默认 100。超过后自动丢弃最早条目。\n❌ 常见误解：认为 history 会无限增长。实际上有滑动窗口机制防止内存溢出。", "detailLink": "../../agent_harness_game/context.py"}, {"question": "AgentHarness.run() 中，agent.act() 和 harness.run() 都执行了安全校验。", "correct": true, "explanation": "✅ 正确理解：agent.act() 中 if self.safety: ok, reason = self.safety.validate(state, action)。harness.run() 中 ok, reason = self.safety.validate(state, action) 再次校验。这是论文强调的 'Harness 可靠性'——关键路径冗余校验。\n❌ 常见误解：认为 safety 只在 agent 层做。实际上 harness 层做了 double-check，防止 agent 绕过安全。", "detailLink": "../../agent_harness_game/harness.py"}, {"question": "BlockType 枚举中，AGENT = 9 可以在 grid 上被放置。", "correct": false, "explanation": "✅ 正确理解：SafetyPolicy.default_game_policy() 中 forbidden_block_types=[BlockType.AGENT]，SafetySandbox.validate() 会拦截任何放置 AGENT 的 action。\n❌ 常见误解：认为 AGENT 只是一个显示字符，可以在 grid 上放置。实际上 AGENT 是禁止 block 类型，不能作为环境 block 被放置。", "detailLink": "../../agent_harness_game/safety.py"}];
+
+const allQuestions = singleQuestions.map((q,i)=>({...q, type:'single', originalIndex:i}))
+  .concat(multiQuestions.map((q,i)=>({...q, type:'multi', originalIndex:i})))
+  .concat(trueFalseQuestions.map((q,i)=>({...q, type:'tf', originalIndex:i})));
+
+// ===== State =====
+let currentType = 'single';
+let currentIndex = 0;
+let userAnswers = {};
+let checkedState = {};
+let dashboardFilter = 'all';
+let lastTypeBeforeResult = 'single';
+let lastIndexBeforeResult = 0;
+
+// ===== Utils =====
+function getQuestionKey(type, index) { return `${type}-${index}`; }
+function getCurrentQuestion() {
+  const arr = currentType === 'single' ? singleQuestions : currentType === 'multi' ? multiQuestions : trueFalseQuestions;
+  return arr[currentIndex];
+}
+function getArrayByType(type) {
+  return type === 'single' ? singleQuestions : type === 'multi' ? multiQuestions : trueFalseQuestions;
+}
+
+// ===== Rendering =====
+function renderQuestion() {
+  const q = getCurrentQuestion();
+  if (!q) return;
+  const key = getQuestionKey(currentType, currentIndex);
+  const isChecked = checkedState[key] || false;
+  const userAns = userAnswers[key];
+  
+  let html = `<div class="mb-2 text-sm text-indigo-600 font-semibold">${getTypeLabel(currentType)} · 第 ${currentIndex+1} / ${getArrayByType(currentType).length} 题</div>`;
+  html += `<h3 class="text-lg font-semibold text-gray-900 mb-4">${q.question}</h3>`;
+  
+  if (currentType === 'single') {
+    html += `<div class="space-y-2">`;
+    q.options.forEach((opt, i) => {
+      let cls = "option-card border-2 rounded-lg p-3 flex items-start gap-3 ";
+      if (isChecked) {
+        if (i === q.correct) cls += "correct";
+        else if (userAns === i) cls += "wrong";
+        else cls += "border-gray-200";
+      } else {
+        cls += (userAns === i ? "selected border-blue-400" : "border-gray-200");
+      }
+      html += `<div class="${cls}" onclick="selectSingle(${i})">
+        <div class="w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5 ${isChecked ? (i===q.correct?'border-green-500 bg-green-500 text-white':(userAns===i?'border-red-500 bg-red-500 text-white':'border-gray-300')) : (userAns===i?'border-blue-500 bg-blue-500 text-white':'border-gray-300')}">
+          ${isChecked ? (i===q.correct?'✓':(userAns===i?'✗':'')) : (userAns===i?'✓':'')}
+        </div>
+        <div class="text-sm text-gray-800">${opt}</div>
+      </div>`;
+    });
+    html += `</div>`;
+  } else if (currentType === 'multi') {
+    html += `<div class="space-y-2">`;
+    q.options.forEach((opt, i) => {
+      const isSelected = (userAns || []).includes(i);
+      let cls = "option-card border-2 rounded-lg p-3 flex items-start gap-3 ";
+      if (isChecked) {
+        if (q.correct.includes(i)) cls += "correct";
+        else if (isSelected) cls += "wrong";
+        else cls += "border-gray-200";
+      } else {
+        cls += (isSelected ? "selected border-blue-400" : "border-gray-200");
+      }
+      html += `<div class="${cls}" onclick="toggleMulti(${i})">
+        <div class="w-6 h-6 rounded border-2 flex items-center justify-center shrink-0 mt-0.5 ${isChecked ? (q.correct.includes(i)?'border-green-500 bg-green-500 text-white':(isSelected?'border-red-500 bg-red-500 text-white':'border-gray-300')) : (isSelected?'border-blue-500 bg-blue-500 text-white':'border-gray-300')}">
+          ${isChecked ? (q.correct.includes(i)?'✓':(isSelected?'✗':'')) : (isSelected?'✓':'')}
+        </div>
+        <div class="text-sm text-gray-800">${opt}</div>
+      </div>`;
+    });
+    html += `</div>`;
+  } else if (currentType === 'tf') {
+    html += `<div class="space-y-2">`;
+    ['True', 'False'].forEach((val, i) => {
+      const optVal = i === 0;
+      const isSelected = userAns === optVal;
+      let cls = "option-card border-2 rounded-lg p-3 flex items-center gap-3 ";
+      if (isChecked) {
+        if (optVal === q.correct) cls += "correct";
+        else if (isSelected) cls += "wrong";
+        else cls += "border-gray-200";
+      } else {
+        cls += (isSelected ? "selected border-blue-400" : "border-gray-200");
+      }
+      html += `<div class="${cls}" onclick="selectTf(${optVal})">
+        <div class="w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 ${isChecked ? (optVal===q.correct?'border-green-500 bg-green-500 text-white':(isSelected?'border-red-500 bg-red-500 text-white':'border-gray-300')) : (isSelected?'border-blue-500 bg-blue-500 text-white':'border-gray-300')}">
+          ${isChecked ? (optVal===q.correct?'✓':(isSelected?'✗':'')) : (isSelected?'✓':'')}
+        </div>
+        <div class="text-sm text-gray-800 font-medium">${val === 'True' ? '正确 (True)' : '错误 (False)'}</div>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+  
+  // Explanation
+  if (isChecked) {
+    html += `<div class="mt-4 p-4 rounded-lg bg-gray-50 border border-gray-200">`;
+    if (currentType === 'single') {
+      html += `<div class="font-semibold mb-2 ${userAns === q.correct ? 'text-green-700' : 'text-red-700'}">${userAns === q.correct ? '✅ 回答正确' : '❌ 回答错误'}</div>`;
+      q.options.forEach((opt, i) => {
+        html += `<div class="text-sm mb-1 ${i===q.correct?'text-green-700':(userAns===i?'text-red-700':'text-gray-600')}">${String.fromCharCode(65+i)}. ${q.explanations[i]}</div>`;
+      });
+    } else if (currentType === 'multi') {
+      const allCorrect = q.correct.length === (userAns||[]).length && q.correct.every(c=>(userAns||[]).includes(c));
+      html += `<div class="font-semibold mb-2 ${allCorrect ? 'text-green-700' : 'text-red-700'}">${allCorrect ? '✅ 回答正确' : '❌ 回答错误'}</div>`;
+      q.options.forEach((opt, i) => {
+        html += `<div class="text-sm mb-1 ${q.correct.includes(i)?'text-green-700':((userAns||[]).includes(i)?'text-red-700':'text-gray-600')}">${String.fromCharCode(65+i)}. ${q.explanations[i]}</div>`;
+      });
+    } else if (currentType === 'tf') {
+      html += `<div class="font-semibold mb-2 ${userAns === q.correct ? 'text-green-700' : 'text-red-700'}">${userAns === q.correct ? '✅ 回答正确' : '❌ 回答错误'}</div>`;
+      html += `<div class="text-sm whitespace-pre-line">${q.explanation}</div>`;
+    }
+    if (q.detailLink) {
+      html += `<div class="mt-3"><a href="${q.detailLink}" target="_blank" class="text-indigo-600 hover:underline text-sm">📎 查看详情文档</a></div>`;
+    }
+    html += `</div>`;
+  }
+  
+  document.getElementById('question-content').innerHTML = html;
+  updateProgress();
+  updateTabs();
+}
+
+function getTypeLabel(type) {
+  return type === 'single' ? '单选题' : type === 'multi' ? '多选题' : '判断题';
+}
+
+function updateProgress() {
+  const total = singleQuestions.length + multiQuestions.length + trueFalseQuestions.length;
+  let answered = 0;
+  Object.keys(userAnswers).forEach(k => { if (userAnswers[k] !== undefined && userAnswers[k] !== null) answered++; });
+  
+  const arr = getArrayByType(currentType);
+  document.getElementById('progress-text').textContent = `${currentType === 'single' ? currentIndex+1 : currentType === 'multi' ? currentIndex+1 : currentIndex+1} / ${arr.length} (${getTypeLabel(currentType)})`;
+  document.getElementById('progress-bar').style.width = `${arr.length ? ((currentIndex+1)/arr.length*100) : 0}%`;
+  
+  // Score calculation
+  let score = 0;
+  let totalMax = 0;
+  singleQuestions.forEach((q,i) => {
+    totalMax += 1;
+    if (checkedState[`single-${i}`] && userAnswers[`single-${i}`] === q.correct) score += 1;
+  });
+  multiQuestions.forEach((q,i) => {
+    totalMax += 1;
+    if (checkedState[`multi-${i}`]) {
+      const ua = userAnswers[`multi-${i}`] || [];
+      if (q.correct.length === ua.length && q.correct.every(c=>ua.includes(c))) score += 1;
+    }
+  });
+  trueFalseQuestions.forEach((q,i) => {
+    totalMax += 1;
+    if (checkedState[`tf-${i}`] && userAnswers[`tf-${i}`] === q.correct) score += 1;
+  });
+  document.getElementById('score-text').textContent = `得分: ${score} / ${totalMax}`;
+}
+
+function updateTabs() {
+  ['single','multi','tf'].forEach(t => {
+    const el = document.getElementById('tab-'+t);
+    if (t === currentType) { el.className = "px-4 py-2 rounded-lg text-sm font-medium bg-indigo-100 text-indigo-700 whitespace-nowrap"; }
+    else { el.className = "px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 whitespace-nowrap"; }
+  });
+}
+
+function switchType(type) {
+  currentType = type;
+  currentIndex = 0;
+  document.getElementById('result-panel').classList.add('hidden');
+  document.getElementById('question-card').classList.remove('hidden');
+  renderQuestion();
+}
+
+function selectSingle(idx) {
+  const key = getQuestionKey(currentType, currentIndex);
+  if (checkedState[key]) return;
+  userAnswers[key] = idx;
+  renderQuestion();
+}
+
+function toggleMulti(idx) {
+  const key = getQuestionKey(currentType, currentIndex);
+  if (checkedState[key]) return;
+  const arr = userAnswers[key] || [];
+  if (arr.includes(idx)) {
+    userAnswers[key] = arr.filter(x => x !== idx);
+  } else {
+    userAnswers[key] = [...arr, idx].sort((a,b)=>a-b);
+  }
+  renderQuestion();
+}
+
+function selectTf(val) {
+  const key = getQuestionKey(currentType, currentIndex);
+  if (checkedState[key]) return;
+  userAnswers[key] = val;
+  renderQuestion();
+}
+
+function checkAnswer() {
+  const key = getQuestionKey(currentType, currentIndex);
+  if (userAnswers[key] === undefined || userAnswers[key] === null) {
+    alert('请先选择一个答案');
+    return;
+  }
+  checkedState[key] = true;
+  renderQuestion();
+  updateProgress();
+}
+
+function resetCurrentQuestion() {
+  const key = getQuestionKey(currentType, currentIndex);
+  delete userAnswers[key];
+  delete checkedState[key];
+  renderQuestion();
+}
+
+function prevQuestion() {
+  if (currentIndex > 0) { currentIndex--; renderQuestion(); }
+  else { 
+    const types = ['single','multi','tf'];
+    const idx = types.indexOf(currentType);
+    if (idx > 0) { currentType = types[idx-1]; currentIndex = getArrayByType(currentType).length-1; renderQuestion(); }
+  }
+}
+
+function nextQuestion() {
+  const arr = getArrayByType(currentType);
+  if (currentIndex < arr.length - 1) { currentIndex++; renderQuestion(); }
+  else {
+    const types = ['single','multi','tf'];
+    const idx = types.indexOf(currentType);
+    if (idx < types.length - 1) { currentType = types[idx+1]; currentIndex = 0; renderQuestion(); }
+    else { showResult(); }
+  }
+}
+
+function showResult() {
+  lastTypeBeforeResult = currentType;
+  lastIndexBeforeResult = currentIndex;
+  document.getElementById('question-card').classList.add('hidden');
+  const panel = document.getElementById('result-panel');
+  panel.classList.remove('hidden');
+  
+  let score = 0, totalMax = 0;
+  singleQuestions.forEach((q,i) => {
+    totalMax += 1;
+    if (checkedState[`single-${i}`] && userAnswers[`single-${i}`] === q.correct) score += 1;
+  });
+  multiQuestions.forEach((q,i) => {
+    totalMax += 1;
+    if (checkedState[`multi-${i}`]) {
+      const ua = userAnswers[`multi-${i}`] || [];
+      if (q.correct.length === ua.length && q.correct.every(c=>ua.includes(c))) score += 1;
+    }
+  });
+  trueFalseQuestions.forEach((q,i) => {
+    totalMax += 1;
+    if (checkedState[`tf-${i}`] && userAnswers[`tf-${i}`] === q.correct) score += 1;
+  });
+  
+  const pct = totalMax ? Math.round(score/totalMax*100) : 0;
+  let grade = pct >= 90 ? '优秀 🎉' : pct >= 70 ? '良好 👍' : pct >= 50 ? '及格 ✓' : '需要加强 📚';
+  
+  document.getElementById('result-content').innerHTML = `
+    <div class="text-center">
+      <div class="text-4xl font-bold text-indigo-600 mb-2">${score} / ${totalMax}</div>
+      <div class="text-lg text-gray-700 mb-4">正确率: ${pct}% · ${grade}</div>
+      <div class="w-full bg-gray-200 rounded-full h-4 mb-4">
+        <div class="bg-indigo-600 h-4 rounded-full transition-all" style="width:${pct}%"></div>
+      </div>
+      <p class="text-sm text-gray-500">点击"返回查看"打开总览面板，或"继续做题"回到最后位置。</p>
+    </div>
+  `;
+}
+
+function continueLast() {
+  document.getElementById('result-panel').classList.add('hidden');
+  document.getElementById('question-card').classList.remove('hidden');
+  currentType = lastTypeBeforeResult;
+  currentIndex = lastIndexBeforeResult;
+  renderQuestion();
+}
+
+// ===== Dashboard =====
+function openDashboard() {
+  document.getElementById('dashboard-overlay').classList.add('open');
+  renderDashboardGrid();
+}
+function closeDashboard() {
+  document.getElementById('dashboard-overlay').classList.remove('open');
+}
+function filterDashboard(filter) {
+  dashboardFilter = filter;
+  renderDashboardGrid();
+}
+
+function renderDashboardGrid() {
+  const grid = document.getElementById('dashboard-grid');
+  grid.innerHTML = '';
+  
+  let stats = { single: {correct:0, wrong:0, unanswered:0}, multi: {correct:0, wrong:0, unanswered:0}, tf: {correct:0, wrong:0, unanswered:0} };
+  
+  function processArray(arr, type) {
+    arr.forEach((q, i) => {
+      const key = `${type}-${i}`;
+      let status = 'unanswered';
+      if (checkedState[key]) {
+        if (type === 'single') status = userAnswers[key] === q.correct ? 'correct' : 'wrong';
+        else if (type === 'multi') { const ua = userAnswers[key]||[]; status = (q.correct.length===ua.length && q.correct.every(c=>ua.includes(c))) ? 'correct' : 'wrong'; }
+        else if (type === 'tf') status = userAnswers[key] === q.correct ? 'correct' : 'wrong';
+      }
+      stats[type][status]++;
+      
+      if (dashboardFilter !== 'all' && status !== dashboardFilter) return;
+      
+      const div = document.createElement('div');
+      div.className = 'cursor-pointer';
+      div.onclick = () => { currentType = type; currentIndex = i; closeDashboard(); document.getElementById('result-panel').classList.add('hidden'); document.getElementById('question-card').classList.remove('hidden'); renderQuestion(); };
+      div.innerHTML = `
+        <div class="thumb ${status}">${type==='single'?'单':type==='multi'?'多':'判'}${i+1}</div>
+      `;
+      grid.appendChild(div);
+    });
+  }
+  
+  processArray(singleQuestions, 'single');
+  processArray(multiQuestions, 'multi');
+  processArray(trueFalseQuestions, 'tf');
+  
+  document.getElementById('dash-single-stats').textContent = `${stats.single.correct}对/${stats.single.wrong}错/${stats.single.unanswered}未`;
+  document.getElementById('dash-multi-stats').textContent = `${stats.multi.correct}对/${stats.multi.wrong}错/${stats.multi.unanswered}未`;
+  document.getElementById('dash-tf-stats').textContent = `${stats.tf.correct}对/${stats.tf.wrong}错/${stats.tf.unanswered}未`;
+}
+
+// ===== Shuffle =====
+function shuffleAllQuestions() {
+  if (!confirm('🎲 随机化将打乱所有单选/多选/判断题的选项顺序，并清空所有答题记录。确定继续？')) return;
+  
+  // Shuffle single
+  singleQuestions.forEach(q => {
+    const pairs = q.options.map((opt, i) => ({opt, expl: q.explanations[i]}));
+    for (let i = pairs.length-1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i+1));
+      [pairs[i], pairs[j]] = [pairs[j], pairs[i]];
+    }
+    q.options = pairs.map(p => p.opt);
+    q.explanations = pairs.map(p => p.expl);
+    q.correct = pairs.findIndex(p => p.expl.startsWith('✅'));
+  });
+  
+  // Shuffle multi
+  multiQuestions.forEach(q => {
+    const pairs = q.options.map((opt, i) => ({opt, expl: q.explanations[i], isCorrect: q.correct.includes(i)}));
+    for (let i = pairs.length-1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i+1));
+      [pairs[i], pairs[j]] = [pairs[j], pairs[i]];
+    }
+    q.options = pairs.map(p => p.opt);
+    q.explanations = pairs.map(p => p.expl);
+    q.correct = pairs.map((p,i) => p.isCorrect ? i : -1).filter(i => i !== -1);
+  });
+  
+  // Reset all answers
+  userAnswers = {};
+  checkedState = {};
+  currentType = 'single';
+  currentIndex = 0;
+  document.getElementById('result-panel').classList.add('hidden');
+  document.getElementById('question-card').classList.remove('hidden');
+  renderQuestion();
+}
+
+// ===== Reset All =====
+function resetAll() {
+  if (!confirm('确定要清空所有答题记录吗？')) return;
+  userAnswers = {};
+  checkedState = {};
+  currentType = 'single';
+  currentIndex = 0;
+  document.getElementById('result-panel').classList.add('hidden');
+  document.getElementById('question-card').classList.remove('hidden');
+  // Restore navigation and progress elements
+  document.getElementById('progress-bar').parentElement.parentElement.classList.remove('hidden');
+  renderQuestion();
+}
+
+// ===== Init =====
+renderQuestion();
+</script>
+</body>
+</html>

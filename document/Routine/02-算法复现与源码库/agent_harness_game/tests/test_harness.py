@@ -1,7 +1,7 @@
 """Unit Tests for Agent Harness Game AI Components
 
 Tests each of H=(E,T,C,S,L,V) independently + integration.
-Run: python -m pytest tests/test_harness.py -v
+Run: python -m pytest agent_harness_game/tests/test_harness.py -v
 """
 import sys
 import os
@@ -334,14 +334,14 @@ class TestIntegration:
         print(f"Wall build score: {result.evaluation.overall_score}")
 
     def test_craft_planks(self):
-        config = HarnessConfig(max_turns=30, log_level="WARNING")
+        config = HarnessConfig(max_turns=30, log_level="WARNING", initial_inventory={BlockType.WOOD.value: 2})
         harness = AgentHarness(config)
         harness.set_task(TaskSpec.craft_planks())
         harness.set_agent(strategy="heuristic")
 
-        # Give the agent wood to craft with
-        result = harness.run(initial_blocks={})
+        result = harness.run()
         print(f"Craft score: {result.evaluation.overall_score}")
+        assert result.evaluation.overall_score > 0
 
     def test_safety_violations_logged(self):
         config = HarnessConfig(max_turns=50, log_level="WARNING")
@@ -352,7 +352,7 @@ class TestIntegration:
         result = harness.run()
         trace = harness.get_full_trace()
         # Should have no safety violations with heuristic agent
-        assert trace["safety_summary"]["total"] == 0 or trace["safety_summary"]["total"] < 5
+        assert trace["safety_summary"]["total"] == 0
 
     def test_reproducibility(self):
         """Two runs with same config should produce traceable results."""

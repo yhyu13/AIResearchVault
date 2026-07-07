@@ -88,12 +88,20 @@ class SafetySandbox:
         # 3. Inventory check for placement
         if action.action_type == ActionType.PLACE_BLOCK:
             block_type = action.params.get("block_type", BlockType.PLANK)
+            if isinstance(block_type, str):
+                block_type = BlockType[block_type.upper()]
+            elif isinstance(block_type, int):
+                block_type = BlockType(block_type)
             if state.inventory.get(block_type.value, 0) <= 0:
                 return False, f"insufficient_inventory: {block_type.name}"
 
         # 4. Check forbidden block types
         if action.action_type == ActionType.PLACE_BLOCK:
             block_type = action.params.get("block_type", BlockType.PLANK)
+            if isinstance(block_type, str):
+                block_type = BlockType[block_type.upper()]
+            elif isinstance(block_type, int):
+                block_type = BlockType(block_type)
             if block_type in self.policy.forbidden_block_types:
                 return False, f"forbidden_block_type: {block_type.name}"
 

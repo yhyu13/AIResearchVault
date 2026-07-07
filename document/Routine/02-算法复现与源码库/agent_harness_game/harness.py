@@ -25,6 +25,7 @@ class HarnessConfig:
     safety_policy: Optional[SafetyPolicy] = None
     save_state_snapshots: bool = False
     log_level: str = "INFO"
+    initial_inventory: Optional[Dict[int, int]] = None
 
 
 @dataclass
@@ -91,6 +92,8 @@ class AgentHarness:
         # Initialize environment
         state = self.environment.reset(initial_blocks=initial_blocks)
         state.max_turns = self.config.max_turns
+        if self.config.initial_inventory:
+            state.inventory.update(self.config.initial_inventory)
         total_reward = 0.0
         done = False
         step = 0

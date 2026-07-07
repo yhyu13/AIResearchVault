@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAG-Anything 源码面试自测卡牌</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif; }
+  .option-card { transition: all 0.2s; cursor: pointer; }
+  .option-card:hover { background-color: #f3f4f6; }
+  .option-card.selected { border-color: #3b82f6; background-color: #eff6ff; }
+  .option-card.correct { border-color: #22c55e; background-color: #f0fdf4; }
+  .option-card.wrong { border-color: #ef4444; background-color: #fef2f2; }
+  .hidden { display: none !important; }
+  .fade-in { animation: fadeIn 0.3s ease-in; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .dashboard-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 50; display: none; align-items: center; justify-content: center; }
+  .dashboard-overlay.open { display: flex; }
+  .dashboard-panel { background: white; width: 90%; max-width: 800px; max-height: 90vh; border-radius: 1rem; padding: 1.5rem; overflow-y: auto; }
+  .thumb { width: 3rem; height: 3rem; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.875rem; }
+  .thumb.correct { background: #dcfce7; color: #166534; }
+  .thumb.wrong { background: #fee2e2; color: #991b1b; }
+  .thumb.unanswered { background: #f3f4f6; color: #6b7280; }
+</style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+<div class="max-w-3xl mx-auto px-4 py-6">
+  <!-- Header -->
+  <div class="bg-white rounded-xl shadow-sm p-6 mb-4">
+    <div class="flex items-center justify-between flex-wrap gap-3">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900">RAG-Anything 源码面试自测</h1>
+        <p class="text-sm text-gray-500 mt-1">基于 LightRAG 的多模态 RAG 框架 · 单模块聚焦</p>
+      </div>
+      <div class="flex gap-2 flex-wrap">
+        <button onclick="openDashboard()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-medium">📊 题目总览</button>
+        <button onclick="shuffleAllQuestions()" class="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 text-sm font-medium">🎲 随机化</button>
+        <button onclick="resetAll()" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 text-sm font-medium">🔄 重置全部</button>
+      </div>
+    </div>
+    <div class="mt-4 flex items-center gap-4 flex-wrap">
+      <div class="flex-1">
+        <div class="flex justify-between text-sm mb-1">
+          <span id="progress-text" class="text-gray-600">1 / 22</span>
+          <span id="score-text" class="font-semibold text-indigo-600">得分: 0</span>
+        </div>
+        <div class="w-full bg-gray-200 rounded-full h-2.5">
+          <div id="progress-bar" class="bg-indigo-600 h-2.5 rounded-full transition-all" style="width: 0%"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Navigation tabs -->
+  <div class="bg-white rounded-xl shadow-sm p-4 mb-4">
+    <div class="flex gap-2 overflow-x-auto">
+      <button id="tab-single" onclick="switchType('single')" class="px-4 py-2 rounded-lg text-sm font-medium bg-indigo-100 text-indigo-700 whitespace-nowrap">单选题 (10)</button>
+      <button id="tab-multi" onclick="switchType('multi')" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 whitespace-nowrap">多选题 (6)</button>
+      <button id="tab-tf" onclick="switchType('tf')" class="px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 whitespace-nowrap">判断题 (6)</button>
+    </div>
+  </div>
+
+  <!-- Question card -->
+  <div id="question-card" class="bg-white rounded-xl shadow-sm p-6 fade-in">
+    <div id="question-content"></div>
+    <div class="flex justify-between items-center mt-6 pt-4 border-t">
+      <button onclick="prevQuestion()" class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 text-sm font-medium">← 上一题</button>
+      <div class="flex gap-2">
+        <button onclick="resetCurrentQuestion()" class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 text-sm font-medium">重置</button>
+        <button onclick="checkAnswer()" class="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 text-sm font-medium">检查答案</button>
+      </div>
+      <button onclick="nextQuestion()" class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 text-sm font-medium">下一题 →</button>
+    </div>
+  </div>
+
+  <!-- Result panel -->
+  <div id="result-panel" class="hidden bg-white rounded-xl shadow-sm p-6 mt-4 fade-in">
+    <div id="result-content"></div>
+    <div class="flex justify-center gap-3 mt-4">
+      <button onclick="openDashboard()" class="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 text-sm font-medium">返回查看</button>
+      <button onclick="continueLast()" class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 text-sm font-medium">继续做题</button>
+    </div>
+  </div>
+</div>
+
+<!-- Dashboard overlay -->
+<div id="dashboard-overlay" class="dashboard-overlay" onclick="if(event.target===this)closeDashboard()">
+  <div class="dashboard-panel">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-xl font-bold text-gray-900">题目总览</h2>
+      <button onclick="closeDashboard()" class="text-gray-500 hover:text-gray-700 text-2xl leading-none">&times;</button>
+    </div>
+    <div class="flex gap-2 mb-4 flex-wrap">
+      <button onclick="filterDashboard('all')" class="px-3 py-1 rounded-full bg-gray-100 text-sm hover:bg-gray-200">全部</button>
+      <button onclick="filterDashboard('correct')" class="px-3 py-1 rounded-full bg-green-100 text-green-700 text-sm hover:bg-green-200">正确</button>
+      <button onclick="filterDashboard('wrong')" class="px-3 py-1 rounded-full bg-red-100 text-red-700 text-sm hover:bg-red-200">错误</button>
+      <button onclick="filterDashboard('unanswered')" class="px-3 py-1 rounded-full bg-gray-100 text-gray-600 text-sm hover:bg-gray-200">未答</button>
+    </div>
+    <div id="dashboard-grid" class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2"></div>
+    <div class="mt-4 text-sm text-gray-600">
+      <div class="flex gap-4 flex-wrap">
+        <span>单选: <span id="dash-single-stats"></span></span>
+        <span>多选: <span id="dash-multi-stats"></span></span>
+        <span>判断: <span id="dash-tf-stats"></span></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== Question Data =====
+const singleQuestions = [{"question": "RAGAnything 的主类继承了哪几个 Mixin？", "options": ["QueryMixin, ProcessorMixin, BatchMixin", "QueryMixin, ParserMixin, BatchMixin", "ProcessorMixin, BatchMixin, ConfigMixin", "QueryMixin, ProcessorMixin, LightRAGMixin"], "correct": 0, "explanations": ["✅ 正确：RAGAnything 继承自 QueryMixin（查询功能）、ProcessorMixin（文档处理功能）和 BatchMixin（批量处理功能）。", "❌ 错误：不存在 ParserMixin，解析功能通过 doc_parser 属性委托实现。", "❌ 错误：不存在 ConfigMixin，配置通过 RAGAnythingConfig 对象管理。", "❌ 错误：不存在 LightRAGMixin，LightRAG 实例作为独立组件注入。"], "detailLink": "../../RAG-Anything_SourceAnalysis.md#architecture"}, {"question": "process_document_complete 的完整流程中，多模态处理发生在文本插入之前还是之后？", "options": ["之前，因为需要先提取多模态内容再插入文本", "之后，文本先通过 LightRAG 的 ainsert 插入，再处理多模态内容", "同时，文本和多模态内容并行处理", "取决于 parser 配置，可配置先后顺序"], "correct": 1, "explanations": ["❌ 错误：虽然解析阶段先分离了文本和多模态内容，但插入到 LightRAG 时是先文本后多模态。", "✅ 正确：流程为：1) 解析文档 → 2) 分离文本/多模态 → 3) 插入纯文本到 LightRAG → 4) 处理多模态内容。这是为了确保文本 KG 先建立，多模态内容再补充关联。", "❌ 错误：虽然解析是异步的，但插入阶段不是并行执行，而是有明确先后顺序。", "❌ 错误：process_document_complete 的顺序是固定的，不存在 parser 配置可以改变这一顺序。"], "detailLink": "../../RAG-Anything_SourceAnalysis.md#core-flow"}, {"question": "MineruParser 在 Windows 上如何处理含空格的输入路径？", "options": ["使用 urllib.parse.quote 对路径编码", "直接传递原路径，让 MinerU 自己处理", "检测不安全路径后，复制到临时目录并替换为安全路径", "使用双引号包裹路径字符串传递给 subprocess"], "correct": 2, "explanations": ["❌ 错误：没有对路径进行 URL 编码的处理。", "❌ 错误：MinerU 对含空格/点结尾的路径处理不佳，直接传递会导致失败。", "✅ 正确：_is_mineru_unsafe_windows_path 检测不安全路径，_prepare_mineru_paths 将文件复制到临时目录（temp_dir），生成 hash 化的安全路径，处理完成后再复制输出。", "❌ 错误：虽然 subprocess 可能接受引号，但代码中采用的是复制到临时目录的策略，而非引号包裹。"], "detailLink": "../../RAG-Anything_SourceAnalysis.md#parser"}, {"question": "ImageModalProcessor 如何处理图像到 base64 的编码？", "options": ["使用 cv2.imread 读取图像后通过 numpy 编码", "使用 requests 从 URL 下载图像后编码", "使用 PIL.Image.open 读取后通过 io.BytesIO 编码", "使用 open 以 rb 模式读取二进制数据后通过 base64.b64encode 编码"], "correct": 3, "explanations": ["❌ 错误：没有使用 OpenCV。", "❌ 错误：没有网络请求逻辑，只处理本地文件路径。", "❌ 错误：没有使用 PIL。", "✅ 正确：_encode_image_to_base64 方法直接以 'rb' 模式打开文件，读取二进制内容后用 base64.b64encode() 编码。"], "detailLink": "../../RAG-Anything_SourceAnalysis.md#modalprocessors"}, {"question": "parse_cache 的缓存 key 由哪些因素决定？", "options": ["文件路径 + 文件修改时间 + parser 配置 + 解析方法", "文件内容 MD5 哈希", "仅由文件路径决定", "文件路径 + 解析方法 + 当前系统时间"], "correct": 0, "explanations": ["✅ 正确：_generate_cache_key 方法将 file_path（绝对路径）、mtime（修改时间）、parser（解析器类型）、parse_method（解析方法）以及 lang/device/start_page/end_page 等相关参数组合后做 MD5。", "❌ 错误：内容哈希用于生成 doc_id，不是缓存 key。", "❌ 错误：缓存 key 不仅由路径决定，还包含多种因素。", "❌ 错误：不包含系统时间，否则每次重启都会失效。"], "detailLink": "../../RAG-Anything_SourceAnalysis.md#cache"}, {"question": "多模态 chunk 与主实体之间通过什么关系连接？", "options": ["related_to 关系", "belongs_to / part_of / contained_in 关系", "is_a 关系", "references 关系"], "correct": 1, "explanations": ["❌ 错误：不是 related_to。", "✅ 正确：在 _batch_add_belongs_to_relations_type_aware 中，为每个提取的实体与主实体之间添加 belongs_to 关系，keywords 为 'belongs_to,part_of,contained_in'，weight 为 10.0。", "❌ 错误：不是 is_a 层级关系。", "❌ 错误：不是 references 引用关系。"], "detailLink": "../../RAG-Anything_SourceAnalysis.md#entity-relation"}, {"question": "RAGAnythingConfig 支持通过环境变量覆盖默认值吗？", "options": ["不支持，只能通过代码直接修改", "仅支持 .env 文件，不支持系统环境变量", "支持，通过 get_env_value 读取环境变量", "支持，但仅限于 WORKING_DIR 和 PARSER 两个变量"], "correct": 2, "explanations": ["❌ 错误：config.py 中每个字段都使用 get_env_value 读取环境变量。", "❌ 错误：.env 文件在 raganything.py 中通过 load_dotenv 加载，但配置类本身直接读取 os.environ。", "✅ 正确：每个配置字段都通过 get_env_value(env_name, default, type) 读取，如 WORKING_DIR、PARSE_METHOD、ENABLE_IMAGE_PROCESSING 等。", "❌ 错误：几乎所有字段都支持环境变量覆盖，远不止两个。"], "detailLink": "../../RAG-Anything_SourceAnalysis.md#config"}, {"question": "_robust_json_parse 在 JSON 解析失败时会经历几层 fallback？", "options": ["2 层：直接解析 + 清理后解析", "3 层：直接解析 + 基础清理 + 引号修复", "5 层：直接解析 + 基础清理 + 引号修复 + 大模型修正 + 正则提取", "4 层：直接解析 + 基础清理 + 渐进式引号修复 + 正则提取字段"], "correct": 3, "explanations": ["❌ 错误：不止 2 层。", "❌ 错误：不止 3 层。", "❌ 错误：没有调用大模型修正的 fallback。", "✅ 正确：Strategy 1 直接解析 JSON candidates；Strategy 2 基础清理（修复引号、去除尾部逗号）；Strategy 3 渐进式引号修复（处理未转义反斜杠）；Strategy 4 正则提取字段（最后手段）。"], "detailLink": "../../RAG-Anything_SourceAnalysis.md#robustness"}, {"question": "ContextExtractor 的 page 模式和 chunk 模式有何区别？", "options": ["page 模式基于页码，chunk 模式基于 content_list 的索引位置", "page 模式基于总页数，chunk 模式基于段落数", "page 模式基于 PDF 页码，chunk 模式基于 token 数量", "page 模式返回整页内容，chunk 模式返回相邻 chunk 的摘要"], "correct": 0, "explanations": ["✅ 正确：page 模式使用 item 的 page_idx 和 context_window 范围筛选同一页附近的内容；chunk 模式使用 item 的 index（_content_list_index）和 context_window 范围筛选相邻索引的内容。", "❌ 错误：不是基于总页数或段落数。", "❌ 错误：chunk 模式不是基于 token 数量（token 数量用于截断）。", "❌ 错误：不是返回摘要，而是返回原始文本内容。"], "detailLink": "../../RAG-Anything_SourceAnalysis.md#context-extractor"}, {"question": "BatchMixin 中如何控制并发文件数？", "options": ["使用 threading.Lock", "使用 asyncio.Semaphore(max_workers)", "使用 concurrent.futures.ThreadPoolExecutor", "使用 multiprocessing.Pool"], "correct": 1, "explanations": ["❌ 错误：没有使用 threading.Lock。", "✅ 正确：process_folder_complete 中创建 asyncio.Semaphore(max_workers)，process_single_file 协程通过 async with semaphore 控制并发。", "❌ 错误：没有使用 ThreadPoolExecutor。", "❌ 错误：没有使用多进程。"], "detailLink": "../../RAG-Anything_SourceAnalysis.md#batch"}];
+const multiQuestions = [{"question": "RAGAnything 类初始化（__post_init__）时会自动创建哪些组件？（多选）", "options": ["RAGAnythingConfig 实例（如果未提供）", "文档解析器（doc_parser）", "多模态处理器（modal_processors）", "上下文提取器（context_extractor）", "回调管理器（callback_manager）", "工作目录（working_dir）"], "correct": [0, 1, 4, 5], "explanations": ["✅ 正确：如果 config 为 None，会自动创建 RAGAnythingConfig()。", "✅ 正确：通过 get_parser(self.config.parser) 获取并设置 doc_parser。", "❌ 错误：modal_processors 在 _initialize_processors 中创建，需要 LightRAG 先初始化，__post_init__ 不创建。", "❌ 错误：context_extractor 在 _initialize_processors 中创建，__post_init__ 不创建。", "✅ 正确：callback_manager 在 __post_init__ 中通过 CallbackManager() 创建。", "✅ 正确：如果 working_dir 不存在，会调用 os.makedirs 创建。"], "detailLink": "../../RAG-Anything_SourceAnalysis.md#init"}, {"question": "_generate_cache_key 在生成缓存 key 时考虑了哪些因素？（多选）", "options": ["文件的绝对路径", "文件的修改时间（mtime）", "解析器类型（parser）", "解析方法（parse_method）", "文件大小", "额外的解析参数（如 lang, device, start_page 等）"], "correct": [0, 1, 2, 3, 5], "explanations": ["✅ 正确：包含 file_path 的绝对路径。", "✅ 正确：包含 mtime 用于检测文件是否被修改。", "✅ 正确：包含 parser 类型。", "✅ 正确：包含 parse_method。", "❌ 错误：不包含文件大小。", "✅ 正确：包含 lang、device、start_page、end_page、formula、table、backend、source 等参数。"], "detailLink": "../../RAG-Anything_SourceAnalysis.md#cache-key"}, {"question": "ImageModalProcessor 的 generate_description_only 方法涉及哪些主要步骤？（多选）", "options": ["解析 modal_content 获取图像路径和元数据", "调用上下文提取器获取 surrounding context", "使用 _encode_image_to_base64 将图像编码", "调用 vision model 生成描述", "直接创建 knowledge graph 节点和边", "解析 LLM 返回的 JSON 获取 entity_info"], "correct": [0, 1, 2, 3, 5], "explanations": ["✅ 正确：解析 modal_content 获取 img_path、captions、footnotes 等。", "✅ 正确：通过 _get_context_for_item 获取上下文。", "✅ 正确：调用 _encode_image_to_base64 将图像转为 base64。", "✅ 正确：调用 modal_caption_func（vision model）生成描述。", "❌ 错误：generate_description_only 只生成描述，不创建 KG 节点和边，那是 process_multimodal_content 的工作。", "✅ 正确：通过 _parse_response 解析 LLM 返回的 JSON 获取 enhanced_caption 和 entity_info。"], "detailLink": "../../RAG-Anything_SourceAnalysis.md#image-processor"}, {"question": "process_document_complete 方法中的异常处理机制包括哪些？（多选）", "options": ["捕获异常后更新 doc_status 为 FAILED 状态", "通过 callback_manager 分发 on_document_error 事件", "自动重试 3 次后放弃", "将异常信息记录到 error_msg 字段", "回滚已插入的文本和多模态内容", "如果 doc_id 为 None 则跳过状态更新"], "correct": [0, 1, 3, 5], "explanations": ["✅ 正确：except 块中调用 _upsert_doc_status 设置 status=DocStatus.FAILED。", "✅ 正确：通过 callback_manager.dispatch('on_document_error', ...) 通知外部。", "❌ 错误：没有自动重试机制。", "✅ 正确：error_msg=str(exc) 被写入 doc_status。", "❌ 错误：没有回滚机制，已插入的数据保留。", "✅ 正确：if doc_id is not None 才更新状态，避免 None 键错误。"], "detailLink": "../../RAG-Anything_SourceAnalysis.md#error-handling"}, {"question": "RAGAnythingConfig 支持的环境变量包括哪些？（多选）", "options": ["WORKING_DIR", "PARSE_METHOD（兼容 MINERU_PARSE_METHOD）", "ENABLE_IMAGE_PROCESSING", "MAX_CONCURRENT_FILES", "CONTEXT_MODE", "USE_FULL_PATH"], "correct": [0, 1, 2, 3, 4, 5], "explanations": ["✅ 正确：WORKING_DIR 默认值为 './rag_storage'。", "✅ 正确：PARSE_METHOD 是主要变量，同时兼容旧的 MINERU_PARSE_METHOD。", "✅ 正确：ENABLE_IMAGE_PROCESSING 默认 True。", "✅ 正确：MAX_CONCURRENT_FILES 默认 1。", "✅ 正确：CONTEXT_MODE 默认 'page'。", "✅ 正确：USE_FULL_PATH 默认 False。"], "detailLink": "../../RAG-Anything_SourceAnalysis.md#env-vars"}, {"question": "_robust_json_parse 的 fallback 策略包括哪些？（多选）", "options": ["直接解析所有 JSON candidates", "基础清理（修复引号、去除尾部逗号）后解析", "渐进式引号修复（处理未转义反斜杠）", "使用正则表达式提取关键字段", "调用 LLM 重新格式化 JSON", "返回空字典作为最终 fallback"], "correct": [0, 1, 2, 3], "explanations": ["✅ 正确：Strategy 1 尝试直接解析所有候选。", "✅ 正确：Strategy 2 进行基础清理（_basic_json_cleanup）。", "✅ 正确：Strategy 3 进行渐进式引号修复（_progressive_quote_fix）。", "✅ 正确：Strategy 4 使用正则提取字段（_extract_fields_with_regex）。", "❌ 错误：没有调用 LLM 重新格式化。", "❌ 错误：即使正则提取也会返回包含 detailed_description 和 entity_info 的字典，不是空字典。"], "detailLink": "../../RAG-Anything_SourceAnalysis.md#json-parse"}];
+const trueFalseQuestions = [{"question": "RAGAnything 的 close 方法在有运行中的事件循环时，会创建新的事件循环来执行清理任务。", "correct": false, "explanation": "✅ 正确理解：当检测到已有运行中的事件循环时（asyncio.get_running_loop() 成功），close 方法使用 loop.create_task(self.finalize_storages()) 将清理任务调度到现有循环中，而不是创建新循环。\n❌ 常见误解：误以为任何情况下都会创建新循环。实际上仅在无运行循环或循环已关闭时才会创建新循环。", "detailLink": "../../RAG-Anything_SourceAnalysis.md#cleanup"}, {"question": "parse_cache 仅基于文件路径生成缓存 key，不考虑文件修改时间和解析配置。", "correct": false, "explanation": "✅ 正确理解：_generate_cache_key 将文件绝对路径、修改时间（mtime）、解析器类型、解析方法以及 lang/device 等参数全部纳入哈希计算，确保文件修改或配置变更后缓存失效。\n❌ 常见误解：认为缓存 key 只是简单路径哈希。实际上包含完整的配置指纹，且 _get_cached_result 会再次验证 mtime 和 parse_config。", "detailLink": "../../RAG-Anything_SourceAnalysis.md#cache"}, {"question": "ImageModalProcessor 使用同步方式读取图像文件并编码为 base64。", "correct": true, "explanation": "✅ 正确理解：_encode_image_to_base64 方法直接使用 open(path, 'rb') 和 base64.b64encode() 进行同步文件读取和编码。虽然 generate_description_only 是 async 方法，但图像编码本身是同步调用。\n❌ 常见误解：认为所有 I/O 操作都是异步的。实际上图像编码没有使用 aiofiles 或 asyncio.to_thread。", "detailLink": "../../RAG-Anything_SourceAnalysis.md#image-encoding"}, {"question": "在 process_document_complete 中，如果文档没有纯文本内容，则不会创建 doc_status 记录。", "correct": false, "explanation": "✅ 正确理解：当 text_content.strip() 为空时，代码会调用 _upsert_doc_status 创建状态为 HANDLING 的 doc_status 记录。这是为了确保多模态-only 文档（如全图片 PDF）也能被追踪处理状态。\n❌ 常见误解：认为没有文本就跳过状态记录。实际上代码明确处理了这种情况：'if not text_content.strip(): await self._upsert_doc_status(...)'。", "detailLink": "../../RAG-Anything_SourceAnalysis.md#doc-status"}, {"question": "ContextExtractor 的 page 模式使用 _content_list_index 来确定上下文范围。", "correct": false, "explanation": "✅ 正确理解：page 模式使用 item 的 page_idx 和 context_window 计算 start_page/end_page 范围，筛选同一页附近的内容。chunk 模式才使用 index（_content_list_index）。\n❌ 常见误解：混淆 page 和 chunk 模式的索引方式。page 模式是跨 item 的页码聚合，chunk 模式是数组索引滑动窗口。", "detailLink": "../../RAG-Anything_SourceAnalysis.md#context-modes"}, {"question": "BatchMixin 的 process_folder_complete 使用线程池（ThreadPoolExecutor）来控制并发文件数。", "correct": false, "explanation": "✅ 正确理解：process_folder_complete 使用 asyncio.Semaphore(max_workers) 控制并发，process_single_file 是 async 协程，通过 async with semaphore 获取信号量。这是纯 asyncio 并发，没有使用线程池。\n❌ 常见误解：将 asyncio 并发与线程池混淆。代码中没有 ThreadPoolExecutor 或 multiprocessing，而是 asyncio 原语。", "detailLink": "../../RAG-Anything_SourceAnalysis.md#batch-concurrency"}];
+
+const allQuestions = singleQuestions.map((q,i)=>({...q, type:'single', originalIndex:i}))
+  .concat(multiQuestions.map((q,i)=>({...q, type:'multi', originalIndex:i})))
+  .concat(trueFalseQuestions.map((q,i)=>({...q, type:'tf', originalIndex:i})));
+
+// ===== State =====
+let currentType = 'single';
+let currentIndex = 0;
+let userAnswers = {};
+let checkedState = {};
+let dashboardFilter = 'all';
+let lastTypeBeforeResult = 'single';
+let lastIndexBeforeResult = 0;
+
+// ===== Utils =====
+function getQuestionKey(type, index) { return `${type}-${index}`; }
+function getCurrentQuestion() {
+  const arr = currentType === 'single' ? singleQuestions : currentType === 'multi' ? multiQuestions : trueFalseQuestions;
+  return arr[currentIndex];
+}
+function getArrayByType(type) {
+  return type === 'single' ? singleQuestions : type === 'multi' ? multiQuestions : trueFalseQuestions;
+}
+
+// ===== Rendering =====
+function renderQuestion() {
+  const q = getCurrentQuestion();
+  if (!q) return;
+  const key = getQuestionKey(currentType, currentIndex);
+  const isChecked = checkedState[key] || false;
+  const userAns = userAnswers[key];
+  
+  let html = `<div class="mb-2 text-sm text-indigo-600 font-semibold">${getTypeLabel(currentType)} · 第 ${currentIndex+1} / ${getArrayByType(currentType).length} 题</div>`;
+  html += `<h3 class="text-lg font-semibold text-gray-900 mb-4">${q.question}</h3>`;
+  
+  if (currentType === 'single') {
+    html += `<div class="space-y-2">`;
+    q.options.forEach((opt, i) => {
+      let cls = "option-card border-2 rounded-lg p-3 flex items-start gap-3 ";
+      if (isChecked) {
+        if (i === q.correct) cls += "correct";
+        else if (userAns === i) cls += "wrong";
+        else cls += "border-gray-200";
+      } else {
+        cls += (userAns === i ? "selected border-blue-400" : "border-gray-200");
+      }
+      html += `<div class="${cls}" onclick="selectSingle(${i})">
+        <div class="w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5 ${isChecked ? (i===q.correct?'border-green-500 bg-green-500 text-white':(userAns===i?'border-red-500 bg-red-500 text-white':'border-gray-300')) : (userAns===i?'border-blue-500 bg-blue-500 text-white':'border-gray-300')}">
+          ${isChecked ? (i===q.correct?'✓':(userAns===i?'✗':'')) : (userAns===i?'✓':'')}
+        </div>
+        <div class="text-sm text-gray-800">${opt}</div>
+      </div>`;
+    });
+    html += `</div>`;
+  } else if (currentType === 'multi') {
+    html += `<div class="space-y-2">`;
+    q.options.forEach((opt, i) => {
+      const isSelected = (userAns || []).includes(i);
+      let cls = "option-card border-2 rounded-lg p-3 flex items-start gap-3 ";
+      if (isChecked) {
+        if (q.correct.includes(i)) cls += "correct";
+        else if (isSelected) cls += "wrong";
+        else cls += "border-gray-200";
+      } else {
+        cls += (isSelected ? "selected border-blue-400" : "border-gray-200");
+      }
+      html += `<div class="${cls}" onclick="toggleMulti(${i})">
+        <div class="w-6 h-6 rounded border-2 flex items-center justify-center shrink-0 mt-0.5 ${isChecked ? (q.correct.includes(i)?'border-green-500 bg-green-500 text-white':(isSelected?'border-red-500 bg-red-500 text-white':'border-gray-300')) : (isSelected?'border-blue-500 bg-blue-500 text-white':'border-gray-300')}">
+          ${isChecked ? (q.correct.includes(i)?'✓':(isSelected?'✗':'')) : (isSelected?'✓':'')}
+        </div>
+        <div class="text-sm text-gray-800">${opt}</div>
+      </div>`;
+    });
+    html += `</div>`;
+  } else if (currentType === 'tf') {
+    html += `<div class="space-y-2">`;
+    ['True', 'False'].forEach((val, i) => {
+      const optVal = i === 0;
+      const isSelected = userAns === optVal;
+      let cls = "option-card border-2 rounded-lg p-3 flex items-center gap-3 ";
+      if (isChecked) {
+        if (optVal === q.correct) cls += "correct";
+        else if (isSelected) cls += "wrong";
+        else cls += "border-gray-200";
+      } else {
+        cls += (isSelected ? "selected border-blue-400" : "border-gray-200");
+      }
+      html += `<div class="${cls}" onclick="selectTf(${optVal})">
+        <div class="w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 ${isChecked ? (optVal===q.correct?'border-green-500 bg-green-500 text-white':(isSelected?'border-red-500 bg-red-500 text-white':'border-gray-300')) : (isSelected?'border-blue-500 bg-blue-500 text-white':'border-gray-300')}">
+          ${isChecked ? (optVal===q.correct?'✓':(isSelected?'✗':'')) : (isSelected?'✓':'')}
+        </div>
+        <div class="text-sm text-gray-800 font-medium">${val === 'True' ? '正确 (True)' : '错误 (False)'}</div>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+  
+  // Explanation
+  if (isChecked) {
+    html += `<div class="mt-4 p-4 rounded-lg bg-gray-50 border border-gray-200">`;
+    if (currentType === 'single') {
+      html += `<div class="font-semibold mb-2 ${userAns === q.correct ? 'text-green-700' : 'text-red-700'}">${userAns === q.correct ? '✅ 回答正确' : '❌ 回答错误'}</div>`;
+      q.options.forEach((opt, i) => {
+        html += `<div class="text-sm mb-1 ${i===q.correct?'text-green-700':(userAns===i?'text-red-700':'text-gray-600')}">${String.fromCharCode(65+i)}. ${q.explanations[i]}</div>`;
+      });
+    } else if (currentType === 'multi') {
+      const allCorrect = q.correct.length === (userAns||[]).length && q.correct.every(c=>(userAns||[]).includes(c));
+      html += `<div class="font-semibold mb-2 ${allCorrect ? 'text-green-700' : 'text-red-700'}">${allCorrect ? '✅ 回答正确' : '❌ 回答错误'}</div>`;
+      q.options.forEach((opt, i) => {
+        html += `<div class="text-sm mb-1 ${q.correct.includes(i)?'text-green-700':((userAns||[]).includes(i)?'text-red-700':'text-gray-600')}">${String.fromCharCode(65+i)}. ${q.explanations[i]}</div>`;
+      });
+    } else if (currentType === 'tf') {
+      html += `<div class="font-semibold mb-2 ${userAns === q.correct ? 'text-green-700' : 'text-red-700'}">${userAns === q.correct ? '✅ 回答正确' : '❌ 回答错误'}</div>`;
+      html += `<div class="text-sm whitespace-pre-line">${q.explanation}</div>`;
+    }
+    if (q.detailLink) {
+      html += `<div class="mt-3"><a href="${q.detailLink}" target="_blank" class="text-indigo-600 hover:underline text-sm">📎 查看详情文档</a></div>`;
+    }
+    html += `</div>`;
+  }
+  
+  document.getElementById('question-content').innerHTML = html;
+  updateProgress();
+  updateTabs();
+}
+
+function getTypeLabel(type) {
+  return type === 'single' ? '单选题' : type === 'multi' ? '多选题' : '判断题';
+}
+
+function updateProgress() {
+  const total = singleQuestions.length + multiQuestions.length + trueFalseQuestions.length;
+  let answered = 0;
+  Object.keys(userAnswers).forEach(k => { if (userAnswers[k] !== undefined && userAnswers[k] !== null) answered++; });
+  
+  const arr = getArrayByType(currentType);
+  document.getElementById('progress-text').textContent = `${currentType === 'single' ? currentIndex+1 : currentType === 'multi' ? currentIndex+1 : currentIndex+1} / ${arr.length} (${getTypeLabel(currentType)})`;
+  document.getElementById('progress-bar').style.width = `${arr.length ? ((currentIndex+1)/arr.length*100) : 0}%`;
+  
+  // Score calculation
+  let score = 0;
+  let totalMax = 0;
+  singleQuestions.forEach((q,i) => {
+    totalMax += 1;
+    if (checkedState[`single-${i}`] && userAnswers[`single-${i}`] === q.correct) score += 1;
+  });
+  multiQuestions.forEach((q,i) => {
+    totalMax += 1;
+    if (checkedState[`multi-${i}`]) {
+      const ua = userAnswers[`multi-${i}`] || [];
+      if (q.correct.length === ua.length && q.correct.every(c=>ua.includes(c))) score += 1;
+    }
+  });
+  trueFalseQuestions.forEach((q,i) => {
+    totalMax += 1;
+    if (checkedState[`tf-${i}`] && userAnswers[`tf-${i}`] === q.correct) score += 1;
+  });
+  document.getElementById('score-text').textContent = `得分: ${score} / ${totalMax}`;
+}
+
+function updateTabs() {
+  ['single','multi','tf'].forEach(t => {
+    const el = document.getElementById('tab-'+t);
+    if (t === currentType) { el.className = "px-4 py-2 rounded-lg text-sm font-medium bg-indigo-100 text-indigo-700 whitespace-nowrap"; }
+    else { el.className = "px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 whitespace-nowrap"; }
+  });
+}
+
+function switchType(type) {
+  currentType = type;
+  currentIndex = 0;
+  document.getElementById('result-panel').classList.add('hidden');
+  document.getElementById('question-card').classList.remove('hidden');
+  renderQuestion();
+}
+
+function selectSingle(idx) {
+  const key = getQuestionKey(currentType, currentIndex);
+  if (checkedState[key]) return;
+  userAnswers[key] = idx;
+  renderQuestion();
+}
+
+function toggleMulti(idx) {
+  const key = getQuestionKey(currentType, currentIndex);
+  if (checkedState[key]) return;
+  const arr = userAnswers[key] || [];
+  if (arr.includes(idx)) {
+    userAnswers[key] = arr.filter(x => x !== idx);
+  } else {
+    userAnswers[key] = [...arr, idx].sort((a,b)=>a-b);
+  }
+  renderQuestion();
+}
+
+function selectTf(val) {
+  const key = getQuestionKey(currentType, currentIndex);
+  if (checkedState[key]) return;
+  userAnswers[key] = val;
+  renderQuestion();
+}
+
+function checkAnswer() {
+  const key = getQuestionKey(currentType, currentIndex);
+  if (userAnswers[key] === undefined || userAnswers[key] === null) {
+    alert('请先选择一个答案');
+    return;
+  }
+  checkedState[key] = true;
+  renderQuestion();
+  updateProgress();
+}
+
+function resetCurrentQuestion() {
+  const key = getQuestionKey(currentType, currentIndex);
+  delete userAnswers[key];
+  delete checkedState[key];
+  renderQuestion();
+}
+
+function prevQuestion() {
+  if (currentIndex > 0) { currentIndex--; renderQuestion(); }
+  else { 
+    const types = ['single','multi','tf'];
+    const idx = types.indexOf(currentType);
+    if (idx > 0) { currentType = types[idx-1]; currentIndex = getArrayByType(currentType).length-1; renderQuestion(); }
+  }
+}
+
+function nextQuestion() {
+  const arr = getArrayByType(currentType);
+  if (currentIndex < arr.length - 1) { currentIndex++; renderQuestion(); }
+  else {
+    const types = ['single','multi','tf'];
+    const idx = types.indexOf(currentType);
+    if (idx < types.length - 1) { currentType = types[idx+1]; currentIndex = 0; renderQuestion(); }
+    else { showResult(); }
+  }
+}
+
+function showResult() {
+  lastTypeBeforeResult = currentType;
+  lastIndexBeforeResult = currentIndex;
+  document.getElementById('question-card').classList.add('hidden');
+  const panel = document.getElementById('result-panel');
+  panel.classList.remove('hidden');
+  
+  let score = 0, totalMax = 0;
+  singleQuestions.forEach((q,i) => {
+    totalMax += 1;
+    if (checkedState[`single-${i}`] && userAnswers[`single-${i}`] === q.correct) score += 1;
+  });
+  multiQuestions.forEach((q,i) => {
+    totalMax += 1;
+    if (checkedState[`multi-${i}`]) {
+      const ua = userAnswers[`multi-${i}`] || [];
+      if (q.correct.length === ua.length && q.correct.every(c=>ua.includes(c))) score += 1;
+    }
+  });
+  trueFalseQuestions.forEach((q,i) => {
+    totalMax += 1;
+    if (checkedState[`tf-${i}`] && userAnswers[`tf-${i}`] === q.correct) score += 1;
+  });
+  
+  const pct = totalMax ? Math.round(score/totalMax*100) : 0;
+  let grade = pct >= 90 ? '优秀 🎉' : pct >= 70 ? '良好 👍' : pct >= 50 ? '及格 ✓' : '需要加强 📚';
+  
+  document.getElementById('result-content').innerHTML = `
+    <div class="text-center">
+      <div class="text-4xl font-bold text-indigo-600 mb-2">${score} / ${totalMax}</div>
+      <div class="text-lg text-gray-700 mb-4">正确率: ${pct}% · ${grade}</div>
+      <div class="w-full bg-gray-200 rounded-full h-4 mb-4">
+        <div class="bg-indigo-600 h-4 rounded-full transition-all" style="width:${pct}%"></div>
+      </div>
+      <p class="text-sm text-gray-500">点击"返回查看"打开总览面板，或"继续做题"回到最后位置。</p>
+    </div>
+  `;
+}
+
+function continueLast() {
+  document.getElementById('result-panel').classList.add('hidden');
+  document.getElementById('question-card').classList.remove('hidden');
+  currentType = lastTypeBeforeResult;
+  currentIndex = lastIndexBeforeResult;
+  renderQuestion();
+}
+
+// ===== Dashboard =====
+function openDashboard() {
+  document.getElementById('dashboard-overlay').classList.add('open');
+  renderDashboardGrid();
+}
+function closeDashboard() {
+  document.getElementById('dashboard-overlay').classList.remove('open');
+}
+function filterDashboard(filter) {
+  dashboardFilter = filter;
+  renderDashboardGrid();
+}
+
+function renderDashboardGrid() {
+  const grid = document.getElementById('dashboard-grid');
+  grid.innerHTML = '';
+  
+  let stats = { single: {correct:0, wrong:0, unanswered:0}, multi: {correct:0, wrong:0, unanswered:0}, tf: {correct:0, wrong:0, unanswered:0} };
+  
+  function processArray(arr, type) {
+    arr.forEach((q, i) => {
+      const key = `${type}-${i}`;
+      let status = 'unanswered';
+      if (checkedState[key]) {
+        if (type === 'single') status = userAnswers[key] === q.correct ? 'correct' : 'wrong';
+        else if (type === 'multi') { const ua = userAnswers[key]||[]; status = (q.correct.length===ua.length && q.correct.every(c=>ua.includes(c))) ? 'correct' : 'wrong'; }
+        else if (type === 'tf') status = userAnswers[key] === q.correct ? 'correct' : 'wrong';
+      }
+      stats[type][status]++;
+      
+      if (dashboardFilter !== 'all' && status !== dashboardFilter) return;
+      
+      const div = document.createElement('div');
+      div.className = 'cursor-pointer';
+      div.onclick = () => { currentType = type; currentIndex = i; closeDashboard(); document.getElementById('result-panel').classList.add('hidden'); document.getElementById('question-card').classList.remove('hidden'); renderQuestion(); };
+      div.innerHTML = `
+        <div class="thumb ${status}">${type==='single'?'单':type==='multi'?'多':'判'}${i+1}</div>
+      `;
+      grid.appendChild(div);
+    });
+  }
+  
+  processArray(singleQuestions, 'single');
+  processArray(multiQuestions, 'multi');
+  processArray(trueFalseQuestions, 'tf');
+  
+  document.getElementById('dash-single-stats').textContent = `${stats.single.correct}对/${stats.single.wrong}错/${stats.single.unanswered}未`;
+  document.getElementById('dash-multi-stats').textContent = `${stats.multi.correct}对/${stats.multi.wrong}错/${stats.multi.unanswered}未`;
+  document.getElementById('dash-tf-stats').textContent = `${stats.tf.correct}对/${stats.tf.wrong}错/${stats.tf.unanswered}未`;
+}
+
+// ===== Shuffle =====
+function shuffleAllQuestions() {
+  if (!confirm('🎲 随机化将打乱所有单选/多选/判断题的选项顺序，并清空所有答题记录。确定继续？')) return;
+  
+  // Shuffle single
+  singleQuestions.forEach(q => {
+    const pairs = q.options.map((opt, i) => ({opt, expl: q.explanations[i]}));
+    for (let i = pairs.length-1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i+1));
+      [pairs[i], pairs[j]] = [pairs[j], pairs[i]];
+    }
+    q.options = pairs.map(p => p.opt);
+    q.explanations = pairs.map(p => p.expl);
+    q.correct = pairs.findIndex(p => p.expl.startsWith('✅'));
+  });
+  
+  // Shuffle multi
+  multiQuestions.forEach(q => {
+    const pairs = q.options.map((opt, i) => ({opt, expl: q.explanations[i], isCorrect: q.correct.includes(i)}));
+    for (let i = pairs.length-1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i+1));
+      [pairs[i], pairs[j]] = [pairs[j], pairs[i]];
+    }
+    q.options = pairs.map(p => p.opt);
+    q.explanations = pairs.map(p => p.expl);
+    q.correct = pairs.map((p,i) => p.isCorrect ? i : -1).filter(i => i !== -1);
+  });
+  
+  // Reset all answers
+  userAnswers = {};
+  checkedState = {};
+  currentType = 'single';
+  currentIndex = 0;
+  document.getElementById('result-panel').classList.add('hidden');
+  document.getElementById('question-card').classList.remove('hidden');
+  renderQuestion();
+}
+
+// ===== Reset All =====
+function resetAll() {
+  if (!confirm('确定要清空所有答题记录吗？')) return;
+  userAnswers = {};
+  checkedState = {};
+  currentType = 'single';
+  currentIndex = 0;
+  document.getElementById('result-panel').classList.add('hidden');
+  document.getElementById('question-card').classList.remove('hidden');
+  // Restore navigation and progress elements
+  document.getElementById('progress-bar').parentElement.parentElement.classList.remove('hidden');
+  renderQuestion();
+}
+
+// ===== Init =====
+renderQuestion();
+</script>
+</body>
+</html>

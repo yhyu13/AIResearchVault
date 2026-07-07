@@ -2,7 +2,7 @@
 Demo 1: Build a 2×2 Wall — Full Harness Pipeline
 
 Demonstrates H=(E,T,C,S,L,V) working together to complete a building task.
-Run: python demo/build_house.py
+Run: python agent_harness_game/demo/build_house.py
 """
 import sys
 import os

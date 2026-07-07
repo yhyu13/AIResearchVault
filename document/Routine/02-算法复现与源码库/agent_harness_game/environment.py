@@ -157,6 +157,11 @@ class SandboxEnvironment:
 
         elif action.action_type == ActionType.PLACE_BLOCK:
             block_type = action.params.get("block_type", BlockType.PLANK)
+            # Defense: normalize block_type to enum (string/int from JSON/external)
+            if isinstance(block_type, str):
+                block_type = BlockType[block_type.upper()]
+            elif isinstance(block_type, int):
+                block_type = BlockType(block_type)
             if new_state.inventory.get(block_type.value, 0) > 0:
                 tx = action.params.get("x", x)
                 ty = action.params.get("y", y)

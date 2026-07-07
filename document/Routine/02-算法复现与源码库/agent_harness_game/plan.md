@@ -39,21 +39,22 @@
 ```
 02-算法复现与源码库/
 ├── 00-README.md
-├── 02-Agent-Harness-Game-AI-2026-07-01.md      # 复现主文档
-├── agent_harness_game/
-│   ├── __init__.py
-│   ├── environment.py     # E: 简化版沙盒环境
-│   ├── agent.py           # T: LLM Agent 接口 + ReAct 循环
-│   ├── context.py         # C: 上下文管理
-│   ├── safety.py          # S: 安全沙箱
-│   ├── logging.py         # L: 日志追踪
-│   ├── verifier.py        # V: 验证评估
-│   └── harness.py         # H: 六组件组装器
-├── demo/
-│   ├── build_house.py     # 案例1: 建造房屋任务
-│   └── craft_item.py      # 案例2: 合成物品任务
-└── tests/
-    └── test_harness.py    # 单元测试
+└── agent_harness_game/
+    ├── __init__.py
+    ├── environment.py     # E: 简化版沙盒环境
+    ├── agent.py           # T: LLM Agent 接口 + ReAct 循环
+    ├── context.py         # C: 上下文管理
+    ├── safety.py          # S: 安全沙箱
+    ├── logging.py         # L: 日志追踪
+    ├── verifier.py        # V: 验证评估
+    ├── harness.py         # H: 六组件组装器
+    ├── demo/
+    │   ├── build_house.py     # 案例1: 建造房屋任务
+    │   └── craft_item.py      # 案例2: 合成物品任务
+    ├── tests/
+    │   └── test_harness.py    # 单元测试
+    ├── 02-Agent-Harness-Game-AI-2026-07-01.md  # 复现主文档
+    └── plan.md                                 # 实现计划
 ```
 
 ### 2.2 实现优先级

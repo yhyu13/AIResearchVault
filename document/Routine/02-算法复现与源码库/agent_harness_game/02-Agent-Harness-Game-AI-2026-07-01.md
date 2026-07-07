@@ -102,13 +102,13 @@ agent_harness_game/
 ├── context.py           # C: 上下文管理（~170行）
 ├── safety.py            # S: 安全沙箱（~190行）
 ├── verifier.py          # V: 多维度验证（~230行）
-└── harness.py           # H: 六组件组装器（~200行）
-
-demo/
-└── build_house.py       # 案例：建造 2×2 墙
-
-tests/
-└── test_harness.py      # 24 个单元测试 + 集成测试
+├── harness.py           # H: 六组件组装器（~200行）
+├── demo/
+│   └── build_house.py   # 案例：建造 2×2 墙
+├── tests/
+│   └── test_harness.py  # 24 个单元测试 + 集成测试
+├── 02-Agent-Harness-Game-AI-2026-07-01.md  # 复现主文档
+└── plan.md                                 # 实现计划
 ```
 
 ### 2.2 关键技术决策
@@ -167,15 +167,15 @@ AgentHarness (H)
 
 由于 Survey 论文是综述性质，没有官方代码实现。我们基于论文定义推导了完整的可运行代码。
 
-| 维度 | Survey 论文 | 本实现 | 差距分析 |
-|------|------------|--------|----------|
-| 架构覆盖 | 六组件完整定义 | ✅ 六组件完整实现 | 对齐 |
-| 环境复杂度 | 真实 3D 游戏（Minecraft） | ⚠️ 简化 2D 网格 | 保留核心状态转移概念，降低运行门槛 |
-| LLM 集成 | 真实 GPT-4/Claude | ✅ 模拟 + 抽象接口 | `LLMBackend` 可替换为真实 API |
-| 安全性 | 多维度沙箱（论文提及） | ✅ 白名单 + 边界 + 库存 | 基础版，可扩展规则引擎 |
-| 可复现性 | 强调日志但未给出格式 | ✅ 结构化 JSON 轨迹 | 增强：支持完整回溯 |
-| 评估 | 概念性讨论 | ✅ 四维量化评估 | 从定性到定量 |
-| 代码量 | 无 | ~1,500 行 Python | 完整可运行 |
+| 维度     | Survey 论文           | 本实现             | 差距分析                    |
+| ------ | ------------------- | --------------- | ----------------------- |
+| 架构覆盖   | 六组件完整定义             | ✅ 六组件完整实现       | 对齐                      |
+| 环境复杂度  | 真实 3D 游戏（Minecraft） | ⚠️ 简化 2D 网格     | 保留核心状态转移概念，降低运行门槛       |
+| LLM 集成 | 真实 GPT-4/Claude     | ✅ 模拟 + 抽象接口     | `LLMBackend` 可替换为真实 API |
+| 安全性    | 多维度沙箱（论文提及）         | ✅ 白名单 + 边界 + 库存 | 基础版，可扩展规则引擎             |
+| 可复现性   | 强调日志但未给出格式          | ✅ 结构化 JSON 轨迹   | 增强：支持完整回溯               |
+| 评估     | 概念性讨论               | ✅ 四维量化评估        | 从定性到定量                  |
+| 代码量    | 无                   | ~1,500 行 Python | 完整可运行                   |
 
 ---
 
@@ -186,7 +186,7 @@ AgentHarness (H)
 **现象**：`test_place_block` 失败，`info["success"]` 为 False
 **原因**：测试用例中放置 `BlockType.WALL`，但库存中只有 `BlockType.PLANK`
 **修复**：将测试中的动作改为放置 `BlockType.PLANK`，与库存一致
-**代码**：`tests/test_harness.py:85-92`
+**代码**：`agent_harness_game/tests/test_harness.py:85-92`
 
 ### 4.2 问题 2：模拟 Agent 策略不够智能
 
@@ -225,10 +225,10 @@ AgentHarness (H)
 
 ```bash
 # 方式 1：运行全部测试（通过 PythonRun）
-python tests/test_harness.py
+python agent_harness_game/tests/test_harness.py
 
 # 方式 2：运行 Demo
-python demo/build_house.py
+python agent_harness_game/demo/build_house.py
 
 # 方式 3：作为模块导入
 from agent_harness_game import AgentHarness, HarnessConfig, TaskSpec
@@ -294,7 +294,7 @@ print(f"Score: {result.evaluation.overall_score}")
 **人类执行建议**：
 1. 阅读 `agent_harness_game/harness.py` 理解组装流程
 2. 修改 `agent_harness_game/agent.py` 中的 `SimulatedLLM` 策略，尝试不同的 heuristics
-3. 在 `demo/build_house.py` 中接入真实 OpenAI API（替换 `SimulatedLLM`）
+3. 在 `agent_harness_game/demo/build_house.py` 中接入真实 OpenAI API（替换 `SimulatedLLM`）
 4. 在 Monday 论文笔记中链接到本文件：`[[02-Agent-Harness-Game-AI-2026-07-01]]`
 
 ---

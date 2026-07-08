@@ -1,0 +1,1245 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>02-向量检索与 Embedding 实验面试知识自测</title>
+  <style>
+    :root {
+      --bg-body: #FAF8F5;
+      --bg-card: #FFFFFF;
+      --bg-warm: #F5F0E8;
+      --primary: #2D5F5F;
+      --primary-light: #3D7A7A;
+      --accent: #4A7C59;
+      --accent-light: #E8F3E8;
+      --text-main: #2C2C2C;
+      --text-muted: #6B6B6B;
+      --border: #D8D2C8;
+      --shadow: rgba(0,0,0,0.06);
+      --correct: #3A8C5D;
+      --correct-bg: #EAF6EE;
+      --wrong: #C44B4B;
+      --wrong-bg: #FCEAEA;
+      --warning: #C9943A;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg-body);
+      color: var(--text-main);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    header h1 {
+      font-size: 1.6rem;
+      color: var(--primary);
+      margin-bottom: 4px;
+    }
+
+    header .topic {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+    }
+
+    .score-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 8px var(--shadow);
+    }
+
+    .score-bar .score {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--primary);
+    }
+
+    .score-bar .actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+
+    .btn-sm { padding: 6px 10px; font-size: 0.78rem; }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+    }
+    .btn-primary:hover { background: var(--primary-light); }
+
+    .btn-secondary {
+      background: var(--bg-warm);
+      color: var(--text-main);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover { background: #EDE8DE; }
+
+    .btn-warning {
+      background: #FFF8E6;
+      color: #8A6D1F;
+      border: 1px solid #F0E0B0;
+    }
+    .btn-warning:hover { background: #FFF0CC; }
+
+    .tabs {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .tab {
+      flex: 1;
+      min-width: 80px;
+      text-align: center;
+      padding: 10px 8px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 0.88rem;
+      transition: all 0.2s ease;
+    }
+
+    .tab.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+      font-weight: 600;
+    }
+
+    .tab .badge {
+      display: inline-block;
+      margin-left: 4px;
+      background: rgba(255,255,255,0.25);
+      padding: 1px 6px;
+      border-radius: 10px;
+      font-size: 0.72rem;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+      box-shadow: 0 2px 12px var(--shadow);
+      margin-bottom: 16px;
+    }
+
+    .progress-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .progress-bar {
+      flex: 1;
+      height: 8px;
+      background: #EAE5DC;
+      border-radius: 4px;
+      overflow: hidden;
+      margin: 0 12px;
+    }
+
+    .progress-bar .fill {
+      height: 100%;
+      background: var(--primary);
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+
+    .question-text {
+      font-size: 1.05rem;
+      font-weight: 500;
+      margin-bottom: 18px;
+      line-height: 1.7;
+    }
+
+    .question-text .blank {
+      display: inline-block;
+      min-width: 80px;
+      padding: 3px 10px;
+      margin: 0 3px;
+      border: 2px dashed var(--border);
+      border-radius: 6px;
+      background: var(--bg-warm);
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      text-align: center;
+      vertical-align: middle;
+      transition: all 0.2s ease;
+    }
+
+    .question-text .blank.filled {
+      border-style: solid;
+      border-color: var(--primary);
+      background: #F0F7F7;
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    .question-text .blank.correct {
+      border-color: var(--correct);
+      background: var(--correct-bg);
+      color: var(--correct);
+    }
+
+    .question-text .blank.wrong {
+      border-color: var(--wrong);
+      background: var(--wrong-bg);
+      color: var(--wrong);
+    }
+
+    .draggables {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+
+    .draggable {
+      padding: 8px 14px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      cursor: grab;
+      font-size: 0.9rem;
+      user-select: none;
+      transition: all 0.2s ease;
+    }
+
+    .draggable:hover {
+      border-color: var(--primary);
+      box-shadow: 0 2px 6px var(--shadow);
+    }
+
+    .draggable.dragging {
+      opacity: 0.5;
+      cursor: grabbing;
+    }
+
+    .draggable.used {
+      opacity: 0.4;
+      pointer-events: none;
+    }
+
+    .options-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .option {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: var(--bg-card);
+    }
+
+    .option:hover { border-color: var(--primary-light); background: #F7FBFB; }
+
+    .option input[type="radio"],
+    .option input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--primary);
+      flex-shrink: 0;
+    }
+
+    .option .label {
+      flex: 1;
+      font-size: 0.95rem;
+    }
+
+    .option.correct-ans {
+      border-color: var(--correct);
+      background: var(--correct-bg);
+    }
+
+    .option.wrong-ans {
+      border-color: var(--wrong);
+      background: var(--wrong-bg);
+    }
+
+    .option .mark {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-left: auto;
+    }
+
+    .explanation {
+      display: none;
+      margin-top: 8px;
+      padding: 12px 14px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    .explanation.show { display: block; }
+
+    .explanation.correct-ex {
+      background: var(--correct-bg);
+      color: #2A6B44;
+      border: 1px solid #B8E0C8;
+    }
+
+    .explanation.wrong-ex {
+      background: var(--wrong-bg);
+      color: #8A3333;
+      border: 1px solid #F0C0C0;
+    }
+
+    .nav-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .nav-bar .btn { flex: 1; }
+
+    .overview-btn {
+      text-align: center;
+      margin-top: 12px;
+    }
+
+    .overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.35);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .overlay.show { display: flex; }
+
+    .overlay-content {
+      background: var(--bg-card);
+      border-radius: 14px;
+      padding: 20px;
+      width: 100%;
+      max-width: 480px;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+    }
+
+    .overlay-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .overlay-header h2 {
+      font-size: 1.15rem;
+      color: var(--primary);
+    }
+
+    .grid-overview {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
+      gap: 8px;
+    }
+
+    .grid-item {
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      border: 1.5px solid var(--border);
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .grid-item:hover { transform: scale(1.05); }
+
+    .grid-item.empty { background: var(--bg-body); color: var(--text-muted); }
+    .grid-item.correct { background: var(--correct-bg); color: var(--correct); border-color: #A0D8B3; }
+    .grid-item.wrong { background: var(--wrong-bg); color: var(--wrong); border-color: #E8A0A0; }
+
+    .legend {
+      display: flex;
+      gap: 14px;
+      justify-content: center;
+      margin-top: 14px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .legend span { display: flex; align-items: center; gap: 4px; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+    .dot-empty { background: #D8D2C8; }
+    .dot-correct { background: var(--correct); }
+    .dot-wrong { background: var(--wrong); }
+
+    @media (max-width: 520px) {
+      .container { padding: 10px; }
+      header h1 { font-size: 1.3rem; }
+      .card { padding: 14px; }
+      .tab { font-size: 0.8rem; padding: 8px 4px; }
+      .question-text { font-size: 0.97rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>02-向量检索与 Embedding 实验面试知识自测</h1>
+      <div class="topic">experiment / RAG / embedding</div>
+    </header>
+
+    <div class="score-bar">
+      <div class="score" id="scoreDisplay">得分: 0 / 0</div>
+      <div class="actions">
+        <button class="btn btn-warning btn-sm" id="btnShuffle">随机选项</button>
+        <button class="btn btn-secondary btn-sm" id="btnResetAll">重置所有</button>
+      </div>
+    </div>
+
+    <div class="tabs" id="tabBar">
+      <div class="tab active" data-type="drag">拖拽填空<span class="badge" id="badgeDrag">0</span></div>
+      <div class="tab" data-type="single">单选题<span class="badge" id="badgeSingle">0</span></div>
+      <div class="tab" data-type="multi">多选题<span class="badge" id="badgeMulti">0</span></div>
+      <div class="tab" data-type="truefalse">判断题<span class="badge" id="badgeTrueFalse">0</span></div>
+    </div>
+
+    <div class="card" id="quizCard">
+      <div class="progress-row">
+        <span id="progressText">1 / 1</span>
+        <div class="progress-bar"><div class="fill" id="progressFill" style="width:0%"></div></div>
+        <button class="btn btn-secondary btn-sm" id="btnOverview">总览</button>
+      </div>
+
+      <div id="questionArea"></div>
+
+      <div id="explanationArea"></div>
+
+      <div style="display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;">
+        <button class="btn btn-primary" id="btnCheck">检查答案</button>
+        <button class="btn btn-secondary" id="btnResetCurrent">重置当前题</button>
+      </div>
+
+      <div class="nav-bar" style="margin-top:16px;">
+        <button class="btn btn-secondary" id="btnPrev">上一题</button>
+        <button class="btn btn-secondary" id="btnNext">下一题</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="overviewOverlay">
+    <div class="overlay-content">
+      <div class="overlay-header">
+        <h2>题目总览</h2>
+        <button class="btn btn-secondary btn-sm" id="btnCloseOverview">关闭</button>
+      </div>
+      <div class="grid-overview" id="overviewGrid"></div>
+      <div class="legend">
+        <span><span class="dot dot-empty"></span>未答</span>
+        <span><span class="dot dot-correct"></span>正确</span>
+        <span><span class="dot dot-wrong"></span>错误</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===== DATA PLACEHOLDERS =====
+    // DRAG_QUESTIONS_PLACEHOLDER_START
+    const dragQuestions = [
+    {
+        "question": "在 FAISS 中实现 Cosine 相似度检索时，实际使用的是 {0} 度量 + 对向量和查询都执行 {1} 操作。",
+        "answers": [
+            "Inner Product",
+            "L2 归一化"
+        ],
+        "options": [
+            "Inner Product",
+            "L2 归一化",
+            "IndexFlatL2",
+            "IndexHNSWFlat",
+            "MaxSim",
+            "欧氏距离"
+        ],
+        "explanations": [
+            "FAISS 原生没有 IndexFlatCosine，而是通过对向量做 L2 归一化后使用 IndexFlatIP（内积）来实现 Cosine 相似度，因为 cosine(A,B) = A·B / (|A||B|)，归一化后分母为1，等价于内积。",
+            "必须对 document embedding 和 query embedding 都执行 faiss.normalize_L2()，才能保证内积等价于余弦相似度。"
+        ]
+    },
+    {
+        "question": "实验中使用的评估指标包括 {0}（衡量相关文档的召回比例）和 {1}（考虑排序位置的加权准确率），另外还测量了单次检索的 P99 {2} 和索引的 {3}。",
+        "answers": [
+            "Recall@k",
+            "nDCG@k",
+            "Latency",
+            "Index Size"
+        ],
+        "options": [
+            "Recall@k",
+            "nDCG@k",
+            "Latency",
+            "Index Size",
+            "F1 Score",
+            "MAP@k",
+            "BLEU Score",
+            "GPU 显存"
+        ],
+        "explanations": [
+            "Recall@k 表示相关文档在前 k 个检索结果中被召回的比例，是 RAG 检索的核心指标。",
+            "nDCG@k (Normalized Discounted Cumulative Gain) 不仅考虑是否召回，还考虑相关文档的排序位置，位置越靠前得分越高。",
+            "Latency 衡量检索速度，实验关注 P99 延迟（99%分位），确保大多数查询的响应时间在可接受范围内。",
+            "Index Size 以 MB 为单位，反映内存占用，影响系统的部署成本和可扩展性。"
+        ]
+    },
+    {
+        "question": "在 Embedding 模型选择上，实验发现 {0} 和 {1} 的检索效果明显优于 MiniLM，但代价是 3-4x 的 {2} 和 {3}。",
+        "answers": [
+            "BGE",
+            "E5",
+            "延迟",
+            "内存"
+        ],
+        "options": [
+            "BGE",
+            "E5",
+            "延迟",
+            "内存",
+            "BERT",
+            "准确率",
+            "参数量",
+            "磁盘空间",
+            "训练时间"
+        ],
+        "explanations": [
+            "BAAI/bge-large-zh (BGE) 在实验中 Recall@10 达到 0.84，表现优异。",
+            "intfloat/e5-large-v2 (E5) 也表现出色，Recall@10 为 0.81，且专为语义搜索任务设计。",
+            "相较于 MiniLM 的 12s 编码时间，BGE/E5 需要约 45-48s，检索延迟也更高。",
+            "BGE/E5 的向量维度为 1024，索引大小约 19.5MB，而 MiniLM 仅 7.3MB（384维）。"
+        ]
+    }
+];
+    // DRAG_QUESTIONS_PLACEHOLDER_END
+
+    // SINGLE_QUESTIONS_PLACEHOLDER_START
+    const singleQuestions = [
+    {
+        "question": "在实验中，哪个 Embedding 模型在 Flat Cosine 索引下取得了最高的 Recall@10？",
+        "options": [
+            "all-MiniLM-L6-v2",
+            "intfloat/e5-large-v2",
+            "BAAI/bge-large-zh",
+            "text-embedding-3-large"
+        ],
+        "correct": 3,
+        "explanations": [
+            "❌ MiniLM 的 Recall@10 为 0.72，是四个模型中最低的。",
+            "❌ E5-Large 的 Recall@10 为 0.81，虽然不错但不是最高。",
+            "❌ BGE-Large-ZH 的 Recall@10 为 0.84，表现很好但仍不是最高。",
+            "✅ text-embedding-3-large 的 Recall@10 达到 0.87，是实验中最高的，但其向量维度为 3072，编码时间 120s，索引大小 58.6MB，成本也最高。"
+        ]
+    },
+    {
+        "question": "在 FAISS 中，代码使用 IndexFlatIP 来实现 Cosine 相似度检索。这种做法的理论依据是什么？",
+        "options": [
+            "IP 和 Cosine 是完全不同的度量方式，FAISS 内部做了特殊转换",
+            "对向量做 L2 归一化后，内积等价于余弦相似度",
+            "IndexFlatIP 比 IndexFlatL2 的计算速度更快",
+            "Cosine 相似度只能用于稀疏向量，不适合 Dense Embedding"
+        ],
+        "correct": 1,
+        "explanations": [
+            "❌ IP（内积）和 Cosine 确实有数学关系，但不是完全不同的度量方式。",
+            "✅ 正确。cosine(A,B) = A·B / (|A||B|)，当向量被 L2 归一化后，|A|=|B|=1，因此 cosine(A,B) = A·B，即内积。",
+            "❌ 速度不是选择 IP 的原因，两者速度相近。",
+            "❌ Cosine 相似度是最常用的 Dense Embedding 度量方式之一。"
+        ]
+    },
+    {
+        "question": "关于 HNSW 索引的使用场景，实验结论是什么？",
+        "options": [
+            "HNSW 在所有文档规模下都比 Flat 索引更快且更准确",
+            "HNSW 只适用于中文文档集，不适用于 MS MARCO",
+            "HNSW 在万级文档规模下是最佳选择",
+            "HNSW 在百万级文档场景下才值得使用"
+        ],
+        "correct": 3,
+        "explanations": [
+            "❌ 实验数据显示，HNSW 在万级文档下并不比 Flat 明显更快，且 Recall 从 0.84 下降到 0.82。",
+            "❌ HNSW 是通用索引结构，与语言无关。",
+            "❌ 实验明确说明万级文档下 Flat 索引已足够快（< 5ms），HNSW 反而增加复杂度和内存占用。",
+            "✅ 实验结论第3条明确指出：HNSW 在百万级文档才值得使用，此时 Flat 的延迟会显著上升。"
+        ]
+    },
+    {
+        "question": "实验中提到 '指令微调模型（E5, BGE）在非对称检索（query vs passage）上优势明显'。这里的 '非对称' 指的是什么？",
+        "options": [
+            "query 和 passage 的编码方式不同，通常 query 会加前缀如 'Represent this sentence for searching...'",
+            "query 和 passage 使用完全不同的 Embedding 模型分别编码",
+            "query 的向量维度与 passage 的向量维度不一致",
+            "非对称检索只在中文场景下有效"
+        ],
+        "correct": 0,
+        "explanations": [
+            "✅ 正确。非对称检索指 query 和 passage 虽然使用同一个 bi-encoder 模型，但 query 会添加任务前缀（如 'Represent this sentence for searching...'），而 passage 不加前缀，使模型能区分查询和文档的语义角色。",
+            "❌ 非对称检索仍然使用同一个模型（bi-encoder），只是编码时的输入格式不同。",
+            "❌ 向量维度是一致的，query 和 passage 经过同一模型编码后维度相同。",
+            "❌ 非对称检索是通用技术，E5 和 BGE 都是多语言模型，不限于中文。"
+        ]
+    }
+];
+    // SINGLE_QUESTIONS_PLACEHOLDER_END
+
+    // MULTI_QUESTIONS_PLACEHOLDER_START
+    const multiQuestions = [
+    {
+        "question": "以下哪些是实验中提到的评估指标？（多选）",
+        "options": [
+            "Recall@k",
+            "nDCG@k",
+            "Latency (P99)",
+            "Index Size (MB)",
+            "Precision@k",
+            "ROUGE-L"
+        ],
+        "correct": [
+            0,
+            1,
+            2,
+            3
+        ],
+        "explanations": [
+            "✅ Recall@k 是核心评估指标，衡量相关文档在前 k 个结果中的召回率。",
+            "✅ nDCG@k 考虑排序位置的加权准确率，是排序质量的重要指标。",
+            "✅ Latency (P99) 衡量单次检索延迟，关注系统的实时性能。",
+            "✅ Index Size (MB) 反映内存占用，是工程部署的关键考量。",
+            "❌ Precision@k 虽然也是检索常用指标，但本文实验未提及。",
+            "❌ ROUGE-L 是文本生成评估指标，与向量检索无关。"
+        ]
+    },
+    {
+        "question": "以下哪些 Embedding 模型在实验的代码中被实际使用？（多选）",
+        "options": [
+            "all-MiniLM-L6-v2",
+            "intfloat/e5-large-v2",
+            "BAAI/bge-large-zh",
+            "text-embedding-ada-002",
+            "text-embedding-3-large",
+            "m3e-base"
+        ],
+        "correct": [
+            0,
+            1,
+            2,
+            4
+        ],
+        "explanations": [
+            "✅ all-MiniLM-L6-v2 是代码中 models 字典的第一个模型，22M 参数。",
+            "✅ intfloat/e5-large-v2 在代码中以 'E5-Large' 为 key 使用。",
+            "✅ BAAI/bge-large-zh 在代码中以 'BGE-Large-ZH' 为 key 使用。",
+            "❌ text-embedding-ada-002 是 OpenAI 的老模型，实验中使用的是 text-embedding-3-large。",
+            "✅ text-embedding-3-large 在结果表格中出现，属于实验对比范围。",
+            "❌ m3e-base 是中文 Embedding 模型，但本实验未涉及。"
+        ]
+    }
+];
+    // MULTI_QUESTIONS_PLACEHOLDER_END
+
+    // TRUEFALSE_QUESTIONS_PLACEHOLDER_START
+    const trueFalseQuestions = [
+    {
+        "question": "Cosine 相似度和 L2 距离在向量归一化后没有任何本质差异，可以互换使用。",
+        "correct": true,
+        "explanationTrue": "✅ 正确。实验结论第2条明确指出：'Cosine vs L2: 归一化后无本质差异'。因为归一化后所有向量长度都为1，L2 距离与 Cosine 距离是单调相关的（d_L2² = 2 - 2·cosine）。但 Cosine 对向量长度不敏感，更稳健，因此实际工程中更常用。",
+        "explanationFalse": "❌ 错误。实际上，在向量归一化后，Cosine 和 L2 确实没有本质差异，L2 距离的平方等于 2 - 2×Cosine，两者是单调相关的。"
+    },
+    {
+        "question": "HNSW 索引在所有文档规模下都比 Flat 索引更好，应该优先使用 HNSW。",
+        "correct": false,
+        "explanationTrue": "❌ 错误。实验数据显示，在万级文档规模下，Flat 索引的延迟已经低于 5ms，完全够用。HNSW 在万级规模下不仅增加内存占用（从 19.5MB 增加到 23.1MB），Recall 还从 0.84 下降到 0.82。HNSW 的优势只有在百万级文档时才会显现。",
+        "explanationFalse": "✅ 正确。实验结论第3条明确指出：'HNSW 在百万级文档才值得使用，万级文档 Flat 索引已足够快（< 5ms）'。过早使用 HNSW 会增加不必要的复杂度和内存开销。"
+    },
+    {
+        "question": "Embedding 模型的效果与模型参数量成正比，参数量越大效果一定越好。",
+        "correct": false,
+        "explanationTrue": "❌ 错误。实验的假设部分就指出 'Dense Retrieval 的效果高度依赖于 Embedding 模型与查询分布的匹配度；并非越大越好'。text-embedding-3-large 虽然效果最好，但它的 3072 维向量和 120s 编码时间是巨大开销。更重要的是，模型与任务匹配度（如 BGE/E5 针对检索任务的指令微调）比单纯参数量更关键。",
+        "explanationFalse": "✅ 正确。实验开篇假设就否定了这一点：效果取决于模型与查询分布的匹配度，并非越大越好。例如 e5-large-v2 和 bge-large-zh 规模相近但表现有差异，说明架构和训练方式比单纯规模更重要。"
+    },
+    {
+        "question": "在 FAISS 的 VectorIndex 类中，add() 方法在 metric 为 cosine 时会调用 faiss.normalize_L2(vectors) 对文档向量进行归一化。",
+        "correct": true,
+        "explanationTrue": "✅ 正确。代码第114-115行明确显示：`if self.metric == 'cosine': faiss.normalize_L2(vectors)`。同时 search() 方法第126-127行也对 query_vectors 做了同样的归一化。这是用内积实现 Cosine 相似度的关键步骤，缺少任何一方的归一化都会导致结果错误。",
+        "explanationFalse": "❌ 错误。查看代码第114-115行，确实有 `if self.metric == 'cosine': faiss.normalize_L2(vectors)` 的操作，且 query 侧也在 search() 中做了归一化。"
+    }
+];
+    // TRUEFALSE_QUESTIONS_PLACEHOLDER_END
+
+    // ===== STATE =====
+    let currentType = 'drag';
+    let currentIndex = 0;
+    let userAnswers = {};
+    let checkedState = {};
+
+    // ===== HELPERS =====
+    function makeKey(type, index) {
+      return type + ':' + index;
+    }
+
+    function getQuestions(type) {
+      if (type === 'drag') return dragQuestions;
+      if (type === 'single') return singleQuestions;
+      if (type === 'multi') return multiQuestions;
+      return trueFalseQuestions;
+    }
+
+    function getBadgeId(type) {
+      if (type === 'drag') return 'badgeDrag';
+      if (type === 'single') return 'badgeSingle';
+      if (type === 'multi') return 'badgeMulti';
+      return 'badgeTrueFalse';
+    }
+
+    function countQuestions(type) {
+      return getQuestions(type).length;
+    }
+
+    function allTypes() {
+      return ['drag', 'single', 'multi', 'truefalse'];
+    }
+
+    // ===== RENDER =====
+    function initBadges() {
+      allTypes().forEach(function(t) {
+        document.getElementById(getBadgeId(t)).textContent = countQuestions(t);
+      });
+    }
+
+    function updateScore() {
+      let total = 0, scored = 0;
+      allTypes().forEach(function(type) {
+        const list = getQuestions(type);
+        for (let i = 0; i < list.length; i++) {
+          const q = list[i];
+          const key = makeKey(type, i);
+          if (checkedState[key]) {
+            total += getQuestionPoints(q, type);
+            scored += getUserPoints(q, type, i);
+          }
+        }
+      });
+      document.getElementById('scoreDisplay').textContent = '得分: ' + scored + ' / ' + total;
+    }
+
+    function getQuestionPoints(q, type) {
+      if (type === 'drag') return q.answers.length;
+      if (type === 'multi') return q.correct.length;
+      return 1;
+    }
+
+    function getUserPoints(q, type, idx) {
+      const key = makeKey(type, idx);
+      const ans = userAnswers[key];
+      if (!ans) return 0;
+      if (type === 'drag') {
+        let pts = 0;
+        for (let i = 0; i < q.answers.length; i++) {
+          if (ans[i] === q.answers[i]) pts++;
+        }
+        return pts;
+      }
+      if (type === 'single') {
+        return ans === q.correct ? 1 : 0;
+      }
+      if (type === 'multi') {
+        let pts = 0;
+        const correctSet = {};
+        for (let i = 0; i < q.correct.length; i++) correctSet[q.correct[i]] = true;
+        const userSet = {};
+        for (let i = 0; i < ans.length; i++) userSet[ans[i]] = true;
+        for (let k in correctSet) {
+          if (userSet[k]) pts++;
+        }
+        return pts;
+      }
+      return ans === q.correct ? 1 : 0;
+    }
+
+    function updateProgress() {
+      const total = countQuestions(currentType);
+      const text = total > 0 ? (currentIndex + 1) + ' / ' + total : '0 / 0';
+      document.getElementById('progressText').textContent = text;
+      const pct = total > 0 ? ((currentIndex + 1) / total * 100) : 0;
+      document.getElementById('progressFill').style.width = pct + '%';
+    }
+
+    function renderQuestion() {
+      const area = document.getElementById('questionArea');
+      const expl = document.getElementById('explanationArea');
+      area.innerHTML = '';
+      expl.innerHTML = '';
+      expl.style.display = 'none';
+      updateProgress();
+
+      const questions = getQuestions(currentType);
+      if (questions.length === 0) {
+        area.innerHTML = '<p style="text-align:center;color:var(--text-muted)">该题型暂无题目</p>';
+        return;
+      }
+      const q = questions[currentIndex];
+      const key = makeKey(currentType, currentIndex);
+
+      const qtext = document.createElement('div');
+      qtext.className = 'question-text';
+
+      if (currentType === 'drag') {
+        let html = q.question;
+        for (let i = 0; i < q.answers.length; i++) {
+          const filled = userAnswers[key] && userAnswers[key][i] ? userAnswers[key][i] : '';
+          let cls = 'blank';
+          if (checkedState[key]) {
+            if (filled === q.answers[i]) cls += ' correct';
+            else cls += ' wrong';
+          } else if (filled) {
+            cls += ' filled';
+          }
+          html = html.replace('{\/' + i + '}', '<span class="' + cls + '" data-blank="' + i + '">' + (filled || '____') + '</span>');
+          html = html.replace('{\*' + i + '}', '<span class="' + cls + '" data-blank="' + i + '">' + (filled || '____') + '</span>');
+          html = html.replace('{' + i + '}', '<span class="' + cls + '" data-blank="' + i + '">' + (filled || '____') + '</span>');
+        }
+        qtext.innerHTML = html;
+        area.appendChild(qtext);
+
+        const pool = document.createElement('div');
+        pool.className = 'draggables';
+        const used = userAnswers[key] || [];
+        for (let i = 0; i < q.options.length; i++) {
+          const opt = q.options[i];
+          const isUsed = used.indexOf(opt) !== -1;
+          const chip = document.createElement('div');
+          chip.className = 'draggable' + (isUsed ? ' used' : '');
+          chip.draggable = !isUsed;
+          chip.textContent = opt;
+          chip.dataset.value = opt;
+          if (!isUsed) setupDrag(chip);
+          pool.appendChild(chip);
+        }
+        area.appendChild(pool);
+
+        if (checkedState[key]) {
+          const box = document.createElement('div');
+          box.className = 'explanation show correct-ex';
+          let exHtml = '<strong>解析：</strong><ul style="margin:8px 0 0 18px">';
+          for (let i = 0; i < q.explanations.length; i++) {
+            const isOk = userAnswers[key] && userAnswers[key][i] === q.answers[i];
+            exHtml += '<li><span style="color:' + (isOk ? 'var(--correct)' : 'var(--wrong)') + '">' + (isOk ? '✅' : '❌') + '</span> 空' + (i+1) + '：' + q.explanations[i] + '</li>';
+          }
+          exHtml += '</ul>';
+          box.innerHTML = exHtml;
+          expl.appendChild(box);
+          expl.style.display = 'block';
+        }
+      } else if (currentType === 'single') {
+        qtext.textContent = q.question;
+        area.appendChild(qtext);
+        const list = document.createElement('div');
+        list.className = 'options-list';
+        for (let i = 0; i < q.options.length; i++) {
+          const opt = document.createElement('label');
+          opt.className = 'option';
+          const isSel = userAnswers[key] === i;
+          if (checkedState[key]) {
+            if (i === q.correct) opt.classList.add('correct-ans');
+            else if (isSel) opt.classList.add('wrong-ans');
+          }
+          const radio = document.createElement('input');
+          radio.type = 'radio';
+          radio.name = 'singleOpt';
+          radio.checked = isSel;
+          radio.disabled = !!checkedState[key];
+          radio.addEventListener('change', function() {
+            userAnswers[key] = i;
+          });
+          const span = document.createElement('span');
+          span.className = 'label';
+          span.textContent = q.options[i];
+          opt.appendChild(radio);
+          opt.appendChild(span);
+          if (checkedState[key]) {
+            const mark = document.createElement('span');
+            mark.className = 'mark';
+            mark.textContent = i === q.correct ? '✅' : (isSel ? '❌' : '');
+            opt.appendChild(mark);
+          }
+          list.appendChild(opt);
+        }
+        area.appendChild(list);
+        if (checkedState[key]) {
+          const box = document.createElement('div');
+          box.className = 'explanation show ' + (userAnswers[key] === q.correct ? 'correct-ex' : 'wrong-ex');
+          box.innerHTML = '<strong>解析：</strong><br>' + q.explanations[q.correct];
+          expl.appendChild(box);
+          expl.style.display = 'block';
+        }
+      } else if (currentType === 'multi') {
+        qtext.textContent = q.question;
+        area.appendChild(qtext);
+        const list = document.createElement('div');
+        list.className = 'options-list';
+        const selSet = {};
+        const ans = userAnswers[key] || [];
+        for (let i = 0; i < ans.length; i++) selSet[ans[i]] = true;
+        const correctSet = {};
+        for (let i = 0; i < q.correct.length; i++) correctSet[q.correct[i]] = true;
+        for (let i = 0; i < q.options.length; i++) {
+          const opt = document.createElement('label');
+          opt.className = 'option';
+          const isSel = !!selSet[i];
+          if (checkedState[key]) {
+            if (correctSet[i]) opt.classList.add('correct-ans');
+            else if (isSel) opt.classList.add('wrong-ans');
+          }
+          const cb = document.createElement('input');
+          cb.type = 'checkbox';
+          cb.checked = isSel;
+          cb.disabled = !!checkedState[key];
+          cb.addEventListener('change', function() {
+            const a = userAnswers[key] || [];
+            const pos = a.indexOf(i);
+            if (pos >= 0) a.splice(pos, 1);
+            else a.push(i);
+            userAnswers[key] = a;
+          });
+          const span = document.createElement('span');
+          span.className = 'label';
+          span.textContent = q.options[i];
+          opt.appendChild(cb);
+          opt.appendChild(span);
+          if (checkedState[key]) {
+            const mark = document.createElement('span');
+            mark.className = 'mark';
+            mark.textContent = correctSet[i] ? '✅' : (isSel ? '❌' : '');
+            opt.appendChild(mark);
+          }
+          list.appendChild(opt);
+        }
+        area.appendChild(list);
+        if (checkedState[key]) {
+          const box = document.createElement('div');
+          let ok = true;
+          for (let k in correctSet) { if (!selSet[k]) ok = false; }
+          for (let k in selSet) { if (!correctSet[k]) ok = false; }
+          box.className = 'explanation show ' + (ok ? 'correct-ex' : 'wrong-ex');
+          let exHtml = '<strong>解析：</strong><ul style="margin:8px 0 0 18px">';
+          for (let i = 0; i < q.options.length; i++) {
+            const isCorrect = !!correctSet[i];
+            const icon = isCorrect ? '✅' : (selSet[i] ? '❌' : '⬜');
+            exHtml += '<li>' + icon + ' ' + q.explanations[i] + '</li>';
+          }
+          exHtml += '</ul>';
+          box.innerHTML = exHtml;
+          expl.appendChild(box);
+          expl.style.display = 'block';
+        }
+      } else if (currentType === 'truefalse') {
+        qtext.textContent = q.question;
+        area.appendChild(qtext);
+        const list = document.createElement('div');
+        list.className = 'options-list';
+        const opts = [{val: true, label: '是 / True'}, {val: false, label: '否 / False'}];
+        for (let i = 0; i < opts.length; i++) {
+          const opt = document.createElement('label');
+          opt.className = 'option';
+          const v = opts[i].val;
+          const isSel = userAnswers[key] === v;
+          if (checkedState[key]) {
+            if (v === q.correct) opt.classList.add('correct-ans');
+            else if (isSel) opt.classList.add('wrong-ans');
+          }
+          const radio = document.createElement('input');
+          radio.type = 'radio';
+          radio.name = 'tfOpt';
+          radio.checked = isSel;
+          radio.disabled = !!checkedState[key];
+          radio.addEventListener('change', function() {
+            userAnswers[key] = v;
+          });
+          const span = document.createElement('span');
+          span.className = 'label';
+          span.textContent = opts[i].label;
+          opt.appendChild(radio);
+          opt.appendChild(span);
+          if (checkedState[key]) {
+            const mark = document.createElement('span');
+            mark.className = 'mark';
+            mark.textContent = v === q.correct ? '✅' : (isSel ? '❌' : '');
+            opt.appendChild(mark);
+          }
+          list.appendChild(opt);
+        }
+        area.appendChild(list);
+        if (checkedState[key]) {
+          const box = document.createElement('div');
+          const ok = userAnswers[key] === q.correct;
+          box.className = 'explanation show ' + (ok ? 'correct-ex' : 'wrong-ex');
+          box.innerHTML = '<strong>解析：</strong><br>' + (q.correct ? q.explanationTrue : q.explanationFalse);
+          expl.appendChild(box);
+          expl.style.display = 'block';
+        }
+      }
+    }
+
+    // ===== DRAG & DROP =====
+    function setupDrag(el) {
+      el.addEventListener('dragstart', function(e) {
+        e.dataTransfer.setData('text/plain', el.dataset.value);
+        el.classList.add('dragging');
+      });
+      el.addEventListener('dragend', function() {
+        el.classList.remove('dragging');
+      });
+    }
+
+    document.addEventListener('dragover', function(e) {
+      const blank = e.target.closest && e.target.closest('[data-blank]');
+      if (blank) e.preventDefault();
+    });
+
+    document.addEventListener('drop', function(e) {
+      const blank = e.target.closest && e.target.closest('[data-blank]');
+      if (!blank) return;
+      e.preventDefault();
+      const value = e.dataTransfer.getData('text/plain');
+      if (!value) return;
+      const bidx = parseInt(blank.dataset.blank, 10);
+      const key = makeKey(currentType, currentIndex);
+      if (!userAnswers[key]) userAnswers[key] = [];
+      userAnswers[key][bidx] = value;
+      renderQuestion();
+    });
+
+    // Also support click-to-fill on mobile
+    document.addEventListener('click', function(e) {
+      const blank = e.target.closest && e.target.closest('[data-blank]');
+      if (!blank) return;
+      if (checkedState[makeKey(currentType, currentIndex)]) return;
+      const key = makeKey(currentType, currentIndex);
+      const ans = userAnswers[key] || [];
+      const bidx = parseInt(blank.dataset.blank, 10);
+      if (ans[bidx]) {
+        delete ans[bidx];
+        renderQuestion();
+        return;
+      }
+      // Find first unused draggable
+      const chips = document.querySelectorAll('.draggable:not(.used)');
+      if (chips.length > 0) {
+        const val = chips[0].dataset.value;
+        if (!userAnswers[key]) userAnswers[key] = [];
+        userAnswers[key][bidx] = val;
+        renderQuestion();
+      }
+    });
+
+    // ===== CONTROLS =====
+    function switchTab(type) {
+      currentType = type;
+      currentIndex = 0;
+      document.querySelectorAll('.tab').forEach(function(t) {
+        t.classList.toggle('active', t.dataset.type === type);
+      });
+      renderQuestion();
+    }
+
+    document.querySelectorAll('.tab').forEach(function(tab) {
+      tab.addEventListener('click', function() {
+        switchTab(tab.dataset.type);
+      });
+    });
+
+    document.getElementById('btnPrev').addEventListener('click', function() {
+      if (currentIndex > 0) { currentIndex--; renderQuestion(); }
+    });
+
+    document.getElementById('btnNext').addEventListener('click', function() {
+      if (currentIndex + 1 < countQuestions(currentType)) { currentIndex++; renderQuestion(); }
+    });
+
+    document.getElementById('btnCheck').addEventListener('click', function() {
+      const key = makeKey(currentType, currentIndex);
+      if (countQuestions(currentType) === 0) return;
+      checkedState[key] = true;
+      updateScore();
+      renderQuestion();
+    });
+
+    document.getElementById('btnResetCurrent').addEventListener('click', function() {
+      const key = makeKey(currentType, currentIndex);
+      delete userAnswers[key];
+      delete checkedState[key];
+      updateScore();
+      renderQuestion();
+    });
+
+    document.getElementById('btnResetAll').addEventListener('click', function() {
+      if (!confirm('确定要重置所有答题记录吗？')) return;
+      userAnswers = {};
+      checkedState = {};
+      updateScore();
+      renderQuestion();
+    });
+
+    // ===== SHUFFLE =====
+    function shuffleArray(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const tmp = arr[i];
+        arr[i] = arr[j];
+        arr[j] = tmp;
+      }
+    }
+
+    function buildIndexMap(oldLen, shuffledIndices) {
+      const map = {};
+      for (let newPos = 0; newPos < oldLen; newPos++) {
+        map[shuffledIndices[newPos]] = newPos;
+      }
+      return map;
+    }
+
+    document.getElementById('btnShuffle').addEventListener('click', function() {
+      if (!confirm('随机化会清空所有答题记录，确定继续？')) return;
+      userAnswers = {};
+      checkedState = {};
+
+      // Single
+      for (let qi = 0; qi < singleQuestions.length; qi++) {
+        const q = singleQuestions[qi];
+        const order = [];
+        for (let i = 0; i < q.options.length; i++) order.push(i);
+        shuffleArray(order);
+        const newOpts = [];
+        for (let i = 0; i < order.length; i++) newOpts.push(q.options[order[i]]);
+        const newExps = [];
+        for (let i = 0; i < order.length; i++) newExps.push(q.explanations[order[i]]);
+        const idxMap = buildIndexMap(q.options.length, order);
+        q.correct = idxMap[q.correct];
+        q.options = newOpts;
+        q.explanations = newExps;
+      }
+
+      // Multi
+      for (let qi = 0; qi < multiQuestions.length; qi++) {
+        const q = multiQuestions[qi];
+        const order = [];
+        for (let i = 0; i < q.options.length; i++) order.push(i);
+        shuffleArray(order);
+        const newOpts = [];
+        for (let i = 0; i < order.length; i++) newOpts.push(q.options[order[i]]);
+        const newExps = [];
+        for (let i = 0; i < order.length; i++) newExps.push(q.explanations[order[i]]);
+        const idxMap = buildIndexMap(q.options.length, order);
+        const newCorrect = [];
+        for (let i = 0; i < q.correct.length; i++) newCorrect.push(idxMap[q.correct[i]]);
+        q.correct = newCorrect;
+        q.options = newOpts;
+        q.explanations = newExps;
+      }
+
+      updateScore();
+      renderQuestion();
+    });
+
+    // ===== OVERVIEW =====
+    function openOverview() {
+      const grid = document.getElementById('overviewGrid');
+      grid.innerHTML = '';
+      const questions = getQuestions(currentType);
+      for (let i = 0; i < questions.length; i++) {
+        const cell = document.createElement('div');
+        const key = makeKey(currentType, i);
+        let cls = 'grid-item';
+        if (checkedState[key]) {
+          const pts = getUserPoints(questions[i], currentType, i);
+          const maxPts = getQuestionPoints(questions[i], currentType);
+          cls += pts === maxPts ? ' correct' : ' wrong';
+        } else {
+          cls += ' empty';
+        }
+        cell.className = cls;
+        cell.textContent = i + 1;
+        cell.addEventListener('click', function() {
+          currentIndex = i;
+          document.getElementById('overviewOverlay').classList.remove('show');
+          renderQuestion();
+        });
+        grid.appendChild(cell);
+      }
+      document.getElementById('overviewOverlay').classList.add('show');
+    }
+
+    document.getElementById('btnOverview').addEventListener('click', openOverview);
+    document.getElementById('btnCloseOverview').addEventListener('click', function() {
+      document.getElementById('overviewOverlay').classList.remove('show');
+    });
+    document.getElementById('overviewOverlay').addEventListener('click', function(e) {
+      if (e.target === document.getElementById('overviewOverlay')) {
+        document.getElementById('overviewOverlay').classList.remove('show');
+      }
+    });
+
+    // ===== KEYBOARD NAV =====
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'ArrowLeft') document.getElementById('btnPrev').click();
+      if (e.key === 'ArrowRight') document.getElementById('btnNext').click();
+    });
+
+    // ===== INIT =====
+    initBadges();
+    updateScore();
+    renderQuestion();
+  </script>
+</body>
+</html>

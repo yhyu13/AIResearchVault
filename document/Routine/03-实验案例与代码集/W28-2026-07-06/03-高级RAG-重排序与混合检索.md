@@ -18,13 +18,13 @@ aliases: [RAG-Advanced-Rerank-Hybrid]
 - 额外收集 50 条包含罕见术语、缩写、ID 的"难查询"
 
 ### 模型/方法
-| 阶段 | 方法 | 选型 |
-|------|------|------|
-| 第一阶段-粗排 | Dense Retrieval | BAAI/bge-large-zh (top_k=50) |
-| 第一阶段-粗排 | Sparse Retrieval | BM25 (k1=1.5, b=0.75) |
-| 融合 | Reciprocal Rank Fusion (RRF) | k=60, 权重 α=0.5 |
-| 第二阶段-精排 | Cross-Encoder | `BAAI/bge-reranker-large` / `cross-encoder/ms-marco-MiniLM-L-6-v2` |
-| 最终截断 | Top_k 选取 | 3-5 |
+| 阶段      | 方法                           | 选型                                                                 |     |
+| ------- | ---------------------------- | ------------------------------------------------------------------ | --- |
+| 第一阶段-粗排 | Dense Retrieval              | BAAI/bge-large-zh (top_k=50)                                       |     |
+| 第一阶段-粗排 | Sparse Retrieval             | BM25 (k1=1.5, b=0.75)                                              |     |
+| 融合      | Reciprocal Rank Fusion (RRF) | k=60, 权重 α=0.5                                                     |     |
+| 第二阶段-精排 | Cross-Encoder                | `BAAI/bge-reranker-large` / `cross-encoder/ms-marco-MiniLM-L-6-v2` |     |
+| 最终截断    | Top_k 选取                     | 3-5                                                                |     |
 
 ### 评估指标
 - Recall@k, MRR, nDCG@10

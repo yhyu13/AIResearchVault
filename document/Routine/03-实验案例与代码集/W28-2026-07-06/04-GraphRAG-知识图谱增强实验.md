@@ -19,15 +19,15 @@ aliases: [GraphRAG-Experiment]
 - **图谱构建**: 使用 LLM 抽取实体和关系，或人工标注对比
 
 ### 模型/方法
-| 阶段 | 方法 | 工具/模型 |
-|------|------|-----------|
-| 实体抽取 | LLM-based NER | `GLiNER` / `spaCy` + LLM prompt |
-| 关系抽取 | 开放信息抽取 (OpenIE) | LLM 结构化输出 (JSON) |
-| 图谱存储 | 属性图 | `Neo4j` 或 `NetworkX` (内存) |
-| 社区检测 | Leiden / Louvain | `igraph` / `networkx` |
-| 社区摘要 | 层次摘要 | LLM 逐社区摘要生成 |
-| 检索 | 全局搜索 + 局部搜索 | 社区摘要 vs 实体邻居子图 |
-| 生成 | 上下文增强生成 | 同基线 LLM |
+| 阶段   | 方法               | 工具/模型                           |
+| ---- | ---------------- | ------------------------------- |
+| 实体抽取 | LLM-based NER    | `GLiNER` / `spaCy` + LLM prompt |
+| 关系抽取 | 开放信息抽取 (OpenIE)  | LLM 结构化输出 (JSON)                |
+| 图谱存储 | 属性图              | `Neo4j` 或 `NetworkX` (内存)       |
+| 社区检测 | Leiden / Louvain | `igraph` / `networkx`           |
+| 社区摘要 | 层次摘要             | LLM 逐社区摘要生成                     |
+| 检索   | 全局搜索 + 局部搜索      | 社区摘要 vs 实体邻居子图                  |
+| 生成   | 上下文增强生成          | 同基线 LLM                         |
 
 ### 评估指标
 - **单跳问答**: Answer Accuracy, F1

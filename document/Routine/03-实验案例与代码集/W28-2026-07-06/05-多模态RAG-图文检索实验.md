@@ -19,13 +19,13 @@ aliases: [Multimodal-RAG-Experiment]
 - **评测查询**: 50 条查询，其中 20 条需要图像信息才能回答（如 "这张图表的趋势是什么？"）
 
 ### 模型/方法
-| 组件 | 选型 | 理由 |
-|------|------|------|
-| 文本 Embedding | `BAAI/bge-large-zh` | 中文语义 |
-| 图像 Embedding | `clip-ViT-B-16` / `Chinese-CLIP` | 跨模态对齐 |
-| 图像 Caption | `BLIP-2` / `Qwen-VL` | 图像转文本辅助 |
-| 向量存储 | FAISS (多模态混合索引) | 统一存储 |
-| 生成模型 | `Qwen-VL-Chat` / `GPT-4V` | 多模态理解 |
+| 组件           | 选型                               | 理由      |
+| ------------ | -------------------------------- | ------- |
+| 文本 Embedding | `BAAI/bge-large-zh`              | 中文语义    |
+| 图像 Embedding | `clip-ViT-B-16` / `Chinese-CLIP` | 跨模态对齐   |
+| 图像 Caption   | `BLIP-2` / `Qwen-VL`             | 图像转文本辅助 |
+| 向量存储         | FAISS (多模态混合索引)                  | 统一存储    |
+| 生成模型         | `Qwen-VL-Chat` / `GPT-4V`        | 多模态理解   |
 
 ### 评估指标
 - **检索准确率**: 图文查询的 Top-1/Top-3 准确率

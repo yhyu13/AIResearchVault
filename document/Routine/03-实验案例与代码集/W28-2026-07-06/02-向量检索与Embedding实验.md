@@ -18,12 +18,12 @@ aliases: [RAG-Embedding-Experiment]
 - **评估**: 每查询标注 1-10 个相关文档
 
 ### 模型/方法
-| 对比维度 | 选项 |
-|----------|------|
+| 对比维度         | 选项                                                                                                     |
+| ------------ | ------------------------------------------------------------------------------------------------------ |
 | Embedding 模型 | `all-MiniLM-L6-v2` (22M), `BAAI/bge-large-zh` (326M), `text-embedding-3-large` (OpenAI), `e5-large-v2` |
-| 索引结构 | `IndexFlatL2` (精确), `IndexIVFFlat` (加速), `HNSW` (近似，高recall) |
-| 距离度量 | Cosine Similarity, L2, Inner Product, MaxSim (ColBERT-style) |
-| 查询编码 | 对称 (bi-encoder) vs 非对称 (query 加前缀 `"Represent this sentence for searching..."`) |
+| 索引结构         | `IndexFlatL2` (精确), `IndexIVFFlat` (加速), `HNSW` (近似，高recall)                                           |
+| 距离度量         | Cosine Similarity, L2, Inner Product, MaxSim (ColBERT-style)                                           |
+| 查询编码         | 对称 (bi-encoder) vs 非对称 (query 加前缀 `"Represent this sentence for searching..."`)                        |
 
 ### 评估指标
 - **Recall@k**: 相关文档在前 k 个结果中的召回率

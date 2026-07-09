@@ -139,6 +139,14 @@ Voyager Agent: 动作 = def solve_task(): ...  // 高层、可组合、可执行
 
 ## 四、完整代码实现
 
+> **初学者阅读指南**：本代码包含 4 个核心模块，建议按顺序阅读：
+> 1. `GridWorld` — 2D 网格环境（理解 Agent 能做什么动作）
+> 2. `SimulatedLLM` — 模拟 LLM（理解代码是如何生成的）
+> 3. `SkillLibrary` — 技能库（理解成功经验如何存储和复用）
+> 4. `VoyagerAgent` — 主控制器（理解三模块如何协同工作）
+
+```python
+
 ```python
 #!/usr/bin/env python3
 """
@@ -170,8 +178,13 @@ import math
 
 class GridWorld:
     """
-    A simple 2D grid environment where the agent moves, collects resources,
-    and reaches goals. Fully observable (no fog of war) for this experiment.
+    2D 网格环境 —— Agent 的"物理世界"
+    
+    初学者要点：
+    - 这是 Agent 执行代码的"沙箱"，所有动作最终都落到这里
+    - 网格中的每个格子可以是：空地(.)、墙(#)、木头(W)、石头(S)、目标(T)
+    - Agent 通过调用 move_up/down/left/right() 和 collect() 与环境交互
+    - 每次移动/收集消耗 1 个 step，超过 max_steps 则任务失败
     """
 
     CELL_EMPTY = "."
@@ -385,13 +398,15 @@ class GridWorld:
 
 class SimulatedLLM:
     """
-    A rule-based simulated LLM that generates Python code for grid tasks.
-    In a real system, this would be replaced with GPT-4 / Claude API calls.
+    模拟 LLM —— 用规则模板替代真实的 GPT-4/Claude API
     
-    The simulated LLM has several 'modes':
-      - curriculum: generate next task based on current skill coverage
-      - code_gen:   generate Python code to solve a task
-      - repair:     fix code based on execution error
+    初学者要点：
+    - 真实 Voyager 调用 GPT-4 生成代码，这里用规则模板保证可复现性
+    - 三个核心功能：
+      1. generate_curriculum: 根据当前能力生成下一个任务（课程设计）
+      2. generate_code: 根据任务描述生成 Python 代码（代码生成）
+      3. repair_code: 根据执行错误修复代码（迭代修复）
+    - 替换为真实 LLM：只需重写这三个方法，改为 API 调用即可
     """
 
     def __init__(self):
@@ -728,8 +743,13 @@ class Skill:
 
 class SkillLibrary:
     """
-    Voyager's Skill Library: stores executable code snippets that solved tasks.
-    Retrieval is based on keyword/level matching (simplified from embedding-based).
+    技能库 —— 存储和检索成功的代码片段
+    
+    初学者要点：
+    - 核心思想："成功经验外化"——把解决过任务的代码存起来，以后遇到类似任务直接复用
+    - 与 RAG 的区别：RAG 存文本段落，技能库存可执行代码；代码可以直接运行验证
+    - 检索策略：按关键词重叠 + 难度等级接近度 + 成功次数 综合评分
+    - 真实 Voyager 使用 embedding 做语义检索，这里简化为规则匹配
     """
 
     def __init__(self):
@@ -808,11 +828,16 @@ class SkillLibrary:
 
 class VoyagerAgent:
     """
-    Main agent orchestrating the three Voyager modules:
-      1. Automatic Curriculum → generates progressive tasks
-      2. Code Generation      → LLM writes code to solve task
-      3. Iterative Prompting  → error → repair → retry
-      4. Skill Library        → store & retrieve successful code
+    Voyager 主控制器 —— 协调三个核心模块的终身学习循环
+    
+    初学者要点：
+    - 这是整个系统的"导演"，控制学习流程：
+      1. 自动课程 → 生成递进任务（由易到难）
+      2. 代码生成 → LLM 写代码解决任务
+      3. 迭代修复 → 失败时自动修复代码并重试
+      4. 技能库 → 成功后存储代码，未来复用
+    - 终身学习 = 不断循环：生成任务 → 尝试解决 → 成功则存储 → 生成更难任务
+    - 关键状态：completed_levels（已完成的难度）、failure_history（失败记录）
     """
 
     def __init__(self, env: GridWorld, llm: SimulatedLLM, max_retries: int = 3):
@@ -842,8 +867,15 @@ class VoyagerAgent:
 
     def execute_code(self, code: str, task: Dict[str, Any]) -> Tuple[bool, str, str]:
         """
-        Execute generated code in a sandbox with the environment's API.
-        Returns: (success, final_message, error_or_empty)
+        在沙箱中执行生成的代码
+        
+        初学者要点：
+        - 这是"代码即动作"的核心：把 LLM 生成的 Python 代码放到环境中执行
+        - namespace 把环境 API（move_up, collect 等）注入到代码的命名空间
+        - 使用 exec() 执行代码，捕获异常作为错误反馈
+        - 执行后检查是否满足任务目标（位置 + 资源要求）
+        
+        Returns: (是否成功, 最终消息, 错误或空字符串)
         """
         # Reset environment for the task
         obs = self.env.reset_random(level=task["level"], seed=42 + len(self.task_results))
@@ -882,7 +914,17 @@ class VoyagerAgent:
 
     def solve_task(self, task: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Attempt to solve a task with iterative prompting (retry on failure).
+        尝试解决一个任务（带迭代修复的完整流程）
+        
+        初学者要点：
+        - 这是单次任务解决的完整流程：
+          1. 从技能库检索相关经验（retrieve_skills）
+          2. 生成初始代码（generate_code）
+          3. 执行代码（execute_code）
+          4. 如果失败 → 修复代码（repair_code）→ 重试
+          5. 如果成功 → 存入技能库（add_skill）
+        - max_retries 控制最多尝试次数，防止无限循环
+        - 每次尝试的结果都记录到 task_results 中，用于后续分析
         """
         print(f"\n{'='*60}")
         print(f"Task [Level {task['level']}]: {task['description']}")
@@ -1142,7 +1184,47 @@ if __name__ == "__main__":
 
 ---
 
+
+## 四、评估指标详解（初学者指南）
+
+### 为什么需要这些指标？
+
+Voyager 是一个**终身学习**系统，核心问题是：Agent 是否真的在"学习"，而不是在"记忆"？这些指标帮助我们量化：
+- Agent 能否解决越来越难的问题？
+- 成功经验是否被有效存储和复用？
+- 失败模式是否在减少？
+
+### 指标一览
+
+| 指标 | 定义 | 为什么重要 | 理想值 | 如何改进 |
+|-----|------|----------|--------|---------|
+| **success_rate** | 成功任务数 / 总任务数 | 衡量整体学习效果 | > 70% | 改进代码生成模板、增加重试次数 |
+| **avg_attempts** | 平均每个任务尝试次数 | 衡量一次通过率，越低说明代码质量越高 | < 2.0 | 优化 SimulatedLLM 的代码模板 |
+| **max_level_reached** | Agent 成功完成的最高难度等级 | 衡量能力上限 | 越高越好（最高6） | 确保课程递进逻辑正确 |
+| **skill_library.total_skills** | 技能库中存储的成功代码片段数 | 衡量知识积累量 | 持续增长 | 确保成功任务被正确存入技能库 |
+| **skill_library.levels_covered** | 技能库覆盖的难度等级列表 | 衡量技能广度 | [1,2,3,4,5,6] | 确保各级别都有成功解 |
+| **failure_patterns** | 失败类型统计（越界/撞墙/未定义变量） | 帮助定位代码生成的薄弱环节 | 趋向于0 | 针对性增强 repair_code 规则 |
+
+### 指标之间的关系
+
+```
+success_rate ↑  ←  skill_library 增长 ←  经验积累
+     ↑
+avg_attempts ↓  ←  代码质量提升 ←  迭代修复有效
+     ↑
+max_level ↑     ←  课程递进合理 ←  自动课程工作正常
+```
+
+**关键洞察**：
+- `success_rate` 高但 `avg_attempts` 也高 → Agent 在"试错学习"，这是正常的终身学习模式
+- `skill_library` 不增长 → 检查 `execute_code` 后的存储逻辑
+- `max_level` 停滞在低级 → 检查 `generate_curriculum` 的 level 递进逻辑
+- `failure_patterns` 中某类错误持续高 → 针对性增强 `repair_code` 的对应规则
+
+---
+
 ## 五、实验步骤
+
 
 ### 5.1 运行实验
 
@@ -1222,7 +1304,30 @@ Failure Pattern Analysis:
 
 ---
 
+
+## 场景配置矩阵
+
+| 场景 | episodes | grid_size | max_retries | 用途 |
+|-----|----------|-----------|-------------|------|
+| 快速测试 | 5 | 8 | 2 | 验证代码能跑通，2分钟出结果 |
+| 标准训练 | 12 | 10 | 3 | 观察完整学习曲线（推荐） |
+| 深度训练 | 20 | 12 | 5 | 验证长期学习能力，观察技能饱和 |
+| 调试模式 | 3 | 6 | 1 | 快速定位bug，最小复现 |
+| 泛化测试 | 15 | 15 | 3 | 测试大网格上的表现 |
+
+### 初学者调试清单
+
+- [ ] **如果 success_rate < 50%**：检查 `SimulatedLLM._code_template()` 的代码模板是否正确生成
+- [ ] **如果 skill_library 不增长**：检查 `solve_task()` 成功后是否调用了 `add_skill()`
+- [ ] **如果 max_level_reached 停滞**：检查 `generate_curriculum()` 的 level 递进逻辑（是否 cap 在低级）
+- [ ] **如果 failure_patterns 中 "out_of_bounds" 高**：增强 `repair_code()` 的边界检查规则
+- [ ] **如果 failure_patterns 中 "blocked by wall" 高**：检查 L3+ 的代码模板是否包含 wall 检测
+- [ ] **如果 avg_attempts > 3**：降低 `max_retries` 或改进初始代码质量
+
+---
+
 ## 六、关键设计决策与解释
+
 
 ### 6.1 为什么用 2D 网格而非真实 Minecraft？
 

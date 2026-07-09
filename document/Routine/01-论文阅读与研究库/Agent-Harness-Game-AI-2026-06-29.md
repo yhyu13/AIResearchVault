@@ -175,13 +175,13 @@ Agent Harness 游戏应用 演进链
 
 ## 相关资源
 
-| 资源 | 类型 | 链接 | 备注 |
-|------|------|------|------|
-| awesome-agent-harness | GitHub | https://github.com/RUCAIBox/awesome-agent-harness | 论文列表宝藏 |
-| Agent Harness Survey | 预印本 | https://www.preprints.org/manuscript/202604.0428/v1 | 必读 |
-| MineDojo | 项目 | https://minedojo.org | Minecraft AI 基准 |
-| Voyager | 项目 | https://voyager.minedojo.org | 终身学习 Agent |
-| OSWorld | 项目 | https://osworld.github.io | 通用 GUI Agent 环境 |
+| 资源                    | 类型     | 链接                                                  | 备注              |
+| --------------------- | ------ | --------------------------------------------------- | --------------- |
+| awesome-agent-harness | GitHub | https://github.com/RUCAIBox/awesome-agent-harness   | 论文列表宝藏          |
+| Agent Harness Survey  | 预印本    | https://www.preprints.org/manuscript/202604.0428/v1 | 必读              |
+| MineDojo              | 项目     | https://minedojo.org                                | Minecraft AI 基准 |
+| Voyager               | 项目     | https://voyager.minedojo.org                        | 终身学习 Agent      |
+| OSWorld               | 项目     | https://osworld.github.io                           | 通用 GUI Agent 环境 |
 
 ---
 

@@ -18,12 +18,77 @@ aliases: [RAG-Embedding-Experiment]
 - **评估**: 每查询标注 1-10 个相关文档
 
 ### 模型/方法
+
+#### 对比维度总览
+
 | 对比维度         | 选项                                                                                                     |
 | ------------ | ------------------------------------------------------------------------------------------------------ |
 | Embedding 模型 | `all-MiniLM-L6-v2` (22M), `BAAI/bge-large-zh` (326M), `text-embedding-3-large` (OpenAI), `e5-large-v2` |
 | 索引结构         | `IndexFlatL2` (精确), `IndexIVFFlat` (加速), `HNSW` (近似，高recall)                                           |
 | 距离度量         | Cosine Similarity, L2, Inner Product, MaxSim (ColBERT-style)                                           |
 | 查询编码         | 对称 (bi-encoder) vs 非对称 (query 加前缀 `"Represent this sentence for searching..."`)                        |
+
+#### 1. Embedding 模型：把文本变成向量的编码器
+
+Embedding 模型是一个神经网络 $f_\theta: \text{text} \to \mathbb{R}^d$，把变长文本映射到固定维度的稠密向量。RAG 的检索本质上是在这个向量空间里做最近邻搜索：
+
+$$
+\text{retrieve}(q) = \arg\max_{d \in \text{corpus}} \text{sim}(f_\theta(q), f_\theta(d))
+$$
+
+| 模型 | 参数量 | 维度 | 训练目标 | 适用场景 |
+|------|--------|------|----------|----------|
+| `all-MiniLM-L6-v2` | 22M | 384 | 通用句子相似度 (Symmetric) | 英文、资源受限、快速原型 |
+| `BAAI/bge-large-zh` | 326M | 1024 | 指令微调 + 中文优化 | 中文文档、需要高精度 |
+| `text-embedding-3-large` | — | 3072 | OpenAI 专有训练 | 多语言、API 调用、不差钱 |
+| `e5-large-v2` | 335M | 1024 | 弱监督对比学习 (E5) | 英文、非对称检索 |
+
+**关键洞察**：不是越大越好。MiniLM→BGE 是 +0.12 Recall（值得），BGE→OpenAI 是 +0.03（性价比极低）。
+
+#### 2. 索引结构：向量怎么存才能搜得快
+
+| 索引 | 原理 | 时间复杂度 | 空间代价 | Recall |
+|------|------|-----------|----------|--------|
+| `IndexFlatL2` | 暴力精确搜索 | $O(Nd)$ | 无额外 | 1.0 |
+| `IndexIVFFlat` | Voronoi 聚类划分，只搜最近簇 | $O(\sqrt{N} \cdot d)$ | 聚类中心 | ~0.95 |
+| `IndexHNSW` | 多层近似最近邻图，贪心跳转 | $O(\log N \cdot d)$ | 图边存储 | ~0.99 |
+
+**HNSW 在百万级文档才值得使用**，万级文档 Flat 索引已足够快（< 5ms）。
+
+#### 3. 距离度量：「近」的数学定义
+
+| 度量 | 公式 | 几何意义 |
+|------|------|----------|
+| **L2** | $\|a - b\|_2$ | 端点直线距离 |
+| **Cosine** | $\frac{a \cdot b}{\|a\| \|b\|}$ | 向量夹角余弦，**忽略长度** |
+| **Inner Product** | $a \cdot b$ | 投影长度，含幅度信息 |
+| **MaxSim** | $\sum_{i \in q} \max_{j \in d} \text{sim}(q_i, d_j)$ | token-level 细粒度匹配 (ColBERT) |
+
+代码中 Cosine 通过 `faiss.normalize_L2(vectors)` + `IndexFlatIP` 实现。归一化后 Cosine 与 L2 排序等价，但 Cosine 对未归一化场景更稳健。
+
+#### 4. 查询编码：对称 vs 非对称
+
+| 类型 | 场景 | 关键区别 |
+|------|------|----------|
+| **对称** | query 和 doc 语义等价 | 找相似句子、重复检测 |
+| **非对称** | query 短、doc 长，形式不同但语义相关 | "什么是RAG?" → RAG 架构段落 |
+
+非对称检索时，E5/BGE 使用**指令前缀**告诉模型编码意图：
+```python
+query = "Represent this sentence for searching relevant passages: " + q
+doc   = "Represent this document for retrieval: " + d
+```
+
+实验显示：指令微调模型在非对称检索上 Recall@10 提升 +12-17%（MiniLM 0.72 → BGE 0.84）。
+
+#### 配置矩阵
+
+| 场景 | 模型 | 索引 | 度量 | 编码 |
+|------|------|------|------|------|
+| 英文快速原型 | MiniLM | Flat | Cosine | 对称 |
+| 中文生产环境 | BGE-Large | HNSW | Cosine | 非对称（加前缀） |
+| 超高精度需求 | OpenAI-3 | Flat | Cosine | API 自动处理 |
+| 百万级文档 | E5-Large | HNSW | Cosine | 非对称 |
 
 ### 评估指标
 - **Recall@k**: 相关文档在前 k 个结果中的召回率

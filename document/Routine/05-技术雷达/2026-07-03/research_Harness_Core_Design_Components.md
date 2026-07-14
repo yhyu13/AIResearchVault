@@ -406,7 +406,7 @@
 | Agent Harness 组件 | 实时图形/游戏对应概念 | 同构性分析 |
 |--------------------|----------------------|------------|
 | **Agent Workflow (Planning Loop)** | **Rendering Pipeline** | 两者都是将高层目标分解为可执行步骤的管线：agent 的 Thought→Action→Observation 循环对应渲染管线的 Vertex→Raster→Pixel 阶段；都需要状态管理、错误恢复与并行调度。 |
-| **Memory Systems (Short/Long-term)** | **Radiance Cache / GI Cache** | 工作记忆 ≈ 帧缓冲（高频更新、容量有限）；长期记忆 ≈ 辐射度缓存（低频更新、空间索引、重要性采样）。MemGPT 的 paging 机制与虚拟纹理/虚拟几何的流式加载同构。 |
+| **Memory Systems (Short/Long-term)** | **Cache / Streaming System** | 工作记忆 ≈ 帧缓冲（高频更新、容量有限）；长期记忆 ≈ 缓存系统（低频更新、空间索引）。MemGPT 的 paging 机制与虚拟纹理/虚拟几何的流式加载同构。 |
 | **Skill Libraries** | **Shader Library / Material System** | 可复用技能 ≈ 可复用 shader/material：都需要版本管理、依赖解析、运行时编译/加载。Voyager 的代码技能库与 UE5 的 Material Function Library 在组织逻辑上高度相似。 |
 | **Multi-agent Orchestration** | **Multi-threaded Job System / Task Graph** | 多 agent 协作 ≈ 多线程任务图：都需要依赖追踪、负载均衡、同步屏障。AutoGen 的 GroupChat 调度器与游戏引擎的 Job Scheduler 面临相同的调度复杂性。 |
 | **Environment Perception** | **Scene Understanding / Perception System** | Agent 的 GUI grounding (SeeClick, GUI-Actor) 与游戏的屏幕空间射线检测、UI 命中测试同构；都需要从像素/几何中提取语义信息。 |
@@ -419,7 +419,7 @@
 | **内存管理** | 虚拟纹理/虚拟几何的流式加载 → MemGPT 的 paging 机制 | Agent 的层次化记忆压缩 → 智能 NPC 的长期记忆系统 |
 | **任务调度** | 游戏引擎的 Job Graph → AutoGen 的 conversation topology | 多 agent 的动态编排 → 大规模 crowd simulation 的群体行为控制 |
 | **状态表示** | 场景图 (Scene Graph) → ESCA (Scene-Graph Generation for Embodied Agents) | Agent 的状态抽象 → 游戏 AI 的层级状态机优化 |
-| **缓存策略** | GPU 缓存的 LRU/LFU → 记忆的遗忘曲线 (MemoryBank) | 记忆的注意力机制 → 渲染中的重要性采样 |
+| **缓存策略** | GPU 缓存的 LRU/LFU → 记忆的遗忘曲线 (MemoryBank) | 记忆的注意力机制 → 渲染中的自适应采样 |
 | **程序化生成** | 程序化内容生成 (PCG) → Voyager 的自动课程生成 | Agent 的技能组合 → 游戏内程序化任务生成 |
 
 ### 5.3 具体交叉点分析
@@ -437,22 +437,7 @@ Agent 的 **ReAct 循环** (Thought → Action → Observation) 与实时渲染�
 2. **资源绑定**：哪些工具/纹理在当前步骤可用
 3. **错误恢复**：某一步失败时如何回滚或降级
 
-#### 5.3.2 Memory System vs Radiance Cache
-
-MemGPT 的 **分层记忆架构** (Main Context / Recall / Archival) 与 **ReSTIR GI 的 Reservoir 系统** 同构：
-
-| MemGPT 层级 | ReSTIR 对应 | 功能 |
-|-------------|-------------|------|
-| Main Context (工作记忆) | Current Frame Reservoir | 当前帧/当前任务的高频信息 |
-| Recall (召回记忆) | Temporal Reservoir | 跨帧/跨任务的时序信息复用 |
-| Archival (归档记忆) | Spatial Cache / Light Cache | 长期空间/语义信息的累积与查询 |
-
-两者都面临相同的工程挑战：
-- **容量限制**：如何决定哪些信息保留、哪些丢弃
-- **检索效率**：如何快速从海量历史中找到相关信息
-- **一致性保证**：如何确保召回的信息与当前上下文一致
-
-#### 5.3.3 Skill Library vs Shader Library
+#### 5.3.2 Skill Library vs Shader Library
 
 Voyager 的 **Skill Library**（以可执行代码为技能表示，通过文本嵌入索引）与游戏引擎的 **Shader Library**（以 HLSL/GLSL 为表示，通过材质系统索引）在工程架构上几乎一致：
 

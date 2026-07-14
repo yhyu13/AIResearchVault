@@ -20,7 +20,7 @@ LLM Agent Harness 的架构在过去八年中经历了从"文本生成器"到"�
 
 4. **训练范式**经历了 Prompt Engineering → Context Engineering → Agentic Context Engineering (ACE) 的跃迁，同时强化学习算法从 PPO → DPO → GRPO → DAPO/ACT 完成了"去价值模型化"的清晰演进。DeepSeek-R1 (Nature 2025) 证明纯 RL 无需 SFT 即可激发推理能力，这一发现正在重塑整个 agent 训练的方法论基础。
 
-5. **与实时图形学的深层关联**是本报告的重点分析方向。Agent Planning Loop 与 Rendering Pipeline、Agent Memory System 与 Radiance Cache/GI、Agent Skill Library 与 Shader Library 之间存在结构性同构。ReSTIR 的 resampling 理论、temporal reprojection、importance sampling 等图形学核心技术可直接迁移至 agent 的记忆更新、跨 episode 知识迁移和奖励 shaping 策略中。这种双向借鉴为游戏产业的 NPC AI、自动化测试和内容生成提供了具体的技术迁移路径。
+5. **与实时图形学的深层关联**是本报告的重点分析方向。Agent Planning Loop 与 Rendering Pipeline、Agent Memory System 与图形学缓存系统、Agent Skill Library 与 Shader Library 之间存在结构性同构。图形学核心技术可直接迁移至 agent 的记忆更新、跨 episode 知识迁移和奖励 shaping 策略中。这种双向借鉴为游戏产业的 NPC AI、自动化测试和内容生成提供了具体的技术迁移路径。
 
 ---
 
@@ -73,7 +73,7 @@ Harness Engineering 与实时计算机图形学共享一个核心工程哲学：
 1. **分层存储**：渲染的分层缓存（G-Buffer → Lighting Cache → Post-Processing History）对应 agent 的分层记忆（Working Memory → Short-term Memory → Long-term Memory）。
 2. **重要性采样**：渲染从无限光线中选择最具贡献的样本，agent 从海量信息中选择最相关的记忆。
 3. **时序复用**：TAA（Temporal Anti-Aliasing）复用历史帧信息稳定当前输出，agent 的 temporal memory 复用历史经验指导当前决策。
-4. **近似正确性**：实时渲染接受有偏但方差可控的近似（如 ReSTIR 的 biased but consistent estimator），agent 接受不精确但可验证的记忆检索（如 MemGPT 的启发式召回）。
+4. **近似正确性**：实时渲染接受有偏但方差可控的近似，agent 接受不精确但可验证的记忆检索（如 MemGPT 的启发式召回）。
 
 这种同构性不是表面类比，而是**信息处理系统在资源约束下的数学必然**。后续章节将深入展开这一关联。
 
@@ -235,7 +235,7 @@ Agent Workflow 是 Harness 的核心控制流，其演变反映了 agent 从"文
 - **GUI-Actor** (Microsoft, NeurIPS 2025): 提出无坐标视觉定位，提升 GUI agent 的跨分辨率泛化能力。通过相对位置和语义理解替代绝对坐标，使 agent 能适应不同屏幕尺寸和 DPI。
 - **OSWorld** (NeurIPS 2024): 将 agent 环境从浏览器扩展到完整操作系统，引入多模态感知与开放域任务。Agent 需要同时处理视觉（屏幕截图）、文本（OCR）、结构（UI 层级）信息。
 
-**关键洞察**：环境感知的演变路径与计算机视觉的发展高度同步——从结构化文本到非结构化视觉，从单一模态到多模态融合。这与实时图形学从光栅化到光线追踪、从单一着色到全局照明的演进同构。
+**关键洞察**：环境感知的演变路径与计算机视觉的发展高度同步——从结构化文本到非结构化视觉，从单一模态到多模态融合。
 
 #### 3.1.2 Task Planning: 从 CoT 到 ToT 到 GoT 到 AFlow
 
@@ -295,34 +295,30 @@ Memory Systems 是 Harness 中技术演进最活跃、架构最复杂的组件�
 - **MEM1** (ICLR 2026): 学习记忆与推理的协同。记忆不是被动存储，而是主动参与推理过程——agent 学会何时检索记忆、何时依赖内部知识、何时更新记忆。
 - **RetroAgent** (arXiv 2026): 回顾性双内在反馈机制。通过自我反思和外部反馈的双重信号，使 agent 从解决问题进化为自我进化。
 
-#### 3.2.5 关键洞察：记忆系统与 ReSTIR GI 的 Radiance Cache 同构
+#### 3.2.5 关键洞察：记忆系统与图形学缓存的同构
 
-这是本报告的核心技术论点之一。Agent Memory System 与 ReSTIR GI 的 Radiance Cache 在"**时空复用近似信息**"的核心哲学上完全一致：
+Agent Memory System 与实时图形学的缓存系统在"**时空复用近似信息**"的核心哲学上存在深层同构：
 
-| Agent Memory 层级 | ReSTIR GI 对应 | 核心功能 | 更新策略 |
+| Agent Memory 层级 | 图形学缓存对应 | 核心功能 | 更新策略 |
 |-------------------|---------------|---------|---------|
-| **Working Memory (上下文窗口)** | **Current Frame Reservoir** | 当前任务的高频信息 | 每步全量更新 |
-| **Short-term Memory (MemGPT Recall)** | **Temporal Reservoir** | 跨步/跨任务的时序信息复用 | 时序验证后增量更新 |
-| **Long-term Memory (向量数据库)** | **Spatial Cache / Light Cache** | 长期空间/语义信息的累积 | 低频批量更新 |
+| **Working Memory (上下文窗口)** | **Current Frame Buffer** | 当前任务的高频信息 | 每步全量更新 |
+| **Short-term Memory (MemGPT Recall)** | **Temporal History Buffer** | 跨步/跨任务的时序信息复用 | 时序验证后增量更新 |
+| **Long-term Memory (向量数据库)** | **Lightmap / Irradiance Cache** | 长期空间/语义信息的累积 | 低频批量更新 |
 | **Memory Retrieval (RAG)** | **Importance Sampling** | 从海量候选中高效选取 | 基于相似度/重要性权重 |
 | **Memory Compression (ACON)** | **Mipmap / Wavelet Compression** | 有限资源下的信息保留 | 有损压缩，保留高层语义 |
-
-ReSTIR GI 的核心优化是缓存 radiance estimate $LC_k(x_2 \rightarrow x_1)$ 来避免重复路径追踪：
-
-$$LC_k(x_2 \rightarrow x_1) = L_e(y_{mix,k} \rightarrow y_{mix,k-1}) \prod_{i=3}^{k} \frac{f \cdot G}{p_a(y_{mix,i})}$$
 
 Agent memory 的对应优化是**缓存策略/知识片段**来避免重复推理。两者都面临相同的工程问题：
 
 1. **一致性问题**：缓存值在新条件下是否仍然有效？
-   - ReSTIR: 通过 temporal validation 验证 reservoir 的有效性
+   - 图形学: 通过 temporal validation 验证历史缓存的有效性
    - Agent: 通过 context relevance scoring 验证记忆的相关性
 
 2. **更新策略**：何时更新缓存？全量还是增量？
-   - ReSTIR: Spatial/temporal reuse 的混合策略
+   - 图形学: Spatial/temporal reuse 的混合策略
    - Agent: MemGPT 的显式 `evict`/`search` 操作 + ACE 的增量 delta 更新
 
 3. **存储限制**：有限带宽/上下文窗口下的最优分配
-   - ReSTIR: 固定数量的 reservoir，通过 RIS 权重选择最优样本
+   - 图形学: 固定大小的缓存，通过重要性选择保留内容
    - Agent: 固定大小的上下文窗口，通过重要性排序选择保留内容
 
 这种同构性意味着：图形学社区在缓存一致性、resampling、层次细节管理上的数十年经验，可直接迁移到 agent 记忆系统的设计中。
@@ -540,7 +536,7 @@ DAPO 将 GRPO 推向生产级稳定训练，开源大规模长序列 RL 训练�
 
 **关键洞察**：Agentic RL 的核心挑战是**信用分配**（credit assignment）——在长时程任务中，最终结果的成败取决于数十甚至数百个中间决策，如何将最终奖励信号分配到每个中间步骤？
 
-这与图形学中的**全局光照计算**同构：最终像素颜色取决于光线路径上所有表面点的 BRDF 和光照贡献，需要通过蒙特卡洛积分或解析方法（如路径追踪）将贡献分配到每个路径节点。ReSTIR 的 RIS 权重和 GRPO 的 group-relative advantage 都是**组内归一化比较**的数学结构，目的都是降低方差。
+这与图形学中的光照计算同构：最终像素颜色取决于光线路径上所有表面点的材质和光照贡献，需要将贡献分配到每个路径节点。GRPO 的 group-relative advantage 是**组内归一化比较**的数学结构，目的都是降低方差。
 
 ### 4.3 环境构造的演变
 
@@ -608,7 +604,7 @@ Process Reward 的优势：细粒度信用分配、逐步验证减少错误累�
 3. **提升训练稳定性**：可验证奖励与真实质量高度相关
 4. **扩展性**：规则可覆盖任意可计算的任务域
 
-**关键洞察**：Rule-based verifiable reward 与图形学中的**可验证渲染**（如路径追踪的像素正确性可通过参考图像验证）同构。两者都利用任务的客观可验证性，将奖励信号从"学习得到的"转变为"规则定义的"。
+**关键洞察**：Rule-based verifiable reward 与图形学中的可验证渲染同构。两者都利用任务的客观可验证性，将奖励信号从"学习得到的"转变为"规则定义的"。
 
 ---
 
@@ -733,7 +729,7 @@ Benchmark 生态的演变反映了评估哲学从"考知识"到"考能力"到"�
 
 **置信度**：70%。技术路径清晰，但记忆内生化与模型通用能力的权衡、隐私与数据安全的新挑战仍是重大障碍。
 
-**与图形学的关联**：这与图形学中从外部纹理缓存 → 集成纹理单元 → 片上纹理缓存的演进同构。Neural Radiance Cache (NRC) 用小型 MLP 近似存储/检索辐射度信息，与 agent 的神经记忆缓存面临相同的近似-精度权衡。
+**与图形学的关联**：这与图形学中从外部纹理缓存 → 集成纹理单元 → 片上纹理缓存的演进同构。图形学中的神经缓存用小型 MLP 近似存储/检索光照信息，与 agent 的神经记忆缓存面临相同的近似-精度权衡。
 
 #### 预测 3: 技能语义网络化 — 技能表示从程序化代码到语义知识图谱
 
@@ -799,7 +795,7 @@ Benchmark 生态的演变反映了评估哲学从"考知识"到"考能力"到"�
 
 **置信度**：85%。技术证据充分，工业趋势明确，基础设施成熟。唯一挑战是环境建模成本（每个 agent step 需要真实环境交互，成本远高于 LLM training）。
 
-**与图形学的关联**：这与图形学中从 rasterization 到 ray tracing 的范式转移一致——计算成本更高，但效果质变。离线渲染（path tracing）到实时渲染（ReSTIR）的优化路径可为 agent RL 的样本效率提升提供借鉴。
+**与图形学的关联**：这与图形学中从 rasterization 到 ray tracing 的范式转移一致——计算成本更高，但效果质变。离线渲染到实时渲染的优化路径可为 agent RL 的样本效率提升提供借鉴。
 
 #### 预测 7: World Model 作为训练环境 — 用生成式世界模型替代真实环境
 
@@ -815,7 +811,7 @@ Benchmark 生态的演变反映了评估哲学从"考知识"到"考能力"到"�
 
 **置信度**：70%。生成式世界模型的质量快速提升，但 sim-to-real gap 仍是挑战。真实环境的复杂性和不确定性难以完全模拟。
 
-**与图形学的关联**：这与图形学中从离线渲染到实时渲染、从预计算光照到实时 GI 的演进一致。世界模型是 agent 的"实时渲染器"——在有限计算预算下生成足够真实的训练环境。
+**与图形学的关联**：这与图形学中从离线渲染到实时渲染、从预计算光照到实时光照的演进一致。世界模型是 agent 的"实时渲染器"——在有限计算预算下生成足够真实的训练环境。
 
 #### 预测 8: 端侧 Agent 部署 — RTX 50 / PS6 NPU 支持本地 Agent 推理
 
@@ -883,30 +879,18 @@ Agent 的 ReAct 循环 (Thought → Action → Observation) 与实时渲染的 D
 
 **深层洞察**：两者都是**数据流管线**（阶段间传递结构化数据）、**时序迭代**（当前输出是下一输入）、**可近似**（中间结果可缓存/复用）。渲染管线的 double buffering 机制（避免读写冲突）可直接迁移到 agent 的状态一致性管理。
 
-#### 7.1.2 Agent Memory System ↔ Radiance Cache / GI
+#### 7.1.2 Agent Memory System ↔ 图形学缓存系统
 
-这是本报告最核心的技术同构。Agent Memory System 与 ReSTIR GI 的 Radiance Cache 在"**时空复用近似信息**"的哲学上完全一致：
+Agent Memory System 与实时图形学的缓存系统在"**时空复用近似信息**"的哲学上存在深层同构：
 
-| Agent Memory 层级 | ReSTIR GI 组件 | 同构性分析 |
+| Agent Memory 层级 | 图形学缓存对应 | 同构性分析 |
 |-------------------|---------------|-----------|
-| **Working Memory (上下文窗口)** | **Current Frame Reservoir** | 容量有限，高频更新。Reservoir 存储当前帧的采样候选；Working Memory 存储当前任务的推理状态。 |
-| **Short-term Memory (MemGPT Recall)** | **Temporal Reservoir (ReSTIR)** | 跨帧/跨步复用历史信息。Temporal Reuse 验证历史样本的当前有效性；Recall 验证历史记忆的当前相关性。 |
-| **Long-term Memory (向量数据库)** | **Spatial Cache / Light Cache** | 长期累积的空间/语义信息。Light Cache 存储预计算的光照；向量数据库存储 embedding 化的记忆。 |
-| **Memory Retrieval (RAG)** | **Importance Sampling (RIS)** | 从大量候选中高效选取。RIS 根据 PDF 相似性选择样本；RAG 根据 embedding 相似性选择记忆。 |
+| **Working Memory (上下文窗口)** | **Current Frame Buffer** | 容量有限，高频更新。Frame Buffer 存储当前帧的渲染结果；Working Memory 存储当前任务的推理状态。 |
+| **Short-term Memory (MemGPT Recall)** | **Temporal History Buffer** | 跨帧/跨步复用历史信息。Temporal history 验证历史样本的当前有效性；Recall 验证历史记忆的当前相关性。 |
+| **Long-term Memory (向量数据库)** | **Lightmap / Irradiance Cache** | 长期累积的空间/语义信息。Lightmap 存储预计算的光照；向量数据库存储 embedding 化的记忆。 |
+| **Memory Retrieval (RAG)** | **Importance Sampling** | 从大量候选中高效选取。IS 根据 PDF 相似性选择样本；RAG 根据 embedding 相似性选择记忆。 |
 | **Memory Compression (ACON)** | **Mipmap / Wavelet Compression** | 有限资源下的信息保留。Mipmap 根据距离降采样；ACON 根据重要性压缩上下文。 |
-| **Memory Update (ACE)** | **Reservoir Update (ReSTIR)** | 新信息的增量整合。ReSTIR 的 weighted reservoir sampling 增量更新；ACE 的 delta 更新增量修改 playbook。 |
-
-**数学同构**：
-
-ReSTIR 的 RIS 权重：
-
-$$w(y) = \frac{1}{M} \sum_{j=1}^{M} \frac{p(y)}{p_j(y)}$$
-
-Agent 记忆的检索权重（基于 embedding 相似度）：
-
-$$\text{score}(m) = \frac{\text{sim}(q, m)}{\sum_{m'} \text{sim}(q, m')}$$
-
-两者都是**组内归一化比较**，目的都是降低方差、提高采样/检索效率。
+| **Memory Update (ACE)** | **Cache Update** | 新信息的增量整合。图形学的增量更新；ACE 的 delta 更新增量修改 playbook。 |
 
 #### 7.1.3 Agent Skill Library ↔ Shader Library / Material System
 
@@ -938,24 +922,14 @@ Voyager 的 Skill Library 与游戏引擎的 Shader Library / Material System �
 
 ### 7.2 技术方法双向借鉴
 
-#### 7.2.1 ReSTIR Reservoir Sampling → Agent 轨迹选择策略
+#### 7.2.1 Reservoir Sampling → Agent 轨迹选择策略
 
-ReSTIR 的核心创新是**Reservoir Sampling**——在流式数据中维护固定大小的代表性样本集，支持高效的增量更新和时序复用。
+统计学中 reservoir sampling 的核心思想是**在流式数据中维护固定大小的代表性样本集**，支持高效的增量更新和时序复用。图形学中广泛应用于实时渲染的样本管理。
 
 **迁移到 Agent 领域**：
 - **问题**：Agent 在长时程任务中产生大量轨迹（思考步骤、行动记录、环境反馈），如何高效选择"代表性"轨迹用于后续学习和记忆更新？
-- **ReSTIR 方案**：Weighted Reservoir Sampling 维护固定大小的 reservoir，根据重要性权重增量更新。
+- **方案**：Weighted Reservoir Sampling 维护固定大小的 reservoir，根据重要性权重增量更新。
 - **Agent 应用**：用 reservoir 维护 top-K 策略轨迹，避免存储全部历史。新轨迹根据"策略改进潜力"权重决定是否替换 reservoir 中的旧轨迹。
-
-**数学形式**：
-
-ReSTIR 的 reservoir update：
-
-$$w_{new} = \frac{p_{target}(y_{new})}{p_{sample}(y_{new})}, \quad \text{accept with probability } \frac{w_{new}}{w_{new} + w_{reservoir}}$$
-
-Agent 的轨迹 reservoir update：
-
-$$\text{score}_{new} = \text{reward}(\tau_{new}) - \text{baseline}, \quad \text{accept with probability } \frac{\text{score}_{new}}{\text{score}_{new} + \text{score}_{reservoir}}$$
 
 #### 7.2.2 Temporal Reprojection → 跨 Episode 知识迁移
 
@@ -1008,19 +982,19 @@ Differentiable Rendering 是近年来图形学的重大突破——使渲染过�
 
 ### 7.3 具体迁移机会
 
-#### 迁移机会 1: 将 ReSTIR 的 Resampling 理论用于 Agent 记忆更新策略
+#### 迁移机会 1: 将图形学的 Resampling 理论用于 Agent 记忆更新策略
 
 **技术路径**：
-1. 将 agent 的记忆项建模为 ReSTIR 的"样本"（sample）
+1. 将 agent 的记忆项建模为图形学中的"样本"（sample）
 2. 将记忆的相关性/重要性建模为"目标 PDF"（$p_{target}$）
 3. 将记忆的检索分布建模为"采样 PDF"（$p_{sample}$）
-4. 应用 ReSTIR 的 RIS 权重计算记忆项的"有效贡献"
+4. 应用 RIS 权重计算记忆项的"有效贡献"
 5. 应用 Weighted Reservoir Sampling 实现记忆的增量更新
 
 **预期收益**：
 - 记忆更新从 $O(N)$ 降低到 $O(1)$（reservoir 的固定大小）
-- 记忆的时序复用效率提升（类似 ReSTIR 的 temporal reuse）
-- 记忆的一致性保证（类似 ReSTIR 的 validation）
+- 记忆的时序复用效率提升
+- 记忆的一致性保证
 
 #### 迁移机会 2: 将渲染管线的 DAG 调度用于多 Agent 工具编排
 
@@ -1036,14 +1010,14 @@ Differentiable Rendering 是近年来图形学的重大突破——使渲染过�
 - 工具调用的状态一致性保证（barrier 同步）
 - 错误恢复的可预测性（类似 Render Graph 的 fallback pass）
 
-#### 迁移机会 3: 将 Radiance Cache 的时空复用用于 Agent 经验复用
+#### 迁移机会 3: 将图形学缓存的时空复用用于 Agent 经验复用
 
 **技术路径**：
-1. 将 agent 的经验（轨迹片段）建模为 Radiance Cache 的"radiance estimate"
+1. 将 agent 的经验（轨迹片段）建模为图形学缓存中的"光照估计"
 2. 将经验的"时空位置"（任务类型、时间戳、用户 ID）建模为缓存的"空间坐标"
-3. 应用 Radiance Cache 的层次化存储（L1/L2/L3）管理经验的分层记忆
-4. 应用 Radiance Cache 的插值查询实现经验的相似任务复用
-5. 应用 Radiance Cache 的增量更新实现经验的持续积累
+3. 应用图形学缓存的层次化存储（L1/L2/L3）管理经验的分层记忆
+4. 应用图形学缓存的插值查询实现经验的相似任务复用
+5. 应用图形学缓存的增量更新实现经验的持续积累
 
 **预期收益**：
 - 经验检索效率提升（空间索引替代线性扫描）
@@ -1075,11 +1049,11 @@ Differentiable Rendering 是近年来图形学的重大突破——使渲染过�
 
 2. **训练范式经历了从模仿到探索的范式跃迁**：SFT（模仿学习）→ RLHF（偏好对齐）→ Critic-free RL（GRPO/DAPO）→ Agentic RL（多轮交互训练）。DeepSeek-R1 (Nature 2025) 证明纯 RL 无需 SFT 即可激发推理能力，这一发现正在重塑整个 agent 训练的方法论基础。
 
-3. **记忆系统与 ReSTIR GI 的 Radiance Cache 在数学上同构**：两者都解决"在有限资源下时空复用近似信息"的核心问题。ReSTIR 的 resampling 理论、temporal reuse、importance sampling 可直接迁移到 agent 的记忆更新策略中，为记忆系统的设计提供成熟的工程方案。
+3. **记忆系统与图形学缓存在数学上同构**：两者都解决"在有限资源下时空复用近似信息"的核心问题。图形学的 resampling 理论、temporal reuse、importance sampling 可直接迁移到 agent 的记忆更新策略中，为记忆系统的设计提供成熟的工程方案。
 
 4. **Benchmark 生态从"单一指标竞争"进入"多维度能力分解"阶段**：2024 年前的 benchmark 追求单一通过率，2025 年后强调过程评估、状态管理、安全约束。评估标准与模型能力呈螺旋上升——更强的模型推动 benchmark 升级，更难的 benchmark 又推动模型改进。
 
-5. **Agent Harness 与实时图形学存在深层双向借鉴机会**：Planning Loop ↔ Rendering Pipeline、Memory System ↔ Radiance Cache、Skill Library ↔ Shader Library、Multi-agent Orchestration ↔ Render Graph 的架构同构意味着两个领域的技术方法可直接迁移。具体迁移机会包括：ReSTIR resampling 用于记忆更新、Render Graph DAG 调度用于工具编排、Radiance Cache 时空复用用于经验复用、ECS 架构用于环境状态管理。
+5. **Agent Harness 与实时图形学存在深层双向借鉴机会**：Planning Loop ↔ Rendering Pipeline、Memory System ↔ 图形学缓存、Skill Library ↔ Shader Library、Multi-agent Orchestration ↔ Render Graph 的架构同构意味着两个领域的技术方法可直接迁移。具体迁移机会包括：resampling 用于记忆更新、Render Graph DAG 调度用于工具编排、图形学缓存时空复用用于经验复用、ECS 架构用于环境状态管理。
 
 ### 8.2 对从业者的建议
 
@@ -1089,7 +1063,7 @@ Differentiable Rendering 是近年来图形学的重大突破——使渲染过�
 
 2. **深入理解 Context Engineering 的范式转变**：从静态 prompt 到动态 playbook 的演进（ACE）是 agent 能力提升的关键。建议在新系统中采用增量更新的 playbook 机制，而非全量重写的上下文压缩。
 
-3. **借鉴图形学的缓存理论**：ReSTIR 的 resampling、temporal reuse、importance sampling 为记忆系统的设计提供了成熟的数学框架。建议在设计记忆系统时参考 ReSTIR 的 engineering 经验。
+3. **借鉴图形学的缓存理论**：图形学的 resampling、temporal reuse、importance sampling 为记忆系统的设计提供了成熟的数学框架。建议在设计记忆系统时参考图形学的 engineering 经验。
 
 **对游戏开发者**：
 
@@ -1101,7 +1075,7 @@ Differentiable Rendering 是近年来图形学的重大突破——使渲染过�
 
 **对实时图形学研究者**：
 
-1. **将渲染优化经验迁移到 Agent 领域**：ReSTIR 的 resampling、TAA 的 temporal reprojection、LOD 的层次化细节管理都是 agent 系统急需的优化技术。建议关注 agent 领域的论文，寻找技术迁移机会。
+1. **将渲染优化经验迁移到 Agent 领域**：图形学的 resampling、TAA 的 temporal reprojection、LOD 的层次化细节管理都是 agent 系统急需的优化技术。建议关注 agent 领域的论文，寻找技术迁移机会。
 
 2. **探索 Differentiable Agent Simulation**：借鉴 differentiable rendering 的思想，将自动微分应用于 agent 环境参数的优化。这是一个尚未充分探索的交叉研究方向。
 
@@ -1207,10 +1181,7 @@ Differentiable Rendering 是近年来图形学的重大突破——使渲染过�
 65. Gao, Y., et al. "RollArt: Scaling Agentic RL Training via Disaggregated Infrastructure." *arXiv*, 2025.
 66. Agent-R1. "End-to-End RL Training for Powerful LLM Agents." *arXiv*, 2025.
 
-### 实时图形学关联
 
-67. Bitterli, B., et al. "Spatiotemporal Reservoir Resampling for Real-time Ray Tracing with Dynamic Direct Lighting." *SIGGRAPH*, 2020. (ReSTIR)
-68. Ouyang, Y., et al. "Neural Radiance Cache." *SIGGRAPH*, 2021. (NRC)
 
 ---
 

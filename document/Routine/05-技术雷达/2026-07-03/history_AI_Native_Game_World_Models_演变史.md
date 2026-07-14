@@ -1,6 +1,6 @@
 # AI-Native Game / World Models 技术演变史（2018→2026）
 
-> **撰写对象**：实时计算机图形学从业者（ReSTIR 全局光照方向）
+> **撰写对象**：AI-Native Game / World Model 技术研究者
 > **核心问题**：这条技术线是怎么走到今天的？关键转折点是什么？
 > **阅读建议**：本文不罗列现状，而是按时间线追踪技术路线的生灭与分叉，标注每步的数学/架构本质。
 
@@ -328,13 +328,13 @@ $$
 
 ---
 
-## 8. 对实时图形学从业者的建议
+## 8. 对 AI-Native Game 开发者的建议
 
 ### 8.1 你的现有技能如何迁移
 
 | 你的专长 | 与 World Model 的交集 | 建议行动 |
 |---------|---------------------|---------|
-| **ReSTIR / 全局光照** | World model 需要物理正确的光照作为训练先验；反之，GI 算法需要与神经渲染结合 | 关注 "Neural Radiance Transfer" 与 "Differentiable Rendering" 方向 |
+| **神经渲染 / 场景表示** | World model 需要物理正确的视觉作为训练先验；神经场景表示可与生成模型结合 | 关注 "Neural Radiance Transfer" 与 "Differentiable Rendering" 方向 |
 | **实时渲染管线** | World model 的推理管线本身就是新型渲染管线 | 学习 CUDA / Triton 优化，理解 Transformer 推理的 memory-bound 特性 |
 | **Shader / 材质** | Diffusion model 的 texture 生成正在替代手工材质 | 掌握 ControlNet / IP-Adapter 等条件控制技术 |
 | **引擎架构** | 混合引擎（传统 + 神经）需要新的中间件抽象 | 研究 Omniverse / Cosmos 的 USD-based 工作流 |
@@ -401,5 +401,5 @@ $$
 
 > **文档信息**
 > - 撰写日期：2026-07-03
-> - 目标读者：实时图形学研究者 / 游戏引擎开发者
+> - 目标读者：AI-Native Game / World Model 技术研究者 / 游戏引擎开发者
 > - 更新策略：每季度根据 arXiv/NeurIPS/ICML/SIGGRAPH 新论文更新里程碑

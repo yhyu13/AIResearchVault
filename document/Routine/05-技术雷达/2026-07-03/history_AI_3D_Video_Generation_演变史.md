@@ -78,7 +78,7 @@ $$G(\mathbf{x}) = \exp\left(-\frac{1}{2}(\mathbf{x} - \boldsymbol{\mu})^\top \bo
 
 其中协方差矩阵 $\boldsymbol{\Sigma}$ 被参数化为 $\boldsymbol{\Sigma} = \mathbf{R}\mathbf{S}\mathbf{S}^\top\mathbf{R}^\top$，$\mathbf{R} \in SO(3)$ 为旋转，$\mathbf{S} = \text{diag}(s)$ 为尺度。这种参数化保证了 $\boldsymbol{\Sigma}$ 的正定性。
 
-渲染时，每个 3D 高斯被投影到图像平面得到一个 2D 高斯（通过仿射近似的 Jacobian $\mathbf{J}$：$\boldsymbol{\Sigma}' = \mathbf{J}\boldsymbol{\Sigma}\mathbf{J}^\top$），然后使用**tile-based rasterizer**按深度排序后做 front-to-back $\alpha$-blending：
+渲染时，每个 3D 高斯被投影到图像平面得到一个 2D 高斯（通过仿射近似），然后使用**tile-based rasterizer**按深度排序后做 front-to-back $\alpha$-blending：
 
 $$C = \sum_{i \in \mathcal{N}} c_i \alpha_i \prod_{j=1}^{i-1}(1 - \alpha_j)$$
 
@@ -274,7 +274,7 @@ Sora 发布后，视频生成领域进入爆发期。2024–2026 年的主要里
 |------|--------------------------|----------------------|
 | 几何表示 | Mesh / Nanite 虚拟几何 | 数百万高斯椭球 |
 | 材质 | PBR (Metallic-Roughness) | 球谐函数 (SH) 编码视角相关颜色 |
-| 光照 | 实时 GI / Lumen / RTX | 烘焙到训练数据中（可 relight） |
+| 光照 | Lumen / RTX | 烘焙到训练数据中（可 relight） |
 | 渲染核心 | Rasterization / Ray tracing | Tile-based splatting + α-blending |
 | 抗锯齿 | TAA / MSAA | 多采样 + 高斯自然抗锯齿 |
 | 编辑性 | 完全可控（材质、动画、LOD） | 有限（位置/颜色可编辑，但无显式拓扑） |
@@ -291,18 +291,6 @@ Sora 发布后，视频生成领域进入爆发期。2024–2026 年的主要里
 - **BiGS**（Liu et al., 2025）：扩展 relightable Gaussian 到近场/远场光照和复杂表面。
 - **VR-GS**（Jiang et al., 2024）：在 Unity 中实现物理感知的 3DGS 交互，允许用户在 VR 中抓取、移动 splatted 对象。
 - **PhysGaussian / PIDG / GaussianFluent**：将 MPM/PBD 物理求解器与 3DGS 耦合，实现弹性体、流体、断裂的物理正确模拟。
-
-### 4.4 对 GI / ReSTIR 研究者的特殊关联
-
-作为正在研究 ReSTIR 全局光照的从业者，你应当关注以下交叉点：
-
-1. **Sampling Problem 的共同本质**：ReSTIR 解决的是「如何高效采样光源以估计直接光照」；Neural Rendering 解决的是「如何高效采样场景表示以合成新视角」。两者都是**采样问题**，都在追求「用更少的样本获得无偏或低方差的估计」。
-
-2. **Neural Importance Sampling**：NVIDIA 的 Neural Radiance Caching、Learned Irradiance 等工作已经展示了神经网络可以用于学习光照传输的重要性分布。3DGS 的 tile-based sorting 与 ReSTIR 的 reservoir 重采样在工程层面可以结合——例如，用高斯不透明度作为 visibility proxy 来加速光传输计算。
-
-3. **Differentiable Rendering 的互哺**：ReSTIR 的梯度估计（如 Diffusion-based derivative estimation）与 3DGS 的可微 splatting 共享同一套数学基础——**反向传播通过随机采样算子**。你对 path tracing gradient 的理解可以直接迁移到 neural rendering 的梯度分析。
-
-4. **未来交点**：当视频生成模型（如 Sora）被用于生成训练数据时，其内在的 3D 一致性可以被提取出来作为 GI 算法的输入。反之，GI 算法的物理正确性可以作为正则化约束注入视频生成模型。
 
 ---
 
@@ -359,10 +347,9 @@ Sora 发布后，视频生成领域进入爆发期。2024–2026 年的主要里
 1. **必须掌握 Differentiable Rendering**：理解「渲染梯度如何反向传播」是连接传统图形学与 AI 的数学基础。重点掌握：
    - 体渲染方程的梯度推导（NeRF 的 reparameterization trick）
    - Splatting 的 backward pass（tile-based 排序下的 $\alpha$-blending 梯度）
-   - Path tracing 的 gradient estimation（ReSTIR 的导数估计与此直接相关）
 
 2. **深入理解 Gaussian Splatting 的渲染管线**：不只是调用开源代码，要理解：
-   - 投影 Jacobian $\mathbf{J} = \partial \mathbf{x}^{2D} / \partial \mathbf{x}^{3D}$ 的推导
+   - 投影变换的推导
    - Covariance $\boldsymbol{\Sigma} = \mathbf{R}\mathbf{S}\mathbf{S}^\top\mathbf{R}^\top$ 的正定约束如何保证
    - Tile-based rasterization 的 CUDA kernel 设计（排序、融合、原子操作）
 
@@ -372,9 +359,7 @@ Sora 发布后，视频生成领域进入爆发期。2024–2026 年的主要里
 
 4. **物理先验不会消失**：当前 hype 倾向于认为「数据驱动将取代物理模拟」。但对需要交互性和确定性的游戏/实时应用而言，PBD、MPM、FEM 等物理求解器仍不可替代。未来的赢家是「物理 + 数据」的混合系统，而非纯数据驱动。
 
-5. **GI / Sampling 背景是核心优势**：你对 ReSTIR、path tracing、importance sampling 的理解可以直接迁移到 neural rendering 的采样问题。特别是在「neural importance sampling」「learned light transport」方向，传统 GI 研究的直觉仍然宝贵。
-
-6. **警惕「渲染质量 = 一切」的陷阱**：视频生成模型在视觉上令人惊艳，但缺乏物理正确性、可控性和可编辑性。对于游戏开发，一个「看起来很好但无法交互」的场景没有生产价值。评估技术时，必须同时看：质量、速度、可控性、物理正确性、存储效率。
+5. **警惕「渲染质量 = 一切」的陷阱**：视频生成模型在视觉上令人惊艳，但缺乏物理正确性、可控性和可编辑性。对于游戏开发，一个「看起来很好但无法交互」的场景没有生产价值。评估技术时，必须同时看：质量、速度、可控性、物理正确性、存储效率。
 
 ### 6.3 生态跟踪层面
 

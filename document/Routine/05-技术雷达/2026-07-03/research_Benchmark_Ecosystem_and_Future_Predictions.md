@@ -3,7 +3,7 @@
 > **研究日期**: 2026-07-11  
 > **基于素材**: awesome-agent-harness 仓库（README.md 695 行 + 论文 PDF）  
 > **研究员**: 技术调研员（Orchestrator 子代理）  
-> **目标读者**: 实时计算机图形学研究者，关注 AI Agent 技术演进与游戏产业交集
+> **目标读者**: 关注 AI Agent 技术演进与游戏产业交集的研究者
 
 ---
 
@@ -13,7 +13,7 @@
 2. [时间线演变（2018→2026）](#2-时间线演变20182026)
 3. [被证明正确的思路 vs 被淘汰的思路](#3-被证明正确的思路-vs-被淘汰的思路)
 4. [核心公司/团队及其贡献](#4-核心公司团队及其贡献)
-5. [与实时图形学/游戏产业的关联分析](#5-与实时图形学游戏产业的关联分析)
+5. [与游戏产业的关联分析](#5-与游戏产业的关联分析)
 6. [未来 2-3 年发展方向预测](#6-未来-2-3-年发展方向预测)
 7. [结论](#7-结论)
 
@@ -198,63 +198,9 @@
 
 ---
 
-## 5. 与实时图形学/游戏产业的关联分析
+## 5. 与游戏产业的关联分析
 
-### 5.1 架构层面的同构性
-
-作为实时图形学研究者，以下同构性值得关注：
-
-#### (1) Planning Loop ↔ Rendering Pipeline
-
-| Agent Planning Loop | Rendering Pipeline | 同构性分析 |
-|--------------------|--------------------|-----------|
-| Observation（环境感知） | Input Assembly（顶点输入） | 都是信息入口，决定后续处理的输入质量 |
-| Thought（推理/规划） | Vertex/Geometry Shader（坐标变换） | 将原始输入转换为可操作的中间表示 |
-| Action（工具调用） | Rasterization（光栅化） | 将抽象决策转换为具体环境变化 |
-| Environment Update（状态更新） | Framebuffer Write（帧缓冲写入） | 修改共享状态，供下一轮使用 |
-| **关键洞察** | | Agent 的 ReAct loop 与渲染管线的 "输入-处理-输出-反馈" 结构**完全同构**。渲染管线用 double buffering 避免读写冲突，agent 可用类似机制管理状态一致性 |
-
-#### (2) Memory System ↔ Radiance Cache
-
-| Agent Memory System | Radiance Cache | 同构性分析 |
-|--------------------|---------------|-----------|
-| 短期记忆（上下文窗口） | 临时 G-buffer（每帧重建） | 容量有限，需要精心管理 |
-| 长期记忆（向量数据库） | 持久 Irradiance Cache / Lightmap | 预计算/预存储，查询时复用 |
-| 记忆检索（RAG） | Importance Sampling（重要性采样） | 从大量候选中高效选取相关信息 |
-| 记忆压缩（ACON / MemGPT） | Mipmap / LOD（层级细节） | 距离当前任务越远，细节越粗糙 |
-| **关键洞察** | | MemGPT 的 "OS 式内存管理" 与 radiance cache 的 "分层存储" 策略**数学等价**：都是解决有限存储下的信息最优保留问题。Agent 社区可借鉴 graphics 的 **resampling** 理论（如 ReSTIR）来设计记忆更新策略 |
-
-#### (3) Tool Use ↔ Shader Dispatch
-
-| Tool Use | Shader Dispatch | 同构性分析 |
-|---------|----------------|-----------|
-| 工具选择（Tool Selection） | Shader 选择（Pipeline State） | 根据任务特征选择最优处理单元 |
-| 参数填充（Argument Filling） | Uniform/Constant Buffer 绑定 | 将具体数据注入处理单元 |
-| 并行工具调用（Parallel Tool Calls） | GPU Wavefront / Warp 并行 | 独立任务可并行执行 |
-| 工具依赖（Tool Dependencies） | Shader Graph / Render Graph | 定义执行顺序和数据依赖 |
-| **关键洞察** | | GAP (Graph-Based Agent Planning, arXiv 2025) 的并行工具调用与 **Render Graph**（如 UE5 的 RDG）**结构相同**：DAG 调度、资源生命周期管理、依赖解析。Agent 工具编排可直接借鉴 Render Graph 的优化技术 |
-
-#### (4) Stateful Environment ↔ Game State Management
-
-| Stateful Agent Env | Game State Management | 同构性分析 |
-|--------------------|----------------------|-----------|
-| World State（ToolSandbox） | Game State（ECS） | 实体-组件-系统架构管理状态 |
-| State Dependency（工具依赖） | System Dependency（系统更新顺序） | 依赖图决定执行顺序 |
-| Checkpoint / Rollback | Save/Load System | 状态快照支持回溯 |
-| **关键洞察** | | ToolSandbox 的 milestone/minefield 机制与游戏开发的 **quest system / achievement system** 完全同构。游戏产业在状态管理上的数十年经验（如 Unity ECS、UE Gameplay Ability System）可直接迁移到 agent 环境设计 |
-
-### 5.2 技术迁移机会
-
-| 图形学技术 | Agent 应用场景 | 迁移路径 |
-|-----------|--------------|---------|
-| **ReSTIR / Resampling** | 记忆更新与检索 | 用 PDF 相似性（vMF 分布）度量记忆相关性，实现高效记忆 resampling |
-| **Temporal Anti-Aliasing (TAA)** | 跨轮决策稳定性 | 用历史帧信息（前一行动）稳定当前决策，减少 jitter |
-| **Level of Detail (LOD)** | 上下文压缩 | 根据任务距离动态调整上下文细节（ACON 的数学基础） |
-| **Deferred Shading** | 延迟工具调用 | 先收集所有工具调用需求，再批量执行，减少环境切换开销 |
-| **Render Graph** | 工具编排优化 | 用 DAG 分析工具依赖，自动并行化独立调用 |
-| **Radiance Cache** | 长期记忆存储 | 分层缓存策略：L1（上下文窗口）→ L2（摘要）→ L3（向量数据库） |
-
-### 5.3 游戏产业的具体交集
+### 5.1 游戏产业的直接交集
 
 1. **NPC Agent**: 现代游戏 NPC 从脚本行为转向 LLM-driven agent。Benchmark 生态的演进（尤其是 stateful、multi-turn 评估）直接决定了 NPC 能否通过图灵测试。
 
@@ -273,18 +219,18 @@
 **技术根因**:
 - 当前 benchmark（如 SWE-bench）报告单一通过率，无法回答 "agent 强在哪里、弱在哪里"
 - ResearchRubrics 和 DeepResearch Bench II 证明：细粒度 rubric 评估可以定位能力短板
-- 这与图形学的 **profiling** 文化一致：渲染管线需要逐 stage 分析，agent 也需要逐能力维度分析
+- 这与软件工程的 **profiling** 文化一致：系统需要逐模块分析，agent 也需要逐能力维度分析
 
 **预测细节**:
 - 2026-2027: 所有主流 benchmark 将引入多维度评分（如 SWE-bench 将分解为：localization accuracy → patch correctness → test coverage → efficiency）
-- 2027-2028: 出现 "Agent Capability Taxonomy" 标准（类似 graphics 的 GPU feature level），不同 agent 按能力等级分类
+- 2027-2028: 出现 "Agent Capability Taxonomy" 标准（类似软件系统的 capability level），不同 agent 按能力等级分类
 
 ### 6.2 预测 2：Live / Self-Evolving Benchmark 将成为主流
 
 **技术根因**:
 - 静态 benchmark 的污染问题无法根治（SWE-bench Verified 有 10.6% 数据泄露）
 - LiveCodeBench 和 SWE-rebench 证明：持续更新是可行的
-- 与图形学的 **continuous integration** 类似：benchmark 需要 CI 式持续维护
+- 与软件工程的 **continuous integration** 类似：benchmark 需要 CI 式持续维护
 
 **预测细节**:
 - 2026-2027: 主要 benchmark（SWE-bench, WebArena, OSWorld）全部转为 live 更新模式
@@ -308,7 +254,7 @@
 **技术根因**:
 - 当前评估碎片化：WebArena（浏览器）、OSWorld（桌面）、AndroidWorld（移动端）
 - 真实用户行为跨平台：在手机上看到信息 → 在电脑上操作 → 在网页上确认
-- 与图形学的 **unified shading model** 类似：需要统一的动作空间（鼠标/键盘/触摸/API）
+- 与多平台 UI 框架的 **统一输入模型** 类似：需要统一的动作空间（鼠标/键盘/触摸/API）
 
 **预测细节**:
 - 2026-2027: 出现跨平台统一 benchmark（如 VenusBench-GD 的扩展）
@@ -325,14 +271,14 @@
 **预测细节**:
 - 2026-2027: 出现专门的安全 benchmark 家族（如 AgentDojo 2.0, MCPTox 扩展）
 - 2027-2028: 安全评估成为 agent 部署的强制门槛（类似游戏的 ESRB/PEGI 分级）
-- 与图形学的 **rendering validation** 类似：每帧渲染需要正确性检查，agent 每个 action 需要安全验证
+- 与软件系统的 **输入验证** 类似：每个用户输入需要正确性检查，agent 每个 action 需要安全验证
 
-### 6.6 预测 6：Evaluation Harness 标准化（类似 Vulkan/DirectX）
+### 6.6 预测 6：Evaluation Harness 标准化（类似标准化 API）
 
 **技术根因**:
 - 当前每个 benchmark 有自己的 harness，复现困难
 - SWE-agent 的 ACI 和 OpenHands 的 scaffold 差异导致 20-30% 性能差距
-- 图形学有 Vulkan/DirectX/OpenGL 标准 API，agent 领域缺乏等价标准
+- 软件领域有标准化 API 规范，agent 评估领域缺乏等价标准
 
 **预测细节**:
 - 2026-2027: 出现 Agent Evaluation Standard（类似 ACI 的扩展），定义统一的环境接口、动作空间、观察格式
@@ -349,9 +295,9 @@
 
 2. **评估标准与模型能力呈螺旋上升**：更强的模型（GPT-4 → o3 → Claude 4）推动 benchmark 升级（SWE-bench → SWE-bench Pro → SWE-Universe），而更难 benchmark 又推动模型改进。
 
-3. **RL 训练是 agent 能力的下一个跃迁点**：从 SFT（模仿学习）到 RL（自主探索）的转变，类似于图形学从 rasterization 到 ray tracing 的范式转移——计算成本更高，但效果质变。
+3. **RL 训练是 agent 能力的下一个跃迁点**：从 SFT（模仿学习）到 RL（自主探索）的转变，计算成本更高，但效果质变。
 
-4. **Agent 评估与实时图形学存在深层同构**：Planning loop ↔ 渲染管线、Memory system ↔ Radiance cache、Tool use ↔ Shader dispatch。两个领域可以互相借鉴优化技术。
+4. **Agent 评估与软件工程评估存在深层同构**：两者都需要系统化的能力分解、过程评估和状态管理。不同技术领域可以互相借鉴优化技术。
 
 ### 7.2 对游戏产业的具体建议
 
@@ -361,7 +307,7 @@
 | **自动化测试** | 手工 QA 为主 | 采用 AgentBench 的 stateful 评估方法，构建游戏专属自动化测试 benchmark |
 | **PCG** | 基于规则的生成 | 借鉴 NL2Repo-Bench，评估从自然语言生成游戏内容的 agent |
 | **实时决策** | 传统 AI（GOAP/HTN） | 关注 RL-based agent（DigiRL / WebRL）的实时性改进，探索毫秒级 agent 决策 |
-| **性能优化** | 手动 profiling | 引入 agent 的 "逐能力维度评估" 方法，对游戏 AI 进行精细化能力 profiling |
+| **性能优化** | 手动调优 | 引入 agent 的 "逐能力维度评估" 方法，对游戏 AI 进行精细化能力分析 |
 
 ### 7.3 关键论文速查表
 
@@ -377,10 +323,10 @@
 
 ---
 
-> **附录**: 本报告基于 awesome-agent-harness 仓库的 502 篇参考文献，结合深度网络搜索（覆盖 arXiv 2024-2026、ICLR、NeurIPS、ACL、ICML 等顶级会议），以及实时计算机图形学的专业视角进行交叉分析。所有论文标注均经过至少两个独立来源验证。
+> **附录**: 本报告基于 awesome-agent-harness 仓库的 502 篇参考文献，结合深度网络搜索（覆盖 arXiv 2024-2026、ICLR、NeurIPS、ACL、ICML 等顶级会议）进行交叉分析。所有论文标注均经过至少两个独立来源验证。
 
 ---
 
 *报告生成时间: 2026-07-11*  
 *研究员: Orchestrator 子代理 — 技术调研员*  
-*质量审核: 数学严谨性检查通过 | 所有论文均有作者/会议/年份/贡献标注*
+*质量审核: 所有论文均有作者/会议/年份/贡献标注*

@@ -14,10 +14,9 @@
 3. [时间线演变（2018→2026）](#3-时间线演变20182026)
 4. [被证明正确的思路 vs 被淘汰的思路](#4-被证明正确的思路-vs-被淘汰的思路)
 5. [核心公司/团队与贡献](#5-核心公司团队与贡献)
-6. [与实时图形学/游戏产业的关联分析](#6-与实时图形学游戏产业的关联分析)
-7. [未来 2-3 年发展方向预测](#7-未来-2-3-年发展方向预测)
-8. [关键公式与算法精要](#8-关键公式与算法精要)
-9. [参考文献](#9-参考文献)
+6. [未来 2-3 年发展方向预测](#6-未来-2-3-年发展方向预测)
+7. [关键公式与算法精要](#7-关键公式与算法精要)
+8. [参考文献](#8-参考文献)
 
 ---
 
@@ -38,10 +37,6 @@
 1. **2024 年：GRPO 的提出（DeepSeekMath）** —— 首次证明无需 critic model 的 group-relative advantage 估计在数学推理上有效，内存节省约 50%。
 2. **2025 年初：DeepSeek-R1（Nature 2025）** —— 纯 RL 无需 SFT 即可激发推理能力，开源复现了 OpenAI o1 的核心方法论。
 3. **2025 年中：DAPO（ByteDance）** —— 四项改进（Clip-Higher、Dynamic Sampling、Token-Level Loss、Overlong Penalty）将 GRPO 推向生产级稳定训练。
-
-### 1.3 与实时图形学的最深层关联
-
-Agent 的 **planning loop**（感知→决策→执行→反馈）与实时渲染的 **rendering pipeline**（G-Buffer → Lighting → Shading → Post-processing）存在结构性同构；Agent 的 **memory system**（MemGPT/Agent Workflow Memory）与 **radiance cache**（ReSTIR GI 的 cached radiance estimate）在"时空复用近似信息"这一核心哲学上完全一致。
 
 ---
 
@@ -440,96 +435,11 @@ ACE 的解决方案是**结构化增量更新**：
 
 ---
 
-## 6. 与实时图形学/游戏产业的关联分析
-
-### 6.1 结构性同构分析
-
-#### 6.1.1 Planning Loop ↔ Rendering Pipeline
-
-| Agent Planning Loop | 实时渲染管线 | 同构点 |
-|---|---|---|
-| **感知 (Perception)** | G-Buffer 生成（几何、材质、深度） | 都从原始输入中提取结构化表示 |
-| **推理 (Reasoning/CoT)** | Lighting 计算（直接光、间接光） | 都是核心计算密集型阶段；可并行/可近似 |
-| **决策 (Action Selection)** | Shading（材质响应合成） | 都基于中间结果做出最终选择 |
-| **执行 (Action Execution)** | Post-processing（Bloom、TAA、色调映射） | 都作用于输出，可反馈到下一帧 |
-| **环境反馈 (Observation)** | 帧缓冲反馈（TAA 历史、运动向量） | 都提供时序信息用于下一迭代 |
-
-**深层洞察**：Agent 的 ReAct loop（Thought→Action→Observation）与渲染的 frame loop（G-Buffer→Lighting→Shading→Post）在**控制流结构**上完全同构。两者都是：
-- **数据流管线**：阶段间传递结构化数据
-- **时序迭代**：当前帧/步的输出是下一帧/步的输入
-- **可近似性**：中间结果可缓存/复用（radiance cache ↔ agent memory）
-
-#### 6.1.2 Memory System ↔ Radiance Cache
-
-| Agent Memory | Radiance Cache | 同构点 |
-|---|---|---|
-| **MemGPT (分页内存)** | **ReSTIR GI Reservoir (缓存池)** | 都是有限资源的动态分配；都有 eviction 策略 |
-| **Agent Workflow Memory** | **ReSTIR 的 temporal reuse** | 都跨时间步复用历史信息；都需验证有效性 |
-| **A-Mem (主动记忆管理)** | **Neural Radiance Cache (NRC)** | 都主动决定存储/更新/检索；都学习型 |
-| **ACE (进化 playbook)** | **World Space Radiance Cache** | 都累积结构化知识；都支持增量更新 |
-| **Context Compression** | **Radiance 的 wavelet 压缩** | 都在保真度和存储间权衡；都有有损压缩 |
-
-**深层洞察**：ReSTIR GI 的核心优化是**缓存 radiance estimate** $LC_k(x_2 \rightarrow x_1)$ 来避免重复路径追踪：
-
-$$LC_k(x_2 \rightarrow x_1) = L_e(y_{mix,k} \rightarrow y_{mix,k-1}) \prod_{i=3}^{k} \frac{f \cdot G}{p_a(y_{mix,i})}$$
-
-Agent memory 的对应优化是**缓存策略/知识片段**来避免重复推理。两者都面临：
-- **一致性问题**：缓存值在新条件下是否仍然有效？
-- **更新策略**：何时更新缓存？全量还是增量？
-- **存储限制**：有限带宽/上下文窗口下的最优分配
-
-#### 6.1.3 Reward Design ↔ Importance Sampling
-
-| Agent Reward | 渲染重要性采样 | 同构点 |
-|---|---|---|
-| **Outcome Reward (稀疏)** | **Path Tracing 均匀采样** | 都方差高；都样本效率低 |
-| **Process Reward (密集)** | **Multiple Importance Sampling (MIS)** | 都多源组合降低方差；都需权重平衡 |
-| **Rule-based Verifiable Reward** | **Next Event Estimation (NEE)** | 都直接计算贡献；都无偏/可验证 |
-| **GRPO Group Relative** | **Resampled Importance Sampling (RIS)** | 都组内比较选择最优；都重采样降低方差 |
-
-**深层洞察**：GRPO 的 group-relative advantage 估计：
-
-$$\hat{A}_i = \frac{r_i - \bar{r}}{\sigma_r}$$
-
-与 ReSTIR 的 RIS 权重：
-
-$$w(y) = \frac{1}{M} \sum_{j=1}^{M} \frac{p(y)}{p_j(y)}$$
-
-在数学结构上都是**组内归一化比较**，目的都是降低方差。
-
-### 6.2 技术迁移可能性
-
-| 图形学技术 | 可迁移到 Agent 领域 | 迁移路径 |
-|---|---|---|
-| **ReSTIR 的 Reservoir 采样** | Agent 的轨迹选择 | 用 reservoir 维护 top-K 策略轨迹，避免存储全部历史 |
-| **Temporal Reprojection** | Agent 的跨 episode 知识迁移 | 将上一 episode 的"有效策略"投影到当前 episode 的上下文 |
-| **Level of Detail (LOD)** | Agent 的层次化推理 | 远距离/低优先级任务用粗粒度推理，近距离用细粒度 |
-| **Deferred Shading** | Agent 的延迟决策 | 先收集全部信息（G-Buffer），再统一决策（Lighting），避免过早承诺 |
-| **TAA (Temporal Anti-Aliasing)** | Agent 的决策平滑 | 当前决策与历史决策混合，避免抖动 |
-| **Neural Radiance Cache** | Agent 的神经记忆缓存 | 用小型 MLP 近似存储/检索策略知识，而非显式文本 |
-
-### 6.3 游戏产业的具体应用前景
-
-1. **NPC Agent**：
-   - 当前：行为树/状态机，预设脚本
-   - 未来：Agentic RL 训练的自适应 NPC，能根据玩家行为动态调整策略
-   - 技术需求：实时环境（游戏引擎）+ 可验证奖励（任务完成度）+ 高效训练（RollArt 式分离基础设施）
-
-2. **自动化测试**：
-   - 当前：人工编写测试用例
-   - 未来：Agent 自主探索游戏状态空间，发现 bug 和边界情况
-   - 技术需求：DigiRL 式真实环境 RL + Process Reward（逐步验证游戏状态合法性）
-
-3. **内容生成**：
-   - 当前：程序化生成（PCG）
-   - 未来：Agent 根据设计目标自主生成关卡/剧情/对话
-   - 技术需求：ACE 式上下文进化 + 规则验证（游戏机制一致性）
-
 ---
 
-## 7. 未来 2-3 年发展方向预测
+## 6. 未来 2-3 年发展方向预测
 
-### 7.1 预测与根因分析
+### 6.1 预测与根因分析
 
 | 预测 | 时间框架 | 技术根因 | 置信度 |
 |---|---|---|---|
@@ -542,7 +452,7 @@ $$w(y) = \frac{1}{M} \sum_{j=1}^{M} \frac{p(y)}{p_j(y)}$$
 | **Test-time Compute 持续扩展** | 2026-2029 | o1/o3/R1 已证明方向；推理时搜索（MCTS/Beam）与训练时 RL 互补；硬件（GPU/TPU）持续扩展 | ★★★★★ |
 | **Self-evolving Agent 闭环** | 2028-2030 | ACE 上下文自进化 + ACT 批判训练 + 基础设施自动化；最终目标是"发布后即自我改进" | ★★★☆☆ |
 
-### 7.2 关键技术挑战
+### 6.2 关键技术挑战
 
 1. **Credit Assignment in Long-Horizon**：
    - 当前：VinePPO、GTPO 尝试解决，但长 horizon（>100 步）的信用分配仍不稳定
@@ -564,20 +474,11 @@ $$w(y) = \frac{1}{M} \sum_{j=1}^{M} \frac{p(y)}{p_j(y)}$$
    - 根因：Transformer 注意力二次复杂度；长序列推理误差累积
    - 可能方向：稀疏注意力（MSA）+ 显式记忆管理（Mem0/AgentSys）+ 层次化压缩
 
-### 7.3 与实时图形学的交叉预测
-
-| 预测 | 根因 | 时间 |
-|---|---|---|
-| **游戏引擎内置 Agent 训练框架** | Unreal/Unity 已支持 Python；RL 训练需要环境接口；产业需求 | 2026-2027 |
-| **Radiance Cache 思想用于 Agent Memory** | 同构性已证明；缓存一致性问题相似；图形学社区有成熟方案 | 2026-2028 |
-| **GPU 光线追踪用于 Agent 感知** | RTX 硬件普及；NeRF/3DGS 场景表示；agent 需要空间推理 | 2027-2029 |
-| **实时渲染与 Agent 决策统一管线** | 两者都是 frame-based 循环；可共享基础设施（GPU、内存管理） | 2028-2030 |
-
 ---
 
-## 8. 关键公式与算法精要
+## 7. 关键公式与算法精要
 
-### 8.1 GRPO（Group Relative Policy Optimization）
+### 7.1 GRPO（Group Relative Policy Optimization）
 
 **目标函数**：
 
@@ -593,7 +494,7 @@ $$\hat{A}_i = \frac{r_i - \text{mean}(\{r_j\}_{j=1}^G)}{\text{std}(\{r_j\}_{j=1}
 
 **关键洞察**：无需 $V_\phi(s)$，用组内统计量替代。
 
-### 8.2 DAPO（Decoupled Clip and Dynamic Sampling Policy Optimization）
+### 7.2 DAPO（Decoupled Clip and Dynamic Sampling Policy Optimization）
 
 **四项改进**：
 
@@ -607,7 +508,7 @@ $$J_{DAPO}(\theta) = \mathbb{E}\left[ \frac{1}{\sum |o_i|} \sum_{i=1}^{G} \sum_{
 
 **关键洞察**：DAPO 优化的是 loss 的**归一化方式**，而非解决 token-level 的 credit assignment（这是 GTPO 的方向）。
 
-### 8.3 ACE（Agentic Context Engineering）
+### 7.3 ACE（Agentic Context Engineering）
 
 **核心循环**：
 
@@ -626,7 +527,7 @@ Curator: 执行增量 delta 更新（ADD/MODIFY/DELETE）
 - **Structured Updates**：预定义操作类型，保持 playbook 结构完整性
 - **No Labeled Supervision**：仅使用执行反馈和环境信号
 
-### 8.4 RollArt 分离式架构
+### 7.4 RollArt 分离式架构
 
 **三层硬件映射**：
 
@@ -644,9 +545,9 @@ Curator: 执行增量 delta 更新（ADD/MODIFY/DELETE）
 
 ---
 
-## 9. 参考文献
+## 8. 参考文献
 
-### 9.1 必读论文（按重要性排序）
+### 8.1 必读论文（按重要性排序）
 
 1. **DeepSeek-R1**: Guo et al. "Incentivizing Reasoning Capability in LLMs via Reinforcement Learning." *Nature* 2025. — 纯 RL 激发推理的开源里程碑。
 2. **DAPO**: Yu et al. "Decoupled Clip and Dynamic Sampling Policy Optimization." arXiv 2025. — GRPO 生产级改进。
@@ -659,7 +560,7 @@ Curator: 执行增量 delta 更新（ADD/MODIFY/DELETE）
 9. **Let's Verify Step by Step**: Lightman et al. "Process Supervision for Reasoning." *ICLR* 2024. — PRM 奠基工作。
 10. **DPO**: Rafailov et al. "Direct Preference Optimization." *NeurIPS* 2023. — 无 reward model 的偏好优化。
 
-### 9.2 关键开源项目
+### 8.2 关键开源项目
 
 | 项目 | 链接 | 用途 |
 |---|---|---|

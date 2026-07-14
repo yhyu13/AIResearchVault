@@ -36,7 +36,7 @@
    - 从仓库 Section 2 "The Design of the Harness" 出发
    - 研究四个子系统：Agent Workflow (感知→规划→执行闭环)、Memory Systems (Working/Conversational/Structured/Unstructured)、Skill Libraries (获取→表示→检索→维护)、Multi-agent Orchestration (Centralized/Decentralized + Debate/Collaboration)
    - 关键论文：MemGPT, Voyager, AutoGen, MetaGPT, ChatDev
-   - 产出：各组件的架构演变 + 设计权衡 + 与 ReSTIR/GI 的潜在关联
+   - 产出：各组件的架构演变 + 设计权衡
 
 3. **Agentic Training 与模型适配**（研究员_C）
    - 从仓库 Section 3 "Model Adaptation for Harness" 出发
@@ -62,14 +62,14 @@
   5. 训练范式演变（SFT → RL → Agentic RL）
   6. Benchmark 生态与评估哲学
   7. 未来预测（2026-2028）
-  8. 对实时图形学从业者的关联分析
+  8. 对其他技术领域从业者的关联分析
   9. 参考文献
 
 ## 质量约束
 - 所有关键论文必须标注作者、会议、年份
 - 架构演变必须有明确的时间线逻辑，避免只列现状
 - 预测部分必须有技术根因支撑，不能是模糊猜测
-- 与 ReSTIR/GI 的关联：agent harness 中的 planning/execution loop 与渲染管线的相似性、memory system 与 GI cache 的对比
+- 与其他技术领域的关联：agent harness 中的 planning/execution loop 与复杂系统控制流的相似性、memory system 与缓存机制的对比
 
 ## 输出
 - `C:/Git-repo-my/AIResearchVault/document/Routine/05-技术雷达/2026-07-03/history_LLM_Agent_Harness_架构演变.md`

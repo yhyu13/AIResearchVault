@@ -1,0 +1,1273 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LLM Agent Memory Systems 面试知识自测</title>
+  <style>
+    :root {
+      --bg-body: #FAF8F5;
+      --bg-card: #FFFFFF;
+      --bg-warm: #F5F0E8;
+      --primary: #2D5F5F;
+      --primary-light: #3D7A7A;
+      --accent: #4A7C59;
+      --accent-light: #E8F3E8;
+      --text-main: #2C2C2C;
+      --text-muted: #6B6B6B;
+      --border: #D8D2C8;
+      --shadow: rgba(0,0,0,0.06);
+      --correct: #3A8C5D;
+      --correct-bg: #EAF6EE;
+      --wrong: #C44B4B;
+      --wrong-bg: #FCEAEA;
+      --warning: #C9943A;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg-body);
+      color: var(--text-main);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    header h1 {
+      font-size: 1.6rem;
+      color: var(--primary);
+      margin-bottom: 4px;
+    }
+
+    header .topic {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+    }
+
+    .score-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 8px var(--shadow);
+    }
+
+    .score-bar .score {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--primary);
+    }
+
+    .score-bar .actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+
+    .btn-sm { padding: 6px 10px; font-size: 0.78rem; }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+    }
+    .btn-primary:hover { background: var(--primary-light); }
+
+    .btn-secondary {
+      background: var(--bg-warm);
+      color: var(--text-main);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover { background: #EDE8DE; }
+
+    .btn-warning {
+      background: #FFF8E6;
+      color: #8A6D1F;
+      border: 1px solid #F0E0B0;
+    }
+    .btn-warning:hover { background: #FFF0CC; }
+
+    .tabs {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .tab {
+      flex: 1;
+      min-width: 80px;
+      text-align: center;
+      padding: 10px 8px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 0.88rem;
+      transition: all 0.2s ease;
+    }
+
+    .tab.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+      font-weight: 600;
+    }
+
+    .tab .badge {
+      display: inline-block;
+      margin-left: 4px;
+      background: rgba(255,255,255,0.25);
+      padding: 1px 6px;
+      border-radius: 10px;
+      font-size: 0.72rem;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+      box-shadow: 0 2px 12px var(--shadow);
+      margin-bottom: 16px;
+    }
+
+    .progress-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .progress-bar {
+      flex: 1;
+      height: 8px;
+      background: #EAE5DC;
+      border-radius: 4px;
+      overflow: hidden;
+      margin: 0 12px;
+    }
+
+    .progress-bar .fill {
+      height: 100%;
+      background: var(--primary);
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+
+    .question-text {
+      font-size: 1.05rem;
+      font-weight: 500;
+      margin-bottom: 18px;
+      line-height: 1.7;
+    }
+
+    .question-text .blank {
+      display: inline-block;
+      min-width: 80px;
+      padding: 3px 10px;
+      margin: 0 3px;
+      border: 2px dashed var(--border);
+      border-radius: 6px;
+      background: var(--bg-warm);
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      text-align: center;
+      vertical-align: middle;
+      transition: all 0.2s ease;
+    }
+
+    .question-text .blank.filled {
+      border-style: solid;
+      border-color: var(--primary);
+      background: #F0F7F7;
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    .question-text .blank.correct {
+      border-color: var(--correct);
+      background: var(--correct-bg);
+      color: var(--correct);
+    }
+
+    .question-text .blank.wrong {
+      border-color: var(--wrong);
+      background: var(--wrong-bg);
+      color: var(--wrong);
+    }
+
+    .draggables {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+
+    .draggable {
+      padding: 8px 14px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      cursor: grab;
+      font-size: 0.9rem;
+      user-select: none;
+      transition: all 0.2s ease;
+    }
+
+    .draggable:hover {
+      border-color: var(--primary);
+      box-shadow: 0 2px 6px var(--shadow);
+    }
+
+    .draggable.dragging {
+      opacity: 0.5;
+      cursor: grabbing;
+    }
+
+    .draggable.used {
+      opacity: 0.4;
+      pointer-events: none;
+    }
+
+    .options-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .option {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: var(--bg-card);
+    }
+
+    .option:hover { border-color: var(--primary-light); background: #F7FBFB; }
+
+    .option input[type="radio"],
+    .option input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--primary);
+      flex-shrink: 0;
+    }
+
+    .option .label {
+      flex: 1;
+      font-size: 0.95rem;
+    }
+
+    .option.correct-ans {
+      border-color: var(--correct);
+      background: var(--correct-bg);
+    }
+
+    .option.wrong-ans {
+      border-color: var(--wrong);
+      background: var(--wrong-bg);
+    }
+
+    .option .mark {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-left: auto;
+    }
+
+    .explanation {
+      display: none;
+      margin-top: 8px;
+      padding: 12px 14px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    .explanation.show { display: block; }
+
+    .explanation.correct-ex {
+      background: var(--correct-bg);
+      color: #2A6B44;
+      border: 1px solid #B8E0C8;
+    }
+
+    .explanation.wrong-ex {
+      background: var(--wrong-bg);
+      color: #8A3333;
+      border: 1px solid #F0C0C0;
+    }
+
+    .nav-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .nav-bar .btn { flex: 1; }
+
+    .overview-btn {
+      text-align: center;
+      margin-top: 12px;
+    }
+
+    .overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.35);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .overlay.show { display: flex; }
+
+    .overlay-content {
+      background: var(--bg-card);
+      border-radius: 14px;
+      padding: 20px;
+      width: 100%;
+      max-width: 480px;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+    }
+
+    .overlay-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .overlay-header h2 {
+      font-size: 1.15rem;
+      color: var(--primary);
+    }
+
+    .grid-overview {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
+      gap: 8px;
+    }
+
+    .grid-item {
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      border: 1.5px solid var(--border);
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .grid-item:hover { transform: scale(1.05); }
+
+    .grid-item.empty { background: var(--bg-body); color: var(--text-muted); }
+    .grid-item.correct { background: var(--correct-bg); color: var(--correct); border-color: #A0D8B3; }
+    .grid-item.wrong { background: var(--wrong-bg); color: var(--wrong); border-color: #E8A0A0; }
+
+    .legend {
+      display: flex;
+      gap: 14px;
+      justify-content: center;
+      margin-top: 14px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .legend span { display: flex; align-items: center; gap: 4px; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+    .dot-empty { background: #D8D2C8; }
+    .dot-correct { background: var(--correct); }
+    .dot-wrong { background: var(--wrong); }
+
+    @media (max-width: 520px) {
+      .container { padding: 10px; }
+      header h1 { font-size: 1.3rem; }
+      .card { padding: 14px; }
+      .tab { font-size: 0.8rem; padding: 8px 4px; }
+      .question-text { font-size: 0.97rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>LLM Agent Memory Systems 面试知识自测</h1>
+      <div class="topic">覆盖 Mem0 / Zep / A-MEM / Memory-R1 / HiMem / MemP / LEGOMem / MemAgent — 请完成以下题目检验掌握程度</div>
+    </header>
+
+    <div class="score-bar">
+      <div class="score" id="scoreDisplay">得分: 0 / 0</div>
+      <div class="actions">
+        <button class="btn btn-warning btn-sm" id="btnShuffle">随机选项</button>
+        <button class="btn btn-secondary btn-sm" id="btnResetAll">重置所有</button>
+      </div>
+    </div>
+
+    <div class="tabs" id="tabBar">
+      <div class="tab active" data-type="drag">拖拽填空<span class="badge" id="badgeDrag">0</span></div>
+      <div class="tab" data-type="single">单选题<span class="badge" id="badgeSingle">0</span></div>
+      <div class="tab" data-type="multi">多选题<span class="badge" id="badgeMulti">0</span></div>
+      <div class="tab" data-type="truefalse">判断题<span class="badge" id="badgeTrueFalse">0</span></div>
+    </div>
+
+    <div class="card" id="quizCard">
+      <div class="progress-row">
+        <span id="progressText">1 / 1</span>
+        <div class="progress-bar"><div class="fill" id="progressFill" style="width:0%"></div></div>
+        <button class="btn btn-secondary btn-sm" id="btnOverview">总览</button>
+      </div>
+
+      <div id="questionArea"></div>
+
+      <div id="explanationArea"></div>
+
+      <div style="display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;">
+        <button class="btn btn-primary" id="btnCheck">检查答案</button>
+        <button class="btn btn-secondary" id="btnResetCurrent">重置当前题</button>
+      </div>
+
+      <div class="nav-bar" style="margin-top:16px;">
+        <button class="btn btn-secondary" id="btnPrev">上一题</button>
+        <button class="btn btn-secondary" id="btnNext">下一题</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="overviewOverlay">
+    <div class="overlay-content">
+      <div class="overlay-header">
+        <h2>题目总览</h2>
+        <button class="btn btn-secondary btn-sm" id="btnCloseOverview">关闭</button>
+      </div>
+      <div class="grid-overview" id="overviewGrid"></div>
+      <div class="legend">
+        <span><span class="dot dot-empty"></span>未答</span>
+        <span><span class="dot dot-correct"></span>正确</span>
+        <span><span class="dot dot-wrong"></span>错误</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===== DRAG-FILL QUESTIONS (Terminology) =====
+    const dragQuestions = [
+      {
+        question: "Mem0 的核心记忆操作包括 ADD、UPDATE、DELETE 和 {0}，其中 {1} 表示新信息对现有记忆无影响，直接忽略。",
+        answers: ["NOOP", "NOOP"],
+        options: ["NOOP", "STORE", "RETRIEVE", "FORGET", "IGNORE", "MERGE"],
+        explanations: [
+          "NOOP（No Operation）是 Mem0 的第四类记忆操作，表示新信息不触发任何记忆变更。",
+          "当 LLM 判断新信息既不新增、也不修改、不删除已有记忆时，执行 NOOP 避免记忆膨胀。"
+        ]
+      },
+      {
+        question: "Zep / Graphiti 为每条事实维护 {0} 和 {1} 两个时间戳，前者记录事实在世界中为真的时间，后者记录系统观察到该事实的时间。",
+        answers: ["valid time", "ingestion time"],
+        options: ["valid time", "ingestion time", "creation time", "update time", "expiry time", "query time"],
+        explanations: [
+          "valid time（有效时间）表示事实本身在现实世界中成立的时间区间，用于回答'当时是什么状态'。",
+          "ingestion time（摄入时间）表示系统何时将该事实录入图谱，用于审计和追踪信息来源延迟。"
+        ]
+      },
+      {
+        question: "A-MEM 借鉴德国社会学家卢曼的 {0} 方法组织记忆，每条笔记包含内容、上下文描述、关键词和标签，并在写入时自动建立 {1} 链接。",
+        answers: ["Zettelkasten", "双向"],
+        options: ["Zettelkasten", "双向", "单向", "树状", "层级", "随机"],
+        explanations: [
+          "Zettelkasten（卡片盒笔记法）是卢曼的知识管理方法，核心思想是通过原子化笔记和链接构建知识网络。",
+          "A-MEM 在写入新笔记时自动分析与历史笔记的语义关联，建立双向链接，使记忆形成演化网络而非孤立列表。"
+        ]
+      },
+      {
+        question: "Memory-R1 采用双 Agent 架构：{0} 负责执行记忆操作维护记忆库，{1} 负责从检索结果中蒸馏和推理生成答案。",
+        answers: ["Memory Manager", "Answer Agent"],
+        options: ["Memory Manager", "Answer Agent", "Policy Agent", "Value Agent", "Retrieval Agent", "Encoder Agent"],
+        explanations: [
+          "Memory Manager 是 Memory-R1 中专门学习记忆策略的 Agent，通过 RL 训练决定何时 ADD/UPDATE/DELETE/NOOP。",
+          "Answer Agent 专注于利用检索到的记忆进行推理和答案生成，两者解耦让各自策略更清晰、更易优化。"
+        ]
+      },
+      {
+        question: "HiMem 的分层架构中，{0} 通过 Topic-Aware + Surprise 双通道分割策略构建事件单元，{1} 通过多阶段信息提取管道将事件沉淀为稳定知识。",
+        answers: ["Episode Memory", "Note Memory"],
+        options: ["Episode Memory", "Note Memory", "Semantic Memory", "Procedural Memory", "Working Memory", "Long-term Memory"],
+        explanations: [
+          "Episode Memory（情景记忆）对应认知科学中的原始感官输入组织，HiMem 用 Topic-Aware 保证主题连贯性、Surprise 捕获信息突变点来分割事件。",
+          "Note Memory（笔记记忆）对应认知科学中的巩固后语义知识，通过多阶段提取管道将动态事件沉淀为稳定、可检索的知识单元。"
+        ]
+      }
+    ];
+
+    // ===== SINGLE-CHOICE QUESTIONS (Conceptual) =====
+    const singleQuestions = [
+      {
+        question: "以下哪项最能概括 Mem0 与传统 RAG 记忆系统的核心区别？",
+        options: [
+          "Mem0 使用更大的向量数据库，支持更多记忆条目",
+          "Mem0 将记忆视为被动存储，而传统 RAG 主动管理记忆",
+          "Mem0 让 LLM 主动执行 ADD/UPDATE/DELETE/NOOP 操作，将记忆管理从被动存储升级为主动操作",
+          "Mem0 仅支持语义记忆，而传统 RAG 支持情景记忆"
+        ],
+        correct: 2,
+        explanations: [
+          "规模更大不是核心区别，传统 RAG 也可以扩展向量库规模。",
+          "方向说反了：传统 RAG 才是被动存储，Mem0 是主动管理。",
+          "正确。Mem0 的核心创新是'记忆即操作'——LLM 主动判断每条新信息如何影响已有记忆，避免简单追加导致的膨胀和矛盾。",
+          "Mem0 支持多类型记忆（user/session/agent 三级），且记忆类型不是与传统 RAG 的核心区别。"
+        ]
+      },
+      {
+        question: "Zep / Graphiti 在 LongMemEval 上得分 63.8%，显著高于 Mem0 的 49.0%。这一优势主要来自什么能力？",
+        options: [
+          "Zep 使用了更大的预训练模型作为编码器",
+          "Zep 的双时间戳设计使其擅长回答'当时是什么状态'的时序推理问题",
+          "Zep 的记忆操作由 RL 训练优化，而非人工设计规则",
+          "Zep 支持多 Agent 共享记忆，而 Mem0 不支持"
+        ],
+        correct: 1,
+        explanations: [
+          "模型规模不是主要因素，Zep 的优势来自架构设计而非编码器大小。",
+          "正确。LongMemEval 评估长期交互中的时序推理能力，Zep 的双时间戳（valid time + ingestion time）专门解决'当时是什么状态'的问题，这是向量存储的结构性盲区。",
+          "Memory-R1 才是 RL 训练的记忆管理，Zep 的记忆操作由人工设计规则驱动。",
+          "多 Agent 共享是 LEGOMem 的特性，不是 Zep 的优势来源。"
+        ]
+      },
+      {
+        question: "Memory-R1 仅用 152 个 QA 对就实现收敛，数据效率极高的主要原因是什么？",
+        options: [
+          "152 个样本是高质量的合成数据，覆盖了所有可能的记忆场景",
+          "PPO/GRPO 使用结果奖励（最终答案正确性），记忆管理的策略优化可以通过稀疏奖励高效学习",
+          "Memory-R1 使用了预训练权重初始化，因此不需要大量微调数据",
+          "152 个样本是错误标注，实际使用了数万条隐藏数据"
+        ],
+        correct: 1,
+        explanations: [
+          "152 个样本不可能覆盖所有场景，数据效率来自 RL 的训练机制而非数据覆盖度。",
+          "正确。记忆管理不是需要海量标注的任务——最终答案正确性作为稀疏奖励，足以让 RL 发现最优记忆策略。这是 Memory-R1 的核心洞察：记忆策略可以通过结果奖励高效学习，无需为每个操作单独标注。",
+          "预训练初始化有帮助，但不是 152 样本收敛的主要原因。",
+          "无证据支持此说法，论文明确报告了 152 个真实 QA 对。"
+        ]
+      },
+      {
+        question: "MemAgent 用 7B 模型在跨会话一致性上可与 70B 长上下文模型竞争，这种效率主要来自什么？",
+        options: [
+          "7B 模型使用了更高效的注意力机制，如线性注意力",
+          "显式记忆管理（记忆层决定 STORE/RETRIEVE/FORGET）替代了上下文压缩，避免了长上下文的信息稀释",
+          "MemAgent 将记忆存储在云端 GPU 集群，减轻了本地模型负担",
+          "70B 模型被故意降频以制造对比效果"
+        ],
+        correct: 1,
+        explanations: [
+          "MemAgent 的论文未提及注意力机制改造，效率来自记忆架构而非注意力优化。",
+          "正确。MemAgent 将记忆层嵌入 Transformer 内部，让模型显式决定存储、读取或遗忘，而非被动压缩长上下文。这使得 7B 模型可以通过精准记忆管理获得 70B 长上下文模型的效果。",
+          "架构效率与云端存储无关，MemAgent 的竞争力来自模型内部设计。",
+          "无证据支持，论文中的对比是公平基准测试。"
+        ]
+      },
+      {
+        question: "以下哪个系统原生支持多 Agent 协作场景下的模块化记忆共享？",
+        options: [
+          "Mem0",
+          "Zep / Graphiti",
+          "A-MEM",
+          "LEGOMem"
+        ],
+        correct: 3,
+        explanations: [
+          "Mem0 的三作用域（user/session/agent）设计用于单 Agent 多租户隔离，非多 Agent 协作。",
+          "Zep 专注于时序知识图谱，未原生设计多 Agent 共享机制。",
+          "A-MEM 的 Zettelkasten 网络是单 Agent 知识管理，不支持跨 Agent 模块化共享。",
+          "正确。LEGOMem 专门面向多 Agent 工作流自动化，将工作流分解为可组合的 LEGO-like 记忆块（感知/决策/行动/验证），支持跨 Agent 共享和复用。"
+        ]
+      }
+    ];
+
+    // ===== MULTI-CHOICE QUESTIONS (Technical Details) =====
+    const multiQuestions = [
+      {
+        question: "Mem0 的三作用域设计（user / session / agent）分别对应什么语义？（多选）",
+        options: [
+          "user 级记忆跨所有会话共享，实现用户个性化",
+          "session 级记忆仅在当前会话有效，实现上下文隔离",
+          "agent 级记忆是全局行为模式，所有用户共享",
+          "三级记忆冲突时，session 级永远优先于 user 级"
+        ],
+        correct: [0, 1, 2],
+        explanations: [
+          "正确。user 级记忆跨会话持久化，是 Mem0 实现个性化的核心机制。",
+          "正确。session 级记忆仅在当前对话生命周期内有效，避免会话间信息泄露。",
+          "正确。agent 级记忆存储 Agent 的全局行为规则和通用知识，所有用户实例共享。",
+          "错误。论文未定义固定的优先级规则，冲突解决是开放工程问题，可能由 LLM 动态判断或人工配置策略。"
+        ]
+      },
+      {
+        question: "以下哪些是 Graphiti 三层子图的组成部分？（多选）",
+        options: [
+          "Episodic 层：保留原始会话的完整历史",
+          "Semantic 层：提取实体关系的事实网络",
+          "Community 层：高层次聚类和社区发现",
+          "Temporal 层：专门存储时间序列索引"
+        ],
+        correct: [0, 1, 2],
+        explanations: [
+          "正确。Episodic 层保留原始交互的完整记录，作为证据层。",
+          "正确。Semantic 层从 Episodic 层提取实体和关系，构建可推理的知识网络。",
+          "正确。Community 层对 Semantic 层进行高层次聚类，支持从粗到精的检索。",
+          "错误。Graphiti 没有独立的 Temporal 层，时序能力通过双时间戳边标注在 Semantic 层实现。"
+        ]
+      },
+      {
+        question: "Memory-R1 的 RL 训练框架包含以下哪些关键设计？（多选）",
+        options: [
+          "Memory Manager 和 Answer Agent 的双 Agent 解耦架构",
+          "PPO 和 GRPO 两种策略优化算法均可使用",
+          "状态空间包含当前记忆库内容和当前查询",
+          "动作空间为 {ADD, UPDATE, DELETE, NOOP} × 所有记忆条目 × 所有可能内容"
+        ],
+        correct: [0, 1, 2, 3],
+        explanations: [
+          "正确。双 Agent 设计让记忆管理和答案生成各自优化，避免目标冲突。",
+          "正确。论文验证了 PPO 和 GRPO 两种算法，其中 GRPO 的群体相对策略更新在高维动作空间中表现更优。",
+          "正确。状态包含记忆库的快照和当前对话上下文，是策略决策的基础。",
+          "正确。虽然动作空间巨大，但 GRPO 通过群体采样和相对优势估计有效探索。"
+        ]
+      },
+      {
+        question: "HiMem 的 Memory Reconsolidation（再巩固）机制具有以下哪些特性？（多选）",
+        options: [
+          "检索记忆时可能触发已有记忆的修订",
+          "与 Zep 的'标记失效不删除'哲学不同，直接修改已有记忆",
+          "根据检索反馈检测冲突并修订存储知识",
+          "每次再巩固都会创建新版本保留历史"
+        ],
+        correct: [0, 1, 2],
+        explanations: [
+          "正确。HiMem 模拟人类认知中'每次回忆都会重构记忆'的现象，检索不仅是读取。",
+          "正确。Zep 保留历史仅标记失效，HiMem 直接修改——两种哲学分别适用于审计场景和实时知识更新场景。",
+          "正确。再巩固的核心是冲突检测：当新检索证据与存储知识矛盾时，触发修订。",
+          "错误。HiMem 直接修改记忆而非版本化保留，这是与 LEGOMem 块级版本控制的区别。"
+        ]
+      },
+      {
+        question: "MemP 的程序记忆三元组表示包含以下哪些元素？（多选）",
+        options: [
+          "任务目标（Goal）",
+          "执行轨迹（Trajectory）",
+          "结果反馈（Feedback）",
+          "环境状态（State）"
+        ],
+        correct: [0, 1, 2],
+        explanations: [
+          "正确。任务目标定义程序记忆的应用场景，是检索时的匹配键。",
+          "正确。执行轨迹记录具体操作序列，是模式提取的原材料。",
+          "正确。结果反馈（成功/失败）指导模式的价值评估，区分正向和负向程序记忆。",
+          "错误。环境状态不是三元组的组成部分，MemP 通过轨迹隐式捕获环境交互。"
+        ]
+      }
+    ];
+
+    // ===== TRUE/FALSE QUESTIONS (Common Misconceptions) =====
+    const trueFalseQuestions = [
+      {
+        question: "Mem0g 的图记忆变体在 LOCOMO 基准上比标准 Mem0 向量记忆提升了约 26% 的准确率。",
+        correct: false,
+        explanationTrue: "",
+        explanationFalse: "错误。Mem0 整体在 LOCOMO 上超越 OpenAI 原生记忆系统 26%，而 Mem0g 的图记忆仅带来约 2% 的准确率提升。这说明向量相似度对多数对话记忆已足够，图记忆的增量收益有限。"
+      },
+      {
+        question: "A-MEM 的 Zettelkasten 笔记网络在 LoCoMo 多跳任务上比标准向量基线 ROUGE-L 提升约 5.8 倍。",
+        correct: true,
+        explanationTrue: "正确。A-MEM 的核心优势在多跳推理场景——笔记间的双向链接让检索可以沿关系网络传播，而标准向量检索只能基于相似度召回孤立条目。5.8 倍提升证明了'记忆即网络'在复杂推理中的价值。",
+        explanationFalse: ""
+      },
+      {
+        question: "Memory-R1 的 RL 训练需要数万条标注数据才能收敛，因为记忆管理的动作空间极其复杂。",
+        correct: false,
+        explanationTrue: "",
+        explanationFalse: "错误。Memory-R1 仅需 152 个 QA 对即可收敛，数据效率极高。这说明记忆管理可以通过结果奖励（稀疏奖励）高效学习，而非需要大量中间步骤标注。GRPO 的群体相对策略更新在高维动作空间中有效探索。"
+      },
+      {
+        question: "MemAgent 将记忆层嵌入 Transformer 内部，这意味着可以直接应用于现有预训练模型而无需重新训练。",
+        correct: false,
+        explanationTrue: "",
+        explanationFalse: "错误。MemAgent 的记忆层插入 Transformer 层间，改变了标准前向传播，需要从头训练或复杂的微调适配。这是 MemAgent 的主要局限——架构侵入性使其无法直接应用于现有模型。"
+      },
+      {
+        question: "LEGOMem 的模块化记忆块支持版本控制，旧版本块在工作流演化时仍保留以支持回溯。",
+        correct: true,
+        explanationTrue: "正确。LEGOMem 的块级版本控制是核心工程亮点——工作流演化时旧版本不删除，新版本通过兼容性检查逐步替换。这避免了破坏性变更，支持多 Agent 协作中的安全回溯。",
+        explanationFalse: ""
+      },
+      {
+        question: "HiMem 的 Episode Memory 和 Note Memory 之间是单向流动：Episode 只能向 Note 沉淀知识，Note 不能影响 Episode。",
+        correct: false,
+        explanationTrue: "",
+        explanationFalse: "错误。HiMem 的两层语义链接形成层次结构，支持双向交互。Note Memory 的再巩固机制可以反向影响 Episode Memory 的检索和分割策略——这是分层架构的优势，而非单向管道。"
+      }
+    ];
+
+    // ===== STATE =====
+    let currentType = 'drag';
+    let currentIndex = 0;
+    let userAnswers = {};
+    let checkedState = {};
+
+    // ===== HELPERS =====
+    function makeKey(type, index) {
+      return type + ':' + index;
+    }
+
+    function getQuestions(type) {
+      if (type === 'drag') return dragQuestions;
+      if (type === 'single') return singleQuestions;
+      if (type === 'multi') return multiQuestions;
+      return trueFalseQuestions;
+    }
+
+    function getBadgeId(type) {
+      if (type === 'drag') return 'badgeDrag';
+      if (type === 'single') return 'badgeSingle';
+      if (type === 'multi') return 'badgeMulti';
+      return 'badgeTrueFalse';
+    }
+
+    function countQuestions(type) {
+      return getQuestions(type).length;
+    }
+
+    function allTypes() {
+      return ['drag', 'single', 'multi', 'truefalse'];
+    }
+
+    // ===== RENDER =====
+    function initBadges() {
+      allTypes().forEach(function(t) {
+        document.getElementById(getBadgeId(t)).textContent = countQuestions(t);
+      });
+    }
+
+    function updateScore() {
+      let total = 0, scored = 0;
+      allTypes().forEach(function(type) {
+        const list = getQuestions(type);
+        for (let i = 0; i < list.length; i++) {
+          const q = list[i];
+          const key = makeKey(type, i);
+          if (checkedState[key]) {
+            total += getQuestionPoints(q, type);
+            scored += getUserPoints(q, type, i);
+          }
+        }
+      });
+      document.getElementById('scoreDisplay').textContent = '得分: ' + scored + ' / ' + total;
+    }
+
+    function getQuestionPoints(q, type) {
+      if (type === 'drag') return q.answers.length;
+      if (type === 'multi') return q.correct.length;
+      return 1;
+    }
+
+    function getUserPoints(q, type, idx) {
+      const key = makeKey(type, idx);
+      const ans = userAnswers[key];
+      if (!ans) return 0;
+      if (type === 'drag') {
+        let pts = 0;
+        for (let i = 0; i < q.answers.length; i++) {
+          if (ans[i] === q.answers[i]) pts++;
+        }
+        return pts;
+      }
+      if (type === 'single') {
+        return ans === q.correct ? 1 : 0;
+      }
+      if (type === 'multi') {
+        let pts = 0;
+        const correctSet = {};
+        for (let i = 0; i < q.correct.length; i++) correctSet[q.correct[i]] = true;
+        const userSet = {};
+        for (let i = 0; i < ans.length; i++) userSet[ans[i]] = true;
+        for (let k in correctSet) {
+          if (userSet[k]) pts++;
+        }
+        return pts;
+      }
+      return ans === q.correct ? 1 : 0;
+    }
+
+    function updateProgress() {
+      const total = countQuestions(currentType);
+      const text = total > 0 ? (currentIndex + 1) + ' / ' + total : '0 / 0';
+      document.getElementById('progressText').textContent = text;
+      const pct = total > 0 ? ((currentIndex + 1) / total * 100) : 0;
+      document.getElementById('progressFill').style.width = pct + '%';
+    }
+
+    function renderQuestion() {
+      const area = document.getElementById('questionArea');
+      const expl = document.getElementById('explanationArea');
+      area.innerHTML = '';
+      expl.innerHTML = '';
+      expl.style.display = 'none';
+      updateProgress();
+
+      const questions = getQuestions(currentType);
+      if (questions.length === 0) {
+        area.innerHTML = '<p style="text-align:center;color:var(--text-muted)">该题型暂无题目</p>';
+        return;
+      }
+      const q = questions[currentIndex];
+      const key = makeKey(currentType, currentIndex);
+
+      const qtext = document.createElement('div');
+      qtext.className = 'question-text';
+
+      if (currentType === 'drag') {
+        let html = q.question;
+        for (let i = 0; i < q.answers.length; i++) {
+          const filled = userAnswers[key] && userAnswers[key][i] ? userAnswers[key][i] : '';
+          let cls = 'blank';
+          if (checkedState[key]) {
+            if (filled === q.answers[i]) cls += ' correct';
+            else cls += ' wrong';
+          } else if (filled) {
+            cls += ' filled';
+          }
+          html = html.replace('{\/' + i + '}', '<span class="' + cls + '" data-blank="' + i + '">' + (filled || '____') + '</span>');
+          html = html.replace('{\*' + i + '}', '<span class="' + cls + '" data-blank="' + i + '">' + (filled || '____') + '</span>');
+          html = html.replace('{' + i + '}', '<span class="' + cls + '" data-blank="' + i + '">' + (filled || '____') + '</span>');
+        }
+        qtext.innerHTML = html;
+        area.appendChild(qtext);
+
+        const pool = document.createElement('div');
+        pool.className = 'draggables';
+        const used = userAnswers[key] || [];
+        for (let i = 0; i < q.options.length; i++) {
+          const opt = q.options[i];
+          const isUsed = used.indexOf(opt) !== -1;
+          const chip = document.createElement('div');
+          chip.className = 'draggable' + (isUsed ? ' used' : '');
+          chip.draggable = !isUsed;
+          chip.textContent = opt;
+          chip.dataset.value = opt;
+          if (!isUsed) setupDrag(chip);
+          pool.appendChild(chip);
+        }
+        area.appendChild(pool);
+
+        if (checkedState[key]) {
+          const box = document.createElement('div');
+          box.className = 'explanation show correct-ex';
+          let exHtml = '<strong>解析：</strong><ul style="margin:8px 0 0 18px">';
+          for (let i = 0; i < q.explanations.length; i++) {
+            const isOk = userAnswers[key] && userAnswers[key][i] === q.answers[i];
+            exHtml += '<li><span style="color:' + (isOk ? 'var(--correct)' : 'var(--wrong)') + '">' + (isOk ? '✅' : '❌') + '</span> 空' + (i+1) + '：' + q.explanations[i] + '</li>';
+          }
+          exHtml += '</ul>';
+          box.innerHTML = exHtml;
+          expl.appendChild(box);
+          expl.style.display = 'block';
+        }
+      } else if (currentType === 'single') {
+        qtext.textContent = q.question;
+        area.appendChild(qtext);
+        const list = document.createElement('div');
+        list.className = 'options-list';
+        for (let i = 0; i < q.options.length; i++) {
+          const opt = document.createElement('label');
+          opt.className = 'option';
+          const isSel = userAnswers[key] === i;
+          if (checkedState[key]) {
+            if (i === q.correct) opt.classList.add('correct-ans');
+            else if (isSel) opt.classList.add('wrong-ans');
+          }
+          const radio = document.createElement('input');
+          radio.type = 'radio';
+          radio.name = 'singleOpt';
+          radio.checked = isSel;
+          radio.disabled = !!checkedState[key];
+          radio.addEventListener('change', function() {
+            userAnswers[key] = i;
+          });
+          const span = document.createElement('span');
+          span.className = 'label';
+          span.textContent = q.options[i];
+          opt.appendChild(radio);
+          opt.appendChild(span);
+          if (checkedState[key]) {
+            const mark = document.createElement('span');
+            mark.className = 'mark';
+            mark.textContent = i === q.correct ? '✅' : (isSel ? '❌' : '');
+            opt.appendChild(mark);
+          }
+          list.appendChild(opt);
+        }
+        area.appendChild(list);
+        if (checkedState[key]) {
+          const box = document.createElement('div');
+          box.className = 'explanation show ' + (userAnswers[key] === q.correct ? 'correct-ex' : 'wrong-ex');
+          box.innerHTML = '<strong>解析：</strong><br>' + q.explanations[q.correct];
+          expl.appendChild(box);
+          expl.style.display = 'block';
+        }
+      } else if (currentType === 'multi') {
+        qtext.textContent = q.question;
+        area.appendChild(qtext);
+        const list = document.createElement('div');
+        list.className = 'options-list';
+        const selSet = {};
+        const ans = userAnswers[key] || [];
+        for (let i = 0; i < ans.length; i++) selSet[ans[i]] = true;
+        const correctSet = {};
+        for (let i = 0; i < q.correct.length; i++) correctSet[q.correct[i]] = true;
+        for (let i = 0; i < q.options.length; i++) {
+          const opt = document.createElement('label');
+          opt.className = 'option';
+          const isSel = !!selSet[i];
+          if (checkedState[key]) {
+            if (correctSet[i]) opt.classList.add('correct-ans');
+            else if (isSel) opt.classList.add('wrong-ans');
+          }
+          const cb = document.createElement('input');
+          cb.type = 'checkbox';
+          cb.checked = isSel;
+          cb.disabled = !!checkedState[key];
+          cb.addEventListener('change', function() {
+            const a = userAnswers[key] || [];
+            const pos = a.indexOf(i);
+            if (pos >= 0) a.splice(pos, 1);
+            else a.push(i);
+            userAnswers[key] = a;
+          });
+          const span = document.createElement('span');
+          span.className = 'label';
+          span.textContent = q.options[i];
+          opt.appendChild(cb);
+          opt.appendChild(span);
+          if (checkedState[key]) {
+            const mark = document.createElement('span');
+            mark.className = 'mark';
+            mark.textContent = correctSet[i] ? '✅' : (isSel ? '❌' : '');
+            opt.appendChild(mark);
+          }
+          list.appendChild(opt);
+        }
+        area.appendChild(list);
+        if (checkedState[key]) {
+          const box = document.createElement('div');
+          let ok = true;
+          for (let k in correctSet) { if (!selSet[k]) ok = false; }
+          for (let k in selSet) { if (!correctSet[k]) ok = false; }
+          box.className = 'explanation show ' + (ok ? 'correct-ex' : 'wrong-ex');
+          let exHtml = '<strong>解析：</strong><ul style="margin:8px 0 0 18px">';
+          for (let i = 0; i < q.options.length; i++) {
+            const isCorrect = !!correctSet[i];
+            const icon = isCorrect ? '✅' : (selSet[i] ? '❌' : '⬜');
+            exHtml += '<li>' + icon + ' ' + q.explanations[i] + '</li>';
+          }
+          exHtml += '</ul>';
+          box.innerHTML = exHtml;
+          expl.appendChild(box);
+          expl.style.display = 'block';
+        }
+      } else if (currentType === 'truefalse') {
+        qtext.textContent = q.question;
+        area.appendChild(qtext);
+        const list = document.createElement('div');
+        list.className = 'options-list';
+        const opts = [{val: true, label: '是 / True'}, {val: false, label: '否 / False'}];
+        for (let i = 0; i < opts.length; i++) {
+          const opt = document.createElement('label');
+          opt.className = 'option';
+          const v = opts[i].val;
+          const isSel = userAnswers[key] === v;
+          if (checkedState[key]) {
+            if (v === q.correct) opt.classList.add('correct-ans');
+            else if (isSel) opt.classList.add('wrong-ans');
+          }
+          const radio = document.createElement('input');
+          radio.type = 'radio';
+          radio.name = 'tfOpt';
+          radio.checked = isSel;
+          radio.disabled = !!checkedState[key];
+          radio.addEventListener('change', function() {
+            userAnswers[key] = v;
+          });
+          const span = document.createElement('span');
+          span.className = 'label';
+          span.textContent = opts[i].label;
+          opt.appendChild(radio);
+          opt.appendChild(span);
+          if (checkedState[key]) {
+            const mark = document.createElement('span');
+            mark.className = 'mark';
+            mark.textContent = v === q.correct ? '✅' : (isSel ? '❌' : '');
+            opt.appendChild(mark);
+          }
+          list.appendChild(opt);
+        }
+        area.appendChild(list);
+        if (checkedState[key]) {
+          const box = document.createElement('div');
+          const ok = userAnswers[key] === q.correct;
+          box.className = 'explanation show ' + (ok ? 'correct-ex' : 'wrong-ex');
+          box.innerHTML = '<strong>解析：</strong><br>' + (q.correct ? q.explanationTrue : q.explanationFalse);
+          expl.appendChild(box);
+          expl.style.display = 'block';
+        }
+      }
+    }
+
+    // ===== DRAG & DROP =====
+    function setupDrag(el) {
+      el.addEventListener('dragstart', function(e) {
+        e.dataTransfer.setData('text/plain', el.dataset.value);
+        el.classList.add('dragging');
+      });
+      el.addEventListener('dragend', function() {
+        el.classList.remove('dragging');
+      });
+    }
+
+    document.addEventListener('dragover', function(e) {
+      const blank = e.target.closest && e.target.closest('[data-blank]');
+      if (blank) e.preventDefault();
+    });
+
+    document.addEventListener('drop', function(e) {
+      const blank = e.target.closest && e.target.closest('[data-blank]');
+      if (!blank) return;
+      e.preventDefault();
+      const value = e.dataTransfer.getData('text/plain');
+      if (!value) return;
+      const bidx = parseInt(blank.dataset.blank, 10);
+      const key = makeKey(currentType, currentIndex);
+      if (!userAnswers[key]) userAnswers[key] = [];
+      userAnswers[key][bidx] = value;
+      renderQuestion();
+    });
+
+    // Also support click-to-fill on mobile
+    document.addEventListener('click', function(e) {
+      const blank = e.target.closest && e.target.closest('[data-blank]');
+      if (!blank) return;
+      if (checkedState[makeKey(currentType, currentIndex)]) return;
+      const key = makeKey(currentType, currentIndex);
+      const ans = userAnswers[key] || [];
+      const bidx = parseInt(blank.dataset.blank, 10);
+      if (ans[bidx]) {
+        delete ans[bidx];
+        renderQuestion();
+        return;
+      }
+      // Find first unused draggable
+      const chips = document.querySelectorAll('.draggable:not(.used)');
+      if (chips.length > 0) {
+        const val = chips[0].dataset.value;
+        if (!userAnswers[key]) userAnswers[key] = [];
+        userAnswers[key][bidx] = val;
+        renderQuestion();
+      }
+    });
+
+    // ===== CONTROLS =====
+    function switchTab(type) {
+      currentType = type;
+      currentIndex = 0;
+      document.querySelectorAll('.tab').forEach(function(t) {
+        t.classList.toggle('active', t.dataset.type === type);
+      });
+      renderQuestion();
+    }
+
+    document.querySelectorAll('.tab').forEach(function(tab) {
+      tab.addEventListener('click', function() {
+        switchTab(tab.dataset.type);
+      });
+    });
+
+    document.getElementById('btnPrev').addEventListener('click', function() {
+      if (currentIndex > 0) { currentIndex--; renderQuestion(); }
+    });
+
+    document.getElementById('btnNext').addEventListener('click', function() {
+      if (currentIndex + 1 < countQuestions(currentType)) { currentIndex++; renderQuestion(); }
+    });
+
+    document.getElementById('btnCheck').addEventListener('click', function() {
+      const key = makeKey(currentType, currentIndex);
+      if (countQuestions(currentType) === 0) return;
+      checkedState[key] = true;
+      updateScore();
+      renderQuestion();
+    });
+
+    document.getElementById('btnResetCurrent').addEventListener('click', function() {
+      const key = makeKey(currentType, currentIndex);
+      delete userAnswers[key];
+      delete checkedState[key];
+      updateScore();
+      renderQuestion();
+    });
+
+    document.getElementById('btnResetAll').addEventListener('click', function() {
+      if (!confirm('确定要重置所有答题记录吗？')) return;
+      userAnswers = {};
+      checkedState = {};
+      updateScore();
+      renderQuestion();
+    });
+
+    // ===== SHUFFLE =====
+    function shuffleArray(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const tmp = arr[i];
+        arr[i] = arr[j];
+        arr[j] = tmp;
+      }
+    }
+
+    function buildIndexMap(oldLen, shuffledIndices) {
+      const map = {};
+      for (let newPos = 0; newPos < oldLen; newPos++) {
+        map[shuffledIndices[newPos]] = newPos;
+      }
+      return map;
+    }
+
+    document.getElementById('btnShuffle').addEventListener('click', function() {
+      if (!confirm('随机化会清空所有答题记录，确定继续？')) return;
+      userAnswers = {};
+      checkedState = {};
+
+      // Single
+      for (let qi = 0; qi < singleQuestions.length; qi++) {
+        const q = singleQuestions[qi];
+        const order = [];
+        for (let i = 0; i < q.options.length; i++) order.push(i);
+        shuffleArray(order);
+        const newOpts = [];
+        for (let i = 0; i < order.length; i++) newOpts.push(q.options[order[i]]);
+        const newExps = [];
+        for (let i = 0; i < order.length; i++) newExps.push(q.explanations[order[i]]);
+        const idxMap = buildIndexMap(q.options.length, order);
+        q.correct = idxMap[q.correct];
+        q.options = newOpts;
+        q.explanations = newExps;
+      }
+
+      // Multi
+      for (let qi = 0; qi < multiQuestions.length; qi++) {
+        const q = multiQuestions[qi];
+        const order = [];
+        for (let i = 0; i < q.options.length; i++) order.push(i);
+        shuffleArray(order);
+        const newOpts = [];
+        for (let i = 0; i < order.length; i++) newOpts.push(q.options[order[i]]);
+        const newExps = [];
+        for (let i = 0; i < order.length; i++) newExps.push(q.explanations[order[i]]);
+        const idxMap = buildIndexMap(q.options.length, order);
+        const newCorrect = [];
+        for (let i = 0; i < q.correct.length; i++) newCorrect.push(idxMap[q.correct[i]]);
+        q.correct = newCorrect;
+        q.options = newOpts;
+        q.explanations = newExps;
+      }
+
+      updateScore();
+      renderQuestion();
+    });
+
+    // ===== OVERVIEW =====
+    function openOverview() {
+      const grid = document.getElementById('overviewGrid');
+      grid.innerHTML = '';
+      const questions = getQuestions(currentType);
+      for (let i = 0; i < questions.length; i++) {
+        const cell = document.createElement('div');
+        const key = makeKey(currentType, i);
+        let cls = 'grid-item';
+        if (checkedState[key]) {
+          const pts = getUserPoints(questions[i], currentType, i);
+          const maxPts = getQuestionPoints(questions[i], currentType);
+          cls += pts === maxPts ? ' correct' : ' wrong';
+        } else {
+          cls += ' empty';
+        }
+        cell.className = cls;
+        cell.textContent = i + 1;
+        cell.addEventListener('click', function() {
+          currentIndex = i;
+          document.getElementById('overviewOverlay').classList.remove('show');
+          renderQuestion();
+        });
+        grid.appendChild(cell);
+      }
+      document.getElementById('overviewOverlay').classList.add('show');
+    }
+
+    document.getElementById('btnOverview').addEventListener('click', openOverview);
+    document.getElementById('btnCloseOverview').addEventListener('click', function() {
+      document.getElementById('overviewOverlay').classList.remove('show');
+    });
+    document.getElementById('overviewOverlay').addEventListener('click', function(e) {
+      if (e.target === document.getElementById('overviewOverlay')) {
+        document.getElementById('overviewOverlay').classList.remove('show');
+      }
+    });
+
+    // ===== KEYBOARD NAV =====
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'ArrowLeft') document.getElementById('btnPrev').click();
+      if (e.key === 'ArrowRight') document.getElementById('btnNext').click();
+    });
+
+    // ===== INIT =====
+    initBadges();
+    updateScore();
+    renderQuestion();
+  </script>
+</body>
+</html>

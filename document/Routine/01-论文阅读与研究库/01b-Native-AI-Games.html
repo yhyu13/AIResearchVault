@@ -1,0 +1,1347 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Native AI Games 面试知识自测</title>
+  <style>
+    :root {
+      --bg-body: #FAF8F5;
+      --bg-card: #FFFFFF;
+      --bg-warm: #F5F0E8;
+      --primary: #2D5F5F;
+      --primary-light: #3D7A7A;
+      --accent: #4A7C59;
+      --accent-light: #E8F3E8;
+      --text-main: #2C2C2C;
+      --text-muted: #6B6B6B;
+      --border: #D8D2C8;
+      --shadow: rgba(0,0,0,0.06);
+      --correct: #3A8C5D;
+      --correct-bg: #EAF6EE;
+      --wrong: #C44B4B;
+      --wrong-bg: #FCEAEA;
+      --warning: #C9943A;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg-body);
+      color: var(--text-main);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    header h1 {
+      font-size: 1.6rem;
+      color: var(--primary);
+      margin-bottom: 4px;
+    }
+
+    header .topic {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+    }
+
+    .score-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 8px var(--shadow);
+    }
+
+    .score-bar .score {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--primary);
+    }
+
+    .score-bar .actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+
+    .btn-sm { padding: 6px 10px; font-size: 0.78rem; }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+    }
+    .btn-primary:hover { background: var(--primary-light); }
+
+    .btn-secondary {
+      background: var(--bg-warm);
+      color: var(--text-main);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover { background: #EDE8DE; }
+
+    .btn-warning {
+      background: #FFF8E6;
+      color: #8A6D1F;
+      border: 1px solid #F0E0B0;
+    }
+    .btn-warning:hover { background: #FFF0CC; }
+
+    .tabs {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .tab {
+      flex: 1;
+      min-width: 80px;
+      text-align: center;
+      padding: 10px 8px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 0.88rem;
+      transition: all 0.2s ease;
+    }
+
+    .tab.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+      font-weight: 600;
+    }
+
+    .tab .badge {
+      display: inline-block;
+      margin-left: 4px;
+      background: rgba(255,255,255,0.25);
+      padding: 1px 6px;
+      border-radius: 10px;
+      font-size: 0.72rem;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+      box-shadow: 0 2px 12px var(--shadow);
+      margin-bottom: 16px;
+    }
+
+    .progress-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .progress-bar {
+      flex: 1;
+      height: 8px;
+      background: #EAE5DC;
+      border-radius: 4px;
+      overflow: hidden;
+      margin: 0 12px;
+    }
+
+    .progress-bar .fill {
+      height: 100%;
+      background: var(--primary);
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+
+    .question-text {
+      font-size: 1.05rem;
+      font-weight: 500;
+      margin-bottom: 18px;
+      line-height: 1.7;
+    }
+
+    .question-text .blank {
+      display: inline-block;
+      min-width: 80px;
+      padding: 3px 10px;
+      margin: 0 3px;
+      border: 2px dashed var(--border);
+      border-radius: 6px;
+      background: var(--bg-warm);
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      text-align: center;
+      vertical-align: middle;
+      transition: all 0.2s ease;
+    }
+
+    .question-text .blank.filled {
+      border-style: solid;
+      border-color: var(--primary);
+      background: #F0F7F7;
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    .question-text .blank.correct {
+      border-color: var(--correct);
+      background: var(--correct-bg);
+      color: var(--correct);
+    }
+
+    .question-text .blank.wrong {
+      border-color: var(--wrong);
+      background: var(--wrong-bg);
+      color: var(--wrong);
+    }
+
+    .draggables {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+
+    .draggable {
+      padding: 8px 14px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      cursor: grab;
+      font-size: 0.9rem;
+      user-select: none;
+      transition: all 0.2s ease;
+    }
+
+    .draggable:hover {
+      border-color: var(--primary);
+      box-shadow: 0 2px 6px var(--shadow);
+    }
+
+    .draggable.dragging {
+      opacity: 0.5;
+      cursor: grabbing;
+    }
+
+    .draggable.used {
+      opacity: 0.4;
+      pointer-events: none;
+    }
+
+    .options-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .option {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: var(--bg-card);
+    }
+
+    .option:hover { border-color: var(--primary-light); background: #F7FBFB; }
+
+    .option input[type="radio"],
+    .option input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--primary);
+      flex-shrink: 0;
+    }
+
+    .option .label {
+      flex: 1;
+      font-size: 0.95rem;
+    }
+
+    .option.correct-ans {
+      border-color: var(--correct);
+      background: var(--correct-bg);
+    }
+
+    .option.wrong-ans {
+      border-color: var(--wrong);
+      background: var(--wrong-bg);
+    }
+
+    .option .mark {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-left: auto;
+    }
+
+    .explanation {
+      display: none;
+      margin-top: 8px;
+      padding: 12px 14px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    .explanation.show { display: block; }
+
+    .explanation.correct-ex {
+      background: var(--correct-bg);
+      color: #2A6B44;
+      border: 1px solid #B8E0C8;
+    }
+
+    .explanation.wrong-ex {
+      background: var(--wrong-bg);
+      color: #8A3333;
+      border: 1px solid #F0C0C0;
+    }
+
+    .nav-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .nav-bar .btn { flex: 1; }
+
+    .overview-btn {
+      text-align: center;
+      margin-top: 12px;
+    }
+
+    .overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.35);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .overlay.show { display: flex; }
+
+    .overlay-content {
+      background: var(--bg-card);
+      border-radius: 14px;
+      padding: 20px;
+      width: 100%;
+      max-width: 480px;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+    }
+
+    .overlay-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .overlay-header h2 {
+      font-size: 1.15rem;
+      color: var(--primary);
+    }
+
+    .grid-overview {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
+      gap: 8px;
+    }
+
+    .grid-item {
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      border: 1.5px solid var(--border);
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .grid-item:hover { transform: scale(1.05); }
+
+    .grid-item.empty { background: var(--bg-body); color: var(--text-muted); }
+    .grid-item.correct { background: var(--correct-bg); color: var(--correct); border-color: #A0D8B3; }
+    .grid-item.wrong { background: var(--wrong-bg); color: var(--wrong); border-color: #E8A0A0; }
+
+    .legend {
+      display: flex;
+      gap: 14px;
+      justify-content: center;
+      margin-top: 14px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .legend span { display: flex; align-items: center; gap: 4px; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+    .dot-empty { background: #D8D2C8; }
+    .dot-correct { background: var(--correct); }
+    .dot-wrong { background: var(--wrong); }
+
+    @media (max-width: 520px) {
+      .container { padding: 10px; }
+      header h1 { font-size: 1.3rem; }
+      .card { padding: 14px; }
+      .tab { font-size: 0.8rem; padding: 8px 4px; }
+      .question-text { font-size: 0.97rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Native AI Games 面试知识自测</h1>
+      <div class="topic">Native AI Games（原生 AI 游戏）—— 涵盖 Genie、UniSim、Infinigen、AI Dungeon 等核心概念</div>
+    </header>
+
+    <div class="score-bar">
+      <div class="score" id="scoreDisplay">得分: 0 / 0</div>
+      <div class="actions">
+        <button class="btn btn-warning btn-sm" id="btnShuffle">随机选项</button>
+        <button class="btn btn-secondary btn-sm" id="btnResetAll">重置所有</button>
+      </div>
+    </div>
+
+    <div class="tabs" id="tabBar">
+      <div class="tab active" data-type="drag">拖拽填空<span class="badge" id="badgeDrag">0</span></div>
+      <div class="tab" data-type="single">单选题<span class="badge" id="badgeSingle">0</span></div>
+      <div class="tab" data-type="multi">多选题<span class="badge" id="badgeMulti">0</span></div>
+      <div class="tab" data-type="truefalse">判断题<span class="badge" id="badgeTrueFalse">0</span></div>
+    </div>
+
+    <div class="card" id="quizCard">
+      <div class="progress-row">
+        <span id="progressText">1 / 1</span>
+        <div class="progress-bar"><div class="fill" id="progressFill" style="width:0%"></div></div>
+        <button class="btn btn-secondary btn-sm" id="btnOverview">总览</button>
+      </div>
+
+      <div id="questionArea"></div>
+
+      <div id="explanationArea"></div>
+
+      <div style="display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;">
+        <button class="btn btn-primary" id="btnCheck">检查答案</button>
+        <button class="btn btn-secondary" id="btnResetCurrent">重置当前题</button>
+      </div>
+
+      <div class="nav-bar" style="margin-top:16px;">
+        <button class="btn btn-secondary" id="btnPrev">上一题</button>
+        <button class="btn btn-secondary" id="btnNext">下一题</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="overviewOverlay">
+    <div class="overlay-content">
+      <div class="overlay-header">
+        <h2>题目总览</h2>
+        <button class="btn btn-secondary btn-sm" id="btnCloseOverview">关闭</button>
+      </div>
+      <div class="grid-overview" id="overviewGrid"></div>
+      <div class="legend">
+        <span><span class="dot dot-empty"></span>未答</span>
+        <span><span class="dot dot-correct"></span>正确</span>
+        <span><span class="dot dot-wrong"></span>错误</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===== DATA PLACEHOLDERS =====
+    // DRAG_QUESTIONS_PLACEHOLDER_START
+    const dragQuestions = [
+  {
+    "question": "Genie 的核心创新是：将 {0} 作为游戏引擎，从 {1} 中学习物理规则和视觉规律，生成可交互的 {2} 环境。",
+    "answers": [
+      "世界模型",
+      "互联网视频",
+      "2D/3D"
+    ],
+    "options": [
+      "世界模型",
+      "互联网视频",
+      "2D/3D",
+      "行为树",
+      "手工设计",
+      "NPC",
+      "分支叙事",
+      "静态"
+    ],
+    "explanations": [
+      "Genie 的核心创新是'世界模型即游戏引擎'，不需要传统的手工设计关卡。",
+      "Genie 从互联网视频中学习物理规则和视觉规律，而非手工编码规则。",
+      "Genie 可以生成可交互的 2D 和 3D 游戏环境。"
+    ]
+  },
+  {
+    "question": "Native AI Game 与传统 AI in Game 的关键区别在于：传统 AI 是内容的 {0}，而原生 AI 是内容的 {1}。",
+    "answers": [
+      "消费者",
+      "生产者"
+    ],
+    "options": [
+      "消费者",
+      "生产者",
+      "旁观者",
+      "优化器",
+      "测试者",
+      "设计者"
+    ],
+    "explanations": [
+      "传统 AI 是在已有手工设计的世界中行动，是'内容的消费者'。",
+      "原生 AI 能够生成世界、驱动叙事、创造玩法，是'内容的生产者'。"
+    ]
+  },
+  {
+    "question": "Infinigen 基于 {0} 几何节点，走'程序化 + {1}'路径，生成具有真实 {2} 属性的场景。",
+    "answers": [
+      "Blender",
+      "物理仿真",
+      "几何和物理"
+    ],
+    "options": [
+      "Blender",
+      "物理仿真",
+      "几何和物理",
+      "神经网络",
+      "端到端学习",
+      "视觉规律",
+      "静态",
+      "动态"
+    ],
+    "explanations": [
+      "Infinigen 基于 Blender 几何节点进行程序化生成。",
+      "Infinigen 走'程序化 + 物理仿真'路径，而非端到端生成模型路径。",
+      "Infinigen 生成的每个场景元素都有真实的几何和物理属性。"
+    ]
+  },
+  {
+    "question": "AI Dungeon 完全由 {0} 驱动叙事，暴露了三个核心问题：{1}、记忆和 {2}。",
+    "answers": [
+      "GPT-3/4",
+      "一致性",
+      "可控性"
+    ],
+    "options": [
+      "GPT-3/4",
+      "一致性",
+      "可控性",
+      "行为树",
+      "规则引擎",
+      "可玩性",
+      "成本",
+      "延迟"
+    ],
+    "explanations": [
+      "AI Dungeon 完全由 GPT-3/4 驱动叙事生成。",
+      "AI Dungeon 暴露了角色突然变卦等一致性问题。",
+      "AI Dungeon 暴露了生成 NSFW 内容等可控性问题。"
+    ]
+  }
+];
+    // DRAG_QUESTIONS_PLACEHOLDER_END
+
+    // SINGLE_QUESTIONS_PLACEHOLDER_START
+    const singleQuestions = [
+  {
+    "question": "Genie 与 UniSim 的核心区别是什么？",
+    "options": [
+      "Genie 强调确定性模拟和可执行性，UniSim 强调生成多样性",
+      "Genie 从视频生成可交互世界，UniSim 强调确定性模拟和'如果...会怎样'推理",
+      "Genie 是程序化生成，UniSim 是神经网络生成",
+      "Genie 只能生成 2D 环境，UniSim 只能生成 3D 环境"
+    ],
+    "correct": 1,
+    "explanations": [
+      "错误：描述反了。UniSim 强调确定性模拟，Genie 强调生成可交互世界。",
+      "正确：Genie 从视频/图像生成可交互世界，UniSim 是可执行世界模型，支持精确预测动作后果。",
+      "错误：Genie 是生成模型，UniSim 也是神经网络，但两者都不是程序化生成。",
+      "错误：Genie 支持 2D/3D，UniSim 没有此限制。"
+    ]
+  },
+  {
+    "question": "Infinigen 与 Genie 在世界生成路径上的根本差异是什么？",
+    "options": [
+      "Infinigen 是端到端学习，Genie 是程序化生成",
+      "Infinigen 是程序化+物理仿真，结果是确定性和可编辑的；Genie 是端到端学习，结果是黑箱",
+      "Infinigen 只能生成室内场景，Genie 只能生成室外场景",
+      "Infinigen 基于神经网络，Genie 基于规则引擎"
+    ],
+    "correct": 1,
+    "explanations": [
+      "错误：描述完全相反。",
+      "正确：Infinigen 基于 Blender 几何节点的程序化生成，结果可编辑；Genie 是端到端神经网络，结果不可直接编辑。",
+      "错误：两者都没有这种场景限制。",
+      "错误：Infinigen 基于程序化规则，Genie 基于神经网络。"
+    ]
+  },
+  {
+    "question": "原生 AI 游戏中，AI-NPC 作为'一等公民'意味着什么？",
+    "options": [
+      "NPC 拥有比玩家更高的等级和装备",
+      "NPC 有真实目标、记忆、社交关系，不只是任务发布者",
+      "NPC 可以无限复活，不会死亡",
+      "NPC 的外观由玩家自定义"
+    ],
+    "correct": 1,
+    "explanations": [
+      "错误：与等级装备无关。",
+      "正确：AI-NPC 作为一等公民意味着它们拥有真实目标、记忆、社交关系，而非简单的 quest giver。",
+      "错误：无限复活不是一等公民的定义。",
+      "错误：外观自定义与一等公民概念无关。"
+    ]
+  },
+  {
+    "question": "GameNGen 的终极形态目标是什么？",
+    "options": [
+      "用神经网络完全替代传统游戏引擎（渲染、物理、逻辑）",
+      "将游戏转换为 VR 体验",
+      "优化游戏加载速度",
+      "实现跨平台游戏发布"
+    ],
+    "correct": 0,
+    "explanations": [
+      "正确：GameNGen 的研究方向是用神经网络完全替代传统游戏引擎，包括渲染、物理和逻辑。",
+      "错误：VR 转换不是 GameNGen 的目标。",
+      "错误：加载速度优化不是其核心目标。",
+      "错误：跨平台发布与 GameNGen 无关。"
+    ]
+  },
+  {
+    "question": "在原生 AI 游戏的设计范式中，'涌现玩法'指的是什么？",
+    "options": [
+      "游戏画面突然出现特效",
+      "规则不预设，AI 与玩家共同创造新玩法",
+      "玩家突然获得隐藏技能",
+      "NPC 随机触发剧情事件"
+    ],
+    "correct": 1,
+    "explanations": [
+      "错误：与画面特效无关。",
+      "正确：涌现玩法意味着规则不预设，AI 与玩家共同创造新的游戏玩法。",
+      "错误：隐藏技能是预设内容，不是涌现。",
+      "错误：随机触发事件不等于涌现玩法。"
+    ]
+  }
+];
+    // SINGLE_QUESTIONS_PLACEHOLDER_END
+
+    // MULTI_QUESTIONS_PLACEHOLDER_START
+    const multiQuestions = [
+  {
+    "question": "Genie 的技术架构包含哪些核心组件？（多选）",
+    "options": [
+      "视频 tokenizer",
+      "动态模型",
+      "动作条件生成",
+      "行为树系统",
+      "规则引擎"
+    ],
+    "correct": [
+      0,
+      1,
+      2
+    ],
+    "explanations": [
+      "正确：视频 tokenizer 是 Genie 架构的核心组件之一。",
+      "正确：动态模型是 Genie 架构的核心组件之一。",
+      "正确：动作条件生成是 Genie 架构的核心组件之一。",
+      "错误：行为树是传统游戏 AI 技术，不是 Genie 的组件。",
+      "错误：规则引擎是传统游戏开发工具，不是 Genie 的组件。"
+    ]
+  },
+  {
+    "question": "原生 AI 游戏的五大特征包括哪些？（多选）",
+    "options": [
+      "动态叙事",
+      "无限内容",
+      "涌现玩法",
+      "固定难度曲线",
+      "AI-NPC 作为一等公民"
+    ],
+    "correct": [
+      0,
+      1,
+      2,
+      4
+    ],
+    "explanations": [
+      "正确：动态叙事是原生 AI 游戏的特征之一，剧情由 AI 实时生成。",
+      "正确：无限内容是原生 AI 游戏的特征之一，内容由生成模型实时产生。",
+      "正确：涌现玩法是原生 AI 游戏的特征之一，AI 与玩家共同创造玩法。",
+      "错误：原生 AI 游戏是自适应难度，而非固定难度曲线。",
+      "正确：AI-NPC 作为一等公民是原生 AI 游戏的特征之一。"
+    ]
+  },
+  {
+    "question": "AI Dungeon 作为原生 AI 游戏暴露的核心问题有哪些？（多选）",
+    "options": [
+      "一致性（角色突然变卦）",
+      "记忆（遗忘前文设定）",
+      "可控性（生成不当内容）",
+      "加载速度过慢",
+      "画面分辨率不足"
+    ],
+    "correct": [
+      0,
+      1,
+      2
+    ],
+    "explanations": [
+      "正确：一致性问题是 AI Dungeon 的核心问题，角色可能突然改变设定。",
+      "正确：记忆问题是 AI Dungeon 的核心问题，LLM 长上下文记忆有限。",
+      "正确：可控性问题是 AI Dungeon 的核心问题，可能生成 NSFW 内容。",
+      "错误：加载速度不是 AI Dungeon 的核心问题。",
+      "错误：AI Dungeon 是纯文本游戏，与画面分辨率无关。"
+    ]
+  },
+  {
+    "question": "UniSim 作为游戏 NPC 的'脑内模拟器'可能带来哪些设计变革？（多选）",
+    "options": [
+      "NPC 可以在行动前'想象'后果",
+      "支持'如果...会怎样'的推理",
+      "需要完全重写游戏引擎",
+      "改变 NPC 行为设计范式",
+      "消除所有游戏 bug"
+    ],
+    "correct": [
+      0,
+      1,
+      3
+    ],
+    "explanations": [
+      "正确：UniSim 让 NPC 可以在行动前模拟后果，像'脑内模拟器'。",
+      "正确：UniSim 支持'如果...会怎样'的因果推理。",
+      "错误：UniSim 不需要完全重写游戏引擎，可以作为插件或模块集成。",
+      "正确：UniSim 会改变 NPC 行为设计范式，从反应式变为预测式。",
+      "错误：UniSim 不能消除所有游戏 bug。"
+    ]
+  },
+  {
+    "question": "原生 AI 游戏面临的开放设计问题包括哪些？（多选）",
+    "options": [
+      "可玩性 vs 涌现性的张力",
+      "世界一致性系统",
+      "AI 成本经济学",
+      "游戏角色性别比例",
+      "世界模型作为游戏引擎"
+    ],
+    "correct": [
+      0,
+      1,
+      2,
+      4
+    ],
+    "explanations": [
+      "正确：可玩性 vs 涌现性是核心张力，AI 生成世界如何保证明确目标。",
+      "正确：世界一致性系统需要类似数据库 ACID 的属性来保证叙事和世界一致。",
+      "正确：AI 成本经济学是开放问题，LLM 调用成本极高。",
+      "错误：角色性别比例不是原生 AI 游戏的核心开放问题。",
+      "正确：世界模型作为游戏引擎是终极形态问题，涉及开发管线重构。"
+    ]
+  }
+];
+    // MULTI_QUESTIONS_PLACEHOLDER_END
+
+    // TRUEFALSE_QUESTIONS_PLACEHOLDER_START
+    const trueFalseQuestions = [
+  {
+    "question": "Genie 可以处理游戏机制层面的系统，如血量、任务系统和经济系统。",
+    "correct": false,
+    "explanationTrue": "错误：Genie 目前主要处理物理规则（重力、碰撞），游戏机制层面的系统需要额外的上层设计与世界模型结合。",
+    "explanationFalse": "正确：Genie 的可交互性边界主要在物理规则层面，游戏机制（血量、任务系统、经济系统）需要上层机制与世界模型结合。"
+  },
+  {
+    "question": "Infinigen 生成的场景是动态的、可交互的。",
+    "correct": false,
+    "explanationTrue": "错误：Infinigen 的场景是静态的，没有交互性。需要与 Genie/LLM 结合才能扩展为可交互世界。",
+    "explanationFalse": "正确：Infinigen 的场景是静态的，没有交互性。需要额外的动态层才能使其可交互。"
+  },
+  {
+    "question": "原生 AI 游戏中，游戏设计师的角色从'世界建筑师'变为'AI 策展人'和'体验调教师'。",
+    "correct": true,
+    "explanationTrue": "正确：如果世界完全由 AI 生成，设计师角色转变为设计 AI 的约束和激励机制，更接近机制设计。",
+    "explanationFalse": "错误：原生 AI 游戏中设计师角色确实会发生转变，从直接构建世界变为调优 AI 生成过程。"
+  },
+  {
+    "question": "UniSim 的可微性（differentiability）对游戏 AI 训练没有意义。",
+    "correct": false,
+    "explanationTrue": "错误：UniSim 的可微性对游戏 AI 训练有重要意义，支持基于梯度的优化和策略学习。",
+    "explanationFalse": "正确：UniSim 的可微性支持基于梯度的优化，对游戏 AI 的训练和策略优化具有重要意义。"
+  },
+  {
+    "question": "如果某种游戏类型（如 4X 策略、卡牌游戏）的视频数据稀缺，Genie 仍然能够生成合理的交互环境。",
+    "correct": false,
+    "explanationTrue": "错误：Genie 的知识受限于互联网视频内容，如果某类游戏视频稀缺，生成质量会受限。",
+    "explanationFalse": "正确：Genie 从视频中学习，数据稀缺的游戏类型会面临生成质量瓶颈，需要额外的数据策略突破。"
+  }
+];
+    // TRUEFALSE_QUESTIONS_PLACEHOLDER_END
+
+    // ===== STATE =====
+    let currentType = 'drag';
+    let currentIndex = 0;
+    let userAnswers = {};
+    let checkedState = {};
+
+    // ===== HELPERS =====
+    function makeKey(type, index) {
+      return type + ':' + index;
+    }
+
+    function getQuestions(type) {
+      if (type === 'drag') return dragQuestions;
+      if (type === 'single') return singleQuestions;
+      if (type === 'multi') return multiQuestions;
+      return trueFalseQuestions;
+    }
+
+    function getBadgeId(type) {
+      if (type === 'drag') return 'badgeDrag';
+      if (type === 'single') return 'badgeSingle';
+      if (type === 'multi') return 'badgeMulti';
+      return 'badgeTrueFalse';
+    }
+
+    function countQuestions(type) {
+      return getQuestions(type).length;
+    }
+
+    function allTypes() {
+      return ['drag', 'single', 'multi', 'truefalse'];
+    }
+
+    // ===== RENDER =====
+    function initBadges() {
+      allTypes().forEach(function(t) {
+        document.getElementById(getBadgeId(t)).textContent = countQuestions(t);
+      });
+    }
+
+    function updateScore() {
+      let total = 0, scored = 0;
+      allTypes().forEach(function(type) {
+        const list = getQuestions(type);
+        for (let i = 0; i < list.length; i++) {
+          const q = list[i];
+          const key = makeKey(type, i);
+          if (checkedState[key]) {
+            total += getQuestionPoints(q, type);
+            scored += getUserPoints(q, type, i);
+          }
+        }
+      });
+      document.getElementById('scoreDisplay').textContent = '得分: ' + scored + ' / ' + total;
+    }
+
+    function getQuestionPoints(q, type) {
+      if (type === 'drag') return q.answers.length;
+      if (type === 'multi') return q.correct.length;
+      return 1;
+    }
+
+    function getUserPoints(q, type, idx) {
+      const key = makeKey(type, idx);
+      const ans = userAnswers[key];
+      if (!ans) return 0;
+      if (type === 'drag') {
+        let pts = 0;
+        for (let i = 0; i < q.answers.length; i++) {
+          if (ans[i] === q.answers[i]) pts++;
+        }
+        return pts;
+      }
+      if (type === 'single') {
+        return ans === q.correct ? 1 : 0;
+      }
+      if (type === 'multi') {
+        let pts = 0;
+        const correctSet = {};
+        for (let i = 0; i < q.correct.length; i++) correctSet[q.correct[i]] = true;
+        const userSet = {};
+        for (let i = 0; i < ans.length; i++) userSet[ans[i]] = true;
+        for (let k in correctSet) {
+          if (userSet[k]) pts++;
+        }
+        return pts;
+      }
+      return ans === q.correct ? 1 : 0;
+    }
+
+    function updateProgress() {
+      const total = countQuestions(currentType);
+      const text = total > 0 ? (currentIndex + 1) + ' / ' + total : '0 / 0';
+      document.getElementById('progressText').textContent = text;
+      const pct = total > 0 ? ((currentIndex + 1) / total * 100) : 0;
+      document.getElementById('progressFill').style.width = pct + '%';
+    }
+
+    function renderQuestion() {
+      const area = document.getElementById('questionArea');
+      const expl = document.getElementById('explanationArea');
+      area.innerHTML = '';
+      expl.innerHTML = '';
+      expl.style.display = 'none';
+      updateProgress();
+
+      const questions = getQuestions(currentType);
+      if (questions.length === 0) {
+        area.innerHTML = '<p style="text-align:center;color:var(--text-muted)">该题型暂无题目</p>';
+        return;
+      }
+      const q = questions[currentIndex];
+      const key = makeKey(currentType, currentIndex);
+
+      const qtext = document.createElement('div');
+      qtext.className = 'question-text';
+
+      if (currentType === 'drag') {
+        let html = q.question;
+        for (let i = 0; i < q.answers.length; i++) {
+          const filled = userAnswers[key] && userAnswers[key][i] ? userAnswers[key][i] : '';
+          let cls = 'blank';
+          if (checkedState[key]) {
+            if (filled === q.answers[i]) cls += ' correct';
+            else cls += ' wrong';
+          } else if (filled) {
+            cls += ' filled';
+          }
+          html = html.replace('{\/' + i + '}', '<span class="' + cls + '" data-blank="' + i + '">' + (filled || '____') + '</span>');
+          html = html.replace('{\*' + i + '}', '<span class="' + cls + '" data-blank="' + i + '">' + (filled || '____') + '</span>');
+          html = html.replace('{' + i + '}', '<span class="' + cls + '" data-blank="' + i + '">' + (filled || '____') + '</span>');
+        }
+        qtext.innerHTML = html;
+        area.appendChild(qtext);
+
+        const pool = document.createElement('div');
+        pool.className = 'draggables';
+        const used = userAnswers[key] || [];
+        for (let i = 0; i < q.options.length; i++) {
+          const opt = q.options[i];
+          const isUsed = used.indexOf(opt) !== -1;
+          const chip = document.createElement('div');
+          chip.className = 'draggable' + (isUsed ? ' used' : '');
+          chip.draggable = !isUsed;
+          chip.textContent = opt;
+          chip.dataset.value = opt;
+          if (!isUsed) setupDrag(chip);
+          pool.appendChild(chip);
+        }
+        area.appendChild(pool);
+
+        if (checkedState[key]) {
+          const box = document.createElement('div');
+          box.className = 'explanation show correct-ex';
+          let exHtml = '<strong>解析：</strong><ul style="margin:8px 0 0 18px">';
+          for (let i = 0; i < q.explanations.length; i++) {
+            const isOk = userAnswers[key] && userAnswers[key][i] === q.answers[i];
+            exHtml += '<li><span style="color:' + (isOk ? 'var(--correct)' : 'var(--wrong)') + '">' + (isOk ? '✅' : '❌') + '</span> 空' + (i+1) + '：' + q.explanations[i] + '</li>';
+          }
+          exHtml += '</ul>';
+          box.innerHTML = exHtml;
+          expl.appendChild(box);
+          expl.style.display = 'block';
+        }
+      } else if (currentType === 'single') {
+        qtext.textContent = q.question;
+        area.appendChild(qtext);
+        const list = document.createElement('div');
+        list.className = 'options-list';
+        for (let i = 0; i < q.options.length; i++) {
+          const opt = document.createElement('label');
+          opt.className = 'option';
+          const isSel = userAnswers[key] === i;
+          if (checkedState[key]) {
+            if (i === q.correct) opt.classList.add('correct-ans');
+            else if (isSel) opt.classList.add('wrong-ans');
+          }
+          const radio = document.createElement('input');
+          radio.type = 'radio';
+          radio.name = 'singleOpt';
+          radio.checked = isSel;
+          radio.disabled = !!checkedState[key];
+          radio.addEventListener('change', function() {
+            userAnswers[key] = i;
+          });
+          const span = document.createElement('span');
+          span.className = 'label';
+          span.textContent = q.options[i];
+          opt.appendChild(radio);
+          opt.appendChild(span);
+          if (checkedState[key]) {
+            const mark = document.createElement('span');
+            mark.className = 'mark';
+            mark.textContent = i === q.correct ? '✅' : (isSel ? '❌' : '');
+            opt.appendChild(mark);
+          }
+          list.appendChild(opt);
+        }
+        area.appendChild(list);
+        if (checkedState[key]) {
+          const box = document.createElement('div');
+          box.className = 'explanation show ' + (userAnswers[key] === q.correct ? 'correct-ex' : 'wrong-ex');
+          box.innerHTML = '<strong>解析：</strong><br>' + q.explanations[q.correct];
+          expl.appendChild(box);
+          expl.style.display = 'block';
+        }
+      } else if (currentType === 'multi') {
+        qtext.textContent = q.question;
+        area.appendChild(qtext);
+        const list = document.createElement('div');
+        list.className = 'options-list';
+        const selSet = {};
+        const ans = userAnswers[key] || [];
+        for (let i = 0; i < ans.length; i++) selSet[ans[i]] = true;
+        const correctSet = {};
+        for (let i = 0; i < q.correct.length; i++) correctSet[q.correct[i]] = true;
+        for (let i = 0; i < q.options.length; i++) {
+          const opt = document.createElement('label');
+          opt.className = 'option';
+          const isSel = !!selSet[i];
+          if (checkedState[key]) {
+            if (correctSet[i]) opt.classList.add('correct-ans');
+            else if (isSel) opt.classList.add('wrong-ans');
+          }
+          const cb = document.createElement('input');
+          cb.type = 'checkbox';
+          cb.checked = isSel;
+          cb.disabled = !!checkedState[key];
+          cb.addEventListener('change', function() {
+            const a = userAnswers[key] || [];
+            const pos = a.indexOf(i);
+            if (pos >= 0) a.splice(pos, 1);
+            else a.push(i);
+            userAnswers[key] = a;
+          });
+          const span = document.createElement('span');
+          span.className = 'label';
+          span.textContent = q.options[i];
+          opt.appendChild(cb);
+          opt.appendChild(span);
+          if (checkedState[key]) {
+            const mark = document.createElement('span');
+            mark.className = 'mark';
+            mark.textContent = correctSet[i] ? '✅' : (isSel ? '❌' : '');
+            opt.appendChild(mark);
+          }
+          list.appendChild(opt);
+        }
+        area.appendChild(list);
+        if (checkedState[key]) {
+          const box = document.createElement('div');
+          let ok = true;
+          for (let k in correctSet) { if (!selSet[k]) ok = false; }
+          for (let k in selSet) { if (!correctSet[k]) ok = false; }
+          box.className = 'explanation show ' + (ok ? 'correct-ex' : 'wrong-ex');
+          let exHtml = '<strong>解析：</strong><ul style="margin:8px 0 0 18px">';
+          for (let i = 0; i < q.options.length; i++) {
+            const isCorrect = !!correctSet[i];
+            const icon = isCorrect ? '✅' : (selSet[i] ? '❌' : '⬜');
+            exHtml += '<li>' + icon + ' ' + q.explanations[i] + '</li>';
+          }
+          exHtml += '</ul>';
+          box.innerHTML = exHtml;
+          expl.appendChild(box);
+          expl.style.display = 'block';
+        }
+      } else if (currentType === 'truefalse') {
+        qtext.textContent = q.question;
+        area.appendChild(qtext);
+        const list = document.createElement('div');
+        list.className = 'options-list';
+        const opts = [{val: true, label: '是 / True'}, {val: false, label: '否 / False'}];
+        for (let i = 0; i < opts.length; i++) {
+          const opt = document.createElement('label');
+          opt.className = 'option';
+          const v = opts[i].val;
+          const isSel = userAnswers[key] === v;
+          if (checkedState[key]) {
+            if (v === q.correct) opt.classList.add('correct-ans');
+            else if (isSel) opt.classList.add('wrong-ans');
+          }
+          const radio = document.createElement('input');
+          radio.type = 'radio';
+          radio.name = 'tfOpt';
+          radio.checked = isSel;
+          radio.disabled = !!checkedState[key];
+          radio.addEventListener('change', function() {
+            userAnswers[key] = v;
+          });
+          const span = document.createElement('span');
+          span.className = 'label';
+          span.textContent = opts[i].label;
+          opt.appendChild(radio);
+          opt.appendChild(span);
+          if (checkedState[key]) {
+            const mark = document.createElement('span');
+            mark.className = 'mark';
+            mark.textContent = v === q.correct ? '✅' : (isSel ? '❌' : '');
+            opt.appendChild(mark);
+          }
+          list.appendChild(opt);
+        }
+        area.appendChild(list);
+        if (checkedState[key]) {
+          const box = document.createElement('div');
+          const ok = userAnswers[key] === q.correct;
+          box.className = 'explanation show ' + (ok ? 'correct-ex' : 'wrong-ex');
+          box.innerHTML = '<strong>解析：</strong><br>' + (q.correct ? q.explanationTrue : q.explanationFalse);
+          expl.appendChild(box);
+          expl.style.display = 'block';
+        }
+      }
+    }
+
+    // ===== DRAG & DROP =====
+    function setupDrag(el) {
+      el.addEventListener('dragstart', function(e) {
+        e.dataTransfer.setData('text/plain', el.dataset.value);
+        el.classList.add('dragging');
+      });
+      el.addEventListener('dragend', function() {
+        el.classList.remove('dragging');
+      });
+    }
+
+    document.addEventListener('dragover', function(e) {
+      const blank = e.target.closest && e.target.closest('[data-blank]');
+      if (blank) e.preventDefault();
+    });
+
+    document.addEventListener('drop', function(e) {
+      const blank = e.target.closest && e.target.closest('[data-blank]');
+      if (!blank) return;
+      e.preventDefault();
+      const value = e.dataTransfer.getData('text/plain');
+      if (!value) return;
+      const bidx = parseInt(blank.dataset.blank, 10);
+      const key = makeKey(currentType, currentIndex);
+      if (!userAnswers[key]) userAnswers[key] = [];
+      userAnswers[key][bidx] = value;
+      renderQuestion();
+    });
+
+    // Also support click-to-fill on mobile
+    document.addEventListener('click', function(e) {
+      const blank = e.target.closest && e.target.closest('[data-blank]');
+      if (!blank) return;
+      if (checkedState[makeKey(currentType, currentIndex)]) return;
+      const key = makeKey(currentType, currentIndex);
+      const ans = userAnswers[key] || [];
+      const bidx = parseInt(blank.dataset.blank, 10);
+      if (ans[bidx]) {
+        delete ans[bidx];
+        renderQuestion();
+        return;
+      }
+      // Find first unused draggable
+      const chips = document.querySelectorAll('.draggable:not(.used)');
+      if (chips.length > 0) {
+        const val = chips[0].dataset.value;
+        if (!userAnswers[key]) userAnswers[key] = [];
+        userAnswers[key][bidx] = val;
+        renderQuestion();
+      }
+    });
+
+    // ===== CONTROLS =====
+    function switchTab(type) {
+      currentType = type;
+      currentIndex = 0;
+      document.querySelectorAll('.tab').forEach(function(t) {
+        t.classList.toggle('active', t.dataset.type === type);
+      });
+      renderQuestion();
+    }
+
+    document.querySelectorAll('.tab').forEach(function(tab) {
+      tab.addEventListener('click', function() {
+        switchTab(tab.dataset.type);
+      });
+    });
+
+    document.getElementById('btnPrev').addEventListener('click', function() {
+      if (currentIndex > 0) { currentIndex--; renderQuestion(); }
+    });
+
+    document.getElementById('btnNext').addEventListener('click', function() {
+      if (currentIndex + 1 < countQuestions(currentType)) { currentIndex++; renderQuestion(); }
+    });
+
+    document.getElementById('btnCheck').addEventListener('click', function() {
+      const key = makeKey(currentType, currentIndex);
+      if (countQuestions(currentType) === 0) return;
+      checkedState[key] = true;
+      updateScore();
+      renderQuestion();
+    });
+
+    document.getElementById('btnResetCurrent').addEventListener('click', function() {
+      const key = makeKey(currentType, currentIndex);
+      delete userAnswers[key];
+      delete checkedState[key];
+      updateScore();
+      renderQuestion();
+    });
+
+    document.getElementById('btnResetAll').addEventListener('click', function() {
+      if (!confirm('确定要重置所有答题记录吗？')) return;
+      userAnswers = {};
+      checkedState = {};
+      updateScore();
+      renderQuestion();
+    });
+
+    // ===== SHUFFLE =====
+    function shuffleArray(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const tmp = arr[i];
+        arr[i] = arr[j];
+        arr[j] = tmp;
+      }
+    }
+
+    function buildIndexMap(oldLen, shuffledIndices) {
+      const map = {};
+      for (let newPos = 0; newPos < oldLen; newPos++) {
+        map[shuffledIndices[newPos]] = newPos;
+      }
+      return map;
+    }
+
+    document.getElementById('btnShuffle').addEventListener('click', function() {
+      if (!confirm('随机化会清空所有答题记录，确定继续？')) return;
+      userAnswers = {};
+      checkedState = {};
+
+      // Single
+      for (let qi = 0; qi < singleQuestions.length; qi++) {
+        const q = singleQuestions[qi];
+        const order = [];
+        for (let i = 0; i < q.options.length; i++) order.push(i);
+        shuffleArray(order);
+        const newOpts = [];
+        for (let i = 0; i < order.length; i++) newOpts.push(q.options[order[i]]);
+        const newExps = [];
+        for (let i = 0; i < order.length; i++) newExps.push(q.explanations[order[i]]);
+        const idxMap = buildIndexMap(q.options.length, order);
+        q.correct = idxMap[q.correct];
+        q.options = newOpts;
+        q.explanations = newExps;
+      }
+
+      // Multi
+      for (let qi = 0; qi < multiQuestions.length; qi++) {
+        const q = multiQuestions[qi];
+        const order = [];
+        for (let i = 0; i < q.options.length; i++) order.push(i);
+        shuffleArray(order);
+        const newOpts = [];
+        for (let i = 0; i < order.length; i++) newOpts.push(q.options[order[i]]);
+        const newExps = [];
+        for (let i = 0; i < order.length; i++) newExps.push(q.explanations[order[i]]);
+        const idxMap = buildIndexMap(q.options.length, order);
+        const newCorrect = [];
+        for (let i = 0; i < q.correct.length; i++) newCorrect.push(idxMap[q.correct[i]]);
+        q.correct = newCorrect;
+        q.options = newOpts;
+        q.explanations = newExps;
+      }
+
+      updateScore();
+      renderQuestion();
+    });
+
+    // ===== OVERVIEW =====
+    function openOverview() {
+      const grid = document.getElementById('overviewGrid');
+      grid.innerHTML = '';
+      const questions = getQuestions(currentType);
+      for (let i = 0; i < questions.length; i++) {
+        const cell = document.createElement('div');
+        const key = makeKey(currentType, i);
+        let cls = 'grid-item';
+        if (checkedState[key]) {
+          const pts = getUserPoints(questions[i], currentType, i);
+          const maxPts = getQuestionPoints(questions[i], currentType);
+          cls += pts === maxPts ? ' correct' : ' wrong';
+        } else {
+          cls += ' empty';
+        }
+        cell.className = cls;
+        cell.textContent = i + 1;
+        cell.addEventListener('click', function() {
+          currentIndex = i;
+          document.getElementById('overviewOverlay').classList.remove('show');
+          renderQuestion();
+        });
+        grid.appendChild(cell);
+      }
+      document.getElementById('overviewOverlay').classList.add('show');
+    }
+
+    document.getElementById('btnOverview').addEventListener('click', openOverview);
+    document.getElementById('btnCloseOverview').addEventListener('click', function() {
+      document.getElementById('overviewOverlay').classList.remove('show');
+    });
+    document.getElementById('overviewOverlay').addEventListener('click', function(e) {
+      if (e.target === document.getElementById('overviewOverlay')) {
+        document.getElementById('overviewOverlay').classList.remove('show');
+      }
+    });
+
+    // ===== KEYBOARD NAV =====
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'ArrowLeft') document.getElementById('btnPrev').click();
+      if (e.key === 'ArrowRight') document.getElementById('btnNext').click();
+    });
+
+    // ===== INIT =====
+    initBadges();
+    updateScore();
+    renderQuestion();
+  </script>
+</body>
+</html>

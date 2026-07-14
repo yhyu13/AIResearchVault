@@ -1,0 +1,1252 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game AI 研究库总览 — 面试知识自测</title>
+  <style>
+    :root {
+      --bg-body: #FAF8F5;
+      --bg-card: #FFFFFF;
+      --bg-warm: #F5F0E8;
+      --primary: #2D5F5F;
+      --primary-light: #3D7A7A;
+      --accent: #4A7C59;
+      --accent-light: #E8F3E8;
+      --text-main: #2C2C2C;
+      --text-muted: #6B6B6B;
+      --border: #D8D2C8;
+      --shadow: rgba(0,0,0,0.06);
+      --correct: #3A8C5D;
+      --correct-bg: #EAF6EE;
+      --wrong: #C44B4B;
+      --wrong-bg: #FCEAEA;
+      --warning: #C9943A;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg-body);
+      color: var(--text-main);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    header h1 {
+      font-size: 1.6rem;
+      color: var(--primary);
+      margin-bottom: 4px;
+    }
+
+    header .topic {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+    }
+
+    .score-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 8px var(--shadow);
+    }
+
+    .score-bar .score {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--primary);
+    }
+
+    .score-bar .actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+
+    .btn-sm { padding: 6px 10px; font-size: 0.78rem; }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+    }
+    .btn-primary:hover { background: var(--primary-light); }
+
+    .btn-secondary {
+      background: var(--bg-warm);
+      color: var(--text-main);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover { background: #EDE8DE; }
+
+    .btn-warning {
+      background: #FFF8E6;
+      color: #8A6D1F;
+      border: 1px solid #F0E0B0;
+    }
+    .btn-warning:hover { background: #FFF0CC; }
+
+    .tabs {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .tab {
+      flex: 1;
+      min-width: 80px;
+      text-align: center;
+      padding: 10px 8px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 0.88rem;
+      transition: all 0.2s ease;
+    }
+
+    .tab.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+      font-weight: 600;
+    }
+
+    .tab .badge {
+      display: inline-block;
+      margin-left: 4px;
+      background: rgba(255,255,255,0.25);
+      padding: 1px 6px;
+      border-radius: 10px;
+      font-size: 0.72rem;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+      box-shadow: 0 2px 12px var(--shadow);
+      margin-bottom: 16px;
+    }
+
+    .progress-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .progress-bar {
+      flex: 1;
+      height: 8px;
+      background: #EAE5DC;
+      border-radius: 4px;
+      overflow: hidden;
+      margin: 0 12px;
+    }
+
+    .progress-bar .fill {
+      height: 100%;
+      background: var(--primary);
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+
+    .question-text {
+      font-size: 1.05rem;
+      font-weight: 500;
+      margin-bottom: 18px;
+      line-height: 1.7;
+    }
+
+    .question-text .blank {
+      display: inline-block;
+      min-width: 80px;
+      padding: 3px 10px;
+      margin: 0 3px;
+      border: 2px dashed var(--border);
+      border-radius: 6px;
+      background: var(--bg-warm);
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      text-align: center;
+      vertical-align: middle;
+      transition: all 0.2s ease;
+    }
+
+    .question-text .blank.filled {
+      border-style: solid;
+      border-color: var(--primary);
+      background: #F0F7F7;
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    .question-text .blank.correct {
+      border-color: var(--correct);
+      background: var(--correct-bg);
+      color: var(--correct);
+    }
+
+    .question-text .blank.wrong {
+      border-color: var(--wrong);
+      background: var(--wrong-bg);
+      color: var(--wrong);
+    }
+
+    .draggables {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+
+    .draggable {
+      padding: 8px 14px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      cursor: grab;
+      font-size: 0.9rem;
+      user-select: none;
+      transition: all 0.2s ease;
+    }
+
+    .draggable:hover {
+      border-color: var(--primary);
+      box-shadow: 0 2px 6px var(--shadow);
+    }
+
+    .draggable.dragging {
+      opacity: 0.5;
+      cursor: grabbing;
+    }
+
+    .draggable.used {
+      opacity: 0.4;
+      pointer-events: none;
+    }
+
+    .options-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .option {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: var(--bg-card);
+    }
+
+    .option:hover { border-color: var(--primary-light); background: #F7FBFB; }
+
+    .option input[type="radio"],
+    .option input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--primary);
+      flex-shrink: 0;
+    }
+
+    .option .label {
+      flex: 1;
+      font-size: 0.95rem;
+    }
+
+    .option.correct-ans {
+      border-color: var(--correct);
+      background: var(--correct-bg);
+    }
+
+    .option.wrong-ans {
+      border-color: var(--wrong);
+      background: var(--wrong-bg);
+    }
+
+    .option .mark {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-left: auto;
+    }
+
+    .explanation {
+      display: none;
+      margin-top: 8px;
+      padding: 12px 14px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    .explanation.show { display: block; }
+
+    .explanation.correct-ex {
+      background: var(--correct-bg);
+      color: #2A6B44;
+      border: 1px solid #B8E0C8;
+    }
+
+    .explanation.wrong-ex {
+      background: var(--wrong-bg);
+      color: #8A3333;
+      border: 1px solid #F0C0C0;
+    }
+
+    .nav-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .nav-bar .btn { flex: 1; }
+
+    .overview-btn {
+      text-align: center;
+      margin-top: 12px;
+    }
+
+    .overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.35);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .overlay.show { display: flex; }
+
+    .overlay-content {
+      background: var(--bg-card);
+      border-radius: 14px;
+      padding: 20px;
+      width: 100%;
+      max-width: 480px;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+    }
+
+    .overlay-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .overlay-header h2 {
+      font-size: 1.15rem;
+      color: var(--primary);
+    }
+
+    .grid-overview {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
+      gap: 8px;
+    }
+
+    .grid-item {
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      border: 1.5px solid var(--border);
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .grid-item:hover { transform: scale(1.05); }
+
+    .grid-item.empty { background: var(--bg-body); color: var(--text-muted); }
+    .grid-item.correct { background: var(--correct-bg); color: var(--correct); border-color: #A0D8B3; }
+    .grid-item.wrong { background: var(--wrong-bg); color: var(--wrong); border-color: #E8A0A0; }
+
+    .legend {
+      display: flex;
+      gap: 14px;
+      justify-content: center;
+      margin-top: 14px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .legend span { display: flex; align-items: center; gap: 4px; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+    .dot-empty { background: #D8D2C8; }
+    .dot-correct { background: var(--correct); }
+    .dot-wrong { background: var(--wrong); }
+
+    @media (max-width: 520px) {
+      .container { padding: 10px; }
+      header h1 { font-size: 1.3rem; }
+      .card { padding: 14px; }
+      .tab { font-size: 0.8rem; padding: 8px 4px; }
+      .question-text { font-size: 0.97rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Game AI 研究库总览 — 面试知识自测</h1>
+      <div class="topic">LLM/Agent × 游戏 系统性研究 · 请完成以下题目检验掌握程度</div>
+    </header>
+
+    <div class="score-bar">
+      <div class="score" id="scoreDisplay">得分: 0 / 0</div>
+      <div class="actions">
+        <button class="btn btn-warning btn-sm" id="btnShuffle">随机选项</button>
+        <button class="btn btn-secondary btn-sm" id="btnResetAll">重置所有</button>
+      </div>
+    </div>
+
+    <div class="tabs" id="tabBar">
+      <div class="tab active" data-type="drag">拖拽填空<span class="badge" id="badgeDrag">0</span></div>
+      <div class="tab" data-type="single">单选题<span class="badge" id="badgeSingle">0</span></div>
+      <div class="tab" data-type="multi">多选题<span class="badge" id="badgeMulti">0</span></div>
+      <div class="tab" data-type="truefalse">判断题<span class="badge" id="badgeTrueFalse">0</span></div>
+    </div>
+
+    <div class="card" id="quizCard">
+      <div class="progress-row">
+        <span id="progressText">1 / 1</span>
+        <div class="progress-bar"><div class="fill" id="progressFill" style="width:0%"></div></div>
+        <button class="btn btn-secondary btn-sm" id="btnOverview">总览</button>
+      </div>
+
+      <div id="questionArea"></div>
+
+      <div id="explanationArea"></div>
+
+      <div style="display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;">
+        <button class="btn btn-primary" id="btnCheck">检查答案</button>
+        <button class="btn btn-secondary" id="btnResetCurrent">重置当前题</button>
+      </div>
+
+      <div class="nav-bar" style="margin-top:16px;">
+        <button class="btn btn-secondary" id="btnPrev">上一题</button>
+        <button class="btn btn-secondary" id="btnNext">下一题</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="overviewOverlay">
+    <div class="overlay-content">
+      <div class="overlay-header">
+        <h2>题目总览</h2>
+        <button class="btn btn-secondary btn-sm" id="btnCloseOverview">关闭</button>
+      </div>
+      <div class="grid-overview" id="overviewGrid"></div>
+      <div class="legend">
+        <span><span class="dot dot-empty"></span>未答</span>
+        <span><span class="dot dot-correct"></span>正确</span>
+        <span><span class="dot dot-wrong"></span>错误</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===== DATA =====
+    const dragQuestions = [
+      {
+        question: "Agent Harness 的六组件架构中，负责将 Agent 动作转换为游戏输入的组件是 {0}，负责提供结构化状态观察的组件是 {1}。",
+        options: ["Environment (E)", "Translator (T)", "Controller (C)", "Sensor (S)", "Logger (L)", "Validator (V)"],
+        answers: ["Controller (C)", "Sensor (S)"],
+        explanations: [
+          "Controller (C) 是 Harness 中负责将 Agent 输出的动作（如代码、自然语言或结构化命令）翻译为游戏实际输入（键盘、鼠标、API 调用）的组件。",
+          "Sensor (S) 负责从游戏环境中提取结构化观察数据，将原始像素、音频等多模态信息转换为 Agent 可理解的表示。"
+        ]
+      },
+      {
+        question: "在 Game AI 的三大研究方向中，{0} 关注如何让 LLM Agent 在复杂游戏环境中可靠执行，{1} 关注游戏设计如何围绕 AI 原生能力重新构建。",
+        options: ["LLM / Agent in Games", "Native AI Games", "Human-AI-Game Interaction", "World Models", "Procedural Generation"],
+        answers: ["LLM / Agent in Games", "Native AI Games"],
+        explanations: [
+          "LLM / Agent in Games 是执行层方向，核心问题是让 LLM Agent 在复杂游戏环境中可靠执行，技术栈包括 RL + LLM + Tool Use + Harness。",
+          "Native AI Games 是设计层方向，核心问题是游戏设计如何围绕 AI 原生能力重新构建，而非将 AI 作为附加组件。"
+        ]
+      },
+      {
+        question: "Voyager (2023) 的核心创新是使用 {0} 实现 Minecraft 中的终身学习，而 Genie (2024) 的核心能力是从 {1} 生成可交互的 2D 世界。",
+        options: ["代码生成", "行为树", "视频/图像", "文本描述", "强化学习", "世界模型"],
+        answers: ["代码生成", "视频/图像"],
+        explanations: [
+          "Voyager 通过代码生成（Code Generation）实现技能发现、记忆和组合，突破了手工设计行为树的天花板。",
+          "Genie 是 Google DeepMind 的工作，能够从视频或图像生成可交互的 2D 世界，属于生成式交互环境。"
+        ]
+      },
+      {
+        question: "在 Diplomacy 游戏中，Meta 的 Cicero (2022) 结合了 {0} 和 {1} 两种能力，成为该领域的代表性工作。",
+        options: ["自然语言谈判", "战略规划", "图像生成", "代码执行", "情感计算", "多智能体协作"],
+        answers: ["自然语言谈判", "战略规划"],
+        explanations: [
+          "Cicero 的核心突破在于将自然语言谈判能力与战略规划能力结合，能够在需要复杂社交互动的策略游戏中与人类玩家竞争。",
+          "战略规划是 Cicero 的另一核心能力，使其不仅是一个对话系统，更是一个能够在长期博弈中制定和执行策略的 Agent。"
+        ]
+      },
+      {
+        question: "传统游戏 AI 的三件套是 {0}、{1} 和寻路算法，而 LLM 带来的范式转移使 Agent 能够从'开发者写行为'变为'{2}'。",
+        options: ["行为树", "状态机", "Agent 写代码/执行命令", "神经网络", "遗传算法", "规则引擎"],
+        answers: ["行为树", "状态机", "Agent 写代码/执行命令"],
+        explanations: [
+          "行为树（Behavior Tree）是传统游戏 AI 的核心架构之一，用于组织 NPC 的行为逻辑。",
+          "状态机（Finite State Machine）是另一种经典游戏 AI 技术，通过状态转换控制角色行为。",
+          "LLM 带来的执行范式转移：从开发者手工编写行为逻辑，到 Agent 自主生成代码或执行命令来完成任务（如 Voyager 的代码生成）。"
+        ]
+      }
+    ];
+
+    const singleQuestions = [
+      {
+        question: "以下哪篇论文提出了 Agent Harness 的六组件架构（E/T/C/S/L/V）？",
+        options: [
+          "Voyager (2023)",
+          "MineDojo (2022)",
+          "Agent Harness Survey (2026)",
+          "OSWorld (2024)"
+        ],
+        correct: 2,
+        explanations: [
+          "Voyager 聚焦于代码生成与终身学习，不涉及 Harness 六组件架构。",
+          "MineDojo 是 Minecraft 的大规模任务基准，与 Harness 架构无关。",
+          "正确。Agent Harness Survey (2026) 提出了六组件架构：Environment (E)、Translator (T)、Controller (C)、Sensor (S)、Logger (L)、Validator (V)。",
+          "OSWorld 是通用 GUI Agent 基准，虽然涉及游戏但非 Harness 架构的提出者。"
+        ]
+      },
+      {
+        question: "Generative Agents (2023) 实验中有多少个 AI Agent 在虚拟小镇中生活、社交和记忆？",
+        options: ["10 个", "15 个", "25 个", "50 个"],
+        correct: 2,
+        explanations: [
+          "10 个不符合论文描述。",
+          "15 个不符合论文描述。",
+          "正确。Generative Agents 论文中设置了 25 个 AI Agent 在虚拟小镇中生活，它们具有记忆、反思和社交规划能力。",
+          "50 个超出了论文中的实验规模。"
+        ]
+      },
+      {
+        question: "在 Game AI 的演进链中，以下哪个属于'设计层：AI-Native Game Design'的代表工作？",
+        options: [
+          "Voyager",
+          "Cicero (Diplomacy)",
+          "Genie",
+          "Overcooked"
+        ],
+        correct: 2,
+        explanations: [
+          "Voyager 属于执行层，关注 Agent 在游戏环境中的执行能力。",
+          "Cicero 属于交互层，关注人机协作与竞争中的自然语言交互。",
+          "正确。Genie (Google DeepMind, 2024) 属于设计层，它从视频/图像生成可交互的 2D 世界，体现了 AI 原生游戏设计的理念。",
+          "Overcooked 属于交互层，是人机协作的基准测试环境。"
+        ]
+      },
+      {
+        question: "World Model 在 Game AI 中的核心作用是什么？",
+        options: [
+          "生成游戏美术资源",
+          "环境在 AI 脑中的压缩模拟器",
+          "优化游戏网络延迟",
+          "替代游戏物理引擎"
+        ],
+        correct: 1,
+        explanations: [
+          "World Model 不直接生成美术资源，生成式内容属于 Procedural Generation 或 Generative Models 的范畴。",
+          "正确。World Model 是环境在 AI 脑中的压缩模拟器，使 Agent 能够在内部模拟环境中进行规划和预测，代表工作包括 Dreamer、UniSim 和 Agent World Model。",
+          "网络延迟优化属于工程基础设施，与 World Model 无关。",
+          "World Model 是认知层面的模拟，不替代底层的物理引擎计算。"
+        ]
+      },
+      {
+        question: "游戏 Agent 评估面临的最大挑战是什么？",
+        options: [
+          "计算资源不足",
+          "缺乏游戏环境",
+          "创造性任务没有标准答案",
+          "Agent 运行速度太慢"
+        ],
+        correct: 2,
+        explanations: [
+          "计算资源是工程问题，不是评估的核心挑战。",
+          "MineDojo、OSWorld 等已提供了大量游戏环境。",
+          "正确。游戏 Agent 的评估挑战在于创造性任务（如'建造一座好房子'）缺乏客观标准答案，需要设计新的评估范式。",
+          "运行速度是优化问题，不是评估的根本难点。"
+        ]
+      }
+    ];
+
+    const multiQuestions = [
+      {
+        question: "以下哪些属于 Agent Harness 六组件架构中的组件？（多选）",
+        options: [
+          "Environment (E)",
+          "Translator (T)",
+          "Controller (C)",
+          "Sensor (S)",
+          "Optimizer (O)",
+          "Renderer (R)"
+        ],
+        correct: [0, 1, 2, 3],
+        explanations: [
+          "正确。Environment (E) 是 Harness 六组件之一，负责提供游戏运行环境。",
+          "正确。Translator (T) 是六组件之一，负责在不同表示之间进行转换。",
+          "正确。Controller (C) 是六组件之一，负责将 Agent 动作转换为游戏输入。",
+          "正确。Sensor (S) 是六组件之一，负责提供结构化状态观察。",
+          "错误。Optimizer (O) 不是 Harness 六组件的组成部分。",
+          "错误。Renderer (R) 不是 Harness 六组件的组成部分。"
+        ]
+      },
+      {
+        question: "以下哪些论文/项目属于'执行层：Agent in Game Environment'方向？（多选）",
+        options: [
+          "Voyager (2023)",
+          "Ghost in the Minecraft (2023)",
+          "MineDojo (2022)",
+          "OSWorld (2024)",
+          "AI Dungeon (2019)",
+          "UniSim (2024)"
+        ],
+        correct: [0, 1, 2, 3],
+        explanations: [
+          "正确。Voyager 通过代码生成实现 Minecraft 终身学习，属于执行层。",
+          "正确。Ghost in the Minecraft 提出'代码即动作'，属于执行层。",
+          "正确。MineDojo 是大规模 Minecraft 任务基准，属于执行层基础设施。",
+          "正确。OSWorld 是通用 GUI Agent 基准（含游戏），属于执行层。",
+          "错误。AI Dungeon 属于设计层，是文本 LLM 驱动的开放叙事。",
+          "错误。UniSim 属于设计层，是世界模型模拟器。"
+        ]
+      },
+      {
+        question: "LLM 为 Game AI 带来的三大范式转移包括哪些？（多选）",
+        options: [
+          "执行范式：从'开发者写行为'到'Agent 写代码/执行命令'",
+          "设计范式：从'手工设计关卡'到'AI 生成世界'",
+          "交互范式：从'scripted NPC'到'有记忆、有目标、有社交关系的 Agent'",
+          "渲染范式：从'光栅化'到'神经辐射场'",
+          "网络范式：从'客户端-服务器'到'分布式区块链'"
+        ],
+        correct: [0, 1, 2],
+        explanations: [
+          "正确。执行范式转移是 LLM 带来的核心变化之一，Voyager 是典型代表。",
+          "正确。设计范式转移使游戏引擎变成'可交互的生成模型'，Genie 和 Agent World Model 是代表。",
+          "正确。交互范式转移使 NPC 从预设脚本变为具有记忆和社交能力的 Agent，Generative Agents 证明了这一点。",
+          "错误。神经辐射场（NeRF）属于图形渲染领域，不是 Game AI 的范式转移。",
+          "错误。区块链与 Game AI 的范式转移无关。"
+        ]
+      },
+      {
+        question: "以下哪些属于'交互层：Human-AI Collaboration in Games'的代表工作/场景？（多选）",
+        options: [
+          "Hidden Role Games (Werewolf, Resistance)",
+          "Overcooked / Co-op Games",
+          "Diplomacy (Meta, 2022)",
+          "Social Simulations (Stanford, 2023)",
+          "Infinigen (Meta, 2023)",
+          "Generative Worldcrafting (2025)"
+        ],
+        correct: [0, 1, 2, 3],
+        explanations: [
+          "正确。Hidden Role Games 研究 AI 欺骗与推理能力，属于交互层。",
+          "正确。Overcooked 等人机协作游戏是研究人机协作的基准环境。",
+          "正确。Diplomacy (Cicero) 研究自然语言谈判与策略，属于交互层。",
+          "正确。Stanford 的 Generative Agents 小镇研究 AI 社交模拟，属于交互层。",
+          "错误。Infinigen 是程序化无限世界生成，属于设计层/基础设施。",
+          "错误。Generative Worldcrafting 属于执行层，关注多模态内容生成。"
+        ]
+      }
+    ];
+
+    const trueFalseQuestions = [
+      {
+        question: "Native AI Game 是指将 AI 作为游戏的附加组件，在传统游戏框架上叠加 AI 功能。",
+        correct: false,
+        explanationTrue: "",
+        explanationFalse: "错误。Native AI Game 的定义是'玩法设计依赖 AI 能力而非硬编码规则'，即游戏设计从根本上围绕 AI 原生能力重新构建，而非将 AI 作为附加组件。"
+      },
+      {
+        question: "Agent Harness 中的 Validator (V) 组件负责验证 Agent 行为的正确性和安全性。",
+        correct: true,
+        explanationTrue: "正确。Validator (V) 是 Harness 六组件之一，负责验证 Agent 的行为是否符合预期、是否安全，防止 Agent 执行破坏性操作。",
+        explanationFalse: ""
+      },
+      {
+        question: "World Model 的概念最早由 Ha 和 Schmidhuber 提出，用于构建环境在 AI 中的压缩表示。",
+        correct: true,
+        explanationTrue: "正确。World Model 的概念确实与 Ha 和 Schmidhuber 的工作密切相关，旨在让 AI 学习环境的压缩表示以进行内部模拟和规划。",
+        explanationFalse: ""
+      },
+      {
+        question: "在 Game AI 的论文追踪 Pipeline 中，'精读'步骤安排在周一，'复习'步骤安排在周二。",
+        correct: false,
+        explanationTrue: "",
+        explanationFalse: "错误。根据 Pipeline 安排：预读在周一，精读在周一晚，讨论在周二，笔记在周二晚，复习在周五。复习是在周五而非周二。"
+      }
+    ];
+
+    // ===== STATE =====
+    let currentType = 'drag';
+    let currentIndex = 0;
+    let userAnswers = {};
+    let checkedState = {};
+
+    // ===== HELPERS =====
+    function makeKey(type, index) {
+      return type + ':' + index;
+    }
+
+    function getQuestions(type) {
+      if (type === 'drag') return dragQuestions;
+      if (type === 'single') return singleQuestions;
+      if (type === 'multi') return multiQuestions;
+      return trueFalseQuestions;
+    }
+
+    function getBadgeId(type) {
+      if (type === 'drag') return 'badgeDrag';
+      if (type === 'single') return 'badgeSingle';
+      if (type === 'multi') return 'badgeMulti';
+      return 'badgeTrueFalse';
+    }
+
+    function countQuestions(type) {
+      return getQuestions(type).length;
+    }
+
+    function allTypes() {
+      return ['drag', 'single', 'multi', 'truefalse'];
+    }
+
+    // ===== RENDER =====
+    function initBadges() {
+      allTypes().forEach(function(t) {
+        document.getElementById(getBadgeId(t)).textContent = countQuestions(t);
+      });
+    }
+
+    function updateScore() {
+      let total = 0, scored = 0;
+      allTypes().forEach(function(type) {
+        const list = getQuestions(type);
+        for (let i = 0; i < list.length; i++) {
+          const q = list[i];
+          const key = makeKey(type, i);
+          if (checkedState[key]) {
+            total += getQuestionPoints(q, type);
+            scored += getUserPoints(q, type, i);
+          }
+        }
+      });
+      document.getElementById('scoreDisplay').textContent = '得分: ' + scored + ' / ' + total;
+    }
+
+    function getQuestionPoints(q, type) {
+      if (type === 'drag') return q.answers.length;
+      if (type === 'multi') return q.correct.length;
+      return 1;
+    }
+
+    function getUserPoints(q, type, idx) {
+      const key = makeKey(type, idx);
+      const ans = userAnswers[key];
+      if (!ans) return 0;
+      if (type === 'drag') {
+        let pts = 0;
+        for (let i = 0; i < q.answers.length; i++) {
+          if (ans[i] === q.answers[i]) pts++;
+        }
+        return pts;
+      }
+      if (type === 'single') {
+        return ans === q.correct ? 1 : 0;
+      }
+      if (type === 'multi') {
+        let pts = 0;
+        const correctSet = {};
+        for (let i = 0; i < q.correct.length; i++) correctSet[q.correct[i]] = true;
+        const userSet = {};
+        for (let i = 0; i < ans.length; i++) userSet[ans[i]] = true;
+        for (let k in correctSet) {
+          if (userSet[k]) pts++;
+        }
+        return pts;
+      }
+      return ans === q.correct ? 1 : 0;
+    }
+
+    function updateProgress() {
+      const total = countQuestions(currentType);
+      const text = total > 0 ? (currentIndex + 1) + ' / ' + total : '0 / 0';
+      document.getElementById('progressText').textContent = text;
+      const pct = total > 0 ? ((currentIndex + 1) / total * 100) : 0;
+      document.getElementById('progressFill').style.width = pct + '%';
+    }
+
+    function renderQuestion() {
+      const area = document.getElementById('questionArea');
+      const expl = document.getElementById('explanationArea');
+      area.innerHTML = '';
+      expl.innerHTML = '';
+      expl.style.display = 'none';
+      updateProgress();
+
+      const questions = getQuestions(currentType);
+      if (questions.length === 0) {
+        area.innerHTML = '<p style="text-align:center;color:var(--text-muted)">该题型暂无题目</p>';
+        return;
+      }
+      const q = questions[currentIndex];
+      const key = makeKey(currentType, currentIndex);
+
+      const qtext = document.createElement('div');
+      qtext.className = 'question-text';
+
+      if (currentType === 'drag') {
+        let html = q.question;
+        for (let i = 0; i < q.answers.length; i++) {
+          const filled = userAnswers[key] && userAnswers[key][i] ? userAnswers[key][i] : '';
+          let cls = 'blank';
+          if (checkedState[key]) {
+            if (filled === q.answers[i]) cls += ' correct';
+            else cls += ' wrong';
+          } else if (filled) {
+            cls += ' filled';
+          }
+          html = html.replace('{\/' + i + '}', '<span class="' + cls + '" data-blank="' + i + '">' + (filled || '____') + '</span>');
+          html = html.replace('{\*' + i + '}', '<span class="' + cls + '" data-blank="' + i + '">' + (filled || '____') + '</span>');
+          html = html.replace('{' + i + '}', '<span class="' + cls + '" data-blank="' + i + '">' + (filled || '____') + '</span>');
+        }
+        qtext.innerHTML = html;
+        area.appendChild(qtext);
+
+        const pool = document.createElement('div');
+        pool.className = 'draggables';
+        const used = userAnswers[key] || [];
+        for (let i = 0; i < q.options.length; i++) {
+          const opt = q.options[i];
+          const isUsed = used.indexOf(opt) !== -1;
+          const chip = document.createElement('div');
+          chip.className = 'draggable' + (isUsed ? ' used' : '');
+          chip.draggable = !isUsed;
+          chip.textContent = opt;
+          chip.dataset.value = opt;
+          if (!isUsed) setupDrag(chip);
+          pool.appendChild(chip);
+        }
+        area.appendChild(pool);
+
+        if (checkedState[key]) {
+          const box = document.createElement('div');
+          box.className = 'explanation show correct-ex';
+          let exHtml = '<strong>解析：</strong><ul style="margin:8px 0 0 18px">';
+          for (let i = 0; i < q.explanations.length; i++) {
+            const isOk = userAnswers[key] && userAnswers[key][i] === q.answers[i];
+            exHtml += '<li><span style="color:' + (isOk ? 'var(--correct)' : 'var(--wrong)') + '">' + (isOk ? '✅' : '❌') + '</span> 空' + (i+1) + '：' + q.explanations[i] + '</li>';
+          }
+          exHtml += '</ul>';
+          box.innerHTML = exHtml;
+          expl.appendChild(box);
+          expl.style.display = 'block';
+        }
+      } else if (currentType === 'single') {
+        qtext.textContent = q.question;
+        area.appendChild(qtext);
+        const list = document.createElement('div');
+        list.className = 'options-list';
+        for (let i = 0; i < q.options.length; i++) {
+          const opt = document.createElement('label');
+          opt.className = 'option';
+          const isSel = userAnswers[key] === i;
+          if (checkedState[key]) {
+            if (i === q.correct) opt.classList.add('correct-ans');
+            else if (isSel) opt.classList.add('wrong-ans');
+          }
+          const radio = document.createElement('input');
+          radio.type = 'radio';
+          radio.name = 'singleOpt';
+          radio.checked = isSel;
+          radio.disabled = !!checkedState[key];
+          radio.addEventListener('change', function() {
+            userAnswers[key] = i;
+          });
+          const span = document.createElement('span');
+          span.className = 'label';
+          span.textContent = q.options[i];
+          opt.appendChild(radio);
+          opt.appendChild(span);
+          if (checkedState[key]) {
+            const mark = document.createElement('span');
+            mark.className = 'mark';
+            mark.textContent = i === q.correct ? '✅' : (isSel ? '❌' : '');
+            opt.appendChild(mark);
+          }
+          list.appendChild(opt);
+        }
+        area.appendChild(list);
+        if (checkedState[key]) {
+          const box = document.createElement('div');
+          box.className = 'explanation show ' + (userAnswers[key] === q.correct ? 'correct-ex' : 'wrong-ex');
+          box.innerHTML = '<strong>解析：</strong><br>' + q.explanations[q.correct];
+          expl.appendChild(box);
+          expl.style.display = 'block';
+        }
+      } else if (currentType === 'multi') {
+        qtext.textContent = q.question;
+        area.appendChild(qtext);
+        const list = document.createElement('div');
+        list.className = 'options-list';
+        const selSet = {};
+        const ans = userAnswers[key] || [];
+        for (let i = 0; i < ans.length; i++) selSet[ans[i]] = true;
+        const correctSet = {};
+        for (let i = 0; i < q.correct.length; i++) correctSet[q.correct[i]] = true;
+        for (let i = 0; i < q.options.length; i++) {
+          const opt = document.createElement('label');
+          opt.className = 'option';
+          const isSel = !!selSet[i];
+          if (checkedState[key]) {
+            if (correctSet[i]) opt.classList.add('correct-ans');
+            else if (isSel) opt.classList.add('wrong-ans');
+          }
+          const cb = document.createElement('input');
+          cb.type = 'checkbox';
+          cb.checked = isSel;
+          cb.disabled = !!checkedState[key];
+          cb.addEventListener('change', function() {
+            const a = userAnswers[key] || [];
+            const pos = a.indexOf(i);
+            if (pos >= 0) a.splice(pos, 1);
+            else a.push(i);
+            userAnswers[key] = a;
+          });
+          const span = document.createElement('span');
+          span.className = 'label';
+          span.textContent = q.options[i];
+          opt.appendChild(cb);
+          opt.appendChild(span);
+          if (checkedState[key]) {
+            const mark = document.createElement('span');
+            mark.className = 'mark';
+            mark.textContent = correctSet[i] ? '✅' : (isSel ? '❌' : '');
+            opt.appendChild(mark);
+          }
+          list.appendChild(opt);
+        }
+        area.appendChild(list);
+        if (checkedState[key]) {
+          const box = document.createElement('div');
+          let ok = true;
+          for (let k in correctSet) { if (!selSet[k]) ok = false; }
+          for (let k in selSet) { if (!correctSet[k]) ok = false; }
+          box.className = 'explanation show ' + (ok ? 'correct-ex' : 'wrong-ex');
+          let exHtml = '<strong>解析：</strong><ul style="margin:8px 0 0 18px">';
+          for (let i = 0; i < q.options.length; i++) {
+            const isCorrect = !!correctSet[i];
+            const icon = isCorrect ? '✅' : (selSet[i] ? '❌' : '⬜');
+            exHtml += '<li>' + icon + ' ' + q.explanations[i] + '</li>';
+          }
+          exHtml += '</ul>';
+          box.innerHTML = exHtml;
+          expl.appendChild(box);
+          expl.style.display = 'block';
+        }
+      } else if (currentType === 'truefalse') {
+        qtext.textContent = q.question;
+        area.appendChild(qtext);
+        const list = document.createElement('div');
+        list.className = 'options-list';
+        const opts = [{val: true, label: '是 / True'}, {val: false, label: '否 / False'}];
+        for (let i = 0; i < opts.length; i++) {
+          const opt = document.createElement('label');
+          opt.className = 'option';
+          const v = opts[i].val;
+          const isSel = userAnswers[key] === v;
+          if (checkedState[key]) {
+            if (v === q.correct) opt.classList.add('correct-ans');
+            else if (isSel) opt.classList.add('wrong-ans');
+          }
+          const radio = document.createElement('input');
+          radio.type = 'radio';
+          radio.name = 'tfOpt';
+          radio.checked = isSel;
+          radio.disabled = !!checkedState[key];
+          radio.addEventListener('change', function() {
+            userAnswers[key] = v;
+          });
+          const span = document.createElement('span');
+          span.className = 'label';
+          span.textContent = opts[i].label;
+          opt.appendChild(radio);
+          opt.appendChild(span);
+          if (checkedState[key]) {
+            const mark = document.createElement('span');
+            mark.className = 'mark';
+            mark.textContent = v === q.correct ? '✅' : (isSel ? '❌' : '');
+            opt.appendChild(mark);
+          }
+          list.appendChild(opt);
+        }
+        area.appendChild(list);
+        if (checkedState[key]) {
+          const box = document.createElement('div');
+          const ok = userAnswers[key] === q.correct;
+          box.className = 'explanation show ' + (ok ? 'correct-ex' : 'wrong-ex');
+          box.innerHTML = '<strong>解析：</strong><br>' + (q.correct ? q.explanationTrue : q.explanationFalse);
+          expl.appendChild(box);
+          expl.style.display = 'block';
+        }
+      }
+    }
+
+    // ===== DRAG & DROP =====
+    function setupDrag(el) {
+      el.addEventListener('dragstart', function(e) {
+        e.dataTransfer.setData('text/plain', el.dataset.value);
+        el.classList.add('dragging');
+      });
+      el.addEventListener('dragend', function() {
+        el.classList.remove('dragging');
+      });
+    }
+
+    document.addEventListener('dragover', function(e) {
+      const blank = e.target.closest && e.target.closest('[data-blank]');
+      if (blank) e.preventDefault();
+    });
+
+    document.addEventListener('drop', function(e) {
+      const blank = e.target.closest && e.target.closest('[data-blank]');
+      if (!blank) return;
+      e.preventDefault();
+      const value = e.dataTransfer.getData('text/plain');
+      if (!value) return;
+      const bidx = parseInt(blank.dataset.blank, 10);
+      const key = makeKey(currentType, currentIndex);
+      if (!userAnswers[key]) userAnswers[key] = [];
+      userAnswers[key][bidx] = value;
+      renderQuestion();
+    });
+
+    // Also support click-to-fill on mobile
+    document.addEventListener('click', function(e) {
+      const blank = e.target.closest && e.target.closest('[data-blank]');
+      if (!blank) return;
+      if (checkedState[makeKey(currentType, currentIndex)]) return;
+      const key = makeKey(currentType, currentIndex);
+      const ans = userAnswers[key] || [];
+      const bidx = parseInt(blank.dataset.blank, 10);
+      if (ans[bidx]) {
+        delete ans[bidx];
+        renderQuestion();
+        return;
+      }
+      // Find first unused draggable
+      const chips = document.querySelectorAll('.draggable:not(.used)');
+      if (chips.length > 0) {
+        const val = chips[0].dataset.value;
+        if (!userAnswers[key]) userAnswers[key] = [];
+        userAnswers[key][bidx] = val;
+        renderQuestion();
+      }
+    });
+
+    // ===== CONTROLS =====
+    function switchTab(type) {
+      currentType = type;
+      currentIndex = 0;
+      document.querySelectorAll('.tab').forEach(function(t) {
+        t.classList.toggle('active', t.dataset.type === type);
+      });
+      renderQuestion();
+    }
+
+    document.querySelectorAll('.tab').forEach(function(tab) {
+      tab.addEventListener('click', function() {
+        switchTab(tab.dataset.type);
+      });
+    });
+
+    document.getElementById('btnPrev').addEventListener('click', function() {
+      if (currentIndex > 0) { currentIndex--; renderQuestion(); }
+    });
+
+    document.getElementById('btnNext').addEventListener('click', function() {
+      if (currentIndex + 1 < countQuestions(currentType)) { currentIndex++; renderQuestion(); }
+    });
+
+    document.getElementById('btnCheck').addEventListener('click', function() {
+      const key = makeKey(currentType, currentIndex);
+      if (countQuestions(currentType) === 0) return;
+      checkedState[key] = true;
+      updateScore();
+      renderQuestion();
+    });
+
+    document.getElementById('btnResetCurrent').addEventListener('click', function() {
+      const key = makeKey(currentType, currentIndex);
+      delete userAnswers[key];
+      delete checkedState[key];
+      updateScore();
+      renderQuestion();
+    });
+
+    document.getElementById('btnResetAll').addEventListener('click', function() {
+      if (!confirm('确定要重置所有答题记录吗？')) return;
+      userAnswers = {};
+      checkedState = {};
+      updateScore();
+      renderQuestion();
+    });
+
+    // ===== SHUFFLE =====
+    function shuffleArray(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const tmp = arr[i];
+        arr[i] = arr[j];
+        arr[j] = tmp;
+      }
+    }
+
+    function buildIndexMap(oldLen, shuffledIndices) {
+      const map = {};
+      for (let newPos = 0; newPos < oldLen; newPos++) {
+        map[shuffledIndices[newPos]] = newPos;
+      }
+      return map;
+    }
+
+    document.getElementById('btnShuffle').addEventListener('click', function() {
+      if (!confirm('随机化会清空所有答题记录，确定继续？')) return;
+      userAnswers = {};
+      checkedState = {};
+
+      // Single
+      for (let qi = 0; qi < singleQuestions.length; qi++) {
+        const q = singleQuestions[qi];
+        const order = [];
+        for (let i = 0; i < q.options.length; i++) order.push(i);
+        shuffleArray(order);
+        const newOpts = [];
+        for (let i = 0; i < order.length; i++) newOpts.push(q.options[order[i]]);
+        const newExps = [];
+        for (let i = 0; i < order.length; i++) newExps.push(q.explanations[order[i]]);
+        const idxMap = buildIndexMap(q.options.length, order);
+        q.correct = idxMap[q.correct];
+        q.options = newOpts;
+        q.explanations = newExps;
+      }
+
+      // Multi
+      for (let qi = 0; qi < multiQuestions.length; qi++) {
+        const q = multiQuestions[qi];
+        const order = [];
+        for (let i = 0; i < q.options.length; i++) order.push(i);
+        shuffleArray(order);
+        const newOpts = [];
+        for (let i = 0; i < order.length; i++) newOpts.push(q.options[order[i]]);
+        const newExps = [];
+        for (let i = 0; i < order.length; i++) newExps.push(q.explanations[order[i]]);
+        const idxMap = buildIndexMap(q.options.length, order);
+        const newCorrect = [];
+        for (let i = 0; i < q.correct.length; i++) newCorrect.push(idxMap[q.correct[i]]);
+        q.correct = newCorrect;
+        q.options = newOpts;
+        q.explanations = newExps;
+      }
+
+      updateScore();
+      renderQuestion();
+    });
+
+    // ===== OVERVIEW =====
+    function openOverview() {
+      const grid = document.getElementById('overviewGrid');
+      grid.innerHTML = '';
+      const questions = getQuestions(currentType);
+      for (let i = 0; i < questions.length; i++) {
+        const cell = document.createElement('div');
+        const key = makeKey(currentType, i);
+        let cls = 'grid-item';
+        if (checkedState[key]) {
+          const pts = getUserPoints(questions[i], currentType, i);
+          const maxPts = getQuestionPoints(questions[i], currentType);
+          cls += pts === maxPts ? ' correct' : ' wrong';
+        } else {
+          cls += ' empty';
+        }
+        cell.className = cls;
+        cell.textContent = i + 1;
+        cell.addEventListener('click', function() {
+          currentIndex = i;
+          document.getElementById('overviewOverlay').classList.remove('show');
+          renderQuestion();
+        });
+        grid.appendChild(cell);
+      }
+      document.getElementById('overviewOverlay').classList.add('show');
+    }
+
+    document.getElementById('btnOverview').addEventListener('click', openOverview);
+    document.getElementById('btnCloseOverview').addEventListener('click', function() {
+      document.getElementById('overviewOverlay').classList.remove('show');
+    });
+    document.getElementById('overviewOverlay').addEventListener('click', function(e) {
+      if (e.target === document.getElementById('overviewOverlay')) {
+        document.getElementById('overviewOverlay').classList.remove('show');
+      }
+    });
+
+    // ===== KEYBOARD NAV =====
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'ArrowLeft') document.getElementById('btnPrev').click();
+      if (e.key === 'ArrowRight') document.getElementById('btnNext').click();
+    });
+
+    // ===== INIT =====
+    initBadges();
+    updateScore();
+    renderQuestion();
+  </script>
+</body>
+</html>

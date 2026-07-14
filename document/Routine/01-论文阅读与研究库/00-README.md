@@ -79,12 +79,13 @@ created: YYYY-MM-DD
 
 覆盖 **LLM/Agent in Games**、**Native AI Games**、**Human-AI-Game Interaction** 三大方向。
 
-| 文件 | 内容 | 方向 |
-|------|------|------|
-| [[01-Game-AI-研究库总览]] | 全景文献地图、概念速查、面试谈资 | 总览 |
-| [[01a-LLM-Agent-in-Games]] | Voyager, MineDojo, OSWorld, Harness 执行层 | 执行层 |
-| [[01b-Native-AI-Games]] | Genie, Infinigen, AI Dungeon, 世界模型设计 | 设计层 |
-| [[01c-Human-AI-Game-Interaction]] | Cicero, Generative Agents, Companion AI, 人机交互 | 交互层 |
+| Markdown | QA HTML | 内容 | 方向 |
+|----------|---------|------|------|
+| [[01-Game-AI-研究库总览]] | [🎯 自测](01-Game-AI-研究库总览.html) | 全景文献地图、概念速查、面试谈资 | 总览 |
+| [[01a-LLM-Agent-in-Games]] | [🎯 自测](01a-LLM-Agent-in-Games.html) | Voyager, MineDojo, OSWorld, Harness 执行层 | 执行层 |
+| [[01b-Native-AI-Games]] | [🎯 自测](01b-Native-AI-Games.html) | Genie, Infinigen, AI Dungeon, 世界模型设计 | 设计层 |
+| [[01c-Human-AI-Game-Interaction]] | [🎯 自测](01c-Human-AI-Game-Interaction.html) | Cicero, Generative Agents, Companion AI, 人机交互 | 交互层 |
+| [[Agent-Harness-Game-AI-2026-06-29]] | [🎯 自测](Agent-Harness-Game-AI-2026-06-29.html) | 6-29 预读：Harness Survey + Generative Worldcrafting + Agent World Model | 预读 |
 
 ---
 
@@ -92,10 +93,32 @@ created: YYYY-MM-DD
 
 覆盖 **Harness 系统**、**Memory 记忆**、**Tool Calling 工具调用**、**Sandbox 沙箱安全** 四大基础设施方向。
 
-| 文件 | 内容 | 方向 |
-|------|------|------|
-| [[01d-memory-latest]] | Mem0, Zep/Graphiti, A-MEM, Memory-R1, HiMem, MemP, LEGOMem, MemAgent | 记忆系统 |
-| [[01d-tool_calling-latest]] | When2Tool, Atomix, PASTE/SPORK, ReTool, ToolACE-R, Tool Use Survey | 工具调用 |
-| [[01d-sandbox-latest]] | LLM-in-Sandbox, Crab, SafeArena, ceLLMate, EnvSimBench, Agent-World | 沙箱安全 |
+| Markdown | QA HTML | 内容 | 方向 |
+|----------|---------|------|------|
+| [[01d-memory-latest]] | [🎯 自测](01d-memory-latest.html) | Mem0, Zep/Graphiti, A-MEM, Memory-R1, HiMem, MemP, LEGOMem, MemAgent | 记忆系统 |
+| [[01d-tool_calling-latest]] | [🎯 自测](01d-tool_calling-latest.html) | When2Tool, Atomix, PASTE/SPORK, ReTool, ToolACE-R, Tool Use Survey | 工具调用 |
+| [[01d-sandbox-latest]] | [🎯 自测](01d-sandbox-latest.html) | LLM-in-Sandbox, Crab, SafeArena, ceLLMate, EnvSimBench, Agent-World | 沙箱安全 |
+
+---
+
+## QA 面试卡牌使用说明
+
+每个 `.html` 文件都是**完全自包含**的互动式面试自测页面，可直接在浏览器打开：
+
+| 功能 | 操作 |
+|------|------|
+| **拖拽填空** | 桌面端 drag-and-drop / 移动端点击填充 |
+| **单选/多选/判断** | 点击选项选择 |
+| **检查答案** | 点击「检查答案」查看解析 |
+| **题目总览** | 点击「总览」打开网格面板，点击缩略图跳转 |
+| **随机选项** | 点击「随机选项」打乱单选/多选答案位置 |
+| **键盘导航** | ← → 箭头键切换题目 |
+| **重置** | 重置当前题 / 重置所有记录 |
+
+**建议复习流程**：
+1. 先读 Markdown 笔记（精读）
+2. 打开对应 HTML 做自测（检验记忆）
+3. 错题回到 Markdown 查原文（查漏补缺）
+4. 重复直到全部正确
 
 ---

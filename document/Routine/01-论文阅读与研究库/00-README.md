@@ -49,6 +49,9 @@ created: YYYY-MM-DD
 |------|--------|----------|
 | Game-AI | 1 | 2026-07-02 |
 | Agent Harness | 1 | 2026-06-29 |
+| Sandbox | 6 | 2026-07-15 |
+| Tool Calling | 6 | 2026-07-15 |
+| Memory | 8 | 2026-07-15 |
 | LLM | 0 | - |
 | RL | 0 | - |
 | Multi-Modal | 0 | - |
@@ -70,8 +73,6 @@ created: YYYY-MM-DD
 4. **笔记**（周二晚）：整理到本库
 5. **复习**（周五）：AI 生成测验，你回答
 
-
-
 ---
 
 ## Game AI 研究库（2026-07-02 新建）
@@ -84,5 +85,17 @@ created: YYYY-MM-DD
 | [[01a-LLM-Agent-in-Games]] | Voyager, MineDojo, OSWorld, Harness 执行层 | 执行层 |
 | [[01b-Native-AI-Games]] | Genie, Infinigen, AI Dungeon, 世界模型设计 | 设计层 |
 | [[01c-Human-AI-Game-Interaction]] | Cicero, Generative Agents, Companion AI, 人机交互 | 交互层 |
+
+---
+
+## Agent 基础设施研究库（2026-07-15 新建）
+
+覆盖 **Harness 系统**、**Memory 记忆**、**Tool Calling 工具调用**、**Sandbox 沙箱安全** 四大基础设施方向。
+
+| 文件 | 内容 | 方向 |
+|------|------|------|
+| [[01d-memory-latest]] | Mem0, Zep/Graphiti, A-MEM, Memory-R1, HiMem, MemP, LEGOMem, MemAgent | 记忆系统 |
+| [[01d-tool_calling-latest]] | When2Tool, Atomix, PASTE/SPORK, ReTool, ToolACE-R, Tool Use Survey | 工具调用 |
+| [[01d-sandbox-latest]] | LLM-in-Sandbox, Crab, SafeArena, ceLLMate, EnvSimBench, Agent-World | 沙箱安全 |
 
 ---

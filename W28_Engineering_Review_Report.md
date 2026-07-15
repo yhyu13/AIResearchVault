@@ -186,7 +186,7 @@ W27 复盘（`2026-W27-复盘.md`）明确提出了三条调整原则：
 |----------|-------------|--------|---------|
 | **RAG #01 代码化** | `01-RAG-基础Pipeline实验.md` 含完整 Python 代码块（~230 行），但无独立 `.py` 文件 | ⚠️ 50% | 代码在 Markdown 中，可运行但需手动提取；无 `requirements.txt`；**未满足"可独立运行"标准** |
 | **Agent Harness reward 修复** | `harness.py` 中 `total_reward` 已累加（`total_reward += reward`），但 `environment.py` 中 `reward = 0.0` 仍为硬编码 | ⚠️ 30% | 骨架完整但 Learning 闭环未闭合；W27 发现的 `reward = 0.0` 问题**未修复** |
-| **技术雷达新增 Agent 基础设施** | 2026-07 技术雷达仍聚焦 ReSTIR/GI，**Agent 基础设施（MCP、RAG、Vector DB）完全缺失** | ❌ 0% | 战略偏差未纠正；用户日常工作的 Game AI/Agent 方向与雷达聚焦的图形学方向**严重脱节** |
+| **技术雷达新增 Agent 基础设施** | 2026-07 技术雷达仍聚焦传统算法领域，**Agent 基础设施（MCP、RAG、Vector DB）完全缺失** | ❌ 0% | 战略偏差未纠正；用户日常工作的 Game AI/Agent 方向与雷达聚焦的传统方向**严重脱节** |
 | **AI-Infra 备忘录补充** | 已有 `AI_Inference_Infrastructure_Optimization_Landscape.md` 等 4 份文档 | ✅ 80% | 数据丰富，但无 KV Cache 结构化压缩的新增内容 |
 | **停止新增纯 Markdown 实验** | W28 新增 5 个 Markdown 实验（#02-#05, #10-#11） | ❌ 0% | **完全违背** W27 止损线；新增实验全部"☐ 待开始"状态 |
 
@@ -253,7 +253,7 @@ W27 复盘明确设定了止损线：
 | 问题 | 严重程度 | 说明 |
 |------|---------|------|
 | Agent 基础设施缺失 | 🔴 高 | MCP、LangGraph、Vector DB、vLLM、AutoGen 等未入雷达 |
-| 图形学过度聚焦 | 🔴 高 | ReSTIR 相关条目占 70%+，与用户"Agent 能力建设"目标脱节 |
+| 传统算法过度聚焦 | 🔴 高 | 传统算法相关条目占 70%+，与用户"Agent 能力建设"目标脱节 |
 | 无 Agent 基础设施象限 | 🔴 高 | W27 明确要求的 P0 任务未完成 |
 | 止损线未执行 | 🔴 高 | 无书面说明为何未执行 |
 

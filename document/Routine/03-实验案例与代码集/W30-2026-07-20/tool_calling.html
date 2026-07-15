@@ -1390,11 +1390,11 @@ function checkDrag(qi) {
   pool.querySelectorAll('.drag-item').forEach(el => { el.draggable = false; el.style.cursor = 'default'; });
 
   s.correct = allCorrect;
-  showExplanation('exp' + qi, allCorrect, formatDragExplanation(qi));
+  showExplanation('exp' + qi, allCorrect, formatDragExplanation(qi, allCorrect));
   updateScore();
 }
 
-function formatDragExplanation(qi) {
+function formatDragExplanation(qi, allCorrect) {
   const q = dragQuestions[qi];
   let html = allCorrect ? '<strong>🎉 全部正确！</strong><br>' : '<strong>❌ 有错误，请看解析：</strong><br>';
   q.explanations.forEach((exp, i) => {

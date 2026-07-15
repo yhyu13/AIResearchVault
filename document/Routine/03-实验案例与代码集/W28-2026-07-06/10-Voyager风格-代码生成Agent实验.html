@@ -1,1216 +1,992 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Voyager 风格-代码生成 Agent 实验面试知识自测</title>
-  <style>
-    :root {
-      --bg-body: #FAF8F5;
-      --bg-card: #FFFFFF;
-      --bg-warm: #F5F0E8;
-      --primary: #2D5F5F;
-      --primary-light: #3D7A7A;
-      --accent: #4A7C59;
-      --accent-light: #E8F3E8;
-      --text-main: #2C2C2C;
-      --text-muted: #6B6B6B;
-      --border: #D8D2C8;
-      --shadow: rgba(0,0,0,0.06);
-      --correct: #3A8C5D;
-      --correct-bg: #EAF6EE;
-      --wrong: #C44B4B;
-      --wrong-bg: #FCEAEA;
-      --warning: #C9943A;
-    }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
-      background: var(--bg-body);
-      color: var(--text-main);
-      line-height: 1.6;
-      min-height: 100vh;
-    }
-
-    .container {
-      max-width: 720px;
-      margin: 0 auto;
-      padding: 16px;
-    }
-
-    header {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-
-    header h1 {
-      font-size: 1.6rem;
-      color: var(--primary);
-      margin-bottom: 4px;
-    }
-
-    header .topic {
-      font-size: 0.95rem;
-      color: var(--text-muted);
-    }
-
-    .score-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 12px 16px;
-      margin-bottom: 16px;
-      box-shadow: 0 2px 8px var(--shadow);
-    }
-
-    .score-bar .score {
-      font-size: 1.1rem;
-      font-weight: 600;
-      color: var(--primary);
-    }
-
-    .score-bar .actions {
-      display: flex;
-      gap: 8px;
-    }
-
-    .btn {
-      border: none;
-      border-radius: 8px;
-      padding: 8px 14px;
-      font-size: 0.85rem;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      font-family: inherit;
-    }
-
-    .btn-sm { padding: 6px 10px; font-size: 0.78rem; }
-
-    .btn-primary {
-      background: var(--primary);
-      color: #fff;
-    }
-    .btn-primary:hover { background: var(--primary-light); }
-
-    .btn-secondary {
-      background: var(--bg-warm);
-      color: var(--text-main);
-      border: 1px solid var(--border);
-    }
-    .btn-secondary:hover { background: #EDE8DE; }
-
-    .btn-warning {
-      background: #FFF8E6;
-      color: #8A6D1F;
-      border: 1px solid #F0E0B0;
-    }
-    .btn-warning:hover { background: #FFF0CC; }
-
-    .tabs {
-      display: flex;
-      gap: 6px;
-      margin-bottom: 16px;
-      flex-wrap: wrap;
-    }
-
-    .tab {
-      flex: 1;
-      min-width: 80px;
-      text-align: center;
-      padding: 10px 8px;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      background: var(--bg-card);
-      color: var(--text-muted);
-      cursor: pointer;
-      font-size: 0.88rem;
-      transition: all 0.2s ease;
-    }
-
-    .tab.active {
-      background: var(--primary);
-      color: #fff;
-      border-color: var(--primary);
-      font-weight: 600;
-    }
-
-    .tab .badge {
-      display: inline-block;
-      margin-left: 4px;
-      background: rgba(255,255,255,0.25);
-      padding: 1px 6px;
-      border-radius: 10px;
-      font-size: 0.72rem;
-    }
-
-    .card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 20px;
-      box-shadow: 0 2px 12px var(--shadow);
-      margin-bottom: 16px;
-    }
-
-    .progress-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-    }
-
-    .progress-bar {
-      flex: 1;
-      height: 8px;
-      background: #EAE5DC;
-      border-radius: 4px;
-      overflow: hidden;
-      margin: 0 12px;
-    }
-
-    .progress-bar .fill {
-      height: 100%;
-      background: var(--primary);
-      border-radius: 4px;
-      transition: width 0.3s ease;
-    }
-
-    .question-text {
-      font-size: 1.05rem;
-      font-weight: 500;
-      margin-bottom: 18px;
-      line-height: 1.7;
-    }
-
-    .question-text .blank {
-      display: inline-block;
-      min-width: 80px;
-      padding: 3px 10px;
-      margin: 0 3px;
-      border: 2px dashed var(--border);
-      border-radius: 6px;
-      background: var(--bg-warm);
-      color: var(--text-muted);
-      font-size: 0.9rem;
-      text-align: center;
-      vertical-align: middle;
-      transition: all 0.2s ease;
-    }
-
-    .question-text .blank.filled {
-      border-style: solid;
-      border-color: var(--primary);
-      background: #F0F7F7;
-      color: var(--primary);
-      font-weight: 600;
-    }
-
-    .question-text .blank.correct {
-      border-color: var(--correct);
-      background: var(--correct-bg);
-      color: var(--correct);
-    }
-
-    .question-text .blank.wrong {
-      border-color: var(--wrong);
-      background: var(--wrong-bg);
-      color: var(--wrong);
-    }
-
-    .draggables {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: 18px;
-    }
-
-    .draggable {
-      padding: 8px 14px;
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      cursor: grab;
-      font-size: 0.9rem;
-      user-select: none;
-      transition: all 0.2s ease;
-    }
-
-    .draggable:hover {
-      border-color: var(--primary);
-      box-shadow: 0 2px 6px var(--shadow);
-    }
-
-    .draggable.dragging {
-      opacity: 0.5;
-      cursor: grabbing;
-    }
-
-    .draggable.used {
-      opacity: 0.4;
-      pointer-events: none;
-    }
-
-    .options-list {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      margin-bottom: 18px;
-    }
-
-    .option {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 12px 14px;
-      border: 1.5px solid var(--border);
-      border-radius: 10px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      background: var(--bg-card);
-    }
-
-    .option:hover { border-color: var(--primary-light); background: #F7FBFB; }
-
-    .option input[type="radio"],
-    .option input[type="checkbox"] {
-      width: 18px;
-      height: 18px;
-      accent-color: var(--primary);
-      flex-shrink: 0;
-    }
-
-    .option .label {
-      flex: 1;
-      font-size: 0.95rem;
-    }
-
-    .option.correct-ans {
-      border-color: var(--correct);
-      background: var(--correct-bg);
-    }
-
-    .option.wrong-ans {
-      border-color: var(--wrong);
-      background: var(--wrong-bg);
-    }
-
-    .option .mark {
-      font-size: 1.1rem;
-      font-weight: 700;
-      margin-left: auto;
-    }
-
-    .explanation {
-      display: none;
-      margin-top: 8px;
-      padding: 12px 14px;
-      border-radius: 8px;
-      font-size: 0.9rem;
-      line-height: 1.6;
-    }
-
-    .explanation.show { display: block; }
-
-    .explanation.correct-ex {
-      background: var(--correct-bg);
-      color: #2A6B44;
-      border: 1px solid #B8E0C8;
-    }
-
-    .explanation.wrong-ex {
-      background: var(--wrong-bg);
-      color: #8A3333;
-      border: 1px solid #F0C0C0;
-    }
-
-    .nav-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .nav-bar .btn { flex: 1; }
-
-    .overview-btn {
-      text-align: center;
-      margin-top: 12px;
-    }
-
-    .overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.35);
-      z-index: 100;
-      justify-content: center;
-      align-items: center;
-      padding: 20px;
-    }
-
-    .overlay.show { display: flex; }
-
-    .overlay-content {
-      background: var(--bg-card);
-      border-radius: 14px;
-      padding: 20px;
-      width: 100%;
-      max-width: 480px;
-      max-height: 80vh;
-      overflow-y: auto;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.15);
-    }
-
-    .overlay-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-    }
-
-    .overlay-header h2 {
-      font-size: 1.15rem;
-      color: var(--primary);
-    }
-
-    .grid-overview {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
-      gap: 8px;
-    }
-
-    .grid-item {
-      aspect-ratio: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 8px;
-      border: 1.5px solid var(--border);
-      font-size: 0.9rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.15s ease;
-    }
-
-    .grid-item:hover { transform: scale(1.05); }
-
-    .grid-item.empty { background: var(--bg-body); color: var(--text-muted); }
-    .grid-item.correct { background: var(--correct-bg); color: var(--correct); border-color: #A0D8B3; }
-    .grid-item.wrong { background: var(--wrong-bg); color: var(--wrong); border-color: #E8A0A0; }
-
-    .legend {
-      display: flex;
-      gap: 14px;
-      justify-content: center;
-      margin-top: 14px;
-      font-size: 0.8rem;
-      color: var(--text-muted);
-    }
-
-    .legend span { display: flex; align-items: center; gap: 4px; }
-    .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
-    .dot-empty { background: #D8D2C8; }
-    .dot-correct { background: var(--correct); }
-    .dot-wrong { background: var(--wrong); }
-
-    @media (max-width: 520px) {
-      .container { padding: 10px; }
-      header h1 { font-size: 1.3rem; }
-      .card { padding: 14px; }
-      .tab { font-size: 0.8rem; padding: 8px 4px; }
-      .question-text { font-size: 0.97rem; }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>实验 10：Voyager 风格 — 代码生成 Agent 实验 — 互动知识卡牌</title>
+<style>
+  :root {
+    --bg: #f6f7f9;
+    --card: #ffffff;
+    --primary: #2b6cb0;
+    --primary-light: #ebf4ff;
+    --accent: #38a169;
+    --accent-light: #f0fff4;
+    --danger: #e53e3e;
+    --danger-light: #fff5f5;
+    --warn: #dd6b20;
+    --warn-light: #fffaf0;
+    --text: #1a202c;
+    --text-secondary: #4a5568;
+    --border: #e2e8f0;
+    --shadow: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -1px rgba(0,0,0,0.04);
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg); color: var(--text);
+    min-height: 100vh;
+  }
+  header {
+    background: linear-gradient(135deg, #2b6cb0 0%, #3182ce 100%);
+    color: #fff; padding: 24px 16px; text-align: center;
+    box-shadow: var(--shadow);
+  }
+  header h1 { margin: 0; font-size: 1.45rem; line-height: 1.3; }
+  header p { margin: 8px 0 0; opacity: 0.9; font-size: 0.95rem; }
+  .container { max-width: 900px; margin: 0 auto; padding: 16px; }
+  .toolbar {
+    display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between;
+    background: var(--card); padding: 12px 16px; border-radius: var(--radius); margin: 16px 0;
+    box-shadow: var(--shadow); position: sticky; top: 0; z-index: 50;
+  }
+  .toolbar .left, .toolbar .right { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .btn {
+    border: none; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 0.92rem;
+    transition: transform .05s, opacity .2s; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn:active { transform: scale(0.98); }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-accent { background: var(--accent); color: #fff; }
+  .btn-warn { background: var(--warn); color: #fff; }
+  .btn-danger { background: var(--danger); color: #fff; }
+  .btn-secondary { background: #edf2f7; color: var(--text); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .score-badge {
+    background: var(--primary-light); color: var(--primary); padding: 6px 12px; border-radius: 20px;
+    font-weight: 700; font-size: 0.95rem;
+  }
+  .progress-wrap { flex: 1 1 160px; min-width: 140px; }
+  .progress-track { height: 10px; background: #e2e8f0; border-radius: 5px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--primary); width: 0%; transition: width .3s; }
+  .progress-text { font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px; text-align: center; }
+  .card {
+    background: var(--card); border-radius: var(--radius); padding: 20px; margin: 16px 0;
+    box-shadow: var(--shadow); display: none;
+  }
+  .card.active { display: block; animation: fadeIn .25s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  .q-type { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; margin-bottom: 10px; display: inline-block; padding: 4px 10px; border-radius: 6px; }
+  .q-type.single { background: var(--primary-light); color: var(--primary); }
+  .q-type.multi { background: var(--warn-light); color: var(--warn); }
+  .q-type.tf { background: var(--accent-light); color: var(--accent); }
+  .q-type.drag { background: #e9d8fd; color: #6b46c1; }
+  .q-title { font-size: 1.1rem; font-weight: 600; margin: 0 0 14px; line-height: 1.5; }
+  .options { display: flex; flex-direction: column; gap: 10px; }
+  .option {
+    background: #f7fafc; border: 2px solid var(--border); border-radius: 10px; padding: 12px 14px;
+    cursor: pointer; display: flex; align-items: center; gap: 10px; transition: border-color .15s, background .15s;
+  }
+  .option:hover { border-color: #cbd5e0; background: #edf2f7; }
+  .option.selected { border-color: var(--primary); background: var(--primary-light); }
+  .option.correct { border-color: var(--accent); background: var(--accent-light); }
+  .option.wrong { border-color: var(--danger); background: var(--danger-light); }
+  .option .marker {
+    width: 22px; height: 22px; border-radius: 50%; border: 2px solid #cbd5e0; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; flex-shrink: 0; color: var(--text-secondary);
+  }
+  .option.selected .marker { border-color: var(--primary); color: var(--primary); }
+  .option.correct .marker { border-color: var(--accent); color: var(--accent); }
+  .option.wrong .marker { border-color: var(--danger); color: var(--danger); }
+  .feedback { margin-top: 14px; padding: 14px; border-radius: 10px; font-size: 0.95rem; line-height: 1.6; display: none; }
+  .feedback.show { display: block; }
+  .feedback.correct { background: var(--accent-light); color: #22543d; }
+  .feedback.wrong { background: var(--danger-light); color: #742a2a; }
+  .drag-pool { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+  .drag-item {
+    background: var(--primary-light); color: var(--primary); padding: 8px 14px; border-radius: 8px;
+    font-weight: 600; cursor: grab; border: 2px dashed var(--primary); font-size: 0.92rem; user-select: none;
+  }
+  .drag-item.dragging { opacity: 0.5; }
+  .drop-zone {
+    display: inline-block; min-width: 100px; height: 36px; line-height: 32px; border: 2px dashed #cbd5e0;
+    border-radius: 8px; text-align: center; vertical-align: middle; background: #f7fafc; color: #a0aec0; font-size: 0.9rem; margin: 0 4px; padding: 0 8px;
+  }
+  .drop-zone.hovered { border-color: var(--primary); background: var(--primary-light); }
+  .drop-zone.filled { border-style: solid; border-color: var(--primary); color: var(--primary); background: #ebf4ff; font-weight: 600; }
+  .drop-zone.correct { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+  .drop-zone.wrong { border-color: var(--danger); color: var(--danger); background: var(--danger-light); }
+  .sentence { line-height: 2.2; font-size: 1.05rem; }
+  .result-panel { text-align: center; padding: 30px 20px; }
+  .result-panel h2 { margin: 0 0 10px; font-size: 1.6rem; }
+  .result-panel .big-score { font-size: 3rem; font-weight: 800; color: var(--primary); }
+  .result-panel .summary { margin: 16px 0; color: var(--text-secondary); }
+  .overview-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); gap: 10px; margin-top: 12px; }
+  .thumb {
+    aspect-ratio: 1; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 0.9rem; cursor: pointer; border: 2px solid transparent; transition: transform .1s;
+  }
+  .thumb:hover { transform: scale(1.05); }
+  .thumb.correct { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+  .thumb.wrong { background: var(--danger-light); color: var(--danger); border-color: var(--danger); }
+  .thumb.unanswered { background: #edf2f7; color: #718096; border-color: #e2e8f0; }
+  .filter-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+  .filter-btn { padding: 6px 12px; border-radius: 20px; border: 1px solid var(--border); background: #fff; cursor: pointer; font-size: 0.85rem; }
+  .filter-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+  .nav-btns { display: flex; justify-content: space-between; margin-top: 18px; }
+  .hidden { display: none !important; }
+  @media (max-width: 600px) {
+    .toolbar { flex-direction: column; align-items: stretch; }
+    .toolbar .left, .toolbar .right { justify-content: space-between; }
+    .overview-grid { grid-template-columns: repeat(auto-fill, minmax(48px, 1fr)); }
+  }
+</style>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1>Voyager 风格-代码生成 Agent 实验面试知识自测</h1>
-      <div class="topic">experiment / llm-agent / voyager / code-generation / curriculum / skill-library | 请完成以下题目检验掌握程度</div>
-    </header>
+<header>
+  <h1>实验 10：Voyager 风格 — 代码生成 Agent 实验</h1>
+  <p>互动知识卡牌 · 终身学习 Minecraft Agent 核心架构</p>
+</header>
 
-    <div class="score-bar">
-      <div class="score" id="scoreDisplay">得分: 0 / 0</div>
-      <div class="actions">
-        <button class="btn btn-warning btn-sm" id="btnShuffle">随机选项</button>
-        <button class="btn btn-secondary btn-sm" id="btnResetAll">重置所有</button>
+<div class="container">
+  <div class="toolbar">
+    <div class="left">
+      <span class="score-badge">得分: <span id="scoreDisplay">0</span> / <span id="totalDisplay">0</span></span>
+      <div class="progress-wrap">
+        <div class="progress-track"><div class="progress-fill" id="progressBar"></div></div>
+        <div class="progress-text"><span id="currentNum">0</span> / <span id="totalNum">0</span></div>
       </div>
     </div>
-
-    <div class="tabs" id="tabBar">
-      <div class="tab active" data-type="drag">拖拽填空<span class="badge" id="badgeDrag">0</span></div>
-      <div class="tab" data-type="single">单选题<span class="badge" id="badgeSingle">0</span></div>
-      <div class="tab" data-type="multi">多选题<span class="badge" id="badgeMulti">0</span></div>
-      <div class="tab" data-type="truefalse">判断题<span class="badge" id="badgeTrueFalse">0</span></div>
-    </div>
-
-    <div class="card" id="quizCard">
-      <div class="progress-row">
-        <span id="progressText">1 / 1</span>
-        <div class="progress-bar"><div class="fill" id="progressFill" style="width:0%"></div></div>
-        <button class="btn btn-secondary btn-sm" id="btnOverview">总览</button>
-      </div>
-
-      <div id="questionArea"></div>
-
-      <div id="explanationArea"></div>
-
-      <div style="display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;">
-        <button class="btn btn-primary" id="btnCheck">检查答案</button>
-        <button class="btn btn-secondary" id="btnResetCurrent">重置当前题</button>
-      </div>
-
-      <div class="nav-bar" style="margin-top:16px;">
-        <button class="btn btn-secondary" id="btnPrev">上一题</button>
-        <button class="btn btn-secondary" id="btnNext">下一题</button>
-      </div>
+    <div class="right">
+      <button class="btn btn-secondary" id="btnPrev">⬅ 上一题</button>
+      <button class="btn btn-secondary" id="btnNext">下一题 ➡</button>
+      <button class="btn btn-warn" id="btnShuffle">🎲 重新洗牌选项</button>
+      <button class="btn btn-primary" id="btnCheck">✓ 检查答案</button>
+      <button class="btn btn-secondary" id="btnResetQ">↺ 重置题目</button>
+      <button class="btn btn-danger" id="btnResetAll">清空全部</button>
     </div>
   </div>
 
-  <div class="overlay" id="overviewOverlay">
-    <div class="overlay-content">
-      <div class="overlay-header">
-        <h2>题目总览</h2>
-        <button class="btn btn-secondary btn-sm" id="btnCloseOverview">关闭</button>
-      </div>
-      <div class="grid-overview" id="overviewGrid"></div>
-      <div class="legend">
-        <span><span class="dot dot-empty"></span>未答</span>
-        <span><span class="dot dot-correct"></span>正确</span>
-        <span><span class="dot dot-wrong"></span>错误</span>
+  <div class="card active" id="overviewCard">
+    <h2 style="margin-top:0">📋 总览面板</h2>
+    <div class="filter-bar">
+      <button class="filter-btn active" data-filter="all">全部</button>
+      <button class="filter-btn" data-filter="correct">✅ 正确</button>
+      <button class="filter-btn" data-filter="wrong">❌ 错误</button>
+      <button class="filter-btn" data-filter="unanswered">⭕ 未答</button>
+    </div>
+    <div class="overview-grid" id="overviewGrid"></div>
+    <p style="color:var(--text-secondary);font-size:0.9rem;margin-top:10px">点击缩略图跳转到对应题目。绿色=正确，红色=错误，灰色=未答。</p>
+  </div>
+
+  <div id="questionsContainer"></div>
+
+  <div class="card" id="resultCard">
+    <div class="result-panel">
+      <h2>🎉 答题完成</h2>
+      <div class="big-score" id="finalScore">0</div>
+      <div class="summary" id="finalSummary"></div>
+      <div style="margin-top:20px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+        <button class="btn btn-primary" id="btnReview">🔍 返回查看</button>
+        <button class="btn btn-accent" id="btnContinue">📝 继续做题</button>
       </div>
     </div>
   </div>
+</div>
 
-  <script>
-    // ===== DATA PLACEHOLDERS =====
-    // DRAG_QUESTIONS_PLACEHOLDER_START
-    const dragQuestions = [
-  {
-    "question": "Voyager 的三层核心架构包括：{0}、{1} 和 {2}。",
-    "answers": [
-      "自动课程",
-      "技能库",
-      "迭代提示"
-    ],
-    "options": [
-      "自动课程",
-      "技能库",
-      "迭代提示",
-      "深度学习",
-      "强化学习",
-      "监督学习"
-    ],
-    "explanations": [
-      "根据当前能力动态生成递进任务，使 Agent 持续学习新技能",
-      "存储可执行、可检索、可复用的代码片段，支持未来任务中的技能复用",
-      "从执行错误中自动修复代码，形成代码生成→执行→修复的闭环"
-    ]
-  },
-  {
-    "question": "SkillLibrary.retrieve_skills() 的综合评分由三个维度组成：{0}、{1} 和 {2}。",
-    "answers": [
-      "关卡接近度",
-      "关键词重叠",
-      "成功次数"
-    ],
-    "options": [
-      "关卡接近度",
-      "关键词重叠",
-      "成功次数",
-      "代码长度",
-      "运行时间",
-      "生成时间"
-    ],
-    "explanations": [
-      "level 越接近目标 level 得分越高，公式为 10.0 / (1.0 + abs(skill.level - level))",
-      "task 描述与 skill 描述的关键词交集越大得分越高，每个重叠词加 2.0 分",
-      "skill 被成功复用的次数越多得分越高，每次成功使用加 1.5 分"
-    ]
+<script>
+(function() {
+  "use strict";
+
+  // ===================== DATA =====================
+  const allQuestions = [
+    // ---------- 单选题 (10道) ----------
+    {
+      type: "single",
+      question: "Voyager 的核心创新是将动作空间从低层 API 升级为什么？",
+      options: [
+        "强化学习策略网络",
+        "代码生成（Python/Mineflayer API）",
+        "预定义行为树",
+        "端到端神经网络控制器"
+      ],
+      answer: 1,
+      explanation: "Voyager 的关键洞察是将动作空间设为代码生成，使 Agent 能组合原子技能形成复杂行为。"
+    },
+    {
+      type: "single",
+      question: "Voyager 的三层架构不包括以下哪一项？",
+      options: [
+        "自动课程（Automatic Curriculum）",
+        "技能库（Skill Library）",
+        "迭代提示（Iterative Prompting）",
+        "强化学习训练器（RL Trainer）"
+      ],
+      answer: 3,
+      explanation: "Voyager 的三层架构是自动课程、技能库和迭代提示，不包含强化学习训练器。"
+    },
+    {
+      type: "single",
+      question: "在本实验中，技能库的检索策略主要基于什么？",
+      options: [
+        "Embedding 语义相似度",
+        "关键词重叠 + 难度等级接近度 + 成功次数",
+        "随机采样",
+        "时间最近优先"
+      ],
+      answer: 1,
+      explanation: "本实验使用关键词重叠、level 接近度和 success_count 综合评分，真实 Voyager 使用 embedding 语义检索。"
+    },
+    {
+      type: "single",
+      question: "代码生成作为动作空间的主要优势不包括？",
+      options: [
+        "组合性：代码可以调用其他代码",
+        "可验证性：执行即可验证正确性",
+        "低延迟：每次动作毫秒级完成",
+        "可复用性：成功代码存入技能库"
+      ],
+      answer: 2,
+      explanation: "代码生成的代价之一是延迟高（每次动作需要 LLM 调用，秒级），不是毫秒级。"
+    },
+    {
+      type: "single",
+      question: "自动课程（Automatic Curriculum）的核心作用是什么？",
+      options: [
+        "存储成功代码片段",
+        "根据当前能力动态生成递进任务",
+        "捕获执行错误并修复代码",
+        "执行生成的代码并验证结果"
+      ],
+      answer: 1,
+      explanation: "自动课程根据 Agent 当前能力动态生成由易到难的任务序列，驱动终身学习。"
+    },
+    {
+      type: "single",
+      question: "在 `GridWorld` 中，单元格 '#' 代表什么？",
+      options: [
+        "空地（可通行）",
+        "障碍物（不可通行）",
+        "木头（可收集资源）",
+        "目标点（任务目的地）"
+      ],
+      answer: 1,
+      explanation: "'#' 是障碍物（wall），Agent 不可移动到该位置。"
+    },
+    {
+      type: "single",
+      question: "`SkillLibrary` 与标准 RAG 的核心区别是什么？",
+      options: [
+        "技能库使用向量检索，RAG 使用关键词检索",
+        "技能库存储可执行代码，RAG 存储文本段落",
+        "技能库需要 GPU 加速，RAG 不需要",
+        "技能库只能用于 Minecraft，RAG 通用"
+      ],
+      answer: 1,
+      explanation: "技能库的核心优势是存储可执行代码，可直接运行验证；RAG 存储文本段落，不可直接执行。"
+    },
+    {
+      type: "single",
+      question: "`VoyagerAgent.solve_task()` 中，max_retries 的默认值是多少？",
+      options: [
+        "1 次",
+        "2 次",
+        "3 次",
+        "5 次"
+      ],
+      answer: 2,
+      explanation: "默认 max_retries=3，控制代码生成失败后的最大重试次数。"
+    },
+    {
+      type: "single",
+      question: "以下哪项是 `failure_patterns` 中统计的失败类型？",
+      options: [
+        "LLM API 超时",
+        "out_of_bounds（越界）",
+        "内存不足",
+        "网络连接中断"
+      ],
+      answer: 1,
+      explanation: "代码中分析了 out_of_bounds、wall_blocked、undefined_variable 等失败模式。"
+    },
+    {
+      type: "single",
+      question: "如果要将本实验替换为真实 LLM（如 GPT-4），需要修改哪个类？",
+      options: [
+        "GridWorld",
+        "SkillLibrary",
+        "SimulatedLLM",
+        "VoyagerAgent"
+      ],
+      answer: 2,
+      explanation: "只需重写 SimulatedLLM 的 generate_curriculum、generate_code、repair_code 三个方法为 API 调用即可。"
+    },
+
+    // ---------- 多选题 (6道) ----------
+    {
+      type: "multi",
+      question: "Voyager 选择代码生成作为动作空间的理由包括哪些？",
+      options: [
+        "代码具有组合性，可以调用其他代码",
+        "代码可执行，可直接验证正确性",
+        "代码可复用，成功片段可存入技能库",
+        "代码生成延迟极低，适合实时游戏",
+        "代码抽象层次高，一次调用可生成多步行为",
+        "代码生成不需要 LLM 支持"
+      ],
+      answer: [0, 1, 2, 4],
+      explanation: "代码生成的延迟高（秒级），且必须依赖 LLM。其余四项均为正确理由。"
+    },
+    {
+      type: "multi",
+      question: "`GridWorld` 环境提供的 API 包括哪些？",
+      options: [
+        "move_up() / move_down() / move_left() / move_right()",
+        "collect() — 收集当前位置资源",
+        "is_at(r, c) — 检查是否在某位置",
+        "train() — 启动终身学习循环",
+        "scan() — 扫描周围单元格",
+        "get_pos() — 获取当前位置"
+      ],
+      answer: [0, 1, 2, 4, 5],
+      explanation: "train() 是 VoyagerAgent 的方法，不是 GridWorld 的环境 API。"
+    },
+    {
+      type: "multi",
+      question: "`SkillLibrary.retrieve_skills()` 的评分因素包括？",
+      options: [
+        "技能描述与任务描述的关键词重叠度",
+        "技能等级与任务等级的接近程度",
+        "技能的成功复用次数",
+        "技能代码的行数",
+        "技能创建的时间戳",
+        "技能标签的数量"
+      ],
+      answer: [0, 1, 2],
+      explanation: "评分公式包含：level 接近度（10/(1+abs)）、关键词重叠（overlap*2）、成功次数（success_count*1.5）。"
+    },
+    {
+      type: "multi",
+      question: "本实验的评估指标包括哪些？",
+      options: [
+        "success_rate — 成功任务数 / 总任务数",
+        "avg_attempts — 平均每个任务尝试次数",
+        "max_level_reached — 成功完成的最高难度等级",
+        "skill_library.total_skills — 技能库中存储的成功代码片段数",
+        "GPU 利用率",
+        "failure_patterns — 失败类型统计"
+      ],
+      answer: [0, 1, 2, 3, 5],
+      explanation: "GPU 利用率不是本实验的评估指标，本实验使用纯 Python 模拟，无需 GPU。"
+    },
+    {
+      type: "multi",
+      question: "`SimulatedLLM.repair_code()` 支持哪些错误修复规则？",
+      options: [
+        "out of bounds — 添加边界检查",
+        "blocked by wall — 注入 is_wall 辅助函数",
+        "name 'step_count' is not defined — 替换为 env.step_count",
+        "API 配额不足 — 切换备用 API key",
+        "网络超时 — 增加重试延迟",
+        "默认：添加 try-except 包装器"
+      ],
+      answer: [0, 1, 2, 5],
+      explanation: "repair_code 只包含三种规则修复和默认 try-except 包装，不包含 API 配额或网络超时处理。"
+    },
+    {
+      type: "multi",
+      question: "以下哪些是本实验提到的扩展方向？",
+      options: [
+        "替换 SimulatedLLM 为 GPT-4/Claude API",
+        "技能库使用 sentence-transformer 做语义检索",
+        "维护技能依赖图，检索时自动解析依赖",
+        "引入任务复杂度度量平滑课程难度曲线",
+        "将 GridWorld 改为 TensorFlow 实现",
+        "用 subprocess 或 docker 隔离代码执行"
+      ],
+      answer: [0, 1, 2, 3, 5],
+      explanation: "扩展方向中未提及 TensorFlow 实现，而是提到 3D 扩展（Mineflayer）和沙箱隔离。"
+    },
+
+    // ---------- 判断题 (6道) ----------
+    {
+      type: "tf",
+      question: "Voyager 使用梯度下降（gradient descent）来更新 Agent 的策略。",
+      answer: false,
+      explanation: "错误。Voyager 无需梯度更新，通过自动课程 + 技能库 + 迭代提示实现终身学习。"
+    },
+    {
+      type: "tf",
+      question: "在 `generate_curriculum` 中，每第 3 次调用会重试一个已失败的等级进行巩固。",
+      answer: true,
+      explanation: "正确。代码中 `if failure_history and self.call_count % 3 == 0` 会触发 retry 逻辑。"
+    },
+    {
+      type: "tf",
+      question: "技能库中的代码片段可以直接执行验证，而 RAG 检索到的文本段落不能直接执行。",
+      answer: true,
+      explanation: "正确。这是技能库相比 RAG 的核心优势：可执行、可验证。"
+    },
+    {
+      type: "tf",
+      question: "`GridWorld.reset_random()` 中，grid 大小固定为 10×10，不随 level 变化。",
+      answer: false,
+      explanation: "错误。grid 大小为 `8 + level * 2`，随难度等级动态增加。"
+    },
+    {
+      type: "tf",
+      question: "如果 success_rate 高但 avg_attempts 也高，说明 Agent 在记忆而非学习。",
+      answer: false,
+      explanation: "错误。success_rate 高 + avg_attempts 高说明 Agent 在试错学习，这是正常的终身学习模式，不是记忆。"
+    },
+    {
+      type: "tf",
+      question: "本实验使用 2D 网格而非真实 Minecraft 的主要原因是 2D 网格的计算效率更高。",
+      answer: false,
+      explanation: "错误。主要原因是零外部依赖、确定性、教学价值清晰；计算效率只是附带优势，不是主要原因。"
+    },
+
+    // ---------- 拖拽填空题 (4道) ----------
+    {
+      type: "drag",
+      question: "Voyager 三模块架构中，____ 负责生成递进任务，____ 负责存储成功代码，____ 负责从错误中修复代码。",
+      blanks: ["自动课程", "技能库", "迭代提示"],
+      pool: ["自动课程", "技能库", "迭代提示", "强化学习", "环境模拟器", "奖励函数"],
+      explanation: "三模块各司其职：自动课程生成任务，技能库存储代码，迭代提示修复错误。"
+    },
+    {
+      type: "drag",
+      question: "在 `GridWorld` 中，'W' 代表 ____，'S' 代表 ____，'T' 代表 ____。",
+      blanks: ["木头", "石头", "目标点"],
+      pool: ["木头", "石头", "目标点", "玩家", "障碍物", "空地"],
+      explanation: "W=木头（wood），S=石头（stone），T=目标点（goal），P=玩家（player），#=障碍物（wall），.=空地（empty）。"
+    },
+    {
+      type: "drag",
+      question: "`VoyagerAgent` 的终身学习循环顺序是：生成 ____ → 生成 ____ → 执行代码 → 失败则 ____ → 成功则存入 ____。",
+      blanks: ["任务", "代码", "修复", "技能库"],
+      pool: ["任务", "代码", "修复", "技能库", "奖励", "梯度"],
+      explanation: "循环流程：自动课程生成任务 → LLM 生成代码 → 执行 → 失败则迭代修复 → 成功则存入技能库。"
+    },
+    {
+      type: "drag",
+      question: "`SkillLibrary.retrieve_skills()` 的评分公式中，____ 接近度加分，____ 重叠加分，____ 次数加分。",
+      blanks: ["等级", "关键词", "成功复用"],
+      pool: ["等级", "关键词", "成功复用", "代码行数", "创建时间", "标签数量"],
+      explanation: "评分依据：等级接近度（10/(1+abs)）、关键词重叠（overlap*2）、成功复用次数（success_count*1.5）。"
+    }
+  ];
+
+  // ===================== STATE =====================
+  let currentIndex = 0;
+  let answers = {};       // qIndex -> answer
+  let checked = {};       // qIndex -> boolean
+  let score = 0;
+  let shuffledOptions = {}; // qIndex -> array of original indices
+  let currentFilter = "all";
+
+  const container = document.getElementById("questionsContainer");
+  const overviewCard = document.getElementById("overviewCard");
+  const resultCard = document.getElementById("resultCard");
+  const scoreDisplay = document.getElementById("scoreDisplay");
+  const totalDisplay = document.getElementById("totalDisplay");
+  const progressBar = document.getElementById("progressBar");
+  const currentNum = document.getElementById("currentNum");
+  const totalNum = document.getElementById("totalNum");
+  const overviewGrid = document.getElementById("overviewGrid");
+
+  // ===================== INIT =====================
+  function init() {
+    totalDisplay.textContent = getTotalPoints();
+    totalNum.textContent = allQuestions.length;
+    buildCards();
+    buildOverview();
+    updateProgress();
+    showCard(0);
   }
-];
-    // DRAG_QUESTIONS_PLACEHOLDER_END
 
-    // SINGLE_QUESTIONS_PLACEHOLDER_START
-    const singleQuestions = [
-  {
-    "question": "以下哪项**不是**代码生成作为动作空间的优势？",
-    "options": [
-      "实时响应（毫秒级延迟）",
-      "组合性（函数调用其他函数）",
-      "可验证性（执行代码即可验证正确性）",
-      "可复用性（成功代码存入技能库）"
-    ],
-    "correct": 0,
-    "explanations": [
-      "❌ 代码生成需要调用 LLM，延迟是秒级而非毫秒级，这正是其代价之一",
-      "✅ 组合性：代码可以调用其他代码，形成函数组合与复杂行为",
-      "✅ 可验证性：执行代码即可验证其正确性，无需人工标注",
-      "✅ 可复用性：成功代码片段存入技能库，未来可检索调用"
-    ]
-  },
-  {
-    "question": "SimulatedLLM.generate_curriculum() 在什么条件下会选择 retry（巩固）模式？",
-    "options": [
-      "当 completed_levels 为空列表时",
-      "当 failure_history 非空且 call_count % 3 == 0 时",
-      "当 skill_names 的数量超过 5 个时",
-      "当 max_completed 达到 Level 6 时"
-    ],
-    "correct": 1,
-    "explanations": [
-      "❌ completed_levels 为空时，max_completed=0，会生成 Level 1 的新任务",
-      "✅ 代码逻辑：if failure_history and self.call_count % 3 == 0: task_type = 'retry'，即每第 3 次调用且存在失败历史时会进行巩固训练",
-      "❌ skill_names 的数量不直接影响 retry 的判断逻辑",
-      "❌ level 会被 min(level, 6) 封顶，但这不触发 retry 模式"
-    ]
-  },
-  {
-    "question": "VoyagerAgent.execute_code() 中，生成的代码是如何在沙箱中执行的？",
-    "options": [
-      "使用 subprocess.run() 启动独立进程执行",
-      "通过 eval() 直接求值表达式",
-      "使用 exec(code, namespace) 在受限命名空间中执行",
-      "将代码写入临时 .py 文件后 import 执行"
-    ],
-    "correct": 2,
-    "explanations": [
-      "❌ 未使用 subprocess，而是在当前 Python 进程中通过 exec 执行",
-      "❌ eval() 只能求值单个表达式，无法执行多行语句和函数定义",
-      "✅ 代码明确使用 exec(code, namespace)，namespace 中仅暴露环境 API（move_up, collect, scan 等），形成受限沙箱",
-      "❌ 未使用文件写入+import 的方式，直接在内存中执行"
-    ]
-  },
-  {
-    "question": "SkillLibrary.retrieve_skills() 返回的结果是如何排序的？",
-    "options": [
-      "按代码长度从短到长排序",
-      "按创建时间从新到旧排序",
-      "按技能名称的字母顺序排序",
-      "按综合评分从高到低排序"
-    ],
-    "correct": 3,
-    "explanations": [
-      "❌ 代码长度未参与检索评分计算",
-      "❌ 创建时间未作为评分维度",
-      "❌ 名称字母顺序未使用",
-      "✅ 通过 score() 函数计算每个 skill 的综合得分（关卡接近度 + 关键词重叠 + 成功次数），然后 reverse=True 降序排列，取 top_k"
-    ]
+  function getTotalPoints() {
+    let total = 0;
+    allQuestions.forEach(q => {
+      if (q.type === "single" || q.type === "tf") total += 1;
+      else if (q.type === "multi") total += q.answer.length;
+      else if (q.type === "drag") total += q.blanks.length;
+    });
+    return total;
   }
-];
-    // SINGLE_QUESTIONS_PLACEHOLDER_END
 
-    // MULTI_QUESTIONS_PLACEHOLDER_START
-    const multiQuestions = [
-  {
-    "question": "GridWorld 中，哪些 API 是通过 namespace 直接暴露给生成代码的？（多选）",
-    "options": [
-      "move_up() / move_down() / move_left() / move_right()",
-      "collect()",
-      "get_pos()",
-      "is_at(r, c)",
-      "reset_random()",
-      "check_goal(required_wood, required_stone)"
-    ],
-    "correct": [
-      0,
-      1,
-      2,
-      3
-    ],
-    "explanations": [
-      "✅ move_up/down/left/right 是基础移动 API，直接暴露在 namespace 中",
-      "✅ collect() 用于收集当前位置资源，暴露在 namespace 中",
-      "✅ get_pos() 返回当前玩家坐标，暴露在 namespace 中",
-      "✅ is_at(r, c) 检查是否在某位置，暴露在 namespace 中",
-      "❌ reset_random() 是 GridWorld 内部方法，用于 Agent 重置环境，不暴露给生成代码",
-      "❌ check_goal() 由 VoyagerAgent 在代码执行后调用验证任务完成，不直接暴露给生成代码"
-    ]
-  },
-  {
-    "question": "SimulatedLLM.repair_code() 针对以下哪些错误类型有明确的修复规则？（多选）",
-    "options": [
-      "out of bounds（越界移动）",
-      "blocked by wall（撞墙）",
-      "SyntaxError（语法错误）",
-      "name 'step_count' is not defined",
-      "RecursionError（递归过深）",
-      "IndexError（索引越界）"
-    ],
-    "correct": [
-      0,
-      1,
-      3
-    ],
-    "explanations": [
-      "✅ 越界错误：在 move_down/move_right 前添加边界检查条件",
-      "✅ 撞墙错误：注入 is_wall(r, c) 辅助函数，通过 scan() 检测墙壁位置",
-      "❌ 语法错误未被显式处理，代码中没有针对 SyntaxError 的修复分支",
-      "✅ step_count 未定义：将代码中的 step_count 替换为 env.step_count",
-      "❌ 递归过深未被显式检测和修复",
-      "❌ 索引越界未被显式处理"
-    ]
+  function buildCards() {
+    container.innerHTML = "";
+    allQuestions.forEach((q, idx) => {
+      const card = document.createElement("div");
+      card.className = "card";
+      card.id = "card-" + idx;
+      card.dataset.index = idx;
+
+      const typeLabel = { single: "单选题", multi: "多选题", tf: "判断题", drag: "拖拽填空" }[q.type];
+      const typeClass = { single: "single", multi: "multi", tf: "tf", drag: "drag" }[q.type];
+
+      let html = `<div class="q-type ${typeClass}">${typeLabel}</div>`;
+      html += `<div class="q-title">${idx + 1}. ${escapeHtml(q.question)}</div>`;
+
+      if (q.type === "single" || q.type === "multi") {
+        html += `<div class="options" id="opts-${idx}"></div>`;
+      } else if (q.type === "tf") {
+        html += `<div class="options" id="opts-${idx}">
+          <div class="option" data-val="true" onclick="selectTF(${idx}, true)"><span class="marker">✓</span> 是</div>
+          <div class="option" data-val="false" onclick="selectTF(${idx}, false)"><span class="marker">✗</span> 否</div>
+        </div>`;
+      } else if (q.type === "drag") {
+        html += `<div class="drag-pool" id="pool-${idx}"></div>`;
+        html += `<div class="sentence" id="sentence-${idx}"></div>`;
+      }
+
+      html += `<div class="feedback" id="fb-${idx}"></div>`;
+      card.innerHTML = html;
+      container.appendChild(card);
+
+      if (q.type === "single" || q.type === "multi") {
+        renderOptions(idx);
+      } else if (q.type === "drag") {
+        renderDrag(idx);
+      }
+    });
   }
-];
-    // MULTI_QUESTIONS_PLACEHOLDER_END
 
-    // TRUEFALSE_QUESTIONS_PLACEHOLDER_START
-    const trueFalseQuestions = [
-  {
-    "question": "Voyager 的核心创新是将 Agent 的动作空间从传统的低层 API（移动/点击）升级为代码生成（Python/Mineflayer API）。",
-    "correct": true,
-    "explanationTrue": "正确。Voyager（NeurIPS 2023）将传统 Agent 的离散低层动作升级为生成可执行代码，使 Agent 能组合原子技能形成复杂行为。这是论文的核心创新点。",
-    "explanationFalse": "错误。这恰恰是 Voyager 论文的核心创新——动作空间从 {上移, 下移, 点击} 等低层 API 升级为 def solve_task(): ... 这样的代码生成。"
-  },
-  {
-    "question": "本实验中的 SkillLibrary 使用基于 embedding 向量的语义相似度进行技能检索。",
-    "correct": false,
-    "explanationTrue": "错误。本实验的 SkillLibrary 使用的是简化版规则检索：关键词重叠 + 关卡接近度 + 成功次数加权。代码注释明确标注 '(simplified from embedding-based)'，说明未实现向量语义检索。",
-    "explanationFalse": "正确。代码注释明确说明 'Retrieval is based on keyword/level matching (simplified from embedding-based)'，本实验使用的是关键词匹配+关卡接近度+成功次数的规则评分，而非基于 embedding 的语义相似度。"
-  },
-  {
-    "question": "自动课程生成的任务难度永远不会超过 Level 6。",
-    "correct": true,
-    "explanationTrue": "正确。SimulatedLLM.generate_curriculum() 中明确有 level = min(level, 6) 的封顶逻辑，无论 Agent 能力多高，任务难度上限始终是 Level 6。",
-    "explanationFalse": "错误。代码中有 level = min(level, 6) 的硬限制，确保课程难度不会超过 Level 6。"
-  },
-  {
-    "question": "在 solve_task() 的迭代提示循环中，Agent 对同一任务最多只会尝试执行代码 3 次。",
-    "correct": true,
-    "explanationTrue": "正确。VoyagerAgent.__init__ 中设置 max_retries=3，solve_task() 中使用 for attempt in range(1, self.max_retries + 1)，即 attempt 取 1, 2, 3，最多尝试 3 次（含初始尝试）。",
-    "explanationFalse": "错误。max_retries=3，循环 range(1, 4) 正好产生 3 次 attempt。若 3 次均失败则放弃该任务并将错误记录到 failure_history。"
+  function renderOptions(idx) {
+    const q = allQuestions[idx];
+    const optsDiv = document.getElementById("opts-" + idx);
+    if (!optsDiv) return;
+    let order = shuffledOptions[idx];
+    if (!order) {
+      order = q.options.map((_, i) => i);
+      if (q.type === "single") {
+        // Fisher-Yates shuffle
+        for (let i = order.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [order[i], order[j]] = [order[j], order[i]];
+        }
+      }
+      shuffledOptions[idx] = order;
+    }
+    optsDiv.innerHTML = "";
+    order.forEach((origIdx, pos) => {
+      const opt = document.createElement("div");
+      opt.className = "option";
+      opt.dataset.orig = origIdx;
+      opt.dataset.pos = pos;
+      const marker = q.type === "single" ? String.fromCharCode(65 + pos) : "☐";
+      opt.innerHTML = `<span class="marker">${marker}</span> ${escapeHtml(q.options[origIdx])}`;
+      opt.onclick = () => selectOption(idx, pos, origIdx);
+      optsDiv.appendChild(opt);
+    });
   }
-];
-    // TRUEFALSE_QUESTIONS_PLACEHOLDER_END
 
-    // ===== STATE =====
-    let currentType = 'drag';
-    let currentIndex = 0;
-    let userAnswers = {};
-    let checkedState = {};
+  function renderDrag(idx) {
+    const q = allQuestions[idx];
+    const pool = document.getElementById("pool-" + idx);
+    const sentence = document.getElementById("sentence-" + idx);
+    if (!pool || !sentence) return;
 
-    // ===== HELPERS =====
-    function makeKey(type, index) {
-      return type + ':' + index;
+    // Shuffle pool items
+    const poolItems = [...q.pool];
+    for (let i = poolItems.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [poolItems[i], poolItems[j]] = [poolItems[j], poolItems[i]];
     }
 
-    function getQuestions(type) {
-      if (type === 'drag') return dragQuestions;
-      if (type === 'single') return singleQuestions;
-      if (type === 'multi') return multiQuestions;
-      return trueFalseQuestions;
-    }
+    pool.innerHTML = "";
+    poolItems.forEach((text, i) => {
+      const item = document.createElement("div");
+      item.className = "drag-item";
+      item.draggable = true;
+      item.textContent = text;
+      item.dataset.text = text;
+      item.dataset.poolIdx = i;
+      item.addEventListener("dragstart", e => {
+        item.classList.add("dragging");
+        e.dataTransfer.setData("text/plain", text);
+        e.dataTransfer.setData("sourceIdx", idx);
+      });
+      item.addEventListener("dragend", () => item.classList.remove("dragging"));
+      pool.appendChild(item);
+    });
 
-    function getBadgeId(type) {
-      if (type === 'drag') return 'badgeDrag';
-      if (type === 'single') return 'badgeSingle';
-      if (type === 'multi') return 'badgeMulti';
-      return 'badgeTrueFalse';
+    // Build sentence with drop zones
+    let parts = q.question.split("____");
+    let html = parts[0];
+    for (let i = 1; i < parts.length; i++) {
+      html += `<span class="drop-zone" data-blank="${i-1}" data-qidx="${idx}" ondragover="allowDrop(event)" ondrop="dropFill(event)" ondragleave="leaveDrop(event)">拖拽填入</span>` + parts[i];
     }
+    sentence.innerHTML = html;
 
-    function countQuestions(type) {
-      return getQuestions(type).length;
-    }
-
-    function allTypes() {
-      return ['drag', 'single', 'multi', 'truefalse'];
-    }
-
-    // ===== RENDER =====
-    function initBadges() {
-      allTypes().forEach(function(t) {
-        document.getElementById(getBadgeId(t)).textContent = countQuestions(t);
+    // Restore filled answers
+    const ans = answers[idx];
+    if (ans && Array.isArray(ans)) {
+      const zones = sentence.querySelectorAll(".drop-zone");
+      zones.forEach((z, i) => {
+        if (ans[i] !== undefined && ans[i] !== null) {
+          z.textContent = ans[i];
+          z.classList.add("filled");
+        }
       });
     }
+  }
 
-    function updateScore() {
-      let total = 0, scored = 0;
-      allTypes().forEach(function(type) {
-        const list = getQuestions(type);
-        for (let i = 0; i < list.length; i++) {
-          const q = list[i];
-          const key = makeKey(type, i);
-          if (checkedState[key]) {
-            total += getQuestionPoints(q, type);
-            scored += getUserPoints(q, type, i);
-          }
-        }
-      });
-      document.getElementById('scoreDisplay').textContent = '得分: ' + scored + ' / ' + total;
-    }
+  // ===================== INTERACTION =====================
+  function selectOption(idx, pos, origIdx) {
+    if (checked[idx]) return;
+    const q = allQuestions[idx];
+    const optsDiv = document.getElementById("opts-" + idx);
+    const opts = optsDiv.querySelectorAll(".option");
 
-    function getQuestionPoints(q, type) {
-      if (type === 'drag') return q.answers.length;
-      if (type === 'multi') return q.correct.length;
-      return 1;
-    }
-
-    function getUserPoints(q, type, idx) {
-      const key = makeKey(type, idx);
-      const ans = userAnswers[key];
-      if (!ans) return 0;
-      if (type === 'drag') {
-        let pts = 0;
-        for (let i = 0; i < q.answers.length; i++) {
-          if (ans[i] === q.answers[i]) pts++;
-        }
-        return pts;
+    if (q.type === "single") {
+      opts.forEach(o => o.classList.remove("selected"));
+      opts[pos].classList.add("selected");
+      answers[idx] = origIdx;
+    } else {
+      opts[pos].classList.toggle("selected");
+      let sel = answers[idx] || [];
+      if (sel.includes(origIdx)) {
+        sel = sel.filter(x => x !== origIdx);
+      } else {
+        sel.push(origIdx);
       }
-      if (type === 'single') {
-        return ans === q.correct ? 1 : 0;
-      }
-      if (type === 'multi') {
-        let pts = 0;
-        const correctSet = {};
-        for (let i = 0; i < q.correct.length; i++) correctSet[q.correct[i]] = true;
-        const userSet = {};
-        for (let i = 0; i < ans.length; i++) userSet[ans[i]] = true;
-        for (let k in correctSet) {
-          if (userSet[k]) pts++;
-        }
-        return pts;
-      }
-      return ans === q.correct ? 1 : 0;
+      answers[idx] = sel.sort((a, b) => a - b);
+    }
+    updateOverviewThumb(idx);
+  }
+
+  function selectTF(idx, val) {
+    if (checked[idx]) return;
+    const optsDiv = document.getElementById("opts-" + idx);
+    const opts = optsDiv.querySelectorAll(".option");
+    opts.forEach(o => o.classList.remove("selected"));
+    opts[val === true ? 0 : 1].classList.add("selected");
+    answers[idx] = val;
+    updateOverviewThumb(idx);
+  }
+
+  window.allowDrop = function(ev) { ev.preventDefault(); };
+  window.leaveDrop = function(ev) { ev.target.classList.remove("hovered"); };
+  window.dropFill = function(ev) {
+    ev.preventDefault();
+    const zone = ev.target;
+    zone.classList.remove("hovered");
+    const text = ev.dataTransfer.getData("text/plain");
+    const qidx = parseInt(zone.dataset.qidx);
+    const blankIdx = parseInt(zone.dataset.blank);
+    if (checked[qidx]) return;
+    zone.textContent = text;
+    zone.classList.add("filled");
+    let ans = answers[qidx] || [];
+    ans[blankIdx] = text;
+    answers[qidx] = ans;
+    updateOverviewThumb(qidx);
+  };
+
+  // ===================== CHECK =====================
+  function checkCurrent() {
+    const idx = currentIndex;
+    const q = allQuestions[idx];
+    if (checked[idx]) return;
+    checked[idx] = true;
+
+    let isCorrect = false;
+    let fb = "";
+    let points = 0;
+
+    if (q.type === "single") {
+      const ans = answers[idx];
+      isCorrect = ans === q.answer;
+      points = isCorrect ? 1 : 0;
+      fb = isCorrect ? `✅ 正确！${q.explanation}` : `❌ 错误。正确答案是 ${String.fromCharCode(65 + getShuffledPos(idx, q.answer))}。${q.explanation}`;
+      highlightSingle(idx, q.answer, ans);
+    } else if (q.type === "multi") {
+      const ans = answers[idx] || [];
+      const correct = q.answer;
+      const isAllCorrect = correct.every(c => ans.includes(c)) && ans.every(a => correct.includes(a));
+      isCorrect = isAllCorrect;
+      points = isAllCorrect ? correct.length : 0;
+      fb = isAllCorrect ? `✅ 完全正确！${q.explanation}` : `❌ 错误。正确选项为 ${correct.map(c => String.fromCharCode(65 + getShuffledPos(idx, c))).join(", ")}。${q.explanation}`;
+      highlightMulti(idx, correct, ans);
+    } else if (q.type === "tf") {
+      const ans = answers[idx];
+      isCorrect = ans === q.answer;
+      points = isCorrect ? 1 : 0;
+      fb = isCorrect ? `✅ 正确！${q.explanation}` : `❌ 错误。正确答案是 ${q.answer ? "是" : "否"}。${q.explanation}`;
+      highlightTF(idx, q.answer, ans);
+    } else if (q.type === "drag") {
+      const ans = answers[idx] || [];
+      const correct = q.blanks;
+      let allCorrect = true;
+      let correctCount = 0;
+      ans.forEach((a, i) => { if (a === correct[i]) correctCount++; });
+      allCorrect = correctCount === correct.length;
+      isCorrect = allCorrect;
+      points = correctCount;
+      fb = allCorrect ? `✅ 完全正确！${q.explanation}` : `❌ 部分错误。正确填入：${correct.join("、")}。${q.explanation}`;
+      highlightDrag(idx, correct, ans);
     }
 
-    function updateProgress() {
-      const total = countQuestions(currentType);
-      const text = total > 0 ? (currentIndex + 1) + ' / ' + total : '0 / 0';
-      document.getElementById('progressText').textContent = text;
-      const pct = total > 0 ? ((currentIndex + 1) / total * 100) : 0;
-      document.getElementById('progressFill').style.width = pct + '%';
-    }
+    score += points;
+    scoreDisplay.textContent = score;
+    showFeedback(idx, fb, isCorrect);
+    updateOverviewThumb(idx);
+    updateProgress();
+  }
 
-    function renderQuestion() {
-      const area = document.getElementById('questionArea');
-      const expl = document.getElementById('explanationArea');
-      area.innerHTML = '';
-      expl.innerHTML = '';
-      expl.style.display = 'none';
+  function getShuffledPos(qIdx, origIdx) {
+    const order = shuffledOptions[qIdx];
+    return order.indexOf(origIdx);
+  }
+
+  function highlightSingle(idx, correctOrig, selectedOrig) {
+    const opts = document.querySelectorAll(`#opts-${idx} .option`);
+    opts.forEach(o => {
+      const orig = parseInt(o.dataset.orig);
+      o.classList.remove("selected");
+      if (orig === correctOrig) o.classList.add("correct");
+      else if (orig === selectedOrig && selectedOrig !== correctOrig) o.classList.add("wrong");
+    });
+  }
+
+  function highlightMulti(idx, correctOrigs, selectedOrigs) {
+    const opts = document.querySelectorAll(`#opts-${idx} .option`);
+    opts.forEach(o => {
+      const orig = parseInt(o.dataset.orig);
+      o.classList.remove("selected");
+      if (correctOrigs.includes(orig)) o.classList.add("correct");
+      else if (selectedOrigs && selectedOrigs.includes(orig)) o.classList.add("wrong");
+    });
+  }
+
+  function highlightTF(idx, correctVal, selectedVal) {
+    const opts = document.querySelectorAll(`#opts-${idx} .option`);
+    opts.forEach(o => {
+      const val = o.dataset.val === "true";
+      o.classList.remove("selected");
+      if (val === correctVal) o.classList.add("correct");
+      else if (val === selectedVal && selectedVal !== correctVal) o.classList.add("wrong");
+    });
+  }
+
+  function highlightDrag(idx, correct, ans) {
+    const zones = document.querySelectorAll(`#sentence-${idx} .drop-zone`);
+    zones.forEach((z, i) => {
+      z.classList.remove("filled");
+      if (ans[i] === correct[i]) z.classList.add("correct");
+      else z.classList.add("wrong");
+    });
+  }
+
+  function showFeedback(idx, text, isCorrect) {
+    const fb = document.getElementById("fb-" + idx);
+    fb.textContent = text;
+    fb.className = "feedback show " + (isCorrect ? "correct" : "wrong");
+  }
+
+  // ===================== NAVIGATION =====================
+  function showCard(idx) {
+    if (idx < 0) idx = 0;
+    if (idx >= allQuestions.length) {
+      // Show result
+      document.querySelectorAll(".card").forEach(c => c.classList.remove("active"));
+      resultCard.classList.add("active");
+      showResult();
+      currentIndex = allQuestions.length;
       updateProgress();
+      return;
+    }
+    currentIndex = idx;
+    document.querySelectorAll(".card").forEach(c => c.classList.remove("active"));
+    const target = document.getElementById("card-" + idx);
+    if (target) target.classList.add("active");
+    else if (idx === -1) overviewCard.classList.add("active");
+    updateProgress();
+  }
 
-      const questions = getQuestions(currentType);
-      if (questions.length === 0) {
-        area.innerHTML = '<p style="text-align:center;color:var(--text-muted)">该题型暂无题目</p>';
-        return;
+  function showResult() {
+    const total = getTotalPoints();
+    const pct = total > 0 ? Math.round((score / total) * 100) : 0;
+    document.getElementById("finalScore").textContent = score + " / " + total;
+    let msg = "";
+    if (pct >= 90) msg = "🌟  excellent！你对 Voyager 架构理解非常深入！";
+    else if (pct >= 70) msg = "👍 良好！大部分核心概念已掌握，继续加油！";
+    else if (pct >= 50) msg = "📚 及格。建议重新阅读实验文档，重点关注错题。";
+    else msg = "💪 需要加强。建议逐题对照文档复习后再试。";
+    document.getElementById("finalSummary").textContent = msg + " 正确率：" + pct + "%";
+  }
+
+  function updateProgress() {
+    let displayIdx = currentIndex;
+    if (displayIdx >= allQuestions.length) displayIdx = allQuestions.length;
+    if (displayIdx < 0) displayIdx = 0;
+    currentNum.textContent = displayIdx;
+    const pct = allQuestions.length > 0 ? (displayIdx / allQuestions.length) * 100 : 0;
+    progressBar.style.width = pct + "%";
+  }
+
+  // ===================== OVERVIEW =====================
+  function buildOverview() {
+    overviewGrid.innerHTML = "";
+    allQuestions.forEach((q, idx) => {
+      const thumb = document.createElement("div");
+      thumb.className = "thumb unanswered";
+      thumb.textContent = idx + 1;
+      thumb.dataset.index = idx;
+      thumb.onclick = () => { showCard(idx); };
+      overviewGrid.appendChild(thumb);
+    });
+  }
+
+  function updateOverviewThumb(idx) {
+    const thumbs = overviewGrid.querySelectorAll(".thumb");
+    const thumb = thumbs[idx];
+    if (!thumb) return;
+    thumb.classList.remove("unanswered", "correct", "wrong");
+    if (checked[idx]) {
+      const isCorrect = isQuestionCorrect(idx);
+      thumb.classList.add(isCorrect ? "correct" : "wrong");
+    } else if (hasAnswer(idx)) {
+      thumb.classList.add("unanswered"); // answered but not checked yet
+      thumb.style.borderColor = "var(--primary)";
+    } else {
+      thumb.classList.add("unanswered");
+      thumb.style.borderColor = "";
+    }
+    applyFilter();
+  }
+
+  function hasAnswer(idx) {
+    const ans = answers[idx];
+    if (ans === undefined || ans === null) return false;
+    if (Array.isArray(ans) && ans.length === 0) return false;
+    if (allQuestions[idx].type === "drag" && Array.isArray(ans)) {
+      return ans.some(a => a !== undefined && a !== null);
+    }
+    return true;
+  }
+
+  function isQuestionCorrect(idx) {
+    const q = allQuestions[idx];
+    const ans = answers[idx];
+    if (q.type === "single") return ans === q.answer;
+    if (q.type === "tf") return ans === q.answer;
+    if (q.type === "multi") {
+      const correct = q.answer;
+      return correct.every(c => (ans || []).includes(c)) && (ans || []).every(a => correct.includes(a));
+    }
+    if (q.type === "drag") {
+      return (ans || []).every((a, i) => a === q.blanks[i]);
+    }
+    return false;
+  }
+
+  function applyFilter() {
+    const thumbs = overviewGrid.querySelectorAll(".thumb");
+    thumbs.forEach(thumb => {
+      const idx = parseInt(thumb.dataset.index);
+      let show = true;
+      if (currentFilter === "correct") show = checked[idx] && isQuestionCorrect(idx);
+      else if (currentFilter === "wrong") show = checked[idx] && !isQuestionCorrect(idx);
+      else if (currentFilter === "unanswered") show = !checked[idx];
+      thumb.style.display = show ? "flex" : "none";
+    });
+  }
+
+  document.querySelectorAll(".filter-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      currentFilter = btn.dataset.filter;
+      applyFilter();
+    });
+  });
+
+  // ===================== RESET =====================
+  function resetQuestion(idx) {
+    checked[idx] = false;
+    delete answers[idx];
+    const q = allQuestions[idx];
+    if (q.type === "single" || q.type === "multi") {
+      renderOptions(idx);
+    } else if (q.type === "tf") {
+      const opts = document.querySelectorAll(`#opts-${idx} .option`);
+      opts.forEach(o => o.classList.remove("selected", "correct", "wrong"));
+    } else if (q.type === "drag") {
+      renderDrag(idx);
+    }
+    const fb = document.getElementById("fb-" + idx);
+    if (fb) { fb.className = "feedback"; fb.textContent = ""; }
+    updateOverviewThumb(idx);
+    recalcScore();
+  }
+
+  function resetAll() {
+    answers = {};
+    checked = {};
+    score = 0;
+    shuffledOptions = {};
+    scoreDisplay.textContent = "0";
+    buildCards();
+    buildOverview();
+    applyFilter();
+    showCard(0);
+  }
+
+  function recalcScore() {
+    let newScore = 0;
+    allQuestions.forEach((q, idx) => {
+      if (!checked[idx]) return;
+      if (q.type === "single" || q.type === "tf") {
+        if (isQuestionCorrect(idx)) newScore += 1;
+      } else if (q.type === "multi") {
+        if (isQuestionCorrect(idx)) newScore += q.answer.length;
+      } else if (q.type === "drag") {
+        const ans = answers[idx] || [];
+        ans.forEach((a, i) => { if (a === q.blanks[i]) newScore += 1; });
       }
-      const q = questions[currentIndex];
-      const key = makeKey(currentType, currentIndex);
+    });
+    score = newScore;
+    scoreDisplay.textContent = score;
+  }
 
-      const qtext = document.createElement('div');
-      qtext.className = 'question-text';
-
-      if (currentType === 'drag') {
-        let html = q.question;
-        for (let i = 0; i < q.answers.length; i++) {
-          const filled = userAnswers[key] && userAnswers[key][i] ? userAnswers[key][i] : '';
-          let cls = 'blank';
-          if (checkedState[key]) {
-            if (filled === q.answers[i]) cls += ' correct';
-            else cls += ' wrong';
-          } else if (filled) {
-            cls += ' filled';
-          }
-          html = html.replace('{\/' + i + '}', '<span class="' + cls + '" data-blank="' + i + '">' + (filled || '____') + '</span>');
-          html = html.replace('{\*' + i + '}', '<span class="' + cls + '" data-blank="' + i + '">' + (filled || '____') + '</span>');
-          html = html.replace('{' + i + '}', '<span class="' + cls + '" data-blank="' + i + '">' + (filled || '____') + '</span>');
-        }
-        qtext.innerHTML = html;
-        area.appendChild(qtext);
-
-        const pool = document.createElement('div');
-        pool.className = 'draggables';
-        const used = userAnswers[key] || [];
-        for (let i = 0; i < q.options.length; i++) {
-          const opt = q.options[i];
-          const isUsed = used.indexOf(opt) !== -1;
-          const chip = document.createElement('div');
-          chip.className = 'draggable' + (isUsed ? ' used' : '');
-          chip.draggable = !isUsed;
-          chip.textContent = opt;
-          chip.dataset.value = opt;
-          if (!isUsed) setupDrag(chip);
-          pool.appendChild(chip);
-        }
-        area.appendChild(pool);
-
-        if (checkedState[key]) {
-          const box = document.createElement('div');
-          box.className = 'explanation show correct-ex';
-          let exHtml = '<strong>解析：</strong><ul style="margin:8px 0 0 18px">';
-          for (let i = 0; i < q.explanations.length; i++) {
-            const isOk = userAnswers[key] && userAnswers[key][i] === q.answers[i];
-            exHtml += '<li><span style="color:' + (isOk ? 'var(--correct)' : 'var(--wrong)') + '">' + (isOk ? '✅' : '❌') + '</span> 空' + (i+1) + '：' + q.explanations[i] + '</li>';
-          }
-          exHtml += '</ul>';
-          box.innerHTML = exHtml;
-          expl.appendChild(box);
-          expl.style.display = 'block';
-        }
-      } else if (currentType === 'single') {
-        qtext.textContent = q.question;
-        area.appendChild(qtext);
-        const list = document.createElement('div');
-        list.className = 'options-list';
-        for (let i = 0; i < q.options.length; i++) {
-          const opt = document.createElement('label');
-          opt.className = 'option';
-          const isSel = userAnswers[key] === i;
-          if (checkedState[key]) {
-            if (i === q.correct) opt.classList.add('correct-ans');
-            else if (isSel) opt.classList.add('wrong-ans');
-          }
-          const radio = document.createElement('input');
-          radio.type = 'radio';
-          radio.name = 'singleOpt';
-          radio.checked = isSel;
-          radio.disabled = !!checkedState[key];
-          radio.addEventListener('change', function() {
-            userAnswers[key] = i;
-          });
-          const span = document.createElement('span');
-          span.className = 'label';
-          span.textContent = q.options[i];
-          opt.appendChild(radio);
-          opt.appendChild(span);
-          if (checkedState[key]) {
-            const mark = document.createElement('span');
-            mark.className = 'mark';
-            mark.textContent = i === q.correct ? '✅' : (isSel ? '❌' : '');
-            opt.appendChild(mark);
-          }
-          list.appendChild(opt);
-        }
-        area.appendChild(list);
-        if (checkedState[key]) {
-          const box = document.createElement('div');
-          box.className = 'explanation show ' + (userAnswers[key] === q.correct ? 'correct-ex' : 'wrong-ex');
-          box.innerHTML = '<strong>解析：</strong><br>' + q.explanations[q.correct];
-          expl.appendChild(box);
-          expl.style.display = 'block';
-        }
-      } else if (currentType === 'multi') {
-        qtext.textContent = q.question;
-        area.appendChild(qtext);
-        const list = document.createElement('div');
-        list.className = 'options-list';
-        const selSet = {};
-        const ans = userAnswers[key] || [];
-        for (let i = 0; i < ans.length; i++) selSet[ans[i]] = true;
-        const correctSet = {};
-        for (let i = 0; i < q.correct.length; i++) correctSet[q.correct[i]] = true;
-        for (let i = 0; i < q.options.length; i++) {
-          const opt = document.createElement('label');
-          opt.className = 'option';
-          const isSel = !!selSet[i];
-          if (checkedState[key]) {
-            if (correctSet[i]) opt.classList.add('correct-ans');
-            else if (isSel) opt.classList.add('wrong-ans');
-          }
-          const cb = document.createElement('input');
-          cb.type = 'checkbox';
-          cb.checked = isSel;
-          cb.disabled = !!checkedState[key];
-          cb.addEventListener('change', function() {
-            const a = userAnswers[key] || [];
-            const pos = a.indexOf(i);
-            if (pos >= 0) a.splice(pos, 1);
-            else a.push(i);
-            userAnswers[key] = a;
-          });
-          const span = document.createElement('span');
-          span.className = 'label';
-          span.textContent = q.options[i];
-          opt.appendChild(cb);
-          opt.appendChild(span);
-          if (checkedState[key]) {
-            const mark = document.createElement('span');
-            mark.className = 'mark';
-            mark.textContent = correctSet[i] ? '✅' : (isSel ? '❌' : '');
-            opt.appendChild(mark);
-          }
-          list.appendChild(opt);
-        }
-        area.appendChild(list);
-        if (checkedState[key]) {
-          const box = document.createElement('div');
-          let ok = true;
-          for (let k in correctSet) { if (!selSet[k]) ok = false; }
-          for (let k in selSet) { if (!correctSet[k]) ok = false; }
-          box.className = 'explanation show ' + (ok ? 'correct-ex' : 'wrong-ex');
-          let exHtml = '<strong>解析：</strong><ul style="margin:8px 0 0 18px">';
-          for (let i = 0; i < q.options.length; i++) {
-            const isCorrect = !!correctSet[i];
-            const icon = isCorrect ? '✅' : (selSet[i] ? '❌' : '⬜');
-            exHtml += '<li>' + icon + ' ' + q.explanations[i] + '</li>';
-          }
-          exHtml += '</ul>';
-          box.innerHTML = exHtml;
-          expl.appendChild(box);
-          expl.style.display = 'block';
-        }
-      } else if (currentType === 'truefalse') {
-        qtext.textContent = q.question;
-        area.appendChild(qtext);
-        const list = document.createElement('div');
-        list.className = 'options-list';
-        const opts = [{val: true, label: '是 / True'}, {val: false, label: '否 / False'}];
-        for (let i = 0; i < opts.length; i++) {
-          const opt = document.createElement('label');
-          opt.className = 'option';
-          const v = opts[i].val;
-          const isSel = userAnswers[key] === v;
-          if (checkedState[key]) {
-            if (v === q.correct) opt.classList.add('correct-ans');
-            else if (isSel) opt.classList.add('wrong-ans');
-          }
-          const radio = document.createElement('input');
-          radio.type = 'radio';
-          radio.name = 'tfOpt';
-          radio.checked = isSel;
-          radio.disabled = !!checkedState[key];
-          radio.addEventListener('change', function() {
-            userAnswers[key] = v;
-          });
-          const span = document.createElement('span');
-          span.className = 'label';
-          span.textContent = opts[i].label;
-          opt.appendChild(radio);
-          opt.appendChild(span);
-          if (checkedState[key]) {
-            const mark = document.createElement('span');
-            mark.className = 'mark';
-            mark.textContent = v === q.correct ? '✅' : (isSel ? '❌' : '');
-            opt.appendChild(mark);
-          }
-          list.appendChild(opt);
-        }
-        area.appendChild(list);
-        if (checkedState[key]) {
-          const box = document.createElement('div');
-          const ok = userAnswers[key] === q.correct;
-          box.className = 'explanation show ' + (ok ? 'correct-ex' : 'wrong-ex');
-          box.innerHTML = '<strong>解析：</strong><br>' + (q.correct ? q.explanationTrue : q.explanationFalse);
-          expl.appendChild(box);
-          expl.style.display = 'block';
-        }
+  // ===================== SHUFFLE =====================
+  function shuffleCurrentOptions() {
+    const idx = currentIndex;
+    if (idx < 0 || idx >= allQuestions.length) return;
+    const q = allQuestions[idx];
+    if (q.type !== "single" && q.type !== "multi") return;
+    if (checked[idx]) return; // cannot shuffle after check
+    delete shuffledOptions[idx];
+    renderOptions(idx);
+    // Restore selections based on original index
+    const ans = answers[idx];
+    if (ans !== undefined && ans !== null) {
+      const opts = document.querySelectorAll(`#opts-${idx} .option`);
+      if (q.type === "single") {
+        opts.forEach(o => { if (parseInt(o.dataset.orig) === ans) o.classList.add("selected"); });
+      } else {
+        opts.forEach(o => { if ((ans || []).includes(parseInt(o.dataset.orig))) o.classList.add("selected"); });
       }
     }
+  }
 
-    // ===== DRAG & DROP =====
-    function setupDrag(el) {
-      el.addEventListener('dragstart', function(e) {
-        e.dataTransfer.setData('text/plain', el.dataset.value);
-        el.classList.add('dragging');
-      });
-      el.addEventListener('dragend', function() {
-        el.classList.remove('dragging');
-      });
-    }
+  // ===================== UTILS =====================
+  function escapeHtml(str) {
+    return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
 
-    document.addEventListener('dragover', function(e) {
-      const blank = e.target.closest && e.target.closest('[data-blank]');
-      if (blank) e.preventDefault();
-    });
+  // ===================== EVENTS =====================
+  document.getElementById("btnPrev").addEventListener("click", () => showCard(currentIndex - 1));
+  document.getElementById("btnNext").addEventListener("click", () => showCard(currentIndex + 1));
+  document.getElementById("btnCheck").addEventListener("click", checkCurrent);
+  document.getElementById("btnResetQ").addEventListener("click", () => resetQuestion(currentIndex));
+  document.getElementById("btnResetAll").addEventListener("click", resetAll);
+  document.getElementById("btnShuffle").addEventListener("click", shuffleCurrentOptions);
+  document.getElementById("btnReview").addEventListener("click", () => { showCard(0); });
+  document.getElementById("btnContinue").addEventListener("click", () => { showCard(0); });
 
-    document.addEventListener('drop', function(e) {
-      const blank = e.target.closest && e.target.closest('[data-blank]');
-      if (!blank) return;
-      e.preventDefault();
-      const value = e.dataTransfer.getData('text/plain');
-      if (!value) return;
-      const bidx = parseInt(blank.dataset.blank, 10);
-      const key = makeKey(currentType, currentIndex);
-      if (!userAnswers[key]) userAnswers[key] = [];
-      userAnswers[key][bidx] = value;
-      renderQuestion();
-    });
+  // Keyboard shortcuts
+  document.addEventListener("keydown", e => {
+    if (e.key === "ArrowLeft") showCard(currentIndex - 1);
+    if (e.key === "ArrowRight") showCard(currentIndex + 1);
+  });
 
-    // Also support click-to-fill on mobile
-    document.addEventListener('click', function(e) {
-      const blank = e.target.closest && e.target.closest('[data-blank]');
-      if (!blank) return;
-      if (checkedState[makeKey(currentType, currentIndex)]) return;
-      const key = makeKey(currentType, currentIndex);
-      const ans = userAnswers[key] || [];
-      const bidx = parseInt(blank.dataset.blank, 10);
-      if (ans[bidx]) {
-        delete ans[bidx];
-        renderQuestion();
-        return;
-      }
-      // Find first unused draggable
-      const chips = document.querySelectorAll('.draggable:not(.used)');
-      if (chips.length > 0) {
-        const val = chips[0].dataset.value;
-        if (!userAnswers[key]) userAnswers[key] = [];
-        userAnswers[key][bidx] = val;
-        renderQuestion();
-      }
-    });
-
-    // ===== CONTROLS =====
-    function switchTab(type) {
-      currentType = type;
-      currentIndex = 0;
-      document.querySelectorAll('.tab').forEach(function(t) {
-        t.classList.toggle('active', t.dataset.type === type);
-      });
-      renderQuestion();
-    }
-
-    document.querySelectorAll('.tab').forEach(function(tab) {
-      tab.addEventListener('click', function() {
-        switchTab(tab.dataset.type);
-      });
-    });
-
-    document.getElementById('btnPrev').addEventListener('click', function() {
-      if (currentIndex > 0) { currentIndex--; renderQuestion(); }
-    });
-
-    document.getElementById('btnNext').addEventListener('click', function() {
-      if (currentIndex + 1 < countQuestions(currentType)) { currentIndex++; renderQuestion(); }
-    });
-
-    document.getElementById('btnCheck').addEventListener('click', function() {
-      const key = makeKey(currentType, currentIndex);
-      if (countQuestions(currentType) === 0) return;
-      checkedState[key] = true;
-      updateScore();
-      renderQuestion();
-    });
-
-    document.getElementById('btnResetCurrent').addEventListener('click', function() {
-      const key = makeKey(currentType, currentIndex);
-      delete userAnswers[key];
-      delete checkedState[key];
-      updateScore();
-      renderQuestion();
-    });
-
-    document.getElementById('btnResetAll').addEventListener('click', function() {
-      if (!confirm('确定要重置所有答题记录吗？')) return;
-      userAnswers = {};
-      checkedState = {};
-      updateScore();
-      renderQuestion();
-    });
-
-    // ===== SHUFFLE =====
-    function shuffleArray(arr) {
-      for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        const tmp = arr[i];
-        arr[i] = arr[j];
-        arr[j] = tmp;
-      }
-    }
-
-    function buildIndexMap(oldLen, shuffledIndices) {
-      const map = {};
-      for (let newPos = 0; newPos < oldLen; newPos++) {
-        map[shuffledIndices[newPos]] = newPos;
-      }
-      return map;
-    }
-
-    document.getElementById('btnShuffle').addEventListener('click', function() {
-      if (!confirm('随机化会清空所有答题记录，确定继续？')) return;
-      userAnswers = {};
-      checkedState = {};
-
-      // Single
-      for (let qi = 0; qi < singleQuestions.length; qi++) {
-        const q = singleQuestions[qi];
-        const order = [];
-        for (let i = 0; i < q.options.length; i++) order.push(i);
-        shuffleArray(order);
-        const newOpts = [];
-        for (let i = 0; i < order.length; i++) newOpts.push(q.options[order[i]]);
-        const newExps = [];
-        for (let i = 0; i < order.length; i++) newExps.push(q.explanations[order[i]]);
-        const idxMap = buildIndexMap(q.options.length, order);
-        q.correct = idxMap[q.correct];
-        q.options = newOpts;
-        q.explanations = newExps;
-      }
-
-      // Multi
-      for (let qi = 0; qi < multiQuestions.length; qi++) {
-        const q = multiQuestions[qi];
-        const order = [];
-        for (let i = 0; i < q.options.length; i++) order.push(i);
-        shuffleArray(order);
-        const newOpts = [];
-        for (let i = 0; i < order.length; i++) newOpts.push(q.options[order[i]]);
-        const newExps = [];
-        for (let i = 0; i < order.length; i++) newExps.push(q.explanations[order[i]]);
-        const idxMap = buildIndexMap(q.options.length, order);
-        const newCorrect = [];
-        for (let i = 0; i < q.correct.length; i++) newCorrect.push(idxMap[q.correct[i]]);
-        q.correct = newCorrect;
-        q.options = newOpts;
-        q.explanations = newExps;
-      }
-
-      updateScore();
-      renderQuestion();
-    });
-
-    // ===== OVERVIEW =====
-    function openOverview() {
-      const grid = document.getElementById('overviewGrid');
-      grid.innerHTML = '';
-      const questions = getQuestions(currentType);
-      for (let i = 0; i < questions.length; i++) {
-        const cell = document.createElement('div');
-        const key = makeKey(currentType, i);
-        let cls = 'grid-item';
-        if (checkedState[key]) {
-          const pts = getUserPoints(questions[i], currentType, i);
-          const maxPts = getQuestionPoints(questions[i], currentType);
-          cls += pts === maxPts ? ' correct' : ' wrong';
-        } else {
-          cls += ' empty';
-        }
-        cell.className = cls;
-        cell.textContent = i + 1;
-        cell.addEventListener('click', function() {
-          currentIndex = i;
-          document.getElementById('overviewOverlay').classList.remove('show');
-          renderQuestion();
-        });
-        grid.appendChild(cell);
-      }
-      document.getElementById('overviewOverlay').classList.add('show');
-    }
-
-    document.getElementById('btnOverview').addEventListener('click', openOverview);
-    document.getElementById('btnCloseOverview').addEventListener('click', function() {
-      document.getElementById('overviewOverlay').classList.remove('show');
-    });
-    document.getElementById('overviewOverlay').addEventListener('click', function(e) {
-      if (e.target === document.getElementById('overviewOverlay')) {
-        document.getElementById('overviewOverlay').classList.remove('show');
-      }
-    });
-
-    // ===== KEYBOARD NAV =====
-    document.addEventListener('keydown', function(e) {
-      if (e.key === 'ArrowLeft') document.getElementById('btnPrev').click();
-      if (e.key === 'ArrowRight') document.getElementById('btnNext').click();
-    });
-
-    // ===== INIT =====
-    initBadges();
-    updateScore();
-    renderQuestion();
-  </script>
+  init();
+})();
+</script>
 </body>
 </html>

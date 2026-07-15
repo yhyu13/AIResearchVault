@@ -1,1256 +1,956 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>实验 09 — Agent Harness 六组件架构验证实验面试知识自测</title>
-  <style>
-    :root {
-      --bg-body: #FAF8F5;
-      --bg-card: #FFFFFF;
-      --bg-warm: #F5F0E8;
-      --primary: #2D5F5F;
-      --primary-light: #3D7A7A;
-      --accent: #4A7C59;
-      --accent-light: #E8F3E8;
-      --text-main: #2C2C2C;
-      --text-muted: #6B6B6B;
-      --border: #D8D2C8;
-      --shadow: rgba(0,0,0,0.06);
-      --correct: #3A8C5D;
-      --correct-bg: #EAF6EE;
-      --wrong: #C44B4B;
-      --wrong-bg: #FCEAEA;
-      --warning: #C9943A;
-    }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
-      background: var(--bg-body);
-      color: var(--text-main);
-      line-height: 1.6;
-      min-height: 100vh;
-    }
-
-    .container {
-      max-width: 720px;
-      margin: 0 auto;
-      padding: 16px;
-    }
-
-    header {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-
-    header h1 {
-      font-size: 1.6rem;
-      color: var(--primary);
-      margin-bottom: 4px;
-    }
-
-    header .topic {
-      font-size: 0.95rem;
-      color: var(--text-muted);
-    }
-
-    .score-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 12px 16px;
-      margin-bottom: 16px;
-      box-shadow: 0 2px 8px var(--shadow);
-    }
-
-    .score-bar .score {
-      font-size: 1.1rem;
-      font-weight: 600;
-      color: var(--primary);
-    }
-
-    .score-bar .actions {
-      display: flex;
-      gap: 8px;
-    }
-
-    .btn {
-      border: none;
-      border-radius: 8px;
-      padding: 8px 14px;
-      font-size: 0.85rem;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      font-family: inherit;
-    }
-
-    .btn-sm { padding: 6px 10px; font-size: 0.78rem; }
-
-    .btn-primary {
-      background: var(--primary);
-      color: #fff;
-    }
-    .btn-primary:hover { background: var(--primary-light); }
-
-    .btn-secondary {
-      background: var(--bg-warm);
-      color: var(--text-main);
-      border: 1px solid var(--border);
-    }
-    .btn-secondary:hover { background: #EDE8DE; }
-
-    .btn-warning {
-      background: #FFF8E6;
-      color: #8A6D1F;
-      border: 1px solid #F0E0B0;
-    }
-    .btn-warning:hover { background: #FFF0CC; }
-
-    .tabs {
-      display: flex;
-      gap: 6px;
-      margin-bottom: 16px;
-      flex-wrap: wrap;
-    }
-
-    .tab {
-      flex: 1;
-      min-width: 80px;
-      text-align: center;
-      padding: 10px 8px;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      background: var(--bg-card);
-      color: var(--text-muted);
-      cursor: pointer;
-      font-size: 0.88rem;
-      transition: all 0.2s ease;
-    }
-
-    .tab.active {
-      background: var(--primary);
-      color: #fff;
-      border-color: var(--primary);
-      font-weight: 600;
-    }
-
-    .tab .badge {
-      display: inline-block;
-      margin-left: 4px;
-      background: rgba(255,255,255,0.25);
-      padding: 1px 6px;
-      border-radius: 10px;
-      font-size: 0.72rem;
-    }
-
-    .card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 20px;
-      box-shadow: 0 2px 12px var(--shadow);
-      margin-bottom: 16px;
-    }
-
-    .progress-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-    }
-
-    .progress-bar {
-      flex: 1;
-      height: 8px;
-      background: #EAE5DC;
-      border-radius: 4px;
-      overflow: hidden;
-      margin: 0 12px;
-    }
-
-    .progress-bar .fill {
-      height: 100%;
-      background: var(--primary);
-      border-radius: 4px;
-      transition: width 0.3s ease;
-    }
-
-    .question-text {
-      font-size: 1.05rem;
-      font-weight: 500;
-      margin-bottom: 18px;
-      line-height: 1.7;
-    }
-
-    .question-text .blank {
-      display: inline-block;
-      min-width: 80px;
-      padding: 3px 10px;
-      margin: 0 3px;
-      border: 2px dashed var(--border);
-      border-radius: 6px;
-      background: var(--bg-warm);
-      color: var(--text-muted);
-      font-size: 0.9rem;
-      text-align: center;
-      vertical-align: middle;
-      transition: all 0.2s ease;
-    }
-
-    .question-text .blank.filled {
-      border-style: solid;
-      border-color: var(--primary);
-      background: #F0F7F7;
-      color: var(--primary);
-      font-weight: 600;
-    }
-
-    .question-text .blank.correct {
-      border-color: var(--correct);
-      background: var(--correct-bg);
-      color: var(--correct);
-    }
-
-    .question-text .blank.wrong {
-      border-color: var(--wrong);
-      background: var(--wrong-bg);
-      color: var(--wrong);
-    }
-
-    .draggables {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: 18px;
-    }
-
-    .draggable {
-      padding: 8px 14px;
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      cursor: grab;
-      font-size: 0.9rem;
-      user-select: none;
-      transition: all 0.2s ease;
-    }
-
-    .draggable:hover {
-      border-color: var(--primary);
-      box-shadow: 0 2px 6px var(--shadow);
-    }
-
-    .draggable.dragging {
-      opacity: 0.5;
-      cursor: grabbing;
-    }
-
-    .draggable.used {
-      opacity: 0.4;
-      pointer-events: none;
-    }
-
-    .options-list {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      margin-bottom: 18px;
-    }
-
-    .option {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 12px 14px;
-      border: 1.5px solid var(--border);
-      border-radius: 10px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      background: var(--bg-card);
-    }
-
-    .option:hover { border-color: var(--primary-light); background: #F7FBFB; }
-
-    .option input[type="radio"],
-    .option input[type="checkbox"] {
-      width: 18px;
-      height: 18px;
-      accent-color: var(--primary);
-      flex-shrink: 0;
-    }
-
-    .option .label {
-      flex: 1;
-      font-size: 0.95rem;
-    }
-
-    .option.correct-ans {
-      border-color: var(--correct);
-      background: var(--correct-bg);
-    }
-
-    .option.wrong-ans {
-      border-color: var(--wrong);
-      background: var(--wrong-bg);
-    }
-
-    .option .mark {
-      font-size: 1.1rem;
-      font-weight: 700;
-      margin-left: auto;
-    }
-
-    .explanation {
-      display: none;
-      margin-top: 8px;
-      padding: 12px 14px;
-      border-radius: 8px;
-      font-size: 0.9rem;
-      line-height: 1.6;
-    }
-
-    .explanation.show { display: block; }
-
-    .explanation.correct-ex {
-      background: var(--correct-bg);
-      color: #2A6B44;
-      border: 1px solid #B8E0C8;
-    }
-
-    .explanation.wrong-ex {
-      background: var(--wrong-bg);
-      color: #8A3333;
-      border: 1px solid #F0C0C0;
-    }
-
-    .nav-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .nav-bar .btn { flex: 1; }
-
-    .overview-btn {
-      text-align: center;
-      margin-top: 12px;
-    }
-
-    .overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.35);
-      z-index: 100;
-      justify-content: center;
-      align-items: center;
-      padding: 20px;
-    }
-
-    .overlay.show { display: flex; }
-
-    .overlay-content {
-      background: var(--bg-card);
-      border-radius: 14px;
-      padding: 20px;
-      width: 100%;
-      max-width: 480px;
-      max-height: 80vh;
-      overflow-y: auto;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.15);
-    }
-
-    .overlay-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-    }
-
-    .overlay-header h2 {
-      font-size: 1.15rem;
-      color: var(--primary);
-    }
-
-    .grid-overview {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
-      gap: 8px;
-    }
-
-    .grid-item {
-      aspect-ratio: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 8px;
-      border: 1.5px solid var(--border);
-      font-size: 0.9rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.15s ease;
-    }
-
-    .grid-item:hover { transform: scale(1.05); }
-
-    .grid-item.empty { background: var(--bg-body); color: var(--text-muted); }
-    .grid-item.correct { background: var(--correct-bg); color: var(--correct); border-color: #A0D8B3; }
-    .grid-item.wrong { background: var(--wrong-bg); color: var(--wrong); border-color: #E8A0A0; }
-
-    .legend {
-      display: flex;
-      gap: 14px;
-      justify-content: center;
-      margin-top: 14px;
-      font-size: 0.8rem;
-      color: var(--text-muted);
-    }
-
-    .legend span { display: flex; align-items: center; gap: 4px; }
-    .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
-    .dot-empty { background: #D8D2C8; }
-    .dot-correct { background: var(--correct); }
-    .dot-wrong { background: var(--wrong); }
-
-    @media (max-width: 520px) {
-      .container { padding: 10px; }
-      header h1 { font-size: 1.3rem; }
-      .card { padding: 14px; }
-      .tab { font-size: 0.8rem; padding: 8px 4px; }
-      .question-text { font-size: 0.97rem; }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>实验 09 — Agent Harness 六组件架构验证实验</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --card-bg: #1e293b;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --accent: #38bdf8;
+    --accent2: #a78bfa;
+    --success: #4ade80;
+    --danger: #f87171;
+    --warn: #fbbf24;
+    --border: #334155;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg); color: var(--text); min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center; padding: 16px;
+  }
+  header { text-align: center; margin-bottom: 12px; }
+  header h1 { margin: 0; font-size: 1.4rem; color: var(--accent); }
+  header p { margin: 4px 0 0; color: var(--muted); font-size: 0.9rem; }
+  .toolbar {
+    display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 12px;
+  }
+  button {
+    background: var(--card-bg); color: var(--text); border: 1px solid var(--border);
+    padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 0.9rem; transition: .2s;
+  }
+  button:hover { border-color: var(--accent); }
+  .primary { background: linear-gradient(135deg, var(--accent), var(--accent2)); border: none; color: #fff; }
+  .danger { border-color: var(--danger); color: var(--danger); }
+  .score-bar {
+    display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 12px;
+  }
+  .score-pill {
+    background: var(--card-bg); border: 1px solid var(--border); padding: 6px 12px; border-radius: 999px;
+    font-size: 0.85rem; color: var(--muted);
+  }
+  .score-pill b { color: var(--accent); }
+  .progress-text { text-align: center; color: var(--muted); font-size: 0.85rem; margin-bottom: 8px; }
+  .progress-bar {
+    width: 100%; max-width: 720px; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; margin-bottom: 16px;
+  }
+  .progress-bar > div { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); width: 0%; transition: width .3s; }
+  .container { width: 100%; max-width: 720px; }
+  .card {
+    background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 12px;
+  }
+  .card h3 { margin: 0 0 10px; font-size: 1.05rem; color: var(--accent); }
+  .question { font-size: 1rem; margin-bottom: 10px; line-height: 1.5; }
+  .options label {
+    display: block; background: #0f172a; border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; cursor: pointer; transition: .2s;
+  }
+  .options label:hover { border-color: var(--accent); }
+  .options input { display: none; }
+  .options label.selected { border-color: var(--accent); background: #1e293b; }
+  .options label.correct { border-color: var(--success); background: rgba(74,222,128,.08); }
+  .options label.wrong { border-color: var(--danger); background: rgba(248,113,113,.08); }
+  .options label.disabled { pointer-events: none; opacity: .7; }
+  .drop-zone {
+    display: inline-block; min-width: 80px; height: 32px; line-height: 30px; border: 2px dashed var(--border); border-radius: 6px; text-align: center; vertical-align: middle; margin: 0 4px; padding: 0 8px; background: #0f172a; color: var(--muted); font-size: 0.9rem;
+  }
+  .drop-zone.filled { border-style: solid; border-color: var(--accent); color: var(--text); }
+  .drop-zone.correct { border-color: var(--success); color: var(--success); }
+  .drop-zone.wrong { border-color: var(--danger); color: var(--danger); }
+  .draggable {
+    display: inline-block; background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; margin: 4px; cursor: grab; font-size: 0.9rem; user-select: none;
+  }
+  .draggable.dragging { opacity: .5; }
+  .tf-options { display: flex; gap: 12px; }
+  .tf-options label { flex: 1; text-align: center; }
+  .nav { display: flex; justify-content: space-between; margin-top: 12px; }
+  .explanation {
+    margin-top: 10px; padding: 10px; background: #0f172a; border-radius: 8px; border-left: 3px solid var(--accent); font-size: 0.9rem; line-height: 1.5; color: var(--muted);
+  }
+  .explanation b { color: var(--text); }
+  .hidden { display: none !important; }
+  .dashboard-overlay {
+    position: fixed; inset: 0; background: rgba(15,23,42,.95); z-index: 50; display: none; flex-direction: column; padding: 16px; overflow-y: auto;
+  }
+  .dashboard-overlay.open { display: flex; }
+  .dashboard-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; }
+  .dashboard-item {
+    background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px; text-align: center; cursor: pointer; font-size: 0.85rem;
+  }
+  .dashboard-item:hover { border-color: var(--accent); }
+  .dashboard-item.correct { border-color: var(--success); }
+  .dashboard-item.wrong { border-color: var(--danger); }
+  .dashboard-item.unanswered { border-color: var(--warn); opacity: .8; }
+  .result-page { text-align: center; padding: 24px; }
+  .result-page h2 { color: var(--accent); }
+  .big-score { font-size: 3rem; font-weight: 700; color: var(--accent); margin: 12px 0; }
+  .filters { display: flex; gap: 8px; justify-content: center; margin-bottom: 12px; flex-wrap: wrap; }
+  .filters button { font-size: 0.8rem; padding: 6px 10px; }
+  .type-tag { display: inline-block; font-size: 0.75rem; padding: 2px 8px; border-radius: 999px; background: var(--border); color: var(--muted); margin-bottom: 6px; }
+  @media (max-width: 480px) { header h1 { font-size: 1.1rem; } .big-score { font-size: 2.2rem; } }
+</style>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1>实验 09 — Agent Harness 六组件架构验证实验面试知识自测</h1>
-      <div class="topic">experiment · game-ai · agent-harness · harness-architecture  请完成以下题目检验掌握程度</div>
-    </header>
+<header>
+  <h1>实验 09 — Agent Harness 六组件架构验证实验</h1>
+  <p>自测卡牌 · 拖拽填空 / 单选 / 多选 / 判断</p>
+</header>
 
-    <div class="score-bar">
-      <div class="score" id="scoreDisplay">得分: 0 / 0</div>
-      <div class="actions">
-        <button class="btn btn-warning btn-sm" id="btnShuffle">随机选项</button>
-        <button class="btn btn-secondary btn-sm" id="btnResetAll">重置所有</button>
-      </div>
-    </div>
+<div class="toolbar">
+  <button class="primary" onclick="openDashboard()">📊 题目总览</button>
+  <button onclick="shuffleAll()">🎲 重新洗牌选项</button>
+  <button class="danger" onclick="resetAll()">🔄 重置所有分数</button>
+</div>
 
-    <div class="tabs" id="tabBar">
-      <div class="tab active" data-type="drag">拖拽填空<span class="badge" id="badgeDrag">0</span></div>
-      <div class="tab" data-type="single">单选题<span class="badge" id="badgeSingle">0</span></div>
-      <div class="tab" data-type="multi">多选题<span class="badge" id="badgeMulti">0</span></div>
-      <div class="tab" data-type="truefalse">判断题<span class="badge" id="badgeTrueFalse">0</span></div>
-    </div>
+<div class="score-bar">
+  <div class="score-pill">得分: <b id="score">0</b> / <b id="maxScore">0</b></div>
+  <div class="score-pill">正确: <b id="correctCount">0</b></div>
+  <div class="score-pill">错误: <b id="wrongCount">0</b></div>
+  <div class="score-pill">未答: <b id="unansweredCount">0</b></div>
+</div>
 
-    <div class="card" id="quizCard">
-      <div class="progress-row">
-        <span id="progressText">1 / 1</span>
-        <div class="progress-bar"><div class="fill" id="progressFill" style="width:0%"></div></div>
-        <button class="btn btn-secondary btn-sm" id="btnOverview">总览</button>
-      </div>
+<div class="progress-text"><span id="currentNum">1</span> / <span id="totalNum">0</span></div>
+<div class="progress-bar"><div id="progressFill"></div></div>
 
-      <div id="questionArea"></div>
+<div class="container" id="quizContainer"></div>
 
-      <div id="explanationArea"></div>
+<div class="nav">
+  <button onclick="prevQuestion()">⬅ 上一题</button>
+  <button class="primary" onclick="checkCurrent()">检查答案</button>
+  <button onclick="resetCurrent()">重置题目</button>
+  <button onclick="nextQuestion()">下一题 ➡</button>
+</div>
 
-      <div style="display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;">
-        <button class="btn btn-primary" id="btnCheck">检查答案</button>
-        <button class="btn btn-secondary" id="btnResetCurrent">重置当前题</button>
-      </div>
+<div class="dashboard-overlay" id="dashboard">
+  <div class="dashboard-header">
+    <h2>📊 题目总览</h2>
+    <button onclick="closeDashboard()">✕ 关闭</button>
+  </div>
+  <div class="filters">
+    <button onclick="filterDashboard('all')">全部</button>
+    <button onclick="filterDashboard('correct')">✅ 正确</button>
+    <button onclick="filterDashboard('wrong')">❌ 错误</button>
+    <button onclick="filterDashboard('unanswered')">⏳ 未答</button>
+  </div>
+  <div class="dashboard-grid" id="dashboardGrid"></div>
+</div>
 
-      <div class="nav-bar" style="margin-top:16px;">
-        <button class="btn btn-secondary" id="btnPrev">上一题</button>
-        <button class="btn btn-secondary" id="btnNext">下一题</button>
-      </div>
+<div class="container hidden" id="resultPage">
+  <div class="card result-page">
+    <h2>🎉 测试完成</h2>
+    <div class="big-score" id="finalScore">0</div>
+    <p id="finalText"></p>
+    <div style="margin-top:16px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+      <button class="primary" onclick="openDashboard()">📊 返回查看</button>
+      <button onclick="continueQuiz()">📝 继续做题</button>
     </div>
   </div>
+</div>
 
-  <div class="overlay" id="overviewOverlay">
-    <div class="overlay-content">
-      <div class="overlay-header">
-        <h2>题目总览</h2>
-        <button class="btn btn-secondary btn-sm" id="btnCloseOverview">关闭</button>
-      </div>
-      <div class="grid-overview" id="overviewGrid"></div>
-      <div class="legend">
-        <span><span class="dot dot-empty"></span>未答</span>
-        <span><span class="dot dot-correct"></span>正确</span>
-        <span><span class="dot dot-wrong"></span>错误</span>
-      </div>
-    </div>
-  </div>
+<script>
+/* ===================== 题目数据 ===================== */
 
-  <script>
-    // ===== DATA PLACEHOLDERS =====
-    // DRAG_QUESTIONS_PLACEHOLDER_START
-    const dragQuestions = [
-    {
-        "question": "Agent Harness 六组件架构记为 H=({0}, {1}, {2}, {3}, {4}, {5})，分别代表 Environment、Tool Calling/Agent、Context、Safety、Logging、Verifier。",
-        "answers": [
-            "E",
-            "T",
-            "C",
-            "S",
-            "L",
-            "V"
-        ],
-        "options": [
-            "E",
-            "T",
-            "C",
-            "S",
-            "L",
-            "V",
-            "A",
-            "B",
-            "D",
-            "F",
-            "G",
-            "M"
-        ],
-        "explanations": [
-            "E 代表 Environment（环境组件），负责状态转移与观察生成。",
-            "T 代表 Tool Calling/Agent（Agent 组件），负责决策与动作生成。",
-            "C 代表 Context（上下文管理组件），负责维护对话历史与目标追踪。",
-            "S 代表 Safety（安全沙箱组件），负责动作合法性校验与拦截。",
-            "L 代表 Logging（日志组件），负责记录轨迹、违规与评估结果。",
-            "V 代表 Verifier（验证器组件），负责多维度任务完成度评估。"
-        ]
-    },
-    {
-        "question": "在实验 4 安全策略消融中，`{0}` 策略禁止边界越界和库存透支；`{1}` 策略允许边界越界和库存透支；`{2}` 策略额外增加 STONE/WALL 为禁止放置类型并要求工具。",
-        "answers": [
-            "default_game_policy",
-            "relaxed_policy",
-            "strict_policy"
-        ],
-        "options": [
-            "default_game_policy",
-            "relaxed_policy",
-            "strict_policy",
-            "heuristic_policy",
-            "random_policy",
-            "standard_policy",
-            "open_policy",
-            "debug_policy"
-        ],
-        "explanations": [
-            "default_game_policy 是标准安全策略：禁止边界越界、禁止库存透支、禁止挖掘草地/空地、AGENT 类型禁止放置。",
-            "relaxed_policy 放宽限制：allow_boundary_violation=True、allow_inventory_negative=True，但 env.step() 仍会静默截断越界。",
-            "strict_policy 在默认基础上收紧：增加 STONE 和 WALL 为 forbidden_block_types，并为两者设置 required_tools='pickaxe'。"
-        ]
-    }
+const dragQuestions = [
+  {
+    id: "d1", type: "drag", category: "架构",
+    question: "Agent Harness 六组件架构 $H=(E, T, C, S, L, V)$ 中，请将正确术语拖入对应空白：\n\nE 代表 {0}，负责管理状态转移；\nT 代表 {1}，负责生成动作；\nS 代表 {2}，负责拦截违规动作。",
+    blanks: 3,
+    answer: ["Environment", "Tool/Agent", "Safety"],
+    pool: ["Environment", "Tool/Agent", "Safety", "Context", "Logger", "Verifier", "Sandbox", "ReActAgent"],
+    explanations: [
+      "E (Environment) 是 2D 沙盒环境，管理状态转移和边界处理。",
+      "T (Tool/Agent) 是代理策略，负责生成动作（如 heuristic 或 random）。",
+      "S (Safety) 是安全沙箱，负责拦截违规动作并记录违规日志。"
+    ]
+  },
+  {
+    id: "d2", type: "drag", category: "评估",
+    question: "综合得分 $V(s_T)$ 的四个核心评估维度中，请将术语拖入正确位置：\n\n衡量目标位置正确方块占比的是 {0}；\n衡量总方块数是否在允许范围内的是 {1}；\n衡量回合利用率的是 {2}；\n衡量是否满足任务库存要求的是 {3}。",
+    blanks: 4,
+    answer: ["structure_correctness", "block_count", "efficiency", "inventory_match"],
+    pool: ["structure_correctness", "block_count", "efficiency", "inventory_match", "safety_violations", "overall_score", "pass_rate", "step_count"],
+    explanations: [
+      "structure_correctness 计算目标位置正确方块占比，是任务完成的核心指标。",
+      "block_count 检查总方块数是否在 [min_blocks, max_blocks] 范围内，防止过度放置。",
+      "efficiency = 1 - t/t_max，鼓励用更少步数完成任务。",
+      "inventory_match 检查库存是否包含任务要求的全部材料，防止透支作弊。"
+    ]
+  },
+  {
+    id: "d3", type: "drag", category: "安全策略",
+    question: "三种安全策略的对比中，请将策略名称拖入正确位置：\n\n{0} 策略禁止边界越界和库存透支，是默认生产环境配置；\n{1} 策略允许边界越界和库存透支，用于测试环境边界容错；\n{2} 策略增加禁止放置类型（STONE、WALL）并要求工具。",
+    blanks: 3,
+    answer: ["default_game_policy", "relaxed_policy", "strict_policy"],
+    pool: ["default_game_policy", "relaxed_policy", "strict_policy", "heuristic_policy", "random_policy", "sandbox_policy", "harness_policy", "env_policy"],
+    explanations: [
+      "default_game_policy 是标准安全边界，禁止边界越界、库存透支、挖掘草地等。",
+      "relaxed_policy 放宽限制，允许边界越界（环境会静默截断）和库存透支。",
+      "strict_policy 增加禁止放置类型（STONE、WALL）并要求工具（如 pickaxe）。"
+    ]
+  }
 ];
-    // DRAG_QUESTIONS_PLACEHOLDER_END
 
-    // SINGLE_QUESTIONS_PLACEHOLDER_START
-    const singleQuestions = [
-    {
-        "question": "在 build_wall_2x2 任务对比实验中，heuristic 策略与 random 策略的平均得分差距约为多少倍？",
-        "options": [
-            "1-2 倍",
-            "4-6 倍",
-            "10-15 倍",
-            "无明显差距"
-        ],
-        "correct": 1,
-        "explanations": [
-            "❌ 1-2 倍差距过小。实际 heuristic 平均得分约 0.85，random 仅 0.05-0.20，差距远超 2 倍。",
-            "✅ 正确。实验结果显示 heuristic 平均得分 ~0.85，random 平均得分 ~0.05-0.20，差距约 4-6 倍。",
-            "❌ 10-15 倍过于夸大。虽然 random 几乎无法完成任务，但得分差距在 4-6 倍范围更为准确。",
-            "❌ 有明显差距。heuristic 策略通过率 100%，random 通过率 0%，差距极为显著。"
-        ]
-    },
-    {
-        "question": "在 build_wall_2x2 任务中，heuristic 策略预置 PLANK 库存后，大约需要多少步完成建墙？",
-        "options": [
-            "1 步",
-            "4 步",
-            "25 步",
-            "50 步"
-        ],
-        "correct": 1,
-        "explanations": [
-            "❌ 1 步无法完成。需要移动至目标坐标并放置 4 个方块，至少需要多步操作。",
-            "✅ 正确。实验记录显示预置 PLANK 库存后，heuristic 策略约 4 步完成 2x2 墙的放置。",
-            "❌ 25 步接近 max_turns 的一半，但 heuristic 策略通过目标追踪可快速到达指定坐标。",
-            "❌ 50 步是 max_turns 上限，heuristic 策略远不需要这么多步数。"
-        ]
-    },
-    {
-        "question": "在三层安全防御机制中，即使使用 relaxed_policy 允许边界越界，哪一层仍会在底层静默截断越界动作？",
-        "options": [
-            "SafetySandbox 初检",
-            "harness.run() 二次检查",
-            "env.step() 环境自身",
-            "ContextManager 边界校验"
-        ],
-        "correct": 2,
-        "explanations": [
-            "❌ SafetySandbox 在 relaxed_policy 下已关闭边界越界拦截（allow_boundary_violation=True）。",
-            "❌ harness.run() 的检查依赖于 SafetySandbox 策略配置，relaxed 策略下不会拦截。",
-            "✅ 正确。env.step() 内部通过 max(0, x-1) 等确定性截断函数形成第三层防御，不受策略配置影响。",
-            "❌ ContextManager 不负责边界校验，它仅管理上下文窗口与目标描述。"
-        ]
-    },
-    {
-        "question": "综合评估中，哪两个维度是硬门槛（必须 ≥ 0.8），否则 passed 一定为 False？",
-        "options": [
-            "efficiency 和 block_count",
-            "structure_correctness 和 safety_violations",
-            "structure_correctness 和 inventory_match",
-            "overall_score 和 pass_rate"
-        ],
-        "correct": 3,
-        "explanations": [
-            "❌ efficiency 和 block_count 是软优化维度，可以低于 0.8，只要综合得分达标仍可能通过。",
-            "❌ safety_violations 是计数指标而非评分维度，且不是硬门槛维度。",
-            "✅ 正确。structure_correctness（结构正确性）和 inventory_match（库存匹配）是强制维度，必须 ≥ 0.8。",
-            "❌ overall_score 是综合输出结果，pass_rate 是统计量，二者都不是评估的强制维度。"
-        ]
-    }
+const singleQuestions = [
+  {
+    id: "s1", type: "single", category: "架构",
+    question: "Agent Harness 六组件架构 $H=(E, T, C, S, L, V)$ 中，哪个组件负责评估任务完成质量？",
+    options: ["E (Environment)", "T (Tool/Agent)", "S (Safety)", "V (Verifier)"],
+    correct: 3,
+    explanations: [
+      "❌ E 负责环境状态转移，不直接评估任务完成质量。",
+      "❌ T 负责生成动作，是策略执行层。",
+      "❌ S 负责安全拦截，评估的是动作合法性而非任务完成度。",
+      "✅ V (Verifier) 负责计算 structure_correctness、efficiency 等多维度评估指标。"
+    ]
+  },
+  {
+    id: "s2", type: "single", category: "评估",
+    question: "在 build_wall_2x2 任务中，结构正确性 $v_{struct}$ 的计算方式是什么？",
+    options: ["正确方块数 / 环境中总方块数", "正确方块数 / 目标位置数", "使用步数 / 最大步数", "库存匹配数 / 总库存数"],
+    correct: 1,
+    explanations: [
+      "❌ 结构正确性只关心目标位置是否正确，与环境中总方块数无关。",
+      "✅ $v_{struct} = \\frac{1}{|P_{target}|} \\sum_{p \\in P_{target}} \\mathbb{1}\\{s(p)=target_type\\}$，即正确方块数除以目标位置数。",
+      "❌ 这是 efficiency 的计算方式，不是结构正确性。",
+      "❌ 这是 inventory_match 的概念，与结构正确性无关。"
+    ]
+  },
+  {
+    id: "s3", type: "single", category: "策略",
+    question: "heuristic 策略与 random 策略的核心区别是什么？",
+    options: ["heuristic 使用随机种子，random 不使用", "heuristic 基于目标坐标规则移动，random 均匀随机采样动作", "heuristic 只能用于建墙任务，random 可用于所有任务", "heuristic 不需要安全沙箱，random 需要"],
+    correct: 1,
+    explanations: [
+      "❌ 两者都可以使用随机种子，heuristic 是确定性策略。",
+      "✅ heuristic 计算到目标的最短路径（曼哈顿距离），random 从动作空间均匀采样。",
+      "❌ heuristic 也可用于其他结构化任务（如 craft_planks）。",
+      "❌ 两者都需要安全沙箱进行动作合法性校验。"
+    ]
+  },
+  {
+    id: "s4", type: "single", category: "安全策略",
+    question: "在 strict_policy 中，放置 WALL 方块需要什么条件？",
+    options: ["不需要任何额外条件", "需要 pickaxe 工具", "需要至少 5 个 PLANK 库存", "需要完成前置任务"],
+    correct: 1,
+    explanations: [
+      "❌ strict_policy 增加了工具要求，不是无条件放置。",
+      "✅ strict_policy 的 required_tools 中规定 BlockType.WALL 需要 pickaxe 工具。",
+      "❌ 库存要求是 inventory_match 的评估维度，不是 strict_policy 的放置条件。",
+      "❌ 实验中没有前置任务机制。"
+    ]
+  },
+  {
+    id: "s5", type: "single", category: "实验结果",
+    question: "实验 3 中，heuristic 策略与 random 策略的得分差距大约是多少倍？",
+    options: ["约 1-2 倍", "约 4-6 倍", "约 10-15 倍", "两者得分相近"],
+    correct: 1,
+    explanations: [
+      "❌ 实际差距更大，heuristic 约 0.85，random 约 0.05-0.20。",
+      "✅ 实验结论明确指出差距约 4-6 倍，说明 Agent 策略是任务成败的核心。",
+      "❌ 差距没有达到 10-15 倍。",
+      "❌ random 策略几乎无法完成建墙任务，得分差距显著。"
+    ]
+  },
+  {
+    id: "s6", type: "single", category: "架构",
+    question: "SafetySandbox 的三层防御中，哪一层是环境自身的保护？",
+    options: ["agent.act() 中的预检查", "harness.run() 中的二次检查", "env.step() 中的最终截断", "ContextManager 的历史过滤"],
+    correct: 2,
+    explanations: [
+      "❌ 这是第一层防御，由 SafetySandbox 在 Agent 动作生成阶段执行。",
+      "❌ 这是第二层防御，由 Harness 在运行阶段执行。",
+      "✅ env.step() 是环境的最终截断，即使沙箱放宽，环境仍有自身保护（如 max(0, x-1)）。",
+      "❌ ContextManager 负责上下文历史管理，与安全防御无关。"
+    ]
+  },
+  {
+    id: "s7", type: "single", category: "评估",
+    question: "综合得分 $V(s_T)$ 的通过条件是什么？",
+    options: ["$V \\geq 0.5$ 即可", "$V \\geq 0.75$ 且强制维度 $\\geq 0.8$", "$V \\geq 0.9$ 且所有维度满分", "只要结构正确性为 1.0 即可"],
+    correct: 1,
+    explanations: [
+      "❌ 阈值是 0.75 不是 0.5。",
+      "✅ 综合得分 $V \\geq 0.75$ 且强制维度（structure_correctness、inventory_match）$\\geq 0.8$ 才能通过。",
+      "❌ 不需要所有维度满分，强制维度达到阈值即可。",
+      "❌ 即使结构正确性为 1.0，若 inventory_match 不达标仍判定失败。"
+    ]
+  },
+  {
+    id: "s8", type: "single", category: "实验设计",
+    question: "实验 3 中固定随机种子的目的是什么？",
+    options: ["让 random 策略也能完成建墙任务", "确保动作序列可复现，便于对比", "减少安全违规次数", "增加 heuristic 策略的随机性"],
+    correct: 1,
+    explanations: [
+      "❌ random 策略即使固定种子也无法完成建墙任务。",
+      "✅ 固定种子确保每轮使用确定性的随机序列，使实验结果可复现。",
+      "❌ 随机种子与安全违规次数无直接关系。",
+      "❌ heuristic 是确定性策略，不受随机种子影响。"
+    ]
+  },
+  {
+    id: "s9", type: "single", category: "评估",
+    question: "efficiency 指标 $v_{eff} = 1 - t/t_{max}$ 的主要局限性是什么？",
+    options: ["无法衡量结构正确性", "与任务难度耦合，不宜跨任务比较", "只能用于 heuristic 策略", "计算结果总是 0 或 1"],
+    correct: 1,
+    explanations: [
+      "❌ efficiency 确实不衡量结构正确性，但这不是其主要局限性。",
+      "✅ 简单任务效率天然高，复杂任务效率天然低，因此不宜跨任务比较。",
+      "❌ efficiency 适用于所有策略。",
+      "❌ efficiency 是连续值，不是二值化指标。"
+    ]
+  },
+  {
+    id: "s10", type: "single", category: "安全策略",
+    question: "relaxed_policy 允许边界越界，但环境如何处理越界动作？",
+    options: ["直接崩溃抛出异常", "静默截断（如 max(0, x-1)）", "自动将 Agent 传送到边界内", "忽略动作不做任何处理"],
+    correct: 1,
+    explanations: [
+      "❌ 环境不会崩溃，有自身的边界保护机制。",
+      "✅ 环境 env.step() 会静默截断越界坐标，如使用 max(0, x-1) 等函数。",
+      "❌ 环境不会传送 Agent，只是截断坐标值。",
+      "❌ 环境会处理动作，只是将越界坐标修正到边界内。"
+    ]
+  }
 ];
-    // SINGLE_QUESTIONS_PLACEHOLDER_END
 
-    // MULTI_QUESTIONS_PLACEHOLDER_START
-    const multiQuestions = [
-    {
-        "question": "Agent Harness 六组件架构 $H=(E,T,C,S,L,V)$ 中，以下哪些属于该架构的核心组件？",
-        "options": [
-            "Environment (E)",
-            "Tool Calling / Agent (T)",
-            "Context (C)",
-            "Memory Pool (M)",
-            "Safety (S)",
-            "Verifier (V)"
-        ],
-        "correct": [
-            0,
-            1,
-            2,
-            4,
-            5
-        ],
-        "explanations": [
-            "✅ Environment (E) 是核心组件，负责状态转移与观察生成。",
-            "✅ Tool Calling/Agent (T) 是核心组件，负责决策与动作选择。",
-            "✅ Context (C) 是核心组件，负责维护上下文与目标追踪。",
-            "❌ Memory Pool (M) 不属于六组件架构。上下文由 C (ContextManager) 管理。",
-            "✅ Safety (S) 是核心组件，负责动作合法性校验与拦截。",
-            "✅ Verifier (V) 是核心组件，负责任务完成度的多维度评估。"
-        ]
-    },
-    {
-        "question": "在实验 4（安全策略消融实验）中，strict_policy 相较于 default_game_policy 增加了哪些限制？",
-        "options": [
-            "STONE 被加入 forbidden_block_types",
-            "允许边界越界 (allow_boundary_violation=True)",
-            "WALL 被加入 forbidden_block_types",
-            "允许库存透支 (allow_inventory_negative=True)",
-            "STONE 和 WALL 需要 pickaxe 工具",
-            "允许挖掘草地 (allow_destroy_unmineable=True)"
-        ],
-        "correct": [
-            0,
-            2,
-            4
-        ],
-        "explanations": [
-            "✅ strict_policy 显式将 STONE 加入 forbidden_block_types。",
-            "❌ 允许边界越界是 relaxed_policy 的特征，strict_policy 保持 allow_boundary_violation=False。",
-            "✅ strict_policy 显式将 WALL 加入 forbidden_block_types。",
-            "❌ 允许库存透支是 relaxed_policy 的特征，strict_policy 保持 allow_inventory_negative=False。",
-            "✅ strict_policy 设置 required_tools={STONE: 'pickaxe', WALL: 'pickaxe'}。",
-            "❌ 所有策略都保持 allow_destroy_unmineable=False，不允许挖掘草地。"
-        ]
-    },
-    {
-        "question": "以下哪些指标属于 build_wall_2x2 任务的评估维度？",
-        "options": [
-            "结构正确性 (structure_correctness)",
-            "块数量 (block_count)",
-            "环境随机性 (env_randomness)",
-            "库存匹配 (inventory_match)",
-            "代码覆盖率 (code_coverage)",
-            "效率 (efficiency)"
-        ],
-        "correct": [
-            0,
-            1,
-            3,
-            5
-        ],
-        "explanations": [
-            "✅ structure_correctness 是核心评估维度，衡量目标位置正确方块占比，且为硬门槛。",
-            "✅ block_count 是评估维度，检查总方块数是否在 [min_blocks, max_blocks] 范围内。",
-            "❌ env_randomness 不是评估维度。环境转移函数 $s' = \\mathcal{P}(s, a)$ 是确定性的。",
-            "✅ inventory_match 是核心评估维度，检查是否满足任务要求的库存，且为硬门槛。",
-            "❌ code_coverage 不是任务评估维度，它是测试覆盖率的开发指标。",
-            "✅ efficiency 是评估维度，定义为 $v_{eff} = 1 - t / t_{max}$，衡量回合利用率。"
-        ]
-    }
+const multiQuestions = [
+  {
+    id: "m1", type: "multi", category: "架构",
+    question: "Agent Harness 六组件架构 $H=(E, T, C, S, L, V)$ 中，以下哪些组件属于该架构？（多选）",
+    options: ["E (Environment)", "T (Tool/Agent)", "C (Context)", "S (Safety)", "L (Logger)", "V (Verifier)"],
+    correct: [0, 1, 2, 3, 4, 5],
+    explanations: [
+      "✅ E 是 2D 沙盒环境，管理状态转移。",
+      "✅ T 是代理策略，生成动作。",
+      "✅ C 是上下文管理器，维护对话历史。",
+      "✅ S 是安全沙箱，拦截违规动作。",
+      "✅ L 是日志记录器，记录运行轨迹。",
+      "✅ V 是验证器，评估任务完成质量。"
+    ]
+  },
+  {
+    id: "m2", type: "multi", category: "评估",
+    question: "以下哪些是 structure_correctness 的局限性？（多选）",
+    options: [
+      "只关心位置对不对，不关心方块从哪来",
+      "无法检测库存透支作弊",
+      "是二值化指标，无法区分差一点和差很多",
+      "与任务难度耦合",
+      "需要大量计算资源",
+      "不适用于随机策略"
+    ],
+    correct: [0, 1],
+    explanations: [
+      "✅ 结构正确性只检查位置是否正确，不检查方块来源是否合法。",
+      "✅ 若 Agent 透支库存放置方块，结构正确性仍可能很高，但 inventory_match 会暴露问题。",
+      "❌ 这是 block_count 的局限性，不是 structure_correctness 的。",
+      "❌ 这是 efficiency 的局限性。",
+      "❌ 结构正确性计算简单，不需要大量资源。",
+      "❌ 结构正确性适用于所有策略，只是 random 策略很难达到高值。"
+    ]
+  },
+  {
+    id: "m3", type: "multi", category: "安全策略",
+    question: "strict_policy 相比 default_game_policy 增加了哪些限制？（多选）",
+    options: [
+      "禁止放置 STONE 类型方块",
+      "禁止放置 WALL 类型方块",
+      "要求放置 STONE 需要 pickaxe 工具",
+      "允许边界越界",
+      "允许库存透支",
+      "要求放置 WALL 需要 pickaxe 工具"
+    ],
+    correct: [0, 1, 2, 5],
+    explanations: [
+      "✅ strict_policy 将 STONE 加入 forbidden_block_types。",
+      "✅ strict_policy 将 WALL 加入 forbidden_block_types。",
+      "✅ strict_policy 的 required_tools 中规定 STONE 需要 pickaxe。",
+      "❌ strict_policy 不允许边界越界，这是 relaxed_policy 的特性。",
+      "❌ strict_policy 不允许库存透支，这是 relaxed_policy 的特性。",
+      "✅ strict_policy 的 required_tools 中规定 WALL 需要 pickaxe。"
+    ]
+  },
+  {
+    id: "m4", type: "multi", category: "实验结果",
+    question: "实验 4 的安全策略消融实验中，以下哪些观察是正确的？（多选）",
+    options: [
+      "default_policy 下 heuristic 策略不触发安全违规",
+      "relaxed_policy 允许边界越界，但环境会静默截断",
+      "strict_policy 会增加安全拦截次数",
+      "relaxed_policy 会提高任务得分",
+      "strict_policy 会降低任务通过率",
+      "default_policy 和 strict_policy 的得分相同"
+    ],
+    correct: [0, 1, 2],
+    explanations: [
+      "✅ heuristic 策略遵守边界和库存规则，在 default_policy 下不触发违规。",
+      "✅ relaxed_policy 允许越界动作，但 env.step() 会静默截断坐标。",
+      "✅ strict_policy 增加了禁止类型和工具要求，会拦截更多动作。",
+      "❌ relaxed_policy 允许越界不增加得分，反而可能浪费步数。",
+      "❌ 实验未显示 strict_policy 显著降低通过率，heuristic 策略通常不触发新增限制。",
+      "❌ 实验未比较两者得分是否相同。"
+    ]
+  },
+  {
+    id: "m5", type: "multi", category: "架构",
+    question: "HarnessResult 中包含哪些可复现性相关的字段？（多选）",
+    options: ["logs", "trajectory", "safety_violations", "evaluation", "agent_strategy", "random_seed"],
+    correct: [0, 1, 2, 3],
+    explanations: [
+      "✅ logs 记录运行日志，用于回溯。",
+      "✅ trajectory 记录动作序列，可重建运行过程。",
+      "✅ safety_violations 记录安全违规详情。",
+      "✅ evaluation 包含各维度得分和综合得分。",
+      "❌ agent_strategy 是配置参数，不是结果字段。",
+      "❌ random_seed 是实验配置，不是 HarnessResult 的字段。"
+    ]
+  },
+  {
+    id: "m6", type: "multi", category: "实验设计",
+    question: "以下哪些配置属于实验文档推荐的「快速验证」场景？（多选）",
+    options: [
+      "Agent 策略: heuristic",
+      "安全策略: default",
+      "最大步数: 50",
+      "预置库存: PLANK: 5",
+      "安全策略: strict",
+      "最大步数: 200"
+    ],
+    correct: [0, 1, 2, 3],
+    explanations: [
+      "✅ 快速验证使用 heuristic 策略。",
+      "✅ 快速验证使用 default 安全策略。",
+      "✅ 快速验证最大步数为 50。",
+      "✅ 快速验证预置 PLANK: 5。",
+      "❌ strict 用于生产模拟或压力测试。",
+      "❌ 200 步用于压力测试或扩展任务。"
+    ]
+  }
 ];
-    // MULTI_QUESTIONS_PLACEHOLDER_END
 
-    // TRUEFALSE_QUESTIONS_PLACEHOLDER_START
-    const trueFalseQuestions = [
-    {
-        "question": "random 策略在 build_wall_2x2 任务中的通过率为 0%，说明无目标导向的随机动作几乎无法完成结构化任务。",
-        "correct": true,
-        "explanationTrue": "✅ 正确。实验 3 显示 random 策略 5 次运行的通过率均为 0%，平均得分仅 0.05-0.20，验证了 Agent 的推理能力是任务成败的核心。",
-        "explanationFalse": "❌ 错误。random 策略的通过率确实为 0%。由于动作空间均匀随机采样，无目标导向的随机动作无法在有限回合内完成精确的方块放置任务。"
-    },
-    {
-        "question": "在 relaxed_policy 下，边界越界动作会被 SafetySandbox 拦截并记录违规日志。",
-        "correct": false,
-        "explanationTrue": "❌ 错误理解。relaxed_policy 显式设置 allow_boundary_violation=True，SafetySandbox 不会拦截越界动作。但 env.step() 会在底层静默截断，且不记录为安全违规。",
-        "explanationFalse": "✅ 正确。relaxed_policy 已关闭 SafetySandbox 的边界越界拦截；越界动作被 env.step() 的确定性截断函数处理，但不会被记录为 safety_violations。"
-    },
-    {
-        "question": "24 个单元测试覆盖 E(7)、S(6)、C(3)、V(4)、T(2+1)、H(4) 六个测试类，全部通过意味着六组件架构的独立功能与集成链路均已验证。",
-        "correct": true,
-        "explanationTrue": "✅ 正确。24/24 PASS 的测试覆盖了 Environment、Safety、Context、Verifier、Agent 和 Integration 六个类别，验证了六组件的独立功能及端到端集成链路。",
-        "explanationFalse": "❌ 错误。实验结果明确记录 24 个测试全部通过，覆盖六组件各自的独立功能与集成链路，这是架构验证通过的核心证据。"
-    },
-    {
-        "question": "固定随机种子后，由于 Agent 策略是唯一随机性来源，同一配置的 Agent Harness 运行结果可以逐比特对比复现。",
-        "correct": true,
-        "explanationTrue": "✅ 正确。环境转移函数 $s' = \\mathcal{P}(s, a)$ 是确定性的，唯一随机性来自 Agent 策略。固定 random.seed() 后，动作序列确定，结果可逐比特复现。",
-        "explanationFalse": "❌ 错误。实验的可复现性检查清单明确指出：环境转移函数为确定性函数，除 Agent 策略外无外部随机性，固定种子后结果可以逐比特对比。"
-    }
+const trueFalseQuestions = [
+  {
+    id: "t1", type: "tf", category: "架构",
+    question: "六组件架构中，Context (C) 负责安全策略的拦截和违规日志记录。",
+    correct: false,
+    explanations: [
+      "✅ 正确理解：Context (C) 是上下文管理器，负责维护对话历史；安全拦截由 Safety (S) 负责。",
+      "❌ 常见误解：容易将 Context 和 Safety 混淆，两者都是"管理"类组件，但职责完全不同。"
+    ]
+  },
+  {
+    id: "t2", type: "tf", category: "评估",
+    question: "block_count 是连续值指标，可以区分「差一点」和「差很多」。",
+    correct: false,
+    explanations: [
+      "✅ 正确理解：block_count 是二值化指标（0 或 1），无法区分放置 3 个和 0 个。",
+      "❌ 常见误解：看到「数量」就认为是连续值，实际上它是硬门槛式的二值判断。"
+    ]
+  },
+  {
+    id: "t3", type: "tf", category: "安全策略",
+    question: "relaxed_policy 允许边界越界，因此 Agent 可以真正超出环境边界放置方块。",
+    correct: false,
+    explanations: [
+      "✅ 正确理解：relaxed_policy 允许沙箱放行越界动作，但环境 env.step() 仍会静默截断坐标，形成第二层防御。",
+      "❌ 常见误解：认为放宽沙箱就等于完全放开边界保护，忽略了环境自身的截断机制。"
+    ]
+  },
+  {
+    id: "t4", type: "tf", category: "策略",
+    question: "random 策略在固定随机种子后，可以稳定完成 build_wall_2x2 任务。",
+    correct: false,
+    explanations: [
+      "✅ 正确理解：random 策略无目标导向，即使固定种子也无法完成建墙任务，通过率 0%。",
+      "❌ 常见误解：认为固定种子就能让 random 策略变得可预测且有效，实际上 random 只是确定了无效的序列。"
+    ]
+  },
+  {
+    id: "t5", type: "tf", category: "评估",
+    question: "inventory_match 检查最终库存，因此可以检测中间过程的资源管理违规。",
+    correct: false,
+    explanations: [
+      "✅ 正确理解：inventory_match 只检查最终状态，Agent 可能先透支再补充，最终匹配但过程违规。",
+      "❌ 常见误解：认为最终库存正确就等于整个过程合规，忽略了中间过程的资源管理风险。"
+    ]
+  },
+  {
+    id: "t6", type: "tf", category: "实验设计",
+    question: "效率指标 efficiency 可以跨任务比较，直接反映 Agent 的「聪明程度」。",
+    correct: false,
+    explanations: [
+      "✅ 正确理解：efficiency 与任务难度耦合，简单任务天然效率高，复杂任务天然效率低，不宜跨任务比较。",
+      "❌ 常见误解：将 efficiency 视为绝对指标，忽略了不同任务难度的基准差异。"
+    ]
+  },
+  {
+    id: "t7", type: "tf", category: "安全策略",
+    question: "strict_policy 下，若 Agent 没有 pickaxe 工具但尝试放置 WALL，动作会被替换为 NOOP。",
+    correct: true,
+    explanations: [
+      "✅ 正确理解：strict_policy 要求放置 WALL 需要 pickaxe，若条件不满足，SafetySandbox 会拦截并将动作替换为 NOOP。",
+      ""
+    ]
+  },
+  {
+    id: "t8", type: "tf", category: "架构",
+    question: "Harness 的三层防御中，即使 SafetySandbox 完全关闭，环境 env.step() 仍会做最终截断。",
+    correct: true,
+    explanations: [
+      "✅ 正确理解：环境有自身的保护机制（如 max(0, x-1)），这是独立于沙箱的最终防线。",
+      ""
+    ]
+  }
 ];
-    // TRUEFALSE_QUESTIONS_PLACEHOLDER_END
 
-    // ===== STATE =====
-    let currentType = 'drag';
-    let currentIndex = 0;
-    let userAnswers = {};
-    let checkedState = {};
+/* ===================== 状态管理 ===================== */
 
-    // ===== HELPERS =====
-    function makeKey(type, index) {
-      return type + ':' + index;
-    }
+const allQuestions = [];
+let currentIndex = 0;
+let userAnswers = {};
+let checked = {};
+let shuffled = false;
 
-    function getQuestions(type) {
-      if (type === 'drag') return dragQuestions;
-      if (type === 'single') return singleQuestions;
-      if (type === 'multi') return multiQuestions;
-      return trueFalseQuestions;
-    }
+function initAllQuestions() {
+  allQuestions.length = 0;
+  dragQuestions.forEach(q => allQuestions.push(q));
+  singleQuestions.forEach(q => allQuestions.push(q));
+  multiQuestions.forEach(q => allQuestions.push(q));
+  trueFalseQuestions.forEach(q => allQuestions.push(q));
+}
 
-    function getBadgeId(type) {
-      if (type === 'drag') return 'badgeDrag';
-      if (type === 'single') return 'badgeSingle';
-      if (type === 'multi') return 'badgeMulti';
-      return 'badgeTrueFalse';
-    }
+function getState(qid) {
+  if (userAnswers[qid] === undefined) return "unanswered";
+  if (checked[qid]) return checked[qid] === "correct" ? "correct" : "wrong";
+  return "unanswered";
+}
 
-    function countQuestions(type) {
-      return getQuestions(type).length;
-    }
+function computeScore() {
+  let score = 0, maxScore = 0, correct = 0, wrong = 0, unanswered = 0;
+  allQuestions.forEach(q => {
+    const max = q.type === "drag" ? q.blanks : (q.type === "multi" ? q.correct.length : 1);
+    maxScore += max;
+    const state = getState(q.id);
+    if (state === "correct") { score += max; correct++; }
+    else if (state === "wrong") { wrong++; }
+    else unanswered++;
+  });
+  document.getElementById("score").textContent = score;
+  document.getElementById("maxScore").textContent = maxScore;
+  document.getElementById("correctCount").textContent = correct;
+  document.getElementById("wrongCount").textContent = wrong;
+  document.getElementById("unansweredCount").textContent = unanswered;
+  const pct = maxScore > 0 ? (score / maxScore * 100) : 0;
+  document.getElementById("progressFill").style.width = pct + "%";
+}
 
-    function allTypes() {
-      return ['drag', 'single', 'multi', 'truefalse'];
-    }
+/* ===================== 渲染 ===================== */
 
-    // ===== RENDER =====
-    function initBadges() {
-      allTypes().forEach(function(t) {
-        document.getElementById(getBadgeId(t)).textContent = countQuestions(t);
-      });
-    }
+function renderDrag(q) {
+  let html = `<div class="card" id="card-${q.id}"><span class="type-tag">拖拽填空 · ${q.category}</span><div class="question">${q.question}</div>`;
+  html += `<div class="pool" id="pool-${q.id}">`;
+  q.pool.forEach((term, i) => {
+    html += `<span class="draggable" draggable="true" data-term="${term}" id="drag-${q.id}-${i}">${term}</span>`;
+  });
+  html += `</div>`;
+  html += `<div style="margin-top:10px;"><button class="primary" onclick="checkDrag('${q.id}')">检查答案</button> <button onclick="resetDrag('${q.id}')">重置</button></div>`;
+  html += `<div class="explanation hidden" id="exp-${q.id}"></div></div>`;
+  return html;
+}
 
-    function updateScore() {
-      let total = 0, scored = 0;
-      allTypes().forEach(function(type) {
-        const list = getQuestions(type);
-        for (let i = 0; i < list.length; i++) {
-          const q = list[i];
-          const key = makeKey(type, i);
-          if (checkedState[key]) {
-            total += getQuestionPoints(q, type);
-            scored += getUserPoints(q, type, i);
-          }
-        }
-      });
-      document.getElementById('scoreDisplay').textContent = '得分: ' + scored + ' / ' + total;
-    }
+function renderSingle(q) {
+  let html = `<div class="card" id="card-${q.id}"><span class="type-tag">单选题 · ${q.category}</span><div class="question">${q.question}</div><div class="options">`;
+  q.options.forEach((opt, i) => {
+    html += `<label id="opt-${q.id}-${i}" onclick="selectSingle('${q.id}', ${i})"><input type="radio" name="${q.id}" value="${i}"> ${opt}</label>`;
+  });
+  html += `</div>`;
+  html += `<div style="margin-top:10px;"><button class="primary" onclick="checkSingle('${q.id}')">检查答案</button> <button onclick="resetSingle('${q.id}')">重置</button></div>`;
+  html += `<div class="explanation hidden" id="exp-${q.id}"></div></div>`;
+  return html;
+}
 
-    function getQuestionPoints(q, type) {
-      if (type === 'drag') return q.answers.length;
-      if (type === 'multi') return q.correct.length;
-      return 1;
-    }
+function renderMulti(q) {
+  let html = `<div class="card" id="card-${q.id}"><span class="type-tag">多选题 · ${q.category}</span><div class="question">${q.question}</div><div class="options">`;
+  q.options.forEach((opt, i) => {
+    html += `<label id="opt-${q.id}-${i}" onclick="toggleMulti('${q.id}', ${i})"><input type="checkbox" name="${q.id}" value="${i}"> ${opt}</label>`;
+  });
+  html += `</div>`;
+  html += `<div style="margin-top:10px;"><button class="primary" onclick="checkMulti('${q.id}')">检查答案</button> <button onclick="resetMulti('${q.id}')">重置</button></div>`;
+  html += `<div class="explanation hidden" id="exp-${q.id}"></div></div>`;
+  return html;
+}
 
-    function getUserPoints(q, type, idx) {
-      const key = makeKey(type, idx);
-      const ans = userAnswers[key];
-      if (!ans) return 0;
-      if (type === 'drag') {
-        let pts = 0;
-        for (let i = 0; i < q.answers.length; i++) {
-          if (ans[i] === q.answers[i]) pts++;
-        }
-        return pts;
-      }
-      if (type === 'single') {
-        return ans === q.correct ? 1 : 0;
-      }
-      if (type === 'multi') {
-        let pts = 0;
-        const correctSet = {};
-        for (let i = 0; i < q.correct.length; i++) correctSet[q.correct[i]] = true;
-        const userSet = {};
-        for (let i = 0; i < ans.length; i++) userSet[ans[i]] = true;
-        for (let k in correctSet) {
-          if (userSet[k]) pts++;
-        }
-        return pts;
-      }
-      return ans === q.correct ? 1 : 0;
-    }
+function renderTF(q) {
+  let html = `<div class="card" id="card-${q.id}"><span class="type-tag">判断题 · ${q.category}</span><div class="question">${q.question}</div><div class="options tf-options">`;
+  ["是", "否"].forEach((opt, i) => {
+    html += `<label id="opt-${q.id}-${i}" onclick="selectTF('${q.id}', ${i})"><input type="radio" name="${q.id}" value="${i}"> ${opt}</label>`;
+  });
+  html += `</div>`;
+  html += `<div style="margin-top:10px;"><button class="primary" onclick="checkTF('${q.id}')">检查答案</button> <button onclick="resetTF('${q.id}')">重置</button></div>`;
+  html += `<div class="explanation hidden" id="exp-${q.id}"></div></div>`;
+  return html;
+}
 
-    function updateProgress() {
-      const total = countQuestions(currentType);
-      const text = total > 0 ? (currentIndex + 1) + ' / ' + total : '0 / 0';
-      document.getElementById('progressText').textContent = text;
-      const pct = total > 0 ? ((currentIndex + 1) / total * 100) : 0;
-      document.getElementById('progressFill').style.width = pct + '%';
-    }
+function renderCurrent() {
+  const container = document.getElementById("quizContainer");
+  const q = allQuestions[currentIndex];
+  let html = "";
+  if (q.type === "drag") html = renderDrag(q);
+  else if (q.type === "single") html = renderSingle(q);
+  else if (q.type === "multi") html = renderMulti(q);
+  else if (q.type === "tf") html = renderTF(q);
+  container.innerHTML = html;
+  document.getElementById("currentNum").textContent = currentIndex + 1;
+  document.getElementById("totalNum").textContent = allQuestions.length;
+  setupDragListeners(q);
+  restoreState(q);
+}
 
-    function renderQuestion() {
-      const area = document.getElementById('questionArea');
-      const expl = document.getElementById('explanationArea');
-      area.innerHTML = '';
-      expl.innerHTML = '';
-      expl.style.display = 'none';
-      updateProgress();
-
-      const questions = getQuestions(currentType);
-      if (questions.length === 0) {
-        area.innerHTML = '<p style="text-align:center;color:var(--text-muted)">该题型暂无题目</p>';
-        return;
-      }
-      const q = questions[currentIndex];
-      const key = makeKey(currentType, currentIndex);
-
-      const qtext = document.createElement('div');
-      qtext.className = 'question-text';
-
-      if (currentType === 'drag') {
-        let html = q.question;
-        for (let i = 0; i < q.answers.length; i++) {
-          const filled = userAnswers[key] && userAnswers[key][i] ? userAnswers[key][i] : '';
-          let cls = 'blank';
-          if (checkedState[key]) {
-            if (filled === q.answers[i]) cls += ' correct';
-            else cls += ' wrong';
-          } else if (filled) {
-            cls += ' filled';
-          }
-          html = html.replace('{\/' + i + '}', '<span class="' + cls + '" data-blank="' + i + '">' + (filled || '____') + '</span>');
-          html = html.replace('{\*' + i + '}', '<span class="' + cls + '" data-blank="' + i + '">' + (filled || '____') + '</span>');
-          html = html.replace('{' + i + '}', '<span class="' + cls + '" data-blank="' + i + '">' + (filled || '____') + '</span>');
-        }
-        qtext.innerHTML = html;
-        area.appendChild(qtext);
-
-        const pool = document.createElement('div');
-        pool.className = 'draggables';
-        const used = userAnswers[key] || [];
-        for (let i = 0; i < q.options.length; i++) {
-          const opt = q.options[i];
-          const isUsed = used.indexOf(opt) !== -1;
-          const chip = document.createElement('div');
-          chip.className = 'draggable' + (isUsed ? ' used' : '');
-          chip.draggable = !isUsed;
-          chip.textContent = opt;
-          chip.dataset.value = opt;
-          if (!isUsed) setupDrag(chip);
-          pool.appendChild(chip);
-        }
-        area.appendChild(pool);
-
-        if (checkedState[key]) {
-          const box = document.createElement('div');
-          box.className = 'explanation show correct-ex';
-          let exHtml = '<strong>解析：</strong><ul style="margin:8px 0 0 18px">';
-          for (let i = 0; i < q.explanations.length; i++) {
-            const isOk = userAnswers[key] && userAnswers[key][i] === q.answers[i];
-            exHtml += '<li><span style="color:' + (isOk ? 'var(--correct)' : 'var(--wrong)') + '">' + (isOk ? '✅' : '❌') + '</span> 空' + (i+1) + '：' + q.explanations[i] + '</li>';
-          }
-          exHtml += '</ul>';
-          box.innerHTML = exHtml;
-          expl.appendChild(box);
-          expl.style.display = 'block';
-        }
-      } else if (currentType === 'single') {
-        qtext.textContent = q.question;
-        area.appendChild(qtext);
-        const list = document.createElement('div');
-        list.className = 'options-list';
-        for (let i = 0; i < q.options.length; i++) {
-          const opt = document.createElement('label');
-          opt.className = 'option';
-          const isSel = userAnswers[key] === i;
-          if (checkedState[key]) {
-            if (i === q.correct) opt.classList.add('correct-ans');
-            else if (isSel) opt.classList.add('wrong-ans');
-          }
-          const radio = document.createElement('input');
-          radio.type = 'radio';
-          radio.name = 'singleOpt';
-          radio.checked = isSel;
-          radio.disabled = !!checkedState[key];
-          radio.addEventListener('change', function() {
-            userAnswers[key] = i;
-          });
-          const span = document.createElement('span');
-          span.className = 'label';
-          span.textContent = q.options[i];
-          opt.appendChild(radio);
-          opt.appendChild(span);
-          if (checkedState[key]) {
-            const mark = document.createElement('span');
-            mark.className = 'mark';
-            mark.textContent = i === q.correct ? '✅' : (isSel ? '❌' : '');
-            opt.appendChild(mark);
-          }
-          list.appendChild(opt);
-        }
-        area.appendChild(list);
-        if (checkedState[key]) {
-          const box = document.createElement('div');
-          box.className = 'explanation show ' + (userAnswers[key] === q.correct ? 'correct-ex' : 'wrong-ex');
-          box.innerHTML = '<strong>解析：</strong><br>' + q.explanations[q.correct];
-          expl.appendChild(box);
-          expl.style.display = 'block';
-        }
-      } else if (currentType === 'multi') {
-        qtext.textContent = q.question;
-        area.appendChild(qtext);
-        const list = document.createElement('div');
-        list.className = 'options-list';
-        const selSet = {};
-        const ans = userAnswers[key] || [];
-        for (let i = 0; i < ans.length; i++) selSet[ans[i]] = true;
-        const correctSet = {};
-        for (let i = 0; i < q.correct.length; i++) correctSet[q.correct[i]] = true;
-        for (let i = 0; i < q.options.length; i++) {
-          const opt = document.createElement('label');
-          opt.className = 'option';
-          const isSel = !!selSet[i];
-          if (checkedState[key]) {
-            if (correctSet[i]) opt.classList.add('correct-ans');
-            else if (isSel) opt.classList.add('wrong-ans');
-          }
-          const cb = document.createElement('input');
-          cb.type = 'checkbox';
-          cb.checked = isSel;
-          cb.disabled = !!checkedState[key];
-          cb.addEventListener('change', function() {
-            const a = userAnswers[key] || [];
-            const pos = a.indexOf(i);
-            if (pos >= 0) a.splice(pos, 1);
-            else a.push(i);
-            userAnswers[key] = a;
-          });
-          const span = document.createElement('span');
-          span.className = 'label';
-          span.textContent = q.options[i];
-          opt.appendChild(cb);
-          opt.appendChild(span);
-          if (checkedState[key]) {
-            const mark = document.createElement('span');
-            mark.className = 'mark';
-            mark.textContent = correctSet[i] ? '✅' : (isSel ? '❌' : '');
-            opt.appendChild(mark);
-          }
-          list.appendChild(opt);
-        }
-        area.appendChild(list);
-        if (checkedState[key]) {
-          const box = document.createElement('div');
-          let ok = true;
-          for (let k in correctSet) { if (!selSet[k]) ok = false; }
-          for (let k in selSet) { if (!correctSet[k]) ok = false; }
-          box.className = 'explanation show ' + (ok ? 'correct-ex' : 'wrong-ex');
-          let exHtml = '<strong>解析：</strong><ul style="margin:8px 0 0 18px">';
-          for (let i = 0; i < q.options.length; i++) {
-            const isCorrect = !!correctSet[i];
-            const icon = isCorrect ? '✅' : (selSet[i] ? '❌' : '⬜');
-            exHtml += '<li>' + icon + ' ' + q.explanations[i] + '</li>';
-          }
-          exHtml += '</ul>';
-          box.innerHTML = exHtml;
-          expl.appendChild(box);
-          expl.style.display = 'block';
-        }
-      } else if (currentType === 'truefalse') {
-        qtext.textContent = q.question;
-        area.appendChild(qtext);
-        const list = document.createElement('div');
-        list.className = 'options-list';
-        const opts = [{val: true, label: '是 / True'}, {val: false, label: '否 / False'}];
-        for (let i = 0; i < opts.length; i++) {
-          const opt = document.createElement('label');
-          opt.className = 'option';
-          const v = opts[i].val;
-          const isSel = userAnswers[key] === v;
-          if (checkedState[key]) {
-            if (v === q.correct) opt.classList.add('correct-ans');
-            else if (isSel) opt.classList.add('wrong-ans');
-          }
-          const radio = document.createElement('input');
-          radio.type = 'radio';
-          radio.name = 'tfOpt';
-          radio.checked = isSel;
-          radio.disabled = !!checkedState[key];
-          radio.addEventListener('change', function() {
-            userAnswers[key] = v;
-          });
-          const span = document.createElement('span');
-          span.className = 'label';
-          span.textContent = opts[i].label;
-          opt.appendChild(radio);
-          opt.appendChild(span);
-          if (checkedState[key]) {
-            const mark = document.createElement('span');
-            mark.className = 'mark';
-            mark.textContent = v === q.correct ? '✅' : (isSel ? '❌' : '');
-            opt.appendChild(mark);
-          }
-          list.appendChild(opt);
-        }
-        area.appendChild(list);
-        if (checkedState[key]) {
-          const box = document.createElement('div');
-          const ok = userAnswers[key] === q.correct;
-          box.className = 'explanation show ' + (ok ? 'correct-ex' : 'wrong-ex');
-          box.innerHTML = '<strong>解析：</strong><br>' + (q.correct ? q.explanationTrue : q.explanationFalse);
-          expl.appendChild(box);
-          expl.style.display = 'block';
-        }
-      }
-    }
-
-    // ===== DRAG & DROP =====
-    function setupDrag(el) {
-      el.addEventListener('dragstart', function(e) {
-        e.dataTransfer.setData('text/plain', el.dataset.value);
-        el.classList.add('dragging');
-      });
-      el.addEventListener('dragend', function() {
-        el.classList.remove('dragging');
-      });
-    }
-
-    document.addEventListener('dragover', function(e) {
-      const blank = e.target.closest && e.target.closest('[data-blank]');
-      if (blank) e.preventDefault();
+function restoreState(q) {
+  if (userAnswers[q.id] === undefined) return;
+  if (q.type === "single") {
+    const ans = userAnswers[q.id];
+    document.querySelectorAll(`input[name="${q.id}"]`).forEach((el, i) => { if (i === ans) el.checked = true; });
+    document.querySelectorAll(`#card-${q.id} .options label`).forEach((el, i) => { if (i === ans) el.classList.add("selected"); });
+  } else if (q.type === "multi") {
+    const ans = userAnswers[q.id] || [];
+    document.querySelectorAll(`input[name="${q.id}"]`).forEach((el, i) => { if (ans.includes(i)) el.checked = true; });
+    document.querySelectorAll(`#card-${q.id} .options label`).forEach((el, i) => { if (ans.includes(i)) el.classList.add("selected"); });
+  } else if (q.type === "tf") {
+    const ans = userAnswers[q.id];
+    document.querySelectorAll(`input[name="${q.id}"]`).forEach((el, i) => { if (i === ans) el.checked = true; });
+    document.querySelectorAll(`#card-${q.id} .options label`).forEach((el, i) => { if (i === ans) el.classList.add("selected"); });
+  } else if (q.type === "drag") {
+    const ans = userAnswers[q.id] || [];
+    ans.forEach((term, idx) => {
+      const zones = document.querySelectorAll(`#card-${q.id} .drop-zone`);
+      if (zones[idx] && term) { zones[idx].textContent = term; zones[idx].classList.add("filled"); }
     });
+  }
+  if (checked[q.id]) showExplanation(q.id);
+}
 
-    document.addEventListener('drop', function(e) {
-      const blank = e.target.closest && e.target.closest('[data-blank]');
-      if (!blank) return;
+/* ===================== 交互逻辑 ===================== */
+
+function selectSingle(qid, idx) {
+  if (checked[qid]) return;
+  userAnswers[qid] = idx;
+  document.querySelectorAll(`#card-${qid} .options label`).forEach((el, i) => {
+    el.classList.toggle("selected", i === idx);
+  });
+}
+
+function toggleMulti(qid, idx) {
+  if (checked[qid]) return;
+  let arr = userAnswers[qid] || [];
+  if (arr.includes(idx)) arr = arr.filter(i => i !== idx);
+  else arr.push(idx);
+  userAnswers[qid] = arr.sort((a, b) => a - b);
+  document.querySelectorAll(`#card-${qid} .options label`).forEach((el, i) => {
+    el.classList.toggle("selected", arr.includes(i));
+  });
+}
+
+function selectTF(qid, idx) {
+  if (checked[qid]) return;
+  userAnswers[qid] = idx;
+  document.querySelectorAll(`#card-${qid} .options label`).forEach((el, i) => {
+    el.classList.toggle("selected", i === idx);
+  });
+}
+
+/* ===================== 检查答案 ===================== */
+
+function checkDrag(qid) {
+  const q = allQuestions.find(x => x.id === qid);
+  const zones = document.querySelectorAll(`#card-${qid} .drop-zone`);
+  const ans = [];
+  zones.forEach(z => ans.push(z.textContent.trim()));
+  userAnswers[qid] = ans;
+  let allCorrect = true;
+  zones.forEach((z, i) => {
+    const correct = q.answer[i];
+    if (z.textContent.trim() === correct) { z.classList.add("correct"); }
+    else { z.classList.add("wrong"); allCorrect = false; }
+  });
+  checked[qid] = allCorrect ? "correct" : "wrong";
+  showExplanation(qid);
+  computeScore();
+}
+
+function checkSingle(qid) {
+  if (userAnswers[qid] === undefined) { alert("请先选择一个选项"); return; }
+  const q = allQuestions.find(x => x.id === qid);
+  const ans = userAnswers[qid];
+  const correct = ans === q.correct;
+  checked[qid] = correct ? "correct" : "wrong";
+  document.querySelectorAll(`#card-${qid} .options label`).forEach((el, i) => {
+    el.classList.add("disabled");
+    if (i === q.correct) el.classList.add("correct");
+    else if (i === ans && !correct) el.classList.add("wrong");
+  });
+  showExplanation(qid);
+  computeScore();
+}
+
+function checkMulti(qid) {
+  const arr = userAnswers[qid] || [];
+  if (arr.length === 0) { alert("请至少选择一个选项"); return; }
+  const q = allQuestions.find(x => x.id === qid);
+  const correct = JSON.stringify(arr) === JSON.stringify(q.correct);
+  checked[qid] = correct ? "correct" : "wrong";
+  document.querySelectorAll(`#card-${qid} .options label`).forEach((el, i) => {
+    el.classList.add("disabled");
+    if (q.correct.includes(i)) el.classList.add("correct");
+    else if (arr.includes(i)) el.classList.add("wrong");
+  });
+  showExplanation(qid);
+  computeScore();
+}
+
+function checkTF(qid) {
+  if (userAnswers[qid] === undefined) { alert("请先选择是或否"); return; }
+  const q = allQuestions.find(x => x.id === qid);
+  const ans = userAnswers[qid];
+  const correct = (ans === 0) === q.correct; // 0=是, 1=否
+  checked[qid] = correct ? "correct" : "wrong";
+  document.querySelectorAll(`#card-${qid} .options label`).forEach((el, i) => {
+    el.classList.add("disabled");
+    const isCorrect = (i === 0) === q.correct;
+    if (isCorrect) el.classList.add("correct");
+    else if (i === ans) el.classList.add("wrong");
+  });
+  showExplanation(qid);
+  computeScore();
+}
+
+function showExplanation(qid) {
+  const q = allQuestions.find(x => x.id === qid);
+  const expEl = document.getElementById(`exp-${qid}`);
+  if (!expEl) return;
+  let html = "";
+  if (q.type === "drag") {
+    html = `<b>解析：</b><br>` + q.explanations.map((e, i) => `空格 ${i+1}：${e}`).join("<br>");
+  } else if (q.type === "single" || q.type === "multi") {
+    html = `<b>解析：</b><br>` + q.explanations.map((e, i) => `${String.fromCharCode(65+i)}. ${e}`).join("<br>");
+  } else if (q.type === "tf") {
+    html = `<b>解析：</b><br>` + q.explanations.filter(e => e).map(e => e).join("<br>");
+  }
+  expEl.innerHTML = html;
+  expEl.classList.remove("hidden");
+}
+
+function checkCurrent() {
+  const q = allQuestions[currentIndex];
+  if (q.type === "drag") checkDrag(q.id);
+  else if (q.type === "single") checkSingle(q.id);
+  else if (q.type === "multi") checkMulti(q.id);
+  else if (q.type === "tf") checkTF(q.id);
+}
+
+/* ===================== 重置 ===================== */
+
+function resetDrag(qid) {
+  delete userAnswers[qid]; delete checked[qid];
+  const zones = document.querySelectorAll(`#card-${qid} .drop-zone`);
+  zones.forEach(z => { z.textContent = ""; z.classList.remove("filled", "correct", "wrong"); });
+  document.getElementById(`exp-${qid}`).classList.add("hidden");
+  computeScore();
+}
+
+function resetSingle(qid) {
+  delete userAnswers[qid]; delete checked[qid];
+  document.querySelectorAll(`#card-${qid} .options label`).forEach(el => {
+    el.classList.remove("selected", "correct", "wrong", "disabled");
+  });
+  document.querySelectorAll(`input[name="${qid}"]`).forEach(el => el.checked = false);
+  document.getElementById(`exp-${qid}`).classList.add("hidden");
+  computeScore();
+}
+
+function resetMulti(qid) {
+  delete userAnswers[qid]; delete checked[qid];
+  document.querySelectorAll(`#card-${qid} .options label`).forEach(el => {
+    el.classList.remove("selected", "correct", "wrong", "disabled");
+  });
+  document.querySelectorAll(`input[name="${qid}"]`).forEach(el => el.checked = false);
+  document.getElementById(`exp-${qid}`).classList.add("hidden");
+  computeScore();
+}
+
+function resetTF(qid) {
+  delete userAnswers[qid]; delete checked[qid];
+  document.querySelectorAll(`#card-${qid} .options label`).forEach(el => {
+    el.classList.remove("selected", "correct", "wrong", "disabled");
+  });
+  document.querySelectorAll(`input[name="${qid}"]`).forEach(el => el.checked = false);
+  document.getElementById(`exp-${qid}`).classList.add("hidden");
+  computeScore();
+}
+
+function resetCurrent() {
+  const q = allQuestions[currentIndex];
+  if (q.type === "drag") resetDrag(q.id);
+  else if (q.type === "single") resetSingle(q.id);
+  else if (q.type === "multi") resetMulti(q.id);
+  else if (q.type === "tf") resetTF(q.id);
+}
+
+function resetAll() {
+  userAnswers = {}; checked = {};
+  document.getElementById("resultPage").classList.add("hidden");
+  document.querySelectorAll(".score-bar, .progress-text, .progress-bar, .nav").forEach(el => el.classList.remove("hidden"));
+  renderCurrent();
+  computeScore();
+}
+
+/* ===================== 导航 ===================== */
+
+function prevQuestion() {
+  if (currentIndex > 0) { currentIndex--; renderCurrent(); }
+}
+
+function nextQuestion() {
+  if (currentIndex < allQuestions.length - 1) { currentIndex++; renderCurrent(); }
+  else { showResult(); }
+}
+
+function showResult() {
+  document.getElementById("quizContainer").innerHTML = "";
+  document.querySelectorAll(".score-bar, .progress-text, .progress-bar, .nav").forEach(el => el.classList.add("hidden"));
+  const resultPage = document.getElementById("resultPage");
+  resultPage.classList.remove("hidden");
+  const score = parseInt(document.getElementById("score").textContent);
+  const max = parseInt(document.getElementById("maxScore").textContent);
+  document.getElementById("finalScore").textContent = score + " / " + max;
+  const pct = max > 0 ? (score / max * 100) : 0;
+  let text = "";
+  if (pct >= 90) text = "🌟 优秀！你对 Agent Harness 六组件架构理解非常深入！";
+  else if (pct >= 75) text = "👍 良好！大部分核心概念已掌握，继续巩固细节。";
+  else if (pct >= 50) text = "📚 及格！建议重新阅读实验文档，重点理解评估指标和安全策略。";
+  else text = "💪 加油！建议先通读实验文档，再进行自测。";
+  document.getElementById("finalText").textContent = text;
+}
+
+function continueQuiz() {
+  document.getElementById("resultPage").classList.add("hidden");
+  document.querySelectorAll(".score-bar, .progress-text, .progress-bar, .nav").forEach(el => el.classList.remove("hidden"));
+  renderCurrent();
+}
+
+/* ===================== 拖拽 ===================== */
+
+function setupDragListeners(q) {
+  if (q.type !== "drag") return;
+  const draggables = document.querySelectorAll(`#card-${q.id} .draggable`);
+  const zones = document.querySelectorAll(`#card-${q.id} .drop-zone`);
+  draggables.forEach(d => {
+    d.addEventListener("dragstart", e => { e.dataTransfer.setData("text/plain", d.dataset.term); d.classList.add("dragging"); });
+    d.addEventListener("dragend", () => d.classList.remove("dragging"));
+    d.addEventListener("click", () => {
+      if (checked[q.id]) return;
+      const emptyZone = Array.from(zones).find(z => !z.textContent.trim());
+      if (emptyZone) { emptyZone.textContent = d.dataset.term; emptyZone.classList.add("filled"); }
+    });
+  });
+  zones.forEach(z => {
+    z.addEventListener("dragover", e => e.preventDefault());
+    z.addEventListener("drop", e => {
       e.preventDefault();
-      const value = e.dataTransfer.getData('text/plain');
-      if (!value) return;
-      const bidx = parseInt(blank.dataset.blank, 10);
-      const key = makeKey(currentType, currentIndex);
-      if (!userAnswers[key]) userAnswers[key] = [];
-      userAnswers[key][bidx] = value;
-      renderQuestion();
+      if (checked[q.id]) return;
+      const term = e.dataTransfer.getData("text/plain");
+      z.textContent = term; z.classList.add("filled");
     });
-
-    // Also support click-to-fill on mobile
-    document.addEventListener('click', function(e) {
-      const blank = e.target.closest && e.target.closest('[data-blank]');
-      if (!blank) return;
-      if (checkedState[makeKey(currentType, currentIndex)]) return;
-      const key = makeKey(currentType, currentIndex);
-      const ans = userAnswers[key] || [];
-      const bidx = parseInt(blank.dataset.blank, 10);
-      if (ans[bidx]) {
-        delete ans[bidx];
-        renderQuestion();
-        return;
-      }
-      // Find first unused draggable
-      const chips = document.querySelectorAll('.draggable:not(.used)');
-      if (chips.length > 0) {
-        const val = chips[0].dataset.value;
-        if (!userAnswers[key]) userAnswers[key] = [];
-        userAnswers[key][bidx] = val;
-        renderQuestion();
-      }
+    z.addEventListener("click", () => {
+      if (checked[q.id]) return;
+      if (z.textContent.trim()) { z.textContent = ""; z.classList.remove("filled", "correct", "wrong"); }
     });
+  });
+}
 
-    // ===== CONTROLS =====
-    function switchTab(type) {
-      currentType = type;
-      currentIndex = 0;
-      document.querySelectorAll('.tab').forEach(function(t) {
-        t.classList.toggle('active', t.dataset.type === type);
-      });
-      renderQuestion();
-    }
+/* ===================== 总览面板 ===================== */
 
-    document.querySelectorAll('.tab').forEach(function(tab) {
-      tab.addEventListener('click', function() {
-        switchTab(tab.dataset.type);
-      });
-    });
+function openDashboard() {
+  renderDashboardGrid("all");
+  document.getElementById("dashboard").classList.add("open");
+}
 
-    document.getElementById('btnPrev').addEventListener('click', function() {
-      if (currentIndex > 0) { currentIndex--; renderQuestion(); }
-    });
+function closeDashboard() {
+  document.getElementById("dashboard").classList.remove("open");
+}
 
-    document.getElementById('btnNext').addEventListener('click', function() {
-      if (currentIndex + 1 < countQuestions(currentType)) { currentIndex++; renderQuestion(); }
-    });
+function filterDashboard(filter) {
+  renderDashboardGrid(filter);
+}
 
-    document.getElementById('btnCheck').addEventListener('click', function() {
-      const key = makeKey(currentType, currentIndex);
-      if (countQuestions(currentType) === 0) return;
-      checkedState[key] = true;
-      updateScore();
-      renderQuestion();
-    });
+function renderDashboardGrid(filter) {
+  const grid = document.getElementById("dashboardGrid");
+  grid.innerHTML = "";
+  allQuestions.forEach((q, i) => {
+    const state = getState(q.id);
+    if (filter !== "all" && state !== filter) return;
+    const div = document.createElement("div");
+    div.className = "dashboard-item " + state;
+    const typeLabel = q.type === "drag" ? "拖拽" : q.type === "single" ? "单选" : q.type === "multi" ? "多选" : "判断";
+    div.innerHTML = `<div style="font-weight:700;margin-bottom:4px;">${i+1}</div><div style="color:var(--muted);font-size:.75rem;">${typeLabel} · ${q.category}</div>`;
+    div.onclick = () => { currentIndex = i; closeDashboard(); renderCurrent(); };
+    grid.appendChild(div);
+  });
+}
 
-    document.getElementById('btnResetCurrent').addEventListener('click', function() {
-      const key = makeKey(currentType, currentIndex);
-      delete userAnswers[key];
-      delete checkedState[key];
-      updateScore();
-      renderQuestion();
-    });
+/* ===================== 洗牌 ===================== */
 
-    document.getElementById('btnResetAll').addEventListener('click', function() {
-      if (!confirm('确定要重置所有答题记录吗？')) return;
-      userAnswers = {};
-      checkedState = {};
-      updateScore();
-      renderQuestion();
-    });
+function shuffleArray(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
 
-    // ===== SHUFFLE =====
-    function shuffleArray(arr) {
-      for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        const tmp = arr[i];
-        arr[i] = arr[j];
-        arr[j] = tmp;
-      }
-    }
+function shuffleAll() {
+  if (!confirm("重新洗牌将清空所有答题记录，是否继续？")) return;
+  singleQuestions.forEach(q => {
+    const pairs = q.options.map((opt, i) => ({ opt, expl: q.explanations[i] }));
+    shuffleArray(pairs);
+    q.options = pairs.map(p => p.opt);
+    q.explanations = pairs.map(p => p.expl);
+    q.correct = pairs.findIndex(p => p.expl.startsWith("✅"));
+  });
+  multiQuestions.forEach(q => {
+    const pairs = q.options.map((opt, i) => ({ opt, expl: q.explanations[i], isCorrect: q.correct.includes(i) }));
+    shuffleArray(pairs);
+    q.options = pairs.map(p => p.opt);
+    q.explanations = pairs.map(p => p.expl);
+    q.correct = pairs.map((p, i) => p.isCorrect ? i : -1).filter(i => i !== -1);
+  });
+  trueFalseQuestions.forEach(q => {
+    // 判断题只有是/否，不需要洗牌选项，但可以重置
+  });
+  userAnswers = {}; checked = {}; shuffled = true;
+  currentIndex = 0;
+  renderCurrent();
+  computeScore();
+}
 
-    function buildIndexMap(oldLen, shuffledIndices) {
-      const map = {};
-      for (let newPos = 0; newPos < oldLen; newPos++) {
-        map[shuffledIndices[newPos]] = newPos;
-      }
-      return map;
-    }
+/* ===================== 初始化 ===================== */
 
-    document.getElementById('btnShuffle').addEventListener('click', function() {
-      if (!confirm('随机化会清空所有答题记录，确定继续？')) return;
-      userAnswers = {};
-      checkedState = {};
-
-      // Single
-      for (let qi = 0; qi < singleQuestions.length; qi++) {
-        const q = singleQuestions[qi];
-        const order = [];
-        for (let i = 0; i < q.options.length; i++) order.push(i);
-        shuffleArray(order);
-        const newOpts = [];
-        for (let i = 0; i < order.length; i++) newOpts.push(q.options[order[i]]);
-        const newExps = [];
-        for (let i = 0; i < order.length; i++) newExps.push(q.explanations[order[i]]);
-        const idxMap = buildIndexMap(q.options.length, order);
-        q.correct = idxMap[q.correct];
-        q.options = newOpts;
-        q.explanations = newExps;
-      }
-
-      // Multi
-      for (let qi = 0; qi < multiQuestions.length; qi++) {
-        const q = multiQuestions[qi];
-        const order = [];
-        for (let i = 0; i < q.options.length; i++) order.push(i);
-        shuffleArray(order);
-        const newOpts = [];
-        for (let i = 0; i < order.length; i++) newOpts.push(q.options[order[i]]);
-        const newExps = [];
-        for (let i = 0; i < order.length; i++) newExps.push(q.explanations[order[i]]);
-        const idxMap = buildIndexMap(q.options.length, order);
-        const newCorrect = [];
-        for (let i = 0; i < q.correct.length; i++) newCorrect.push(idxMap[q.correct[i]]);
-        q.correct = newCorrect;
-        q.options = newOpts;
-        q.explanations = newExps;
-      }
-
-      updateScore();
-      renderQuestion();
-    });
-
-    // ===== OVERVIEW =====
-    function openOverview() {
-      const grid = document.getElementById('overviewGrid');
-      grid.innerHTML = '';
-      const questions = getQuestions(currentType);
-      for (let i = 0; i < questions.length; i++) {
-        const cell = document.createElement('div');
-        const key = makeKey(currentType, i);
-        let cls = 'grid-item';
-        if (checkedState[key]) {
-          const pts = getUserPoints(questions[i], currentType, i);
-          const maxPts = getQuestionPoints(questions[i], currentType);
-          cls += pts === maxPts ? ' correct' : ' wrong';
-        } else {
-          cls += ' empty';
-        }
-        cell.className = cls;
-        cell.textContent = i + 1;
-        cell.addEventListener('click', function() {
-          currentIndex = i;
-          document.getElementById('overviewOverlay').classList.remove('show');
-          renderQuestion();
-        });
-        grid.appendChild(cell);
-      }
-      document.getElementById('overviewOverlay').classList.add('show');
-    }
-
-    document.getElementById('btnOverview').addEventListener('click', openOverview);
-    document.getElementById('btnCloseOverview').addEventListener('click', function() {
-      document.getElementById('overviewOverlay').classList.remove('show');
-    });
-    document.getElementById('overviewOverlay').addEventListener('click', function(e) {
-      if (e.target === document.getElementById('overviewOverlay')) {
-        document.getElementById('overviewOverlay').classList.remove('show');
-      }
-    });
-
-    // ===== KEYBOARD NAV =====
-    document.addEventListener('keydown', function(e) {
-      if (e.key === 'ArrowLeft') document.getElementById('btnPrev').click();
-      if (e.key === 'ArrowRight') document.getElementById('btnNext').click();
-    });
-
-    // ===== INIT =====
-    initBadges();
-    updateScore();
-    renderQuestion();
-  </script>
+initAllQuestions();
+renderCurrent();
+computeScore();
+</script>
 </body>
 </html>

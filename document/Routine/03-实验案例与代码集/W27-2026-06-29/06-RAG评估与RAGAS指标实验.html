@@ -1,1109 +1,859 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>06-RAG 评估与 RAGAS 指标实验面试知识自测</title>
-  <style>
-    :root {
-      --bg-body: #FAF8F5;
-      --bg-card: #FFFFFF;
-      --bg-warm: #F5F0E8;
-      --primary: #2D5F5F;
-      --primary-light: #3D7A7A;
-      --accent: #4A7C59;
-      --accent-light: #E8F3E8;
-      --text-main: #2C2C2C;
-      --text-muted: #6B6B6B;
-      --border: #D8D2C8;
-      --shadow: rgba(0,0,0,0.06);
-      --correct: #3A8C5D;
-      --correct-bg: #EAF6EE;
-      --wrong: #C44B4B;
-      --wrong-bg: #FCEAEA;
-      --warning: #C9943A;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>06-RAG 评估与 RAGAS 指标实验 — 互动知识卡牌</title>
+<style>
+  :root {
+    --bg: #f6f7f9;
+    --card: #ffffff;
+    --text: #1f2937;
+    --muted: #6b7280;
+    --accent: #2563eb;
+    --accent-2: #7c3aed;
+    --good: #16a34a;
+    --bad: #dc2626;
+    --warn: #d97706;
+    --border: #e5e7eb;
+    --shadow: 0 10px 30px rgba(0,0,0,0.08);
+    --radius: 16px;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg); color: var(--text);
+    display: flex; flex-direction: column; align-items: center;
+  }
+  header {
+    width: 100%; max-width: 900px; padding: 20px 16px 10px;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  }
+  h1 { font-size: 1.25rem; margin: 0; }
+  .score-board {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 10px 16px; box-shadow: var(--shadow); display: flex; gap: 16px; align-items: center; flex-wrap: wrap;
+  }
+  .score-board .pill { font-size: 0.9rem; }
+  .pill .num { font-weight: 700; color: var(--accent); }
+  .progress-wrap { width: 100%; max-width: 900px; padding: 0 16px; }
+  .progress-bar { height: 8px; background: #e5e7eb; border-radius: 999px; overflow: hidden; }
+  .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); transition: width 0.3s ease; }
+  .progress-text { font-size: 0.85rem; color: var(--muted); margin-top: 6px; text-align: right; }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+  .container { width: 100%; max-width: 900px; padding: 16px; flex: 1; display: flex; flex-direction: column; }
 
-    body {
-      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
-      background: var(--bg-body);
-      color: var(--text-main);
-      line-height: 1.6;
-      min-height: 100vh;
-    }
+  .card {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 22px; flex: 1; display: flex; flex-direction: column; gap: 14px;
+  }
+  .q-type { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); font-weight: 700; }
+  .q-title { font-size: 1.1rem; line-height: 1.6; }
+  .options { display: flex; flex-direction: column; gap: 10px; }
+  .option {
+    background: #f8fafc; border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px;
+    cursor: pointer; display: flex; align-items: center; gap: 10px; transition: box-shadow 0.15s, border-color 0.15s, background 0.15s;
+  }
+  .option:hover { border-color: #cbd5e1; background: #f1f5f9; }
+  .option input { accent-color: var(--accent); }
+  .option.correct { border-color: var(--good); background: #f0fdf4; }
+  .option.wrong { border-color: var(--bad); background: #fef2f2; }
+  .option.disabled { pointer-events: none; opacity: 0.9; }
 
-    .container {
-      max-width: 720px;
-      margin: 0 auto;
-      padding: 16px;
-    }
+  .tf-options { display: flex; gap: 12px; flex-wrap: wrap; }
+  .tf-btn {
+    flex: 1; min-width: 120px; padding: 12px; border-radius: 12px; border: 1px solid var(--border);
+    background: #f8fafc; cursor: pointer; font-weight: 600; transition: all 0.15s;
+  }
+  .tf-btn:hover { border-color: #cbd5e1; background: #f1f5f9; }
+  .tf-btn.correct { border-color: var(--good); background: #f0fdf4; color: var(--good); }
+  .tf-btn.wrong { border-color: var(--bad); background: #fef2f2; color: var(--bad); }
+  .tf-btn.disabled { pointer-events: none; opacity: 0.9; }
 
-    header {
-      text-align: center;
-      margin-bottom: 20px;
-    }
+  .drop-zone {
+    display: inline-block; min-width: 120px; min-height: 34px; border: 2px dashed #cbd5e1;
+    border-radius: 8px; background: #f8fafc; vertical-align: middle; text-align: center; line-height: 30px;
+    padding: 0 8px; cursor: pointer; transition: border-color 0.2s, background 0.2s;
+  }
+  .drop-zone.hovered { border-color: var(--accent); background: #eff6ff; }
+  .drop-zone.occupied { border-style: solid; border-color: var(--accent); background: #eff6ff; font-weight: 600; }
+  .drop-zone.correct-zone { border-color: var(--good); background: #f0fdf4; }
+  .drop-zone.wrong-zone { border-color: var(--bad); background: #fef2f2; }
+  .draggable-pool { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+  .draggable {
+    background: #fff; border: 1px solid var(--border); border-radius: 999px; padding: 6px 14px;
+    cursor: grab; box-shadow: 0 2px 0 rgba(0,0,0,0.04); user-select: none; touch-action: none;
+  }
+  .draggable.dragging { opacity: 0.5; }
 
-    header h1 {
-      font-size: 1.6rem;
-      color: var(--primary);
-      margin-bottom: 4px;
-    }
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
+  button.action {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff; border: none;
+    border-radius: 12px; padding: 10px 16px; font-weight: 600; cursor: pointer; box-shadow: 0 6px 18px rgba(37,99,235,0.25);
+    transition: transform 0.1s, box-shadow 0.15s;
+  }
+  button.action:hover { transform: translateY(-1px); box-shadow: 0 8px 22px rgba(37,99,235,0.3); }
+  button.action.secondary { background: #fff; color: var(--text); border: 1px solid var(--border); box-shadow: none; }
+  button.action.secondary:hover { background: #f8fafc; }
+  button.action:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
 
-    header .topic {
-      font-size: 0.95rem;
-      color: var(--text-muted);
-    }
+  .explain {
+    background: #f8fafc; border-left: 4px solid var(--accent); padding: 12px 14px; border-radius: 0 10px 10px 0;
+    color: #374151; line-height: 1.6; display: none;
+  }
+  .explain.visible { display: block; }
 
-    .score-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 12px 16px;
-      margin-bottom: 16px;
-      box-shadow: 0 2px 8px var(--shadow);
-    }
+  .nav { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 6px; }
 
-    .score-bar .score {
-      font-size: 1.1rem;
-      font-weight: 600;
-      color: var(--primary);
-    }
+  .overview {
+    display: none; grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); gap: 10px; padding: 10px 0;
+  }
+  .overview.visible { display: grid; }
+  .thumb {
+    background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 10px 6px; text-align: center;
+    cursor: pointer; transition: transform 0.1s, box-shadow 0.15s; font-size: 0.85rem;
+  }
+  .thumb:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+  .thumb .t-num { font-weight: 700; font-size: 1rem; }
+  .thumb .t-type { font-size: 0.7rem; color: var(--muted); }
+  .thumb.correct { border-color: var(--good); background: #f0fdf4; }
+  .thumb.wrong { border-color: var(--bad); background: #fef2f2; }
+  .thumb.answered { border-color: var(--warn); background: #fffbeb; }
 
-    .score-bar .actions {
-      display: flex;
-      gap: 8px;
-    }
+  .filter-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+  .chip { background: #fff; border: 1px solid var(--border); border-radius: 999px; padding: 6px 12px; font-size: 0.85rem; cursor: pointer; }
+  .chip.active { background: var(--accent); color: #fff; border-color: var(--accent); }
 
-    .btn {
-      border: none;
-      border-radius: 8px;
-      padding: 8px 14px;
-      font-size: 0.85rem;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      font-family: inherit;
-    }
+  .result { display: none; flex-direction: column; align-items: center; gap: 14px; padding: 30px 16px; text-align: center; }
+  .result.visible { display: flex; }
+  .big-score { font-size: 3rem; font-weight: 800; background: linear-gradient(135deg, var(--accent), var(--accent-2)); -webkit-background-clip: text; color: transparent; }
+  .result-btns { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
 
-    .btn-sm { padding: 6px 10px; font-size: 0.78rem; }
-
-    .btn-primary {
-      background: var(--primary);
-      color: #fff;
-    }
-    .btn-primary:hover { background: var(--primary-light); }
-
-    .btn-secondary {
-      background: var(--bg-warm);
-      color: var(--text-main);
-      border: 1px solid var(--border);
-    }
-    .btn-secondary:hover { background: #EDE8DE; }
-
-    .btn-warning {
-      background: #FFF8E6;
-      color: #8A6D1F;
-      border: 1px solid #F0E0B0;
-    }
-    .btn-warning:hover { background: #FFF0CC; }
-
-    .tabs {
-      display: flex;
-      gap: 6px;
-      margin-bottom: 16px;
-      flex-wrap: wrap;
-    }
-
-    .tab {
-      flex: 1;
-      min-width: 80px;
-      text-align: center;
-      padding: 10px 8px;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      background: var(--bg-card);
-      color: var(--text-muted);
-      cursor: pointer;
-      font-size: 0.88rem;
-      transition: all 0.2s ease;
-    }
-
-    .tab.active {
-      background: var(--primary);
-      color: #fff;
-      border-color: var(--primary);
-      font-weight: 600;
-    }
-
-    .tab .badge {
-      display: inline-block;
-      margin-left: 4px;
-      background: rgba(255,255,255,0.25);
-      padding: 1px 6px;
-      border-radius: 10px;
-      font-size: 0.72rem;
-    }
-
-    .card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 20px;
-      box-shadow: 0 2px 12px var(--shadow);
-      margin-bottom: 16px;
-    }
-
-    .progress-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-    }
-
-    .progress-bar {
-      flex: 1;
-      height: 8px;
-      background: #EAE5DC;
-      border-radius: 4px;
-      overflow: hidden;
-      margin: 0 12px;
-    }
-
-    .progress-bar .fill {
-      height: 100%;
-      background: var(--primary);
-      border-radius: 4px;
-      transition: width 0.3s ease;
-    }
-
-    .question-text {
-      font-size: 1.05rem;
-      font-weight: 500;
-      margin-bottom: 18px;
-      line-height: 1.7;
-    }
-
-    .question-text .blank {
-      display: inline-block;
-      min-width: 80px;
-      padding: 3px 10px;
-      margin: 0 3px;
-      border: 2px dashed var(--border);
-      border-radius: 6px;
-      background: var(--bg-warm);
-      color: var(--text-muted);
-      font-size: 0.9rem;
-      text-align: center;
-      vertical-align: middle;
-      transition: all 0.2s ease;
-    }
-
-    .question-text .blank.filled {
-      border-style: solid;
-      border-color: var(--primary);
-      background: #F0F7F7;
-      color: var(--primary);
-      font-weight: 600;
-    }
-
-    .question-text .blank.correct {
-      border-color: var(--correct);
-      background: var(--correct-bg);
-      color: var(--correct);
-    }
-
-    .question-text .blank.wrong {
-      border-color: var(--wrong);
-      background: var(--wrong-bg);
-      color: var(--wrong);
-    }
-
-    .draggables {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: 18px;
-    }
-
-    .draggable {
-      padding: 8px 14px;
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      cursor: grab;
-      font-size: 0.9rem;
-      user-select: none;
-      transition: all 0.2s ease;
-    }
-
-    .draggable:hover {
-      border-color: var(--primary);
-      box-shadow: 0 2px 6px var(--shadow);
-    }
-
-    .draggable.dragging {
-      opacity: 0.5;
-      cursor: grabbing;
-    }
-
-    .draggable.used {
-      opacity: 0.4;
-      pointer-events: none;
-    }
-
-    .options-list {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      margin-bottom: 18px;
-    }
-
-    .option {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 12px 14px;
-      border: 1.5px solid var(--border);
-      border-radius: 10px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      background: var(--bg-card);
-    }
-
-    .option:hover { border-color: var(--primary-light); background: #F7FBFB; }
-
-    .option input[type="radio"],
-    .option input[type="checkbox"] {
-      width: 18px;
-      height: 18px;
-      accent-color: var(--primary);
-      flex-shrink: 0;
-    }
-
-    .option .label {
-      flex: 1;
-      font-size: 0.95rem;
-    }
-
-    .option.correct-ans {
-      border-color: var(--correct);
-      background: var(--correct-bg);
-    }
-
-    .option.wrong-ans {
-      border-color: var(--wrong);
-      background: var(--wrong-bg);
-    }
-
-    .option .mark {
-      font-size: 1.1rem;
-      font-weight: 700;
-      margin-left: auto;
-    }
-
-    .explanation {
-      display: none;
-      margin-top: 8px;
-      padding: 12px 14px;
-      border-radius: 8px;
-      font-size: 0.9rem;
-      line-height: 1.6;
-    }
-
-    .explanation.show { display: block; }
-
-    .explanation.correct-ex {
-      background: var(--correct-bg);
-      color: #2A6B44;
-      border: 1px solid #B8E0C8;
-    }
-
-    .explanation.wrong-ex {
-      background: var(--wrong-bg);
-      color: #8A3333;
-      border: 1px solid #F0C0C0;
-    }
-
-    .nav-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .nav-bar .btn { flex: 1; }
-
-    .overview-btn {
-      text-align: center;
-      margin-top: 12px;
-    }
-
-    .overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.35);
-      z-index: 100;
-      justify-content: center;
-      align-items: center;
-      padding: 20px;
-    }
-
-    .overlay.show { display: flex; }
-
-    .overlay-content {
-      background: var(--bg-card);
-      border-radius: 14px;
-      padding: 20px;
-      width: 100%;
-      max-width: 480px;
-      max-height: 80vh;
-      overflow-y: auto;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.15);
-    }
-
-    .overlay-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-    }
-
-    .overlay-header h2 {
-      font-size: 1.15rem;
-      color: var(--primary);
-    }
-
-    .grid-overview {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
-      gap: 8px;
-    }
-
-    .grid-item {
-      aspect-ratio: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 8px;
-      border: 1.5px solid var(--border);
-      font-size: 0.9rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.15s ease;
-    }
-
-    .grid-item:hover { transform: scale(1.05); }
-
-    .grid-item.empty { background: var(--bg-body); color: var(--text-muted); }
-    .grid-item.correct { background: var(--correct-bg); color: var(--correct); border-color: #A0D8B3; }
-    .grid-item.wrong { background: var(--wrong-bg); color: var(--wrong); border-color: #E8A0A0; }
-
-    .legend {
-      display: flex;
-      gap: 14px;
-      justify-content: center;
-      margin-top: 14px;
-      font-size: 0.8rem;
-      color: var(--text-muted);
-    }
-
-    .legend span { display: flex; align-items: center; gap: 4px; }
-    .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
-    .dot-empty { background: #D8D2C8; }
-    .dot-correct { background: var(--correct); }
-    .dot-wrong { background: var(--wrong); }
-
-    @media (max-width: 520px) {
-      .container { padding: 10px; }
-      header h1 { font-size: 1.3rem; }
-      .card { padding: 14px; }
-      .tab { font-size: 0.8rem; padding: 8px 4px; }
-      .question-text { font-size: 0.97rem; }
-    }
-  </style>
+  .hidden { display: none !important; }
+</style>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1>06-RAG 评估与 RAGAS 指标实验面试知识自测</h1>
-      <div class="topic">experiment, RAG, evaluation, RAGAS请完成以下题目检验掌握程度</div>
-    </header>
+<header>
+  <h1>06-RAG 评估与 RAGAS 指标实验</h1>
+  <div class="score-board">
+    <div class="pill">得分：<span class="num" id="scoreVal">0</span></div>
+    <div class="pill">已答：<span class="num" id="answeredVal">0</span> / <span id="totalVal">0</span></div>
+    <div class="pill">正确率：<span class="num" id="rateVal">0%</span></div>
+  </div>
+</header>
+<div class="progress-wrap">
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  <div class="progress-text" id="progressText">0 / 0</div>
+</div>
 
-    <div class="score-bar">
-      <div class="score" id="scoreDisplay">得分: 0 / 0</div>
+<div class="container">
+  <div class="filter-bar" id="filterBar">
+    <button class="chip active" data-filter="all" onclick="filterOverview('all')">全部</button>
+    <button class="chip" data-filter="correct" onclick="filterOverview('correct')">正确</button>
+    <button class="chip" data-filter="wrong" onclick="filterOverview('wrong')">错误</button>
+    <button class="chip" data-filter="unanswered" onclick="filterOverview('unanswered')">未答</button>
+  </div>
+  <div class="overview" id="overview"></div>
+
+  <div id="quizArea">
+    <div class="card" id="questionCard">
+      <div class="q-type" id="qType"></div>
+      <div class="q-title" id="qTitle"></div>
+      <div id="qBody"></div>
+      <div class="explain" id="explain"></div>
       <div class="actions">
-        <button class="btn btn-warning btn-sm" id="btnShuffle">随机选项</button>
-        <button class="btn btn-secondary btn-sm" id="btnResetAll">重置所有</button>
+        <button class="action" id="checkBtn" onclick="checkAnswer()">检查答案</button>
+        <button class="action secondary" id="resetBtn" onclick="resetQuestion()">重置题目</button>
+        <button class="action secondary" onclick="toggleOverview()">总览面板</button>
+        <button class="action secondary" id="shuffleBtn" onclick="shuffleOptions()">🎲 重新洗牌选项</button>
       </div>
     </div>
-
-    <div class="tabs" id="tabBar">
-      <div class="tab active" data-type="drag">拖拽填空<span class="badge" id="badgeDrag">0</span></div>
-      <div class="tab" data-type="single">单选题<span class="badge" id="badgeSingle">0</span></div>
-      <div class="tab" data-type="multi">多选题<span class="badge" id="badgeMulti">0</span></div>
-      <div class="tab" data-type="truefalse">判断题<span class="badge" id="badgeTrueFalse">0</span></div>
-    </div>
-
-    <div class="card" id="quizCard">
-      <div class="progress-row">
-        <span id="progressText">1 / 1</span>
-        <div class="progress-bar"><div class="fill" id="progressFill" style="width:0%"></div></div>
-        <button class="btn btn-secondary btn-sm" id="btnOverview">总览</button>
-      </div>
-
-      <div id="questionArea"></div>
-
-      <div id="explanationArea"></div>
-
-      <div style="display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;">
-        <button class="btn btn-primary" id="btnCheck">检查答案</button>
-        <button class="btn btn-secondary" id="btnResetCurrent">重置当前题</button>
-      </div>
-
-      <div class="nav-bar" style="margin-top:16px;">
-        <button class="btn btn-secondary" id="btnPrev">上一题</button>
-        <button class="btn btn-secondary" id="btnNext">下一题</button>
-      </div>
+    <div class="nav">
+      <button class="action secondary" onclick="prevQuestion()">上一题</button>
+      <button class="action secondary" onclick="nextQuestion()">下一题</button>
     </div>
   </div>
 
-  <div class="overlay" id="overviewOverlay">
-    <div class="overlay-content">
-      <div class="overlay-header">
-        <h2>题目总览</h2>
-        <button class="btn btn-secondary btn-sm" id="btnCloseOverview">关闭</button>
-      </div>
-      <div class="grid-overview" id="overviewGrid"></div>
-      <div class="legend">
-        <span><span class="dot dot-empty"></span>未答</span>
-        <span><span class="dot dot-correct"></span>正确</span>
-        <span><span class="dot dot-wrong"></span>错误</span>
-      </div>
+  <div class="result" id="resultArea">
+    <div class="big-score" id="finalScore">0</div>
+    <div id="finalMsg">完成所有题目！</div>
+    <div class="result-btns">
+      <button class="action" onclick="showResultDetails()">返回查看</button>
+      <button class="action secondary" onclick="resetAll()">重置全部</button>
     </div>
   </div>
+</div>
 
-  <script>
-    // ===== DATA PLACEHOLDERS =====
-    // DRAG_QUESTIONS_PLACEHOLDER_START
-const dragQuestions = [
-  {
-    question: "RAGAS 的 evaluate() 函数要求数据集包含四个字段：{0}、{1}、{2} 和 ground_truth，其中 contexts 的类型是 {3}。",
-    answers: ['question', 'answer', 'contexts', 'List[List[str]]'],
-    options: ['question', 'answer', 'contexts', 'List[List[str]]', 'List[str]', 'references', 'predictions', 'queries'],
-    explanations: ['RAGAS 要求传入 question 字段表示查询问题。', 'answer 字段存放模型生成的回答。', 'contexts 字段存放检索到的上下文文档，是每个问题对应的文档列表的列表。', 'contexts 的类型是 List[List[str]]，即每个问题对应一个文档字符串列表。']
-  },
-  {
-    question: "自定义 FaithfulnessChecker 使用 {0} 模型进行 NLI 推理，entailment 标签索引为 {1}，返回的是被 contexts {2} 的声明比例。",
-    answers: ['cross-encoder/nli-deberta-v3-base', '0', '支持'],
-    options: ['cross-encoder/nli-deberta-v3-base', '0', '支持', 'BAAI/bge-large-zh', '1', '2', '否定', '反驳'],
-    explanations: ['代码中使用 cross-encoder/nli-deberta-v3-base 作为 NLI 模型。', '代码注释显示 entailment_label = 0，取决于模型标签映射。', 'Faithfulness 返回的是被上下文支持的声明比例，即 entailment 的比例。']
-  }
-];
-    // DRAG_QUESTIONS_PLACEHOLDER_END
+<script>
+(function(){
+  'use strict';
 
-    // SINGLE_QUESTIONS_PLACEHOLDER_START
-const singleQuestions = [
-  {
-    question: "在实验中，哪个指标与人工评分的 Pearson 相关性最高？",
-    options: ['Answer Correctness (r=0.78)', 'Faithfulness (r=0.72)', 'Semantic Sim (r=0.71)', 'Answer Relevancy (r=0.68)'],
-    correct: 0,
-    explanations: ['✅ Answer Correctness 与人工评分相关性最高，r=0.78，是实验结果中最高的。', '❌ Faithfulness 虽然也很高(r=0.72)，但不是最高，它主要用于幻觉检测。', '❌ Semantic Sim 的 r=0.71，低于 Answer Correctness，但性价比最佳。', '❌ Answer Relevancy 的 r=0.68，且容易与正确性混淆。']
-  },
-  {
-    question: "哪个指标最适合作为线上幻觉监控的自动化指标？",
-    options: ['Answer Correctness', 'Faithfulness (r=0.72，无需 ground truth)', 'BERTScore', 'Context Precision'],
-    correct: 1,
-    explanations: ['❌ Answer Correctness 需要 ground truth，不适合无监督的线上监控场景。', '✅ Faithfulness 是检测幻觉的最佳自动化指标(r=0.72)，且不需要 ground truth，适合线上监控。', '❌ BERTScore 只是快速 proxy，不是专门的幻觉检测指标。', '❌ Context Precision 是检索质量指标，与人工偏好相关性较弱(r=0.55)。']
-  },
-  {
-    question: "自定义 SemanticCorrectness 类使用什么模型和方式计算相似度？",
-    options: ['cross-encoder/nli-deberta-v3-base', 'ragas 内置 LLM', 'BAAI/bge-large-zh + 余弦相似度', 'GPT-4'],
-    correct: 2,
-    explanations: ['❌ 这是 FaithfulnessChecker 使用的 NLI 模型，不是语义相似度模型。', '❌ SemanticCorrectness 是自定义实现的，不使用 ragas 内置 LLM。', '✅ 代码中使用 BAAI/bge-large-zh 编码句子，然后通过 np.dot 计算余弦相似度。', '❌ 实验未使用 GPT-4 计算语义相似度，使用的是开源 embedding 模型。']
-  },
-  {
-    question: "Context Precision 和 Context Recall 主要评估什么维度？",
-    options: ['生成质量', '端到端性能', '人工偏好', '检索质量'],
-    correct: 3,
-    explanations: ['❌ 生成质量由 Faithfulness、Answer Relevancy 等指标评估。', '❌ 端到端性能由 Answer Correctness 评估。', '❌ 人工偏好是综合评分，不是这两个指标的专门评估维度。', '✅ 实验明确将 Context Precision 和 Context Recall 归类为检索质量指标。']
-  }
-];
-    // SINGLE_QUESTIONS_PLACEHOLDER_END
+  const allQuestions = [
+    // ===== 单选题 (10) =====
+    {
+      type: 'single',
+      question: 'RAGAS 框架的核心思想是什么？',
+      options: [
+        '利用人工标注者对每个回答进行 1-5 分评分',
+        '利用 LLM 作为评判者，通过构造特定 prompt 判断回答质量',
+        '使用 BLEU 和 ROUGE 等字符串重叠指标评估生成质量',
+        '仅依赖 NLI 模型判断回答与上下文的一致性'
+      ],
+      correct: 1,
+      explain: 'RAGAS 的核心创新在于利用 LLM 作为「评判者」，通过语义感知的方式评估 RAG 系统质量，而非传统字符串匹配指标。'
+    },
+    {
+      type: 'single',
+      question: 'Faithfulness 指标的定义是什么？',
+      options: [
+        '回答与标准答案的语义相似度',
+        '回答是否直接回应了用户的问题',
+        '被上下文支持的声明数 / 回答中的总声明数',
+        '检索到的前 k 个文档中相关文档的比例'
+      ],
+      correct: 2,
+      explain: 'Faithfulness = 被上下文支持的声明数 / 总声明数，用于检测幻觉——即回答中是否包含无法从检索上下文中验证的信息。'
+    },
+    {
+      type: 'single',
+      question: 'Answer Correctness 与人工评分的 Pearson 相关系数 r 是多少？',
+      options: [
+        '0.55',
+        '0.68',
+        '0.72',
+        '0.78'
+      ],
+      correct: 3,
+      explain: '实验结果显示 Answer Correctness 与人工评分的相关性最高（r=0.78），是端到端质量最可靠的自动化代理指标。'
+    },
+    {
+      type: 'single',
+      question: 'Context Precision@k 衡量的是什么？',
+      options: [
+        '所有相关文档中被成功召回的比例',
+        '检索到的前 k 个文档中真正相关文档所占比例',
+        '回答与标准答案的事实重叠度',
+        '回答是否直接回应了用户的问题'
+      ],
+      correct: 1,
+      explain: 'Context Precision@k = top-k 中相关文档数 / k，衡量检索系统的精确率，避免给 LLM 灌入无关噪声上下文。'
+    },
+    {
+      type: 'single',
+      question: '自定义 FaithfulnessChecker 中，为什么对多个 context 取「最大 entailment 分数」而非平均？',
+      options: [
+        '因为平均计算会放大噪声，最大更稳健',
+        '因为只要有一个 context 能支持该回答，回答就是忠实的（OR 逻辑）',
+        '因为 CrossEncoder 模型对长文本平均效果差',
+        '因为 RAGAS 官方推荐取最大值'
+      ],
+      correct: 1,
+      explain: '只要有一个上下文能支持回答中的声明，该声明即被视为忠实——这是 OR 逻辑，而非要求所有上下文都支持。'
+    },
+    {
+      type: 'single',
+      question: '以下哪项是 Faithfulness 指标的局限性？',
+      options: [
+        '必须有 ground truth 才能计算',
+        '无法检测上下文中的错误信息（如果检索文档本身有错，Faithfulness 仍可能很高）',
+        '对开放式问题的判断主观性较强',
+        '只关心检索准不准，不关心全不全'
+      ],
+      correct: 1,
+      explain: 'Faithfulness 判断「回答是否被上下文支持」，但如果上下文本身包含错误信息，Faithfulness 仍可能很高——它无法检测原始知识源的错误。'
+    },
+    {
+      type: 'single',
+      question: '在相关性分析中，当评分分布偏斜或存在极端值时，应优先参考哪个系数？',
+      options: [
+        'Pearson r',
+        'Spearman ρ',
+        'Kendall τ',
+        'F1 Score'
+      ],
+      correct: 1,
+      explain: 'Spearman 秩相关系数对异常值更稳健，能捕捉单调（不必线性）关系，适合评分分布偏斜或存在极端值的场景。'
+    },
+    {
+      type: 'single',
+      question: '为什么 RAGAS 在计算 Faithfulness 时要将回答拆分为「原子声明」？',
+      options: [
+        '为了减少 LLM 调用次数，降低计算成本',
+        '为了精确定位哪个具体事实出了问题，避免整体判断掩盖局部错误',
+        '因为原子声明更容易与 BLEU 分数对齐',
+        '因为 RAGAS 只支持单句输入'
+      ],
+      correct: 1,
+      explain: '回答通常包含多个事实，整体判断 entailment 会掩盖局部错误。拆分为原子声明后可以精确定位哪个具体事实出了问题。'
+    },
+    {
+      type: 'single',
+      question: '日常开发迭代场景下，推荐的指标组合是什么？',
+      options: [
+        '全套 RAGAS 5 指标',
+        'Answer Correctness + Human Eval',
+        'Faithfulness + Semantic Sim',
+        'Context Precision@k + Context Recall'
+      ],
+      correct: 2,
+      explain: '日常迭代推荐 Faithfulness + Semantic Sim，无需 ground truth 且计算成本低，适合快速发现幻觉和语义漂移。'
+    },
+    {
+      type: 'single',
+      question: 'SemanticCorrectness 类使用什么模型计算语义相似度？',
+      options: [
+        'OpenAI GPT-4 API',
+        'cross-encoder/nli-deberta-v3-base',
+        'BAAI/bge-large-zh',
+        'all-MiniLM-L6-v2'
+      ],
+      correct: 2,
+      explain: '代码中 SemanticCorrectness 默认使用 BAAI/bge-large-zh 模型，针对中文语义相似度优化。英文场景可换为 all-MiniLM-L6-v2 或 intfloat/e5-large-v2。'
+    },
 
-    // MULTI_QUESTIONS_PLACEHOLDER_START
-const multiQuestions = [
-  {
-    question: "以下哪些 RAGAS 指标的计算成本属于"高（LLM）"？（多选）",
-    options: ['Faithfulness', 'Answer Relevancy', 'Context Precision', 'Context Recall', 'Answer Correctness', 'Semantic Sim'],
-    correct: [0, 1, 4],
-    explanations: ['✅ Faithfulness 计算成本高，需要调用 LLM 判断声明是否被支持。', '✅ Answer Relevancy 计算成本高，需要调用 LLM 判断回答与问题的相关度。', '❌ Context Precision 计算成本为中等，不需要 LLM 调用。', '❌ Context Recall 计算成本为中等，不需要 LLM 调用。', '✅ Answer Correctness 计算成本高，需要调用 LLM 进行语义比较。', '❌ Semantic Sim 是自定义低成本指标，基于 embedding 模型，不需要 LLM。']
-  },
-  {
-    question: "关于 prepare_ragas_dataset 函数，以下哪些描述是正确的？（多选）",
-    options: ['返回类型是 datasets.Dataset', 'contexts 参数类型是 List[str]', '需要 question, answer, contexts, ground_truth 四个字段', '依赖 numpy 库完成核心转换', 'SEED=42 在该函数内部设置', '将字典数据转换为 Hugging Face Dataset 格式'],
-    correct: [0, 2, 5],
-    explanations: ['✅ 函数返回 Dataset.from_dict(data)，类型是 datasets.Dataset。', '❌ contexts 参数类型是 List[List[str]]，表示每个问题对应多个上下文文档。', '✅ 代码显示需要 question、answer、contexts、ground_truth 四个字段。', '❌ 核心转换依赖 datasets 库，numpy 仅用于后续的相似度计算。', '❌ SEED=42 是全局变量，不在函数内部设置。', '✅ 该函数通过 Dataset.from_dict 将字典数据转为 Hugging Face Dataset 格式。']
-  }
-];
-    // MULTI_QUESTIONS_PLACEHOLDER_END
+    // ===== 多选题 (6) =====
+    {
+      type: 'multi',
+      question: 'RAGAS 框架包含哪些评估指标？（多选）',
+      options: [
+        'Faithfulness',
+        'Answer Relevancy',
+        'Context Precision',
+        'Context Recall',
+        'Answer Correctness',
+        'BERTScore'
+      ],
+      correct: [0,1,2,3,4],
+      explain: 'RAGAS 全套 5 指标包括：Faithfulness、Answer Relevancy、Context Precision、Context Recall、Answer Correctness。BERTScore 是自定义补充指标，非 RAGAS 原生。'
+    },
+    {
+      type: 'multi',
+      question: '以下哪些是 Context Recall 的局限性？（多选）',
+      options: [
+        '需要预先知道「所有相关文档」的完整集合',
+        '在无标注数据集上无法计算',
+        '不关心返回顺序',
+        '只关心检索准不准，不关心全不全',
+        '提高 k 值通常提升 Recall 但降低 Precision',
+        '无法用于多模态 RAG 系统'
+      ],
+      correct: [0,1,2,4],
+      explain: 'Context Recall 的局限：(1) 需要预先知道所有相关文档；(2) 无标注数据集无法计算；(3) 不关心返回顺序；(4) 与 Precision 存在权衡（非其自身局限的表述）。D 描述的是 Precision 的特点，F 无依据。'
+    },
+    {
+      type: 'multi',
+      question: 'NLI 模型在 Faithfulness 检测中判断哪些逻辑关系？（多选）',
+      options: [
+        '蕴含（Entailment）',
+        '矛盾（Contradiction）',
+        '中性（Neutral）',
+        '相似（Similarity）',
+        '等价（Equivalence）',
+        '推理（Inference）'
+      ],
+      correct: [0,1,2],
+      explain: 'NLI 模型判断三分类关系：Entailment（上下文支持声明）、Contradiction（声明与上下文矛盾，即幻觉）、Neutral（无法验证，可能为参数记忆）。'
+    },
+    {
+      type: 'multi',
+      question: '以下哪些指标需要 ground truth（标准答案）才能计算？（多选）',
+      options: [
+        'Faithfulness',
+        'Answer Relevancy',
+        'Context Precision',
+        'Context Recall',
+        'Answer Correctness',
+        'Semantic Sim'
+      ],
+      correct: [3,4,5],
+      explain: '需要 ground truth 的指标：Context Recall（需预先知道所有相关文档）、Answer Correctness（需与标准答案对比）、Semantic Sim（需与参考答案计算相似度）。Faithfulness、Answer Relevancy、Context Precision 无需 ground truth。'
+    },
+    {
+      type: 'multi',
+      question: '实验中对比了哪些 RAG 系统变体？（多选）',
+      options: [
+        'Naive RAG',
+        'Advanced RAG',
+        'GraphRAG',
+        'Multimodal RAG',
+        'Agentic RAG',
+        'Hybrid RAG'
+      ],
+      correct: [0,1,2,3,4],
+      explain: '实验对比了 5 个 RAG 系统变体：Naive、Advanced、GraphRAG、Multimodal、Agentic。Hybrid RAG 未在实验设计列表中明确列出。'
+    },
+    {
+      type: 'multi',
+      question: '以下哪些是 Answer Relevancy 的局限性？（多选）',
+      options: [
+        '容易与 Correctness 混淆——回答可能非常相关但完全错误',
+        '对开放式问题的判断主观性较强',
+        '某些场景下「不直接回答」是合理策略（如安全拒绝）',
+        '必须有 ground truth 才能计算',
+        '无法检测上下文中的错误信息',
+        '计算成本极低，无需 LLM 调用'
+      ],
+      correct: [0,1,2],
+      explain: 'Answer Relevancy 的局限：(1) 容易与 Correctness 混淆；(2) 对开放式问题判断主观；(3) 安全拒绝等场景下不直接回答也是合理的。D 是 Answer Correctness 的特点，E 是 Faithfulness 的局限，F 与事实相反（RAGAS 指标均需 LLM 调用，成本高）。'
+    },
 
-    // TRUEFALSE_QUESTIONS_PLACEHOLDER_START
-const trueFalseQuestions = [
-  {
-    question: "Answer Correctness 可以在无监督场景中使用，因为它不需要 ground truth。",
-    correct: false,
-    explanationTrue: "该陈述错误。Answer Correctness 需要 ground truth 来与模型回答进行语义相似度比较。",
-    explanationFalse: "✅ 正确。结论明确指出 Answer Correctness 需要 ground truth，不适合无监督场景。日常迭代建议用 Faithfulness + Semantic Sim。"
-  },
-  {
-    question: "Faithfulness 指标的核心作用是检测回答中是否存在幻觉。",
-    correct: true,
-    explanationTrue: "✅ 正确。实验结论明确指出 Faithfulness 是检测幻觉的最佳自动化指标(r=0.72)，适合线上监控。",
-    explanationFalse: "该陈述正确。Faithfulness 通过判断回答中的声明是否被上下文支持来检测幻觉。"
-  },
-  {
-    question: "RAGAS 的 Context Precision 和 Context Recall 与人工总体偏好评分的 Pearson 相关性均高于 0.6。",
-    correct: false,
-    explanationTrue: "该陈述错误。实验结果显示 Context Precision 的 r=0.55，Context Recall 的 r=0.51，均未达到 0.6。",
-    explanationFalse: "✅ 正确。Context Precision (r=0.55) 和 Context Recall (r=0.51) 与人工总体偏好相关性较弱，它们主要评估检索质量而非生成质量。"
-  },
-  {
-    question: "实验建议的日常迭代指标组合是 Faithfulness + Semantic Sim。",
-    correct: true,
-    explanationTrue: "✅ 正确。结论第4条明确建议：日常迭代用 Faithfulness + Semantic Sim（低成本），正式评测加 Answer Correctness。",
-    explanationFalse: "该陈述正确。这是实验给出的明确建议，因为两者成本低且分别覆盖幻觉检测和语义相似度。"
-  }
-];
-    // TRUEFALSE_QUESTIONS_PLACEHOLDER_END
+    // ===== 判断题 (6) =====
+    {
+      type: 'tf',
+      question: 'Faithfulness 指标可以检测检索文档本身是否存在错误信息。',
+      answer: false,
+      explain: '错误。Faithfulness 只判断「回答是否被上下文支持」，如果检索到的文档本身有错，Faithfulness 仍可能很高。它无法检测原始知识源的错误。'
+    },
+    {
+      type: 'tf',
+      question: 'Context Precision@k 只关心检索结果「准不准」，不关心「全不全」。',
+      answer: true,
+      explain: '正确。Context Precision 衡量 top-k 中相关文档的比例，只关心精确率。如果系统只返回 1 篇相关文档，Precision=1.0，但可能漏掉大量其他相关文档。'
+    },
+    {
+      type: 'tf',
+      question: 'Answer Relevancy 高意味着回答一定是正确的。',
+      answer: false,
+      explain: '错误。Answer Relevancy 只检测回答是否回应了问题，不检测事实正确性。回答可能非常相关但完全错误——这是它与 Correctness 的核心区别。'
+    },
+    {
+      type: 'tf',
+      question: 'RAGAS 的 evaluate() 函数默认使用 OpenAI GPT 模型进行判断。',
+      answer: true,
+      explain: '正确。RAGAS 的 evaluate() 默认调用 LLM（通常是 OpenAI GPT）对每个样本进行判断，需要提前设置 OPENAI_API_KEY 环境变量。'
+    },
+    {
+      type: 'tf',
+      question: 'Pearson 相关系数对单调非线性关系比 Spearman 更敏感。',
+      answer: false,
+      explain: '错误。Pearson 只对线性关系敏感，对单调非线性关系可能低估。Spearman 基于秩次，能捕捉单调（不必线性）关系，对异常值也更稳健。'
+    },
+    {
+      type: 'tf',
+      question: '自定义 FaithfulnessChecker 使用 CrossEncoder 的 NLI 模型，无需 OpenAI API 即可本地运行。',
+      answer: true,
+      explain: '正确。FaithfulnessChecker 基于 cross-encoder/nli-deberta-v3-base 本地运行，无需 LLM API，适合低成本快速检测幻觉。'
+    },
 
-    // ===== STATE =====
-    let currentType = 'drag';
-    let currentIndex = 0;
-    let userAnswers = {};
-    let checkedState = {};
-
-    // ===== HELPERS =====
-    function makeKey(type, index) {
-      return type + ':' + index;
+    // ===== 拖拽填空 (4) =====
+    {
+      type: 'drag',
+      question: '将正确的术语填入 RAGAS 评估框架的架构图中：',
+      template: 'RAGAS 利用 {0} 作为评判者，通过 {1} 判断回答质量。其中 {2} 检测幻觉，{3} 检测离题回答。',
+      blanks: [
+        'LLM（大语言模型）',
+        '特定 prompt 构造',
+        'Faithfulness（忠实度）',
+        'Answer Relevancy（回答相关性）'
+      ],
+      pool: [
+        'LLM（大语言模型）',
+        '特定 prompt 构造',
+        'Faithfulness（忠实度）',
+        'Answer Relevancy（回答相关性）',
+        'BLEU 分数',
+        '人工标注者'
+      ],
+      explain: 'RAGAS 的核心是利用 LLM 作为评判者，通过构造特定 prompt 让 LLM 判断回答质量。Faithfulness 检测幻觉（回答是否忠实于上下文），Answer Relevancy 检测离题（回答是否回应问题）。'
+    },
+    {
+      type: 'drag',
+      question: '将指标与其核心关注点匹配：',
+      template: '{0} 关注检索精确率，{1} 关注检索召回率，{2} 关注回答与标准答案的一致性，{3} 关注回答是否被上下文支持。',
+      blanks: [
+        'Context Precision@k',
+        'Context Recall',
+        'Answer Correctness',
+        'Faithfulness'
+      ],
+      pool: [
+        'Context Precision@k',
+        'Context Recall',
+        'Answer Correctness',
+        'Faithfulness',
+        'Answer Relevancy',
+        'Semantic Sim'
+      ],
+      explain: 'Context Precision@k 衡量检索精确率；Context Recall 衡量检索召回率；Answer Correctness 衡量回答与 ground truth 的一致性；Faithfulness 衡量回答是否被上下文支持（检测幻觉）。'
+    },
+    {
+      type: 'drag',
+      question: '将 NLI 逻辑关系与 Faithfulness 判断结果匹配：',
+      template: '当上下文与声明的关系为 {0} 时，声明被支持；为 {1} 时，声明与上下文矛盾（幻觉）；为 {2} 时，声明无法验证（可能为参数记忆）。RAGAS 使用 {3} 将回答拆分为原子声明逐一验证。',
+      blanks: [
+        'Entailment（蕴含）',
+        'Contradiction（矛盾）',
+        'Neutral（中性）',
+        'LLM'
+      ],
+      pool: [
+        'Entailment（蕴含）',
+        'Contradiction（矛盾）',
+        'Neutral（中性）',
+        'LLM',
+        'BLEU',
+        'ROUGE'
+      ],
+      explain: 'NLI 三分类：Entailment 表示声明被支持；Contradiction 表示声明与上下文矛盾（幻觉）；Neutral 表示无法验证。RAGAS 使用 LLM 将回答拆分为原子声明，逐一判断支持关系。'
+    },
+    {
+      type: 'drag',
+      question: '将代码中的类/函数与其功能匹配：',
+      template: '{0} 将原始数据转换为 RAGAS 要求的 Dataset 格式；{1} 基于 NLI 模型检测 Faithfulness；{2} 基于 Embedding 计算语义相似度；{3} 计算自动化指标与人工评分的 Pearson 和 Spearman 相关性。',
+      blanks: [
+        'prepare_ragas_dataset()',
+        'FaithfulnessChecker',
+        'SemanticCorrectness',
+        'compute_human_correlation()'
+      ],
+      pool: [
+        'prepare_ragas_dataset()',
+        'FaithfulnessChecker',
+        'SemanticCorrectness',
+        'compute_human_correlation()',
+        'run_ragas_evaluation()',
+        'CrossEncoder'
+      ],
+      explain: 'prepare_ragas_dataset() 构造 Dataset；FaithfulnessChecker 基于 NLI 检测忠实度；SemanticCorrectness 基于 Embedding 计算语义相似度；compute_human_correlation() 计算 Pearson 和 Spearman 相关性。'
     }
+  ];
 
-    function getQuestions(type) {
-      if (type === 'drag') return dragQuestions;
-      if (type === 'single') return singleQuestions;
-      if (type === 'multi') return multiQuestions;
-      return trueFalseQuestions;
-    }
+  let current = 0;
+  const state = allQuestions.map(() => ({ answered: false, correct: false, userAnswer: null }));
+  let filter = 'all';
 
-    function getBadgeId(type) {
-      if (type === 'drag') return 'badgeDrag';
-      if (type === 'single') return 'badgeSingle';
-      if (type === 'multi') return 'badgeMulti';
-      return 'badgeTrueFalse';
-    }
-
-    function countQuestions(type) {
-      return getQuestions(type).length;
-    }
-
-    function allTypes() {
-      return ['drag', 'single', 'multi', 'truefalse'];
-    }
-
-    // ===== RENDER =====
-    function initBadges() {
-      allTypes().forEach(function(t) {
-        document.getElementById(getBadgeId(t)).textContent = countQuestions(t);
-      });
-    }
-
-    function updateScore() {
-      let total = 0, scored = 0;
-      allTypes().forEach(function(type) {
-        const list = getQuestions(type);
-        for (let i = 0; i < list.length; i++) {
-          const q = list[i];
-          const key = makeKey(type, i);
-          if (checkedState[key]) {
-            total += getQuestionPoints(q, type);
-            scored += getUserPoints(q, type, i);
-          }
-        }
-      });
-      document.getElementById('scoreDisplay').textContent = '得分: ' + scored + ' / ' + total;
-    }
-
-    function getQuestionPoints(q, type) {
-      if (type === 'drag') return q.answers.length;
-      if (type === 'multi') return q.correct.length;
-      return 1;
-    }
-
-    function getUserPoints(q, type, idx) {
-      const key = makeKey(type, idx);
-      const ans = userAnswers[key];
-      if (!ans) return 0;
-      if (type === 'drag') {
-        let pts = 0;
-        for (let i = 0; i < q.answers.length; i++) {
-          if (ans[i] === q.answers[i]) pts++;
-        }
-        return pts;
-      }
-      if (type === 'single') {
-        return ans === q.correct ? 1 : 0;
-      }
-      if (type === 'multi') {
-        let pts = 0;
-        const correctSet = {};
-        for (let i = 0; i < q.correct.length; i++) correctSet[q.correct[i]] = true;
-        const userSet = {};
-        for (let i = 0; i < ans.length; i++) userSet[ans[i]] = true;
-        for (let k in correctSet) {
-          if (userSet[k]) pts++;
-        }
-        return pts;
-      }
-      return ans === q.correct ? 1 : 0;
-    }
-
-    function updateProgress() {
-      const total = countQuestions(currentType);
-      const text = total > 0 ? (currentIndex + 1) + ' / ' + total : '0 / 0';
-      document.getElementById('progressText').textContent = text;
-      const pct = total > 0 ? ((currentIndex + 1) / total * 100) : 0;
-      document.getElementById('progressFill').style.width = pct + '%';
-    }
-
-    function renderQuestion() {
-      const area = document.getElementById('questionArea');
-      const expl = document.getElementById('explanationArea');
-      area.innerHTML = '';
-      expl.innerHTML = '';
-      expl.style.display = 'none';
-      updateProgress();
-
-      const questions = getQuestions(currentType);
-      if (questions.length === 0) {
-        area.innerHTML = '<p style="text-align:center;color:var(--text-muted)">该题型暂无题目</p>';
-        return;
-      }
-      const q = questions[currentIndex];
-      const key = makeKey(currentType, currentIndex);
-
-      const qtext = document.createElement('div');
-      qtext.className = 'question-text';
-
-      if (currentType === 'drag') {
-        let html = q.question;
-        for (let i = 0; i < q.answers.length; i++) {
-          const filled = userAnswers[key] && userAnswers[key][i] ? userAnswers[key][i] : '';
-          let cls = 'blank';
-          if (checkedState[key]) {
-            if (filled === q.answers[i]) cls += ' correct';
-            else cls += ' wrong';
-          } else if (filled) {
-            cls += ' filled';
-          }
-          html = html.replace('{\/' + i + '}', '<span class="' + cls + '" data-blank="' + i + '">' + (filled || '____') + '</span>');
-          html = html.replace('{\*' + i + '}', '<span class="' + cls + '" data-blank="' + i + '">' + (filled || '____') + '</span>');
-          html = html.replace('{' + i + '}', '<span class="' + cls + '" data-blank="' + i + '">' + (filled || '____') + '</span>');
-        }
-        qtext.innerHTML = html;
-        area.appendChild(qtext);
-
-        const pool = document.createElement('div');
-        pool.className = 'draggables';
-        const used = userAnswers[key] || [];
-        for (let i = 0; i < q.options.length; i++) {
-          const opt = q.options[i];
-          const isUsed = used.indexOf(opt) !== -1;
-          const chip = document.createElement('div');
-          chip.className = 'draggable' + (isUsed ? ' used' : '');
-          chip.draggable = !isUsed;
-          chip.textContent = opt;
-          chip.dataset.value = opt;
-          if (!isUsed) setupDrag(chip);
-          pool.appendChild(chip);
-        }
-        area.appendChild(pool);
-
-        if (checkedState[key]) {
-          const box = document.createElement('div');
-          box.className = 'explanation show correct-ex';
-          let exHtml = '<strong>解析：</strong><ul style="margin:8px 0 0 18px">';
-          for (let i = 0; i < q.explanations.length; i++) {
-            const isOk = userAnswers[key] && userAnswers[key][i] === q.answers[i];
-            exHtml += '<li><span style="color:' + (isOk ? 'var(--correct)' : 'var(--wrong)') + '">' + (isOk ? '✅' : '❌') + '</span> 空' + (i+1) + '：' + q.explanations[i] + '</li>';
-          }
-          exHtml += '</ul>';
-          box.innerHTML = exHtml;
-          expl.appendChild(box);
-          expl.style.display = 'block';
-        }
-      } else if (currentType === 'single') {
-        qtext.textContent = q.question;
-        area.appendChild(qtext);
-        const list = document.createElement('div');
-        list.className = 'options-list';
-        for (let i = 0; i < q.options.length; i++) {
-          const opt = document.createElement('label');
-          opt.className = 'option';
-          const isSel = userAnswers[key] === i;
-          if (checkedState[key]) {
-            if (i === q.correct) opt.classList.add('correct-ans');
-            else if (isSel) opt.classList.add('wrong-ans');
-          }
-          const radio = document.createElement('input');
-          radio.type = 'radio';
-          radio.name = 'singleOpt';
-          radio.checked = isSel;
-          radio.disabled = !!checkedState[key];
-          radio.addEventListener('change', function() {
-            userAnswers[key] = i;
-          });
-          const span = document.createElement('span');
-          span.className = 'label';
-          span.textContent = q.options[i];
-          opt.appendChild(radio);
-          opt.appendChild(span);
-          if (checkedState[key]) {
-            const mark = document.createElement('span');
-            mark.className = 'mark';
-            mark.textContent = i === q.correct ? '✅' : (isSel ? '❌' : '');
-            opt.appendChild(mark);
-          }
-          list.appendChild(opt);
-        }
-        area.appendChild(list);
-        if (checkedState[key]) {
-          const box = document.createElement('div');
-          box.className = 'explanation show ' + (userAnswers[key] === q.correct ? 'correct-ex' : 'wrong-ex');
-          box.innerHTML = '<strong>解析：</strong><br>' + q.explanations[q.correct];
-          expl.appendChild(box);
-          expl.style.display = 'block';
-        }
-      } else if (currentType === 'multi') {
-        qtext.textContent = q.question;
-        area.appendChild(qtext);
-        const list = document.createElement('div');
-        list.className = 'options-list';
-        const selSet = {};
-        const ans = userAnswers[key] || [];
-        for (let i = 0; i < ans.length; i++) selSet[ans[i]] = true;
-        const correctSet = {};
-        for (let i = 0; i < q.correct.length; i++) correctSet[q.correct[i]] = true;
-        for (let i = 0; i < q.options.length; i++) {
-          const opt = document.createElement('label');
-          opt.className = 'option';
-          const isSel = !!selSet[i];
-          if (checkedState[key]) {
-            if (correctSet[i]) opt.classList.add('correct-ans');
-            else if (isSel) opt.classList.add('wrong-ans');
-          }
-          const cb = document.createElement('input');
-          cb.type = 'checkbox';
-          cb.checked = isSel;
-          cb.disabled = !!checkedState[key];
-          cb.addEventListener('change', function() {
-            const a = userAnswers[key] || [];
-            const pos = a.indexOf(i);
-            if (pos >= 0) a.splice(pos, 1);
-            else a.push(i);
-            userAnswers[key] = a;
-          });
-          const span = document.createElement('span');
-          span.className = 'label';
-          span.textContent = q.options[i];
-          opt.appendChild(cb);
-          opt.appendChild(span);
-          if (checkedState[key]) {
-            const mark = document.createElement('span');
-            mark.className = 'mark';
-            mark.textContent = correctSet[i] ? '✅' : (isSel ? '❌' : '');
-            opt.appendChild(mark);
-          }
-          list.appendChild(opt);
-        }
-        area.appendChild(list);
-        if (checkedState[key]) {
-          const box = document.createElement('div');
-          let ok = true;
-          for (let k in correctSet) { if (!selSet[k]) ok = false; }
-          for (let k in selSet) { if (!correctSet[k]) ok = false; }
-          box.className = 'explanation show ' + (ok ? 'correct-ex' : 'wrong-ex');
-          let exHtml = '<strong>解析：</strong><ul style="margin:8px 0 0 18px">';
-          for (let i = 0; i < q.options.length; i++) {
-            const isCorrect = !!correctSet[i];
-            const icon = isCorrect ? '✅' : (selSet[i] ? '❌' : '⬜');
-            exHtml += '<li>' + icon + ' ' + q.explanations[i] + '</li>';
-          }
-          exHtml += '</ul>';
-          box.innerHTML = exHtml;
-          expl.appendChild(box);
-          expl.style.display = 'block';
-        }
-      } else if (currentType === 'truefalse') {
-        qtext.textContent = q.question;
-        area.appendChild(qtext);
-        const list = document.createElement('div');
-        list.className = 'options-list';
-        const opts = [{val: true, label: '是 / True'}, {val: false, label: '否 / False'}];
-        for (let i = 0; i < opts.length; i++) {
-          const opt = document.createElement('label');
-          opt.className = 'option';
-          const v = opts[i].val;
-          const isSel = userAnswers[key] === v;
-          if (checkedState[key]) {
-            if (v === q.correct) opt.classList.add('correct-ans');
-            else if (isSel) opt.classList.add('wrong-ans');
-          }
-          const radio = document.createElement('input');
-          radio.type = 'radio';
-          radio.name = 'tfOpt';
-          radio.checked = isSel;
-          radio.disabled = !!checkedState[key];
-          radio.addEventListener('change', function() {
-            userAnswers[key] = v;
-          });
-          const span = document.createElement('span');
-          span.className = 'label';
-          span.textContent = opts[i].label;
-          opt.appendChild(radio);
-          opt.appendChild(span);
-          if (checkedState[key]) {
-            const mark = document.createElement('span');
-            mark.className = 'mark';
-            mark.textContent = v === q.correct ? '✅' : (isSel ? '❌' : '');
-            opt.appendChild(mark);
-          }
-          list.appendChild(opt);
-        }
-        area.appendChild(list);
-        if (checkedState[key]) {
-          const box = document.createElement('div');
-          const ok = userAnswers[key] === q.correct;
-          box.className = 'explanation show ' + (ok ? 'correct-ex' : 'wrong-ex');
-          box.innerHTML = '<strong>解析：</strong><br>' + (q.correct ? q.explanationTrue : q.explanationFalse);
-          expl.appendChild(box);
-          expl.style.display = 'block';
-        }
-      }
-    }
-
-    // ===== DRAG & DROP =====
-    function setupDrag(el) {
-      el.addEventListener('dragstart', function(e) {
-        e.dataTransfer.setData('text/plain', el.dataset.value);
-        el.classList.add('dragging');
-      });
-      el.addEventListener('dragend', function() {
-        el.classList.remove('dragging');
-      });
-    }
-
-    document.addEventListener('dragover', function(e) {
-      const blank = e.target.closest && e.target.closest('[data-blank]');
-      if (blank) e.preventDefault();
-    });
-
-    document.addEventListener('drop', function(e) {
-      const blank = e.target.closest && e.target.closest('[data-blank]');
-      if (!blank) return;
-      e.preventDefault();
-      const value = e.dataTransfer.getData('text/plain');
-      if (!value) return;
-      const bidx = parseInt(blank.dataset.blank, 10);
-      const key = makeKey(currentType, currentIndex);
-      if (!userAnswers[key]) userAnswers[key] = [];
-      userAnswers[key][bidx] = value;
-      renderQuestion();
-    });
-
-    // Also support click-to-fill on mobile
-    document.addEventListener('click', function(e) {
-      const blank = e.target.closest && e.target.closest('[data-blank]');
-      if (!blank) return;
-      if (checkedState[makeKey(currentType, currentIndex)]) return;
-      const key = makeKey(currentType, currentIndex);
-      const ans = userAnswers[key] || [];
-      const bidx = parseInt(blank.dataset.blank, 10);
-      if (ans[bidx]) {
-        delete ans[bidx];
-        renderQuestion();
-        return;
-      }
-      // Find first unused draggable
-      const chips = document.querySelectorAll('.draggable:not(.used)');
-      if (chips.length > 0) {
-        const val = chips[0].dataset.value;
-        if (!userAnswers[key]) userAnswers[key] = [];
-        userAnswers[key][bidx] = val;
-        renderQuestion();
-      }
-    });
-
-    // ===== CONTROLS =====
-    function switchTab(type) {
-      currentType = type;
-      currentIndex = 0;
-      document.querySelectorAll('.tab').forEach(function(t) {
-        t.classList.toggle('active', t.dataset.type === type);
-      });
-      renderQuestion();
-    }
-
-    document.querySelectorAll('.tab').forEach(function(tab) {
-      tab.addEventListener('click', function() {
-        switchTab(tab.dataset.type);
-      });
-    });
-
-    document.getElementById('btnPrev').addEventListener('click', function() {
-      if (currentIndex > 0) { currentIndex--; renderQuestion(); }
-    });
-
-    document.getElementById('btnNext').addEventListener('click', function() {
-      if (currentIndex + 1 < countQuestions(currentType)) { currentIndex++; renderQuestion(); }
-    });
-
-    document.getElementById('btnCheck').addEventListener('click', function() {
-      const key = makeKey(currentType, currentIndex);
-      if (countQuestions(currentType) === 0) return;
-      checkedState[key] = true;
-      updateScore();
-      renderQuestion();
-    });
-
-    document.getElementById('btnResetCurrent').addEventListener('click', function() {
-      const key = makeKey(currentType, currentIndex);
-      delete userAnswers[key];
-      delete checkedState[key];
-      updateScore();
-      renderQuestion();
-    });
-
-    document.getElementById('btnResetAll').addEventListener('click', function() {
-      if (!confirm('确定要重置所有答题记录吗？')) return;
-      userAnswers = {};
-      checkedState = {};
-      updateScore();
-      renderQuestion();
-    });
-
-    // ===== SHUFFLE =====
-    function shuffleArray(arr) {
-      for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        const tmp = arr[i];
-        arr[i] = arr[j];
-        arr[j] = tmp;
-      }
-    }
-
-    function buildIndexMap(oldLen, shuffledIndices) {
-      const map = {};
-      for (let newPos = 0; newPos < oldLen; newPos++) {
-        map[shuffledIndices[newPos]] = newPos;
-      }
-      return map;
-    }
-
-    document.getElementById('btnShuffle').addEventListener('click', function() {
-      if (!confirm('随机化会清空所有答题记录，确定继续？')) return;
-      userAnswers = {};
-      checkedState = {};
-
-      // Single
-      for (let qi = 0; qi < singleQuestions.length; qi++) {
-        const q = singleQuestions[qi];
-        const order = [];
-        for (let i = 0; i < q.options.length; i++) order.push(i);
-        shuffleArray(order);
-        const newOpts = [];
-        for (let i = 0; i < order.length; i++) newOpts.push(q.options[order[i]]);
-        const newExps = [];
-        for (let i = 0; i < order.length; i++) newExps.push(q.explanations[order[i]]);
-        const idxMap = buildIndexMap(q.options.length, order);
-        q.correct = idxMap[q.correct];
-        q.options = newOpts;
-        q.explanations = newExps;
-      }
-
-      // Multi
-      for (let qi = 0; qi < multiQuestions.length; qi++) {
-        const q = multiQuestions[qi];
-        const order = [];
-        for (let i = 0; i < q.options.length; i++) order.push(i);
-        shuffleArray(order);
-        const newOpts = [];
-        for (let i = 0; i < order.length; i++) newOpts.push(q.options[order[i]]);
-        const newExps = [];
-        for (let i = 0; i < order.length; i++) newExps.push(q.explanations[order[i]]);
-        const idxMap = buildIndexMap(q.options.length, order);
-        const newCorrect = [];
-        for (let i = 0; i < q.correct.length; i++) newCorrect.push(idxMap[q.correct[i]]);
-        q.correct = newCorrect;
-        q.options = newOpts;
-        q.explanations = newExps;
-      }
-
-      updateScore();
-      renderQuestion();
-    });
-
-    // ===== OVERVIEW =====
-    function openOverview() {
-      const grid = document.getElementById('overviewGrid');
-      grid.innerHTML = '';
-      const questions = getQuestions(currentType);
-      for (let i = 0; i < questions.length; i++) {
-        const cell = document.createElement('div');
-        const key = makeKey(currentType, i);
-        let cls = 'grid-item';
-        if (checkedState[key]) {
-          const pts = getUserPoints(questions[i], currentType, i);
-          const maxPts = getQuestionPoints(questions[i], currentType);
-          cls += pts === maxPts ? ' correct' : ' wrong';
-        } else {
-          cls += ' empty';
-        }
-        cell.className = cls;
-        cell.textContent = i + 1;
-        cell.addEventListener('click', function() {
-          currentIndex = i;
-          document.getElementById('overviewOverlay').classList.remove('show');
-          renderQuestion();
-        });
-        grid.appendChild(cell);
-      }
-      document.getElementById('overviewOverlay').classList.add('show');
-    }
-
-    document.getElementById('btnOverview').addEventListener('click', openOverview);
-    document.getElementById('btnCloseOverview').addEventListener('click', function() {
-      document.getElementById('overviewOverlay').classList.remove('show');
-    });
-    document.getElementById('overviewOverlay').addEventListener('click', function(e) {
-      if (e.target === document.getElementById('overviewOverlay')) {
-        document.getElementById('overviewOverlay').classList.remove('show');
-      }
-    });
-
-    // ===== KEYBOARD NAV =====
-    document.addEventListener('keydown', function(e) {
-      if (e.key === 'ArrowLeft') document.getElementById('btnPrev').click();
-      if (e.key === 'ArrowRight') document.getElementById('btnNext').click();
-    });
-
-    // ===== INIT =====
-    initBadges();
-    updateScore();
+  function init() {
+    document.getElementById('totalVal').textContent = allQuestions.length;
+    renderOverview();
     renderQuestion();
-  </script>
+    updateProgress();
+  }
+
+  function updateProgress() {
+    const answered = state.filter(s => s.answered).length;
+    const correct = state.filter(s => s.correct).length;
+    const total = allQuestions.length;
+    const rate = answered ? Math.round(correct / answered * 100) : 0;
+    document.getElementById('scoreVal').textContent = correct;
+    document.getElementById('answeredVal').textContent = answered;
+    document.getElementById('rateVal').textContent = rate + '%';
+    document.getElementById('progressFill').style.width = (answered / total * 100) + '%';
+    document.getElementById('progressText').textContent = (current + 1) + ' / ' + total;
+  }
+
+  function renderQuestion() {
+    const q = allQuestions[current];
+    const s = state[current];
+    document.getElementById('qType').textContent = typeLabel(q.type);
+    document.getElementById('qTitle').textContent = (current + 1) + '. ' + q.question;
+    const body = document.getElementById('qBody');
+    body.innerHTML = '';
+    document.getElementById('explain').classList.remove('visible');
+    document.getElementById('explain').textContent = '';
+
+    if (q.type === 'single') {
+      const opts = document.createElement('div');
+      opts.className = 'options';
+      q.options.forEach((opt, i) => {
+        const row = document.createElement('label');
+        row.className = 'option';
+        row.dataset.index = i;
+        row.innerHTML = `<input type="radio" name="q${current}" value="${i}"> <span>${String.fromCharCode(65+i)}. ${escapeHtml(opt)}</span>`;
+        row.querySelector('input').addEventListener('change', () => { s.userAnswer = i; });
+        opts.appendChild(row);
+      });
+      body.appendChild(opts);
+    } else if (q.type === 'multi') {
+      const opts = document.createElement('div');
+      opts.className = 'options';
+      q.options.forEach((opt, i) => {
+        const row = document.createElement('label');
+        row.className = 'option';
+        row.dataset.index = i;
+        row.innerHTML = `<input type="checkbox" name="q${current}" value="${i}"> <span>${String.fromCharCode(65+i)}. ${escapeHtml(opt)}</span>`;
+        row.querySelector('input').addEventListener('change', () => {
+          if (!Array.isArray(s.userAnswer)) s.userAnswer = [];
+          const idx = s.userAnswer.indexOf(i);
+          if (idx > -1) s.userAnswer.splice(idx, 1); else s.userAnswer.push(i);
+          s.userAnswer.sort((a,b)=>a-b);
+        });
+        opts.appendChild(row);
+      });
+      body.appendChild(opts);
+    } else if (q.type === 'tf') {
+      const wrap = document.createElement('div');
+      wrap.className = 'tf-options';
+      const yesBtn = document.createElement('button');
+      yesBtn.className = 'tf-btn';
+      yesBtn.textContent = '是（正确）';
+      yesBtn.onclick = () => { s.userAnswer = true; };
+      const noBtn = document.createElement('button');
+      noBtn.className = 'tf-btn';
+      noBtn.textContent = '否（错误）';
+      noBtn.onclick = () => { s.userAnswer = false; };
+      wrap.appendChild(yesBtn);
+      wrap.appendChild(noBtn);
+      body.appendChild(wrap);
+    } else if (q.type === 'drag') {
+      const wrap = document.createElement('div');
+      wrap.style.lineHeight = '2.2';
+      let html = escapeHtml(q.template);
+      q.blanks.forEach((_, i) => {
+        html = html.replace('{'+i+'}', `<span class="drop-zone" data-index="${i}"></span>`);
+      });
+      wrap.innerHTML = html;
+      const pool = document.createElement('div');
+      pool.className = 'draggable-pool';
+      q.pool.forEach((item, idx) => {
+        const chip = document.createElement('span');
+        chip.className = 'draggable';
+        chip.draggable = true;
+        chip.dataset.value = item;
+        chip.textContent = item;
+        chip.addEventListener('dragstart', dragStart);
+        chip.addEventListener('dragend', dragEnd);
+        pool.appendChild(chip);
+      });
+      body.appendChild(wrap);
+      body.appendChild(pool);
+      setupDropZones(wrap);
+      if (!s.userAnswer) s.userAnswer = new Array(q.blanks.length).fill(null);
+    }
+
+    if (s.answered) {
+      showFeedback();
+      document.getElementById('checkBtn').disabled = true;
+    } else {
+      document.getElementById('checkBtn').disabled = false;
+      if (q.type === 'single' && typeof s.userAnswer === 'number') {
+        const inp = body.querySelector(`input[value="${s.userAnswer}"]`);
+        if (inp) inp.checked = true;
+      }
+      if (q.type === 'multi' && Array.isArray(s.userAnswer)) {
+        s.userAnswer.forEach(i => {
+          const inp = body.querySelector(`input[value="${i}"]`);
+          if (inp) inp.checked = true;
+        });
+      }
+      if (q.type === 'tf' && typeof s.userAnswer === 'boolean') {
+        const btns = body.querySelectorAll('.tf-btn');
+        btns[s.userAnswer ? 0 : 1].classList.add('active');
+      }
+    }
+  }
+
+  function typeLabel(t) {
+    return t==='single'?'单选题':t==='multi'?'多选题':t==='tf'?'判断题':'拖拽填空';
+  }
+
+  function checkAnswer() {
+    const q = allQuestions[current];
+    const s = state[current];
+    let isCorrect = false;
+
+    if (q.type === 'single') {
+      if (typeof s.userAnswer !== 'number') { alert('请先选择一个答案'); return; }
+      isCorrect = s.userAnswer === q.correct;
+    } else if (q.type === 'multi') {
+      if (!Array.isArray(s.userAnswer) || s.userAnswer.length === 0) { alert('请至少选择一个答案'); return; }
+      isCorrect = arraysEqual(s.userAnswer, q.correct);
+    } else if (q.type === 'tf') {
+      if (typeof s.userAnswer !== 'boolean') { alert('请选择「是」或「否」'); return; }
+      isCorrect = s.userAnswer === q.answer;
+    } else if (q.type === 'drag') {
+      if (!Array.isArray(s.userAnswer) || s.userAnswer.some(v => v === null)) { alert('请将所有术语填入对应位置'); return; }
+      isCorrect = arraysEqual(s.userAnswer, q.blanks);
+    }
+
+    s.answered = true;
+    s.correct = isCorrect;
+    showFeedback();
+    updateProgress();
+    renderOverview();
+    document.getElementById('checkBtn').disabled = true;
+
+    if (state.every(st => st.answered)) {
+      setTimeout(() => showResult(), 600);
+    }
+  }
+
+  function showFeedback() {
+    const q = allQuestions[current];
+    const s = state[current];
+    const body = document.getElementById('qBody');
+    const explain = document.getElementById('explain');
+    explain.textContent = q.explain;
+    explain.classList.add('visible');
+
+    if (q.type === 'single') {
+      body.querySelectorAll('.option').forEach((row, i) => {
+        row.classList.add('disabled');
+        if (i === q.correct) row.classList.add('correct');
+        else if (i === s.userAnswer && !s.correct) row.classList.add('wrong');
+      });
+    } else if (q.type === 'multi') {
+      body.querySelectorAll('.option').forEach((row, i) => {
+        row.classList.add('disabled');
+        const isCorrect = q.correct.includes(i);
+        const isSelected = s.userAnswer.includes(i);
+        if (isCorrect) row.classList.add('correct');
+        else if (isSelected && !isCorrect) row.classList.add('wrong');
+      });
+    } else if (q.type === 'tf') {
+      const btns = body.querySelectorAll('.tf-btn');
+      btns.forEach(b => b.classList.add('disabled'));
+      const correctIdx = q.answer ? 0 : 1;
+      const chosenIdx = s.userAnswer ? 0 : 1;
+      btns[correctIdx].classList.add('correct');
+      if (chosenIdx !== correctIdx) btns[chosenIdx].classList.add('wrong');
+    } else if (q.type === 'drag') {
+      body.querySelectorAll('.drop-zone').forEach((zone, i) => {
+        const val = zone.textContent.trim();
+        const correct = q.blanks[i];
+        if (val === correct) zone.classList.add('correct-zone');
+        else zone.classList.add('wrong-zone');
+      });
+      body.querySelectorAll('.draggable').forEach(d => d.draggable = false);
+    }
+  }
+
+  function resetQuestion() {
+    const s = state[current];
+    s.answered = false; s.correct = false; s.userAnswer = null;
+    renderQuestion();
+    updateProgress();
+    renderOverview();
+  }
+
+  function prevQuestion() {
+    if (current > 0) { current--; renderQuestion(); updateProgress(); }
+  }
+  function nextQuestion() {
+    if (current < allQuestions.length - 1) { current++; renderQuestion(); updateProgress(); }
+  }
+
+  function shuffleOptions() {
+    const q = allQuestions[current];
+    if (q.type !== 'single' && q.type !== 'multi') { alert('只有单选题和多选题支持洗牌'); return; }
+    const body = document.getElementById('qBody');
+    const opts = body.querySelector('.options');
+    const rows = Array.from(opts.children);
+    for (let i = rows.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      opts.insertBefore(rows[j], rows[i].nextSibling);
+      [rows[i], rows[j]] = [rows[j], rows[i]];
+    }
+    // Clear selection after shuffle
+    state[current].userAnswer = q.type === 'multi' ? [] : null;
+    body.querySelectorAll('input').forEach(inp => inp.checked = false);
+  }
+
+  function renderOverview() {
+    const ov = document.getElementById('overview');
+    ov.innerHTML = '';
+    allQuestions.forEach((q, i) => {
+      const s = state[i];
+      const thumb = document.createElement('div');
+      thumb.className = 'thumb';
+      if (s.answered) {
+        thumb.classList.add(s.correct ? 'correct' : 'wrong');
+      }
+      thumb.innerHTML = `<div class="t-num">${i+1}</div><div class="t-type">${typeLabel(q.type)}</div>`;
+      thumb.onclick = () => { current = i; toggleOverview(false); renderQuestion(); updateProgress(); };
+      if (filter === 'correct' && (!s.answered || !s.correct)) return;
+      if (filter === 'wrong' && (!s.answered || s.correct)) return;
+      if (filter === 'unanswered' && s.answered) return;
+      ov.appendChild(thumb);
+    });
+  }
+
+  function toggleOverview(show) {
+    const ov = document.getElementById('overview');
+    const quiz = document.getElementById('quizArea');
+    const fb = document.getElementById('filterBar');
+    if (typeof show === 'boolean') {
+      if (show) { ov.classList.add('visible'); quiz.classList.add('hidden'); fb.style.display = 'flex'; }
+      else { ov.classList.remove('visible'); quiz.classList.remove('hidden'); fb.style.display = 'none'; }
+    } else {
+      if (ov.classList.contains('visible')) { ov.classList.remove('visible'); quiz.classList.remove('hidden'); fb.style.display = 'none'; }
+      else { ov.classList.add('visible'); quiz.classList.add('hidden'); fb.style.display = 'flex'; }
+    }
+  }
+
+  function filterOverview(f) {
+    filter = f;
+    document.querySelectorAll('.chip').forEach(c => c.classList.toggle('active', c.dataset.filter === f));
+    renderOverview();
+  }
+
+  function showResult() {
+    const correct = state.filter(s => s.correct).length;
+    document.getElementById('finalScore').textContent = correct;
+    document.getElementById('resultArea').classList.add('visible');
+    document.getElementById('quizArea').classList.add('hidden');
+    document.getElementById('filterBar').style.display = 'none';
+    document.getElementById('overview').classList.remove('visible');
+  }
+
+  function showResultDetails() {
+    document.getElementById('resultArea').classList.remove('visible');
+    document.getElementById('quizArea').classList.remove('hidden');
+    current = 0; renderQuestion(); updateProgress();
+  }
+
+  function resetAll() {
+    if (!confirm('确定要清空所有答题记录吗？')) return;
+    state.forEach(s => { s.answered = false; s.correct = false; s.userAnswer = null; });
+    current = 0;
+    document.getElementById('resultArea').classList.remove('visible');
+    document.getElementById('quizArea').classList.remove('hidden');
+    toggleOverview(false);
+    renderQuestion();
+    updateProgress();
+    renderOverview();
+  }
+
+  // Drag and Drop
+  let draggedEl = null;
+  function dragStart(e) { draggedEl = this; this.classList.add('dragging'); e.dataTransfer.setData('text/plain', this.dataset.value); }
+  function dragEnd(e) { this.classList.remove('dragging'); draggedEl = null; }
+  function setupDropZones(container) {
+    container.querySelectorAll('.drop-zone').forEach(zone => {
+      zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('hovered'); });
+      zone.addEventListener('dragleave', () => zone.classList.remove('hovered'));
+      zone.addEventListener('drop', e => {
+        e.preventDefault();
+        zone.classList.remove('hovered');
+        const val = e.dataTransfer.getData('text/plain');
+        zone.textContent = val;
+        zone.classList.add('occupied');
+        const idx = parseInt(zone.dataset.index);
+        if (!Array.isArray(state[current].userAnswer)) state[current].userAnswer = new Array(allQuestions[current].blanks.length).fill(null);
+        state[current].userAnswer[idx] = val;
+      });
+      zone.addEventListener('click', () => {
+        if (zone.textContent.trim()) {
+          zone.textContent = '';
+          zone.classList.remove('occupied');
+          const idx = parseInt(zone.dataset.index);
+          if (Array.isArray(state[current].userAnswer)) state[current].userAnswer[idx] = null;
+        }
+      });
+    });
+  }
+
+  function arraysEqual(a, b) {
+    if (a.length !== b.length) return false;
+    const sa = a.slice().sort(), sb = b.slice().sort();
+    return sa.every((v, i) => v === sb[i]);
+  }
+  function escapeHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  init();
+})();
+</script>
 </body>
 </html>

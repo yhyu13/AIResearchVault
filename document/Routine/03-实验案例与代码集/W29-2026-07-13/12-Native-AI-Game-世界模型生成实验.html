@@ -1,1257 +1,1418 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Native AI Game — 世界模型生成实验面试知识自测</title>
-  <style>
-    :root {
-      --bg-body: #FAF8F5;
-      --bg-card: #FFFFFF;
-      --bg-warm: #F5F0E8;
-      --primary: #2D5F5F;
-      --primary-light: #3D7A7A;
-      --accent: #4A7C59;
-      --accent-light: #E8F3E8;
-      --text-main: #2C2C2C;
-      --text-muted: #6B6B6B;
-      --border: #D8D2C8;
-      --shadow: rgba(0,0,0,0.06);
-      --correct: #3A8C5D;
-      --correct-bg: #EAF6EE;
-      --wrong: #C44B4B;
-      --wrong-bg: #FCEAEA;
-      --warning: #C9943A;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>实验 12：Native AI Game — 世界模型生成实验</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --accent: #e74c3c;
+            --success: #27ae60;
+            --warning: #f39c12;
+            --bg: #f5f7fa;
+            --card-bg: #ffffff;
+            --text: #2c3e50;
+            --text-light: #7f8c8d;
+            --border: #e1e8ed;
+            --shadow: 0 2px 8px rgba(0,0,0,0.08);
+            --shadow-hover: 0 4px 16px rgba(0,0,0,0.12);
+        }
 
-    body {
-      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
-      background: var(--bg-body);
-      color: var(--text-main);
-      line-height: 1.6;
-      min-height: 100vh;
-    }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
 
-    .container {
-      max-width: 720px;
-      margin: 0 auto;
-      padding: 16px;
-    }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
 
-    header {
-      text-align: center;
-      margin-bottom: 20px;
-    }
+        header {
+            text-align: center;
+            padding: 30px 20px;
+            background: linear-gradient(135deg, var(--primary) 0%, #34495e 100%);
+            color: white;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow-hover);
+        }
 
-    header h1 {
-      font-size: 1.6rem;
-      color: var(--primary);
-      margin-bottom: 4px;
-    }
+        header h1 {
+            font-size: 1.6rem;
+            margin-bottom: 8px;
+        }
 
-    header .topic {
-      font-size: 0.95rem;
-      color: var(--text-muted);
-    }
+        header .subtitle {
+            font-size: 0.9rem;
+            opacity: 0.85;
+        }
 
-    .score-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 12px 16px;
-      margin-bottom: 16px;
-      box-shadow: 0 2px 8px var(--shadow);
-    }
+        /* Score Panel */
+        .score-panel {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--card-bg);
+            padding: 16px 24px;
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
 
-    .score-bar .score {
-      font-size: 1.1rem;
-      font-weight: 600;
-      color: var(--primary);
-    }
+        .score-display {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--secondary);
+        }
 
-    .score-bar .actions {
-      display: flex;
-      gap: 8px;
-    }
+        .progress-bar {
+            flex: 1;
+            min-width: 200px;
+            height: 8px;
+            background: var(--border);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 0 16px;
+        }
 
-    .btn {
-      border: none;
-      border-radius: 8px;
-      padding: 8px 14px;
-      font-size: 0.85rem;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      font-family: inherit;
-    }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--secondary), var(--success));
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
 
-    .btn-sm { padding: 6px 10px; font-size: 0.78rem; }
+        .progress-text {
+            font-size: 0.85rem;
+            color: var(--text-light);
+            min-width: 80px;
+            text-align: right;
+        }
 
-    .btn-primary {
-      background: var(--primary);
-      color: #fff;
-    }
-    .btn-primary:hover { background: var(--primary-light); }
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
 
-    .btn-secondary {
-      background: var(--bg-warm);
-      color: var(--text-main);
-      border: 1px solid var(--border);
-    }
-    .btn-secondary:hover { background: #EDE8DE; }
+        .btn-primary {
+            background: var(--secondary);
+            color: white;
+        }
 
-    .btn-warning {
-      background: #FFF8E6;
-      color: #8A6D1F;
-      border: 1px solid #F0E0B0;
-    }
-    .btn-warning:hover { background: #FFF0CC; }
+        .btn-primary:hover {
+            background: #2980b9;
+        }
 
-    .tabs {
-      display: flex;
-      gap: 6px;
-      margin-bottom: 16px;
-      flex-wrap: wrap;
-    }
+        .btn-warning {
+            background: var(--warning);
+            color: white;
+        }
 
-    .tab {
-      flex: 1;
-      min-width: 80px;
-      text-align: center;
-      padding: 10px 8px;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      background: var(--bg-card);
-      color: var(--text-muted);
-      cursor: pointer;
-      font-size: 0.88rem;
-      transition: all 0.2s ease;
-    }
+        .btn-danger {
+            background: var(--accent);
+            color: white;
+        }
 
-    .tab.active {
-      background: var(--primary);
-      color: #fff;
-      border-color: var(--primary);
-      font-weight: 600;
-    }
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
 
-    .tab .badge {
-      display: inline-block;
-      margin-left: 4px;
-      background: rgba(255,255,255,0.25);
-      padding: 1px 6px;
-      border-radius: 10px;
-      font-size: 0.72rem;
-    }
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text);
+        }
 
-    .card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 20px;
-      box-shadow: 0 2px 12px var(--shadow);
-      margin-bottom: 16px;
-    }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
 
-    .progress-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-    }
+        /* Question Card */
+        .question-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+            display: none;
+        }
 
-    .progress-bar {
-      flex: 1;
-      height: 8px;
-      background: #EAE5DC;
-      border-radius: 4px;
-      overflow: hidden;
-      margin: 0 12px;
-    }
+        .question-card.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
 
-    .progress-bar .fill {
-      height: 100%;
-      background: var(--primary);
-      border-radius: 4px;
-      transition: width 0.3s ease;
-    }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
 
-    .question-text {
-      font-size: 1.05rem;
-      font-weight: 500;
-      margin-bottom: 18px;
-      line-height: 1.7;
-    }
+        .question-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+        }
 
-    .question-text .blank {
-      display: inline-block;
-      min-width: 80px;
-      padding: 3px 10px;
-      margin: 0 3px;
-      border: 2px dashed var(--border);
-      border-radius: 6px;
-      background: var(--bg-warm);
-      color: var(--text-muted);
-      font-size: 0.9rem;
-      text-align: center;
-      vertical-align: middle;
-      transition: all 0.2s ease;
-    }
+        .question-type {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
 
-    .question-text .blank.filled {
-      border-style: solid;
-      border-color: var(--primary);
-      background: #F0F7F7;
-      color: var(--primary);
-      font-weight: 600;
-    }
+        .type-single { background: #e3f2fd; color: #1565c0; }
+        .type-multi { background: #fff3e0; color: #e65100; }
+        .type-judge { background: #e8f5e9; color: #2e7d32; }
+        .type-drag { background: #f3e5f5; color: #7b1fa2; }
 
-    .question-text .blank.correct {
-      border-color: var(--correct);
-      background: var(--correct-bg);
-      color: var(--correct);
-    }
+        .question-number {
+            font-size: 0.85rem;
+            color: var(--text-light);
+        }
 
-    .question-text .blank.wrong {
-      border-color: var(--wrong);
-      background: var(--wrong-bg);
-      color: var(--wrong);
-    }
+        .question-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
 
-    .draggables {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: 18px;
-    }
+        /* Options */
+        .options-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
 
-    .draggable {
-      padding: 8px 14px;
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      cursor: grab;
-      font-size: 0.9rem;
-      user-select: none;
-      transition: all 0.2s ease;
-    }
+        .option-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: white;
+        }
 
-    .draggable:hover {
-      border-color: var(--primary);
-      box-shadow: 0 2px 6px var(--shadow);
-    }
+        .option-item:hover {
+            border-color: var(--secondary);
+            background: #f8f9fa;
+        }
 
-    .draggable.dragging {
-      opacity: 0.5;
-      cursor: grabbing;
-    }
+        .option-item.selected {
+            border-color: var(--secondary);
+            background: #e3f2fd;
+        }
 
-    .draggable.used {
-      opacity: 0.4;
-      pointer-events: none;
-    }
+        .option-item.correct {
+            border-color: var(--success);
+            background: #e8f5e9;
+        }
 
-    .options-list {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      margin-bottom: 18px;
-    }
+        .option-item.incorrect {
+            border-color: var(--accent);
+            background: #ffebee;
+        }
 
-    .option {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 12px 14px;
-      border: 1.5px solid var(--border);
-      border-radius: 10px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      background: var(--bg-card);
-    }
+        .option-item input {
+            margin-right: 12px;
+            cursor: pointer;
+        }
 
-    .option:hover { border-color: var(--primary-light); background: #F7FBFB; }
+        .option-label {
+            font-weight: 500;
+            margin-right: 8px;
+            min-width: 24px;
+        }
 
-    .option input[type="radio"],
-    .option input[type="checkbox"] {
-      width: 18px;
-      height: 18px;
-      accent-color: var(--primary);
-      flex-shrink: 0;
-    }
+        /* Drag and Drop */
+        .drag-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
 
-    .option .label {
-      flex: 1;
-      font-size: 0.95rem;
-    }
+        .drag-words {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 16px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 2px dashed var(--border);
+            min-height: 60px;
+        }
 
-    .option.correct-ans {
-      border-color: var(--correct);
-      background: var(--correct-bg);
-    }
+        .drag-word {
+            padding: 8px 16px;
+            background: var(--secondary);
+            color: white;
+            border-radius: 6px;
+            cursor: grab;
+            font-weight: 500;
+            user-select: none;
+            transition: transform 0.2s;
+        }
 
-    .option.wrong-ans {
-      border-color: var(--wrong);
-      background: var(--wrong-bg);
-    }
+        .drag-word:active {
+            cursor: grabbing;
+            transform: scale(1.05);
+        }
 
-    .option .mark {
-      font-size: 1.1rem;
-      font-weight: 700;
-      margin-left: auto;
-    }
+        .drag-word.dragging {
+            opacity: 0.5;
+        }
 
-    .explanation {
-      display: none;
-      margin-top: 8px;
-      padding: 12px 14px;
-      border-radius: 8px;
-      font-size: 0.9rem;
-      line-height: 1.6;
-    }
+        .drag-blank {
+            display: inline-block;
+            min-width: 120px;
+            height: 36px;
+            border: 2px dashed var(--secondary);
+            border-radius: 6px;
+            margin: 0 4px;
+            vertical-align: middle;
+            background: #e3f2fd;
+            text-align: center;
+            line-height: 32px;
+            font-weight: 500;
+            color: var(--secondary);
+        }
 
-    .explanation.show { display: block; }
+        .drag-blank.filled {
+            background: var(--secondary);
+            color: white;
+            border-style: solid;
+        }
 
-    .explanation.correct-ex {
-      background: var(--correct-bg);
-      color: #2A6B44;
-      border: 1px solid #B8E0C8;
-    }
+        .drag-blank.correct {
+            background: var(--success);
+            border-color: var(--success);
+        }
 
-    .explanation.wrong-ex {
-      background: var(--wrong-bg);
-      color: #8A3333;
-      border: 1px solid #F0C0C0;
-    }
+        .drag-blank.incorrect {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
 
-    .nav-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-    }
+        .drag-sentence {
+            font-size: 1.05rem;
+            line-height: 2.2;
+            padding: 16px;
+            background: #fafafa;
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
 
-    .nav-bar .btn { flex: 1; }
+        /* Explanation */
+        .explanation {
+            display: none;
+            margin-top: 20px;
+            padding: 16px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid var(--secondary);
+        }
 
-    .overview-btn {
-      text-align: center;
-      margin-top: 12px;
-    }
+        .explanation.show {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
 
-    .overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.35);
-      z-index: 100;
-      justify-content: center;
-      align-items: center;
-      padding: 20px;
-    }
+        .explanation-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: var(--secondary);
+        }
 
-    .overlay.show { display: flex; }
+        /* Navigation */
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
 
-    .overlay-content {
-      background: var(--bg-card);
-      border-radius: 14px;
-      padding: 20px;
-      width: 100%;
-      max-width: 480px;
-      max-height: 80vh;
-      overflow-y: auto;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.15);
-    }
+        .nav-group {
+            display: flex;
+            gap: 10px;
+        }
 
-    .overlay-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-    }
+        /* Overview Panel */
+        .overview-panel {
+            display: none;
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: var(--shadow);
+        }
 
-    .overlay-header h2 {
-      font-size: 1.15rem;
-      color: var(--primary);
-    }
+        .overview-panel.active {
+            display: block;
+        }
 
-    .grid-overview {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
-      gap: 8px;
-    }
+        .overview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+            gap: 8px;
+            margin-top: 16px;
+        }
 
-    .grid-item {
-      aspect-ratio: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 8px;
-      border: 1.5px solid var(--border);
-      font-size: 0.9rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.15s ease;
-    }
+        .overview-item {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
 
-    .grid-item:hover { transform: scale(1.05); }
+        .overview-item:hover {
+            transform: scale(1.1);
+        }
 
-    .grid-item.empty { background: var(--bg-body); color: var(--text-muted); }
-    .grid-item.correct { background: var(--correct-bg); color: var(--correct); border-color: #A0D8B3; }
-    .grid-item.wrong { background: var(--wrong-bg); color: var(--wrong); border-color: #E8A0A0; }
+        .overview-item.unanswered {
+            background: var(--border);
+            color: var(--text-light);
+        }
 
-    .legend {
-      display: flex;
-      gap: 14px;
-      justify-content: center;
-      margin-top: 14px;
-      font-size: 0.8rem;
-      color: var(--text-muted);
-    }
+        .overview-item.correct {
+            background: #e8f5e9;
+            color: var(--success);
+            border-color: var(--success);
+        }
 
-    .legend span { display: flex; align-items: center; gap: 4px; }
-    .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
-    .dot-empty { background: #D8D2C8; }
-    .dot-correct { background: var(--correct); }
-    .dot-wrong { background: var(--wrong); }
+        .overview-item.incorrect {
+            background: #ffebee;
+            color: var(--accent);
+            border-color: var(--accent);
+        }
 
-    @media (max-width: 520px) {
-      .container { padding: 10px; }
-      header h1 { font-size: 1.3rem; }
-      .card { padding: 14px; }
-      .tab { font-size: 0.8rem; padding: 8px 4px; }
-      .question-text { font-size: 0.97rem; }
-    }
-  </style>
+        .filter-buttons {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 6px 14px;
+            border: 1px solid var(--border);
+            background: white;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .filter-btn.active {
+            background: var(--secondary);
+            color: white;
+            border-color: var(--secondary);
+        }
+
+        /* Result Panel */
+        .result-panel {
+            display: none;
+            text-align: center;
+            padding: 40px 24px;
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+        }
+
+        .result-panel.active {
+            display: block;
+        }
+
+        .result-score {
+            font-size: 3rem;
+            font-weight: bold;
+            color: var(--secondary);
+            margin: 20px 0;
+        }
+
+        .result-message {
+            font-size: 1.1rem;
+            color: var(--text-light);
+            margin-bottom: 24px;
+        }
+
+        .result-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin: 24px 0;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .stat-item {
+            padding: 16px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-light);
+            margin-top: 4px;
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .container {
+                padding: 12px;
+            }
+
+            header h1 {
+                font-size: 1.2rem;
+            }
+
+            .score-panel {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .progress-bar {
+                margin: 8px 0;
+            }
+
+            .question-card {
+                padding: 16px;
+            }
+
+            .nav-buttons {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .nav-group {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .result-stats {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Utility */
+        .hidden {
+            display: none !important;
+        }
+
+        .show {
+            display: block !important;
+        }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1>Native AI Game — 世界模型生成实验面试知识自测</h1>
-      <div class="topic">程序化生成 · 世界模型 · 交互模拟 · 请完成以下题目检验掌握程度</div>
-    </header>
+    <div class="container">
+        <header>
+            <h1>实验 12：Native AI Game — 世界模型生成实验</h1>
+            <p class="subtitle">程序化生成 + 世界模型 + 交互模拟 · 知识卡牌</p>
+        </header>
 
-    <div class="score-bar">
-      <div class="score" id="scoreDisplay">得分: 0 / 0</div>
-      <div class="actions">
-        <button class="btn btn-warning btn-sm" id="btnShuffle">随机选项</button>
-        <button class="btn btn-secondary btn-sm" id="btnResetAll">重置所有</button>
-      </div>
+        <!-- Score Panel -->
+        <div class="score-panel" id="scorePanel">
+            <div class="score-display">得分: <span id="scoreValue">0</span></div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+            </div>
+            <div class="progress-text"><span id="currentQ">0</span> / <span id="totalQ">0</span></div>
+            <div class="nav-group">
+                <button class="btn btn-outline" onclick="showOverview()">📋 总览</button>
+                <button class="btn btn-warning" onclick="shuffleOptions()">🎲 重新洗牌</button>
+                <button class="btn btn-danger" onclick="resetAll()">🔄 重置全部</button>
+            </div>
+        </div>
+
+        <!-- Questions Container -->
+        <div id="questionsContainer"></div>
+
+        <!-- Overview Panel -->
+        <div class="overview-panel" id="overviewPanel">
+            <h2>题目总览</h2>
+            <div class="filter-buttons">
+                <button class="filter-btn active" onclick="filterOverview('all')">全部</button>
+                <button class="filter-btn" onclick="filterOverview('unanswered')">未答</button>
+                <button class="filter-btn" onclick="filterOverview('correct')">正确</button>
+                <button class="filter-btn" onclick="filterOverview('incorrect')">错误</button>
+            </div>
+            <div class="overview-grid" id="overviewGrid"></div>
+            <div class="nav-buttons" style="margin-top: 20px;">
+                <button class="btn btn-primary" onclick="hideOverview()">返回做题</button>
+            </div>
+        </div>
+
+        <!-- Result Panel -->
+        <div class="result-panel" id="resultPanel">
+            <h2>🎉 答题完成！</h2>
+            <div class="result-score" id="finalScore">0</div>
+            <div class="result-message" id="resultMessage"></div>
+            <div class="result-stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="statCorrect">0</div>
+                    <div class="stat-label">正确</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="statIncorrect">0</div>
+                    <div class="stat-label">错误</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="statUnanswered">0</div>
+                    <div class="stat-label">未答</div>
+                </div>
+            </div>
+            <div class="nav-group" style="justify-content: center; margin-top: 24px;">
+                <button class="btn btn-outline" onclick="hideResult()">返回查看</button>
+                <button class="btn btn-primary" onclick="resetAll()">继续做题</button>
+            </div>
+        </div>
     </div>
 
-    <div class="tabs" id="tabBar">
-      <div class="tab active" data-type="drag">拖拽填空<span class="badge" id="badgeDrag">0</span></div>
-      <div class="tab" data-type="single">单选题<span class="badge" id="badgeSingle">0</span></div>
-      <div class="tab" data-type="multi">多选题<span class="badge" id="badgeMulti">0</span></div>
-      <div class="tab" data-type="truefalse">判断题<span class="badge" id="badgeTrueFalse">0</span></div>
-    </div>
+    <script>
+        // ==================== 题目数据 ====================
+        var allQuestions = [
+            // ===== 拖拽填空题 (4道) =====
+            {
+                id: 1,
+                type: "drag",
+                question: "世界模型 M 将当前状态 s_t 和动作 a_t 映射到下一状态：s_{t+1} = ______",
+                blanks: ["M(s_t, a_t)"],
+                options: ["M(s_t, a_t)", "s_t + a_t", "fBm(s_t)", "hash(s_t, a_t)", "noise(s_t)", "terrain(s_t)"],
+                explanation: "世界模型的核心定义是 M(s_t, a_t)，即根据当前状态和动作预测下一状态。这是 Genie 世界模型的基本形式。"
+            },
+            {
+                id: 2,
+                type: "drag",
+                question: "程序化生成地形使用 ______ 叠加多个频率的噪声，公式为 h(x,y) = Σ (1/2^i) · noise(2^i x, 2^i y)",
+                blanks: ["fBm（分形布朗运动）"],
+                options: ["fBm（分形布朗运动）", "Perlin 噪声", "CNN", "RNN", "GAN", "VAE"],
+                explanation: "fBm（Fractional Brownian Motion）通过叠加多八度噪声产生自相似的分形地形，是程序化生成的核心数学工具。"
+            },
+            {
+                id: 3,
+                type: "drag",
+                question: "在 ProceduralWorldGenerator 中，______ 函数用于替代标准 Perlin 噪声，实现零外部依赖的平滑噪声",
+                blanks: ["_smooth_noise"],
+                options: ["_smooth_noise", "_fbm", "generate_terrain", "_hash", "predict_move", "is_valid_position"],
+                explanation: "_smooth_noise 使用双线性插值对哈希值进行平滑，替代了标准 Perlin 噪声，确保代码零外部依赖。"
+            },
+            {
+                id: 4,
+                type: "drag",
+                question: "建筑生成遵循聚落规则：新建筑必须 ______ 已有建筑，形成自然的聚落分布",
+                blanks: ["邻接"],
+                options: ["邻接", "远离", "重叠", "覆盖", "平行于", "垂直于"],
+                explanation: "predict_build() 检查 3×3 邻域是否有已有建筑，只有邻接时才允许建造，模拟真实聚落形成。"
+            },
 
-    <div class="card" id="quizCard">
-      <div class="progress-row">
-        <span id="progressText">1 / 1</span>
-        <div class="progress-bar"><div class="fill" id="progressFill" style="width:0%"></div></div>
-        <button class="btn btn-secondary btn-sm" id="btnOverview">总览</button>
-      </div>
+            // ===== 单选题 (10道) =====
+            {
+                id: 5,
+                type: "single",
+                question: "Native AI Game 中，程序化生成路径（Infinigen 思路）的核心特征是什么？",
+                options: [
+                    "使用神经网络从数据中学习生成",
+                    "使用算法和规则系统生成内容，具有确定性生成逻辑",
+                    "依赖大规模训练数据集",
+                    "使用 LLM 生成叙事内容"
+                ],
+                correct: 1,
+                explanation: "程序化生成（Infinigen）使用算法和规则系统生成内容，每个元素都有确定性生成逻辑和可编辑属性，不依赖训练数据。"
+            },
+            {
+                id: 6,
+                type: "single",
+                question: "世界模型路径（Genie 思路）的核心思想是什么？",
+                options: [
+                    "用程序化规则生成静态世界",
+                    "世界模型即游戏引擎，用神经网络学习环境动力学",
+                    "用 LLM 生成游戏剧情",
+                    "用行为树控制 NPC 行为"
+                ],
+                correct: 1,
+                explanation: "Genie 的核心思想是'世界模型即游戏引擎'，用神经网络从数据中学习环境动力学，生成可交互的物理一致世界。"
+            },
+            {
+                id: 7,
+                type: "single",
+                question: "在 TerrainType 枚举中，哪种地形是不可行走的？",
+                options: [
+                    "平原 (PLAIN)",
+                    "森林 (FOREST)",
+                    "水域 (WATER) 和 山地 (MOUNTAIN)",
+                    "沙滩 (SAND)"
+                ],
+                correct: 2,
+                explanation: "walkable 属性返回 self != TerrainType.WATER and self != TerrainType.MOUNTAIN，即水域和山地不可行走。"
+            },
+            {
+                id: 8,
+                type: "single",
+                question: "生成地形时，大尺度趋势（large_scale）的作用是什么？",
+                options: [
+                    "增加地形细节",
+                    "让水域和山脉分布更自然",
+                    "提高生成速度",
+                    "减少内存占用"
+                ],
+                correct: 1,
+                explanation: "代码注释明确说明：'添加大尺度趋势（让水域和山脉分布更自然）'，通过低八度 fBm 实现。"
+            },
+            {
+                id: 9,
+                type: "single",
+                question: "NPC 的 _choose_target 方法中，EXPLORER（探索者）的目标选择策略是什么？",
+                options: [
+                    "在附近 5 格范围内徘徊",
+                    "在建筑附近 3 格范围内巡逻",
+                    "在聚落间 10 格范围内移动",
+                    "在世界范围内随机选择目标"
+                ],
+                correct: 3,
+                explanation: "EXPLORER 的目标选择是 random.randint(0, world.width - 1) 和 random.randint(0, world.height - 1)，即在世界范围内随机选择。"
+            },
+            {
+                id: 10,
+                type: "single",
+                question: "建造塔楼 (TOWER) 需要消耗哪些资源？",
+                options: [
+                    "5 木材 + 2 石材",
+                    "8 木材 + 4 石材",
+                    "3 木材 + 2 食物",
+                    "10 石材 + 5 木材 + 2 黄金"
+                ],
+                correct: 3,
+                explanation: "BuildingType.TOWER 的 cost 是 {ResourceType.STONE: 10, ResourceType.WOOD: 5, ResourceType.GOLD: 2}。"
+            },
+            {
+                id: 11,
+                type: "single",
+                question: "WorldModel 的 history 属性使用什么数据结构？",
+                options: [
+                    "列表 (list)",
+                    "字典 (dict)",
+                    "双端队列 (deque)",
+                    "集合 (set)"
+                ],
+                correct: 2,
+                explanation: "代码中 self.history: deque = deque(maxlen=100)，使用双端队列记录最近 100 个世界快照。"
+            },
+            {
+                id: 12,
+                type: "single",
+                question: "Player 的 vision_range 默认值是多少？",
+                options: [
+                    "5",
+                    "7",
+                    "8",
+                    "10"
+                ],
+                correct: 2,
+                explanation: "Player 类中 vision_range: int = 8，表示玩家可以看到周围 8 格范围内的区域。"
+            },
+            {
+                id: 13,
+                type: "single",
+                question: "本实验为什么使用伪随机哈希函数而非标准 Perlin 噪声？",
+                options: [
+                    "标准 Perlin 噪声计算太慢",
+                    "零外部依赖，便于理解底层数学",
+                    "伪随机哈希生成的地形更真实",
+                    "Perlin 噪声有专利限制"
+                ],
+                correct: 1,
+                explanation: "实验分析中明确说明：'原因：零外部依赖，便于理解底层数学。实现：用线性同余哈希 + 双线性插值模拟平滑噪声。'"
+            },
+            {
+                id: 14,
+                type: "single",
+                question: "在评估指标中，'可达区域比例'的理想值应满足什么条件？",
+                options: [
+                    "< 20%",
+                    "> 40%",
+                    "= 50%",
+                    "> 80%"
+                ],
+                correct: 1,
+                explanation: "评估指标表中明确说明可达区域比例的理想值是 > 40%，确保玩家有足够的探索空间。"
+            },
 
-      <div id="questionArea"></div>
+            // ===== 多选题 (6道) =====
+            {
+                id: 15,
+                type: "multi",
+                question: "WorldModel 提供的三个核心预测函数包括哪些？",
+                options: [
+                    "predict_move：预测移动后的位置",
+                    "predict_gather：预测能否采集到资源",
+                    "predict_build：预测能否在此建造",
+                    "predict_attack：预测战斗结果",
+                    "predict_trade：预测交易收益",
+                    "predict_dialog：预测 NPC 对话"
+                ],
+                correct: [0, 1, 2],
+                explanation: "WorldModel 的三个核心预测函数是 predict_move、predict_gather 和 predict_build。attack、trade、dialog 不在本实验范围内。"
+            },
+            {
+                id: 16,
+                type: "multi",
+                question: "以下哪些是程序化生成与世界模型的对比维度？",
+                options: [
+                    "世界生成方式",
+                    "可预测性",
+                    "可编辑性",
+                    "交互性",
+                    "计算成本",
+                    "内容多样性"
+                ],
+                correct: [0, 1, 2, 3, 4, 5],
+                explanation: "实验分析中的对比表格包含全部六个维度：世界生成、可预测性、可编辑性、交互性、计算成本、内容多样性。"
+            },
+            {
+                id: 17,
+                type: "multi",
+                question: "NPC 的角色类型包括哪些？",
+                options: [
+                    "VILLAGER（村民）",
+                    "MERCHANT（商人）",
+                    "GUARD（守卫）",
+                    "EXPLORER（探索者）",
+                    "WARRIOR（战士）",
+                    "FARMER（农民）"
+                ],
+                correct: [0, 1, 2, 3],
+                explanation: "NPCRole 枚举定义了四种角色：VILLAGER、MERCHANT、GUARD、EXPLORER。WARRIOR 和 FARMER 未定义。"
+            },
+            {
+                id: 18,
+                type: "multi",
+                question: "以下哪些资源类型在实验中被定义？",
+                options: [
+                    "WOOD（木材）",
+                    "STONE（石材）",
+                    "FOOD（食物）",
+                    "GOLD（黄金）",
+                    "IRON（铁矿）",
+                    "CRYSTAL（水晶）"
+                ],
+                correct: [0, 1, 2, 3],
+                explanation: "ResourceType 枚举定义了 WOOD、STONE、FOOD、GOLD 四种资源。IRON 和 CRYSTAL 未定义。"
+            },
+            {
+                id: 19,
+                type: "multi",
+                question: "渲染系统的渲染层级顺序（从底到顶）包括哪些？",
+                options: [
+                    "地形",
+                    "资源",
+                    "建筑",
+                    "NPC",
+                    "玩家",
+                    "视野范围"
+                ],
+                correct: [0, 1, 2, 3, 4, 5],
+                explanation: "WorldRenderer.render() 的渲染顺序是：1.地形 → 2.资源 → 3.建筑 → 4.NPC → 5.玩家 → 6.视野范围，符合从底到顶的逻辑。"
+            },
+            {
+                id: 20,
+                type: "multi",
+                question: "以下哪些操作会触发 world.tick() 让 NPC 行动？",
+                options: [
+                    "玩家移动 (w/a/s/d)",
+                    "玩家采集 (g)",
+                    "玩家建造 (b/1-4)",
+                    "手动推进时间 (t)",
+                    "显示帮助 (h)",
+                    "退出游戏 (q)"
+                ],
+                correct: [0, 1, 2, 3],
+                explanation: "代码中 if key[0] in \'wasdWASDgGbB123\' 时调用 world.tick()。h（帮助）和 q（退出）不会触发 tick。"
+            },
 
-      <div id="explanationArea"></div>
+            // ===== 判断题 (7道) =====
+            {
+                id: 21,
+                type: "judge",
+                question: "程序化生成（Infinigen）使用神经网络从数据中学习生成世界内容。",
+                correct: false,
+                explanation: "错误。程序化生成使用算法和规则系统（如噪声函数+阈值）生成内容，不依赖神经网络或训练数据。这是与 Genie 世界模型的核心区别。"
+            },
+            {
+                id: 22,
+                type: "judge",
+                question: "WorldModel 的 predict_move 函数在目标位置不可行走时返回原位置。",
+                correct: true,
+                explanation: "正确。predict_move 中 if self.is_valid_position(new_pos) 返回 new_pos，否则返回 pos（原位置），即保持不动。"
+            },
+            {
+                id: 23,
+                type: "judge",
+                question: "NPC 的 AI 使用神经网络进行决策，每个 NPC 都有独立的深度学习模型。",
+                correct: false,
+                explanation: "错误。NPC 使用简单的规则 AI（目标驱动行为），根据角色类型选择目标并移动。实验明确说明这是'最简可行 AI'，真实游戏才会用行为树或强化学习。"
+            },
+            {
+                id: 24,
+                type: "judge",
+                question: "在 _fbm 函数中，persistence 参数越高，生成的地形越粗糙。",
+                correct: true,
+                explanation: "正确。persistence 控制高八度噪声的衰减速度，越高则高频噪声贡献越大，地形细节越多、越粗糙。"
+            },
+            {
+                id: 25,
+                type: "judge",
+                question: "玩家可以在水域上建造建筑，只要资源足够。",
+                correct: false,
+                explanation: "错误。is_valid_position 检查 t.walkable，而水域的 walkable 为 False。predict_build 首先调用 is_valid_position，因此水域不可建造。"
+            },
+            {
+                id: 26,
+                type: "judge",
+                question: "本实验中，程序化生成和世界模型是互斥的技术路径，不能同时使用。",
+                correct: false,
+                explanation: "错误。本实验的核心目标就是融合两条路径：用程序化生成构建基础世界，用世界模型管理交互。实验明确说明'程序化生成和世界模型不是互斥的'。"
+            },
+            {
+                id: 27,
+                type: "judge",
+                question: "Inventory.can_afford 方法使用 all() 函数检查是否满足所有资源需求。",
+                correct: true,
+                explanation: "正确。代码中 return all(self.has(r, a) for r, a in cost.items())，使用 all() 确保每种资源都满足数量要求。"
+            }
+        ];
 
-      <div style="display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;">
-        <button class="btn btn-primary" id="btnCheck">检查答案</button>
-        <button class="btn btn-secondary" id="btnResetCurrent">重置当前题</button>
-      </div>
+        // ==================== 状态管理 ====================
+        var state = {
+            currentIndex: 0,
+            answers: {},
+            score: 0,
+            shuffled: false
+        };
 
-      <div class="nav-bar" style="margin-top:16px;">
-        <button class="btn btn-secondary" id="btnPrev">上一题</button>
-        <button class="btn btn-secondary" id="btnNext">下一题</button>
-      </div>
-    </div>
-  </div>
+        var originalQuestions = JSON.parse(JSON.stringify(allQuestions));
 
-  <div class="overlay" id="overviewOverlay">
-    <div class="overlay-content">
-      <div class="overlay-header">
-        <h2>题目总览</h2>
-        <button class="btn btn-secondary btn-sm" id="btnCloseOverview">关闭</button>
-      </div>
-      <div class="grid-overview" id="overviewGrid"></div>
-      <div class="legend">
-        <span><span class="dot dot-empty"></span>未答</span>
-        <span><span class="dot dot-correct"></span>正确</span>
-        <span><span class="dot dot-wrong"></span>错误</span>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    // ===== DATA PLACEHOLDERS =====
-    // DRAG_QUESTIONS_PLACEHOLDER_START
-    const dragQuestions = [
-  {
-    "question": "本实验融合了两条技术路径：{0} 思路的程序化生成 与 {1} 思路的世界模型。",
-    "answers": [
-      "Infinigen",
-      "Genie"
-    ],
-    "options": [
-      "Infinigen",
-      "Genie",
-      "AI Dungeon",
-      "Perlin",
-      "fBm",
-      "DeepMind"
-    ],
-    "explanations": [
-      "Infinigen（Meta）是程序化生成的代表项目，用算法和规则系统生成无限多样化的世界内容。",
-      "Genie（DeepMind）是世界模型的代表项目，核心思想是'世界模型即游戏引擎'。"
-    ]
-  },
-  {
-    "question": "地形分类基于高度阈值：h < 0.3 为 {0}，0.4 ≤ h < 0.6 为 {1}，h ≥ 0.8 为 {2}。",
-    "answers": [
-      "水域",
-      "平原",
-      "山地"
-    ],
-    "options": [
-      "水域",
-      "沙滩",
-      "平原",
-      "森林",
-      "山地",
-      "雪地"
-    ],
-    "explanations": [
-      "高度 h < 0.3 时被分类为水域（Water），不可通行。",
-      "0.4 ≤ h < 0.6 对应平原（Plain），适合建造且有植被。",
-      "h ≥ 0.8 对应山地（Mountain），石材资源丰富但难以通行。"
-    ]
-  },
-  {
-    "question": "fBm 地形生成中，{0} 控制频率的倍增比，{1} 控制振幅的衰减比。",
-    "answers": [
-      "lacunarity",
-      "persistence"
-    ],
-    "options": [
-      "lacunarity",
-      "persistence",
-      "octaves",
-      "seed",
-      "frequency",
-      "amplitude"
-    ],
-    "explanations": [
-      "lacunarity（缺项度）控制每一层噪声频率的倍增比，默认值为 2.0。",
-      "persistence（持续度）控制每一层噪声振幅的衰减比，默认值为 0.5。"
-    ]
-  }
-];
-    // DRAG_QUESTIONS_PLACEHOLDER_END
-
-    // SINGLE_QUESTIONS_PLACEHOLDER_START
-    const singleQuestions = [
-  {
-    "question": "Native AI Game 中，'用算法和规则系统生成无限内容、不依赖训练数据'对应哪条技术路径？",
-    "options": [
-      "Infinigen（程序化生成）",
-      "Genie（世界模型）",
-      "AI Dungeon（LLM叙事）",
-      "Perlin噪声"
-    ],
-    "correct": 0,
-    "explanations": [
-      "正确。Infinigen 路径的核心正是用算法和规则系统生成内容，每个元素都有确定性生成逻辑。",
-      "Genie 是用神经网络从数据中学习环境动力学，属于世界模型路径。",
-      "AI Dungeon 是用 LLM 驱动叙事，属于文本生成式交互。",
-      "Perlin 噪声只是程序化生成中的一种数学工具，不是路径名称。"
-    ]
-  },
-  {
-    "question": "在本实验中，地形高度 h 满足什么条件时被分类为森林（Forest）？",
-    "options": [
-      "h < 0.3",
-      "0.3 ≤ h < 0.4",
-      "0.6 ≤ h < 0.8",
-      "h ≥ 0.8"
-    ],
-    "correct": 2,
-    "explanations": [
-      "h < 0.3 是水域，不是森林。",
-      "0.3 ≤ h < 0.4 是沙滩，属于过渡区域。",
-      "正确。0.6 ≤ h < 0.8 对应森林，木材资源丰富且 NPC 出没。",
-      "h ≥ 0.8 是山地，石材资源但难以通行。"
-    ]
-  },
-  {
-    "question": "本实验中，WorldModel 类里的哪个函数负责预测移动结果、是状态转移的核心？",
-    "options": [
-      "is_valid_position",
-      "predict_move",
-      "predict_gather",
-      "apply_action"
-    ],
-    "correct": 1,
-    "explanations": [
-      "is_valid_position 只检查位置是否有效，不涉及状态转移预测。",
-      "正确。predict_move 接收当前位置和行动方向，返回预测的新位置，是世界模型的核心函数。",
-      "predict_gather 只预测采集结果，不处理位置状态转移。",
-      "apply_action 是执行层，负责真正修改状态，不是预测函数。"
-    ]
-  },
-  {
-    "question": "在游戏中，按下哪个键可以建造 Tower（塔楼）？",
-    "options": [
-      "b / 1（建造 House）",
-      "2（建造 Workshop）",
-      "3（建造 Farm）",
-      "4（建造 Tower）"
-    ],
-    "correct": 3,
-    "explanations": [
-      "b / 1 对应建造 House，不是 Tower。",
-      "2 对应建造 Workshop，不是 Tower。",
-      "3 对应建造 Farm，不是 Tower。",
-      "正确。4 对应建造 Tower，需要消耗 10 石材 + 5 木材 + 2 黄金。"
-    ]
-  }
-];
-    // SINGLE_QUESTIONS_PLACEHOLDER_END
-
-    // MULTI_QUESTIONS_PLACEHOLDER_START
-    const multiQuestions = [
-  {
-    "question": "以下哪些属于 Native AI Game 范式中 AI 的原生能力？（请选择所有正确选项）",
-    "options": [
-      "AI 生成游戏世界",
-      "AI 作为外挂辅助玩家",
-      "AI 驱动叙事和玩法",
-      "AI 仅负责图形渲染",
-      "AI 创造动态交互内容",
-      "AI 替代传统游戏规则"
-    ],
-    "correct": [
-      0,
-      2,
-      4
-    ],
-    "explanations": [
-      "正确。Native AI Game 让 AI 生成世界是核心特征之一。",
-      "错误。'外挂辅助'是传统 AI 工具思路，Native AI Game 是让 AI 成为核心。",
-      "正确。AI 驱动叙事和创造玩法是 Native AI Game 的关键特征。",
-      "错误。图形渲染只是表现层，不是 Native AI Game 的核心能力。",
-      "正确。动态交互内容是世界模型路径的核心产出。",
-      "错误。Native AI Game 不是替代规则，而是围绕 AI 能力重新设计游戏。"
-    ]
-  },
-  {
-    "question": "在本实验中，哪些地形类型是可行走的（walkable）？（请选择所有正确选项）",
-    "options": [
-      "水域(Water)",
-      "沙滩(Sand)",
-      "平原(Plain)",
-      "山地(Mountain)",
-      "森林(Forest)",
-      "雪地(Snow)"
-    ],
-    "correct": [
-      1,
-      2,
-      4
-    ],
-    "explanations": [
-      "错误。水域不可通行，代码中 walkable 对 Water 返回 False。",
-      "正确。沙滩是可通行的过渡地形。",
-      "正确。平原是可通行且适合建造的主要地形。",
-      "错误。山地不可通行，代码中 walkable 对 Mountain 返回 False。",
-      "正确。森林是可通行地形，且有木材资源。",
-      "错误。雪地不是本实验定义的地形类型。"
-    ]
-  },
-  {
-    "question": "WorldModel 类提供的核心预测/执行函数包括哪些？（请选择所有正确选项）",
-    "options": [
-      "predict_move（预测移动）",
-      "predict_gather（预测采集）",
-      "predict_fight（预测战斗）",
-      "predict_build（预测建造可行性）",
-      "predict_trade（预测交易）",
-      "apply_action（执行动作并更新状态）"
-    ],
-    "correct": [
-      0,
-      1,
-      3,
-      5
-    ],
-    "explanations": [
-      "正确。predict_move 是世界模型核心函数，预测移动结果。",
-      "正确。predict_gather 预测当前位置是否有可采集资源。",
-      "错误。本实验没有实现战斗系统，不存在 predict_fight。",
-      "正确。predict_build 检查位置是否满足建造条件（邻接已有建筑等）。",
-      "错误。本实验没有交易机制，不存在 predict_trade。",
-      "正确。apply_action 是统一的执行入口，负责调用预测并更新世界状态。"
-    ]
-  }
-];
-    // MULTI_QUESTIONS_PLACEHOLDER_END
-
-    // TRUEFALSE_QUESTIONS_PLACEHOLDER_START
-    const trueFalseQuestions = [
-  {
-    "question": "本实验的地形生成使用了外部 Perlin 噪声库（如 noise 包）。",
-    "correct": false,
-    "explanationTrue": "错误。本实验使用自定义的伪随机哈希函数 + 双线性插值来模拟平滑噪声，目的是零外部依赖。",
-    "explanationFalse": "正确。代码注释明确说明'零外部依赖'，使用 _hash 函数和 _smooth_noise 方法替代标准 Perlin 噪声库。"
-  },
-  {
-    "question": "在 Native AI Game 中，世界模型的核心公式是 s_{t+1} = M(s_t, a_t)。",
-    "correct": true,
-    "explanationTrue": "正确。实验笔记明确给出该公式，表示世界模型 M 将当前状态 s_t 和动作 a_t 映射到下一状态 s_{t+1}。",
-    "explanationFalse": "错误。实验笔记的理论基础部分明确记载了 s_{t+1} = M(s_t, a_t) 这一公式。"
-  },
-  {
-    "question": "建筑可以在任何平原地形上直接建造，无需满足其他条件。",
-    "correct": false,
-    "explanationTrue": "错误。 predict_build 明确要求位置必须邻接已有建筑（聚落规则），且不能覆盖已有资源。",
-    "explanationFalse": "正确。建造需要满足聚落规则——必须邻接已有建筑，且位置有效、无资源覆盖。"
-  },
-  {
-    "question": "NPC 的 MERCHANT（商人）角色会在建筑附近小范围巡逻。",
-    "correct": false,
-    "explanationTrue": "错误。在建筑附近巡逻的是 GUARD（守卫）；MERCHANT（商人）会在 ±10 格范围内移动，跨度更大。",
-    "explanationFalse": "正确。MERCHANT 在 ±10 的较大范围内移动；只有 GUARD 会选择建筑附近 ±3 格巡逻。"
-  }
-];
-    // TRUEFALSE_QUESTIONS_PLACEHOLDER_END
-
-    // ===== STATE =====
-    let currentType = 'drag';
-    let currentIndex = 0;
-    let userAnswers = {};
-    let checkedState = {};
-
-    // ===== HELPERS =====
-    function makeKey(type, index) {
-      return type + ':' + index;
-    }
-
-    function getQuestions(type) {
-      if (type === 'drag') return dragQuestions;
-      if (type === 'single') return singleQuestions;
-      if (type === 'multi') return multiQuestions;
-      return trueFalseQuestions;
-    }
-
-    function getBadgeId(type) {
-      if (type === 'drag') return 'badgeDrag';
-      if (type === 'single') return 'badgeSingle';
-      if (type === 'multi') return 'badgeMulti';
-      return 'badgeTrueFalse';
-    }
-
-    function countQuestions(type) {
-      return getQuestions(type).length;
-    }
-
-    function allTypes() {
-      return ['drag', 'single', 'multi', 'truefalse'];
-    }
-
-    // ===== RENDER =====
-    function initBadges() {
-      allTypes().forEach(function(t) {
-        document.getElementById(getBadgeId(t)).textContent = countQuestions(t);
-      });
-    }
-
-    function updateScore() {
-      let total = 0, scored = 0;
-      allTypes().forEach(function(type) {
-        const list = getQuestions(type);
-        for (let i = 0; i < list.length; i++) {
-          const q = list[i];
-          const key = makeKey(type, i);
-          if (checkedState[key]) {
-            total += getQuestionPoints(q, type);
-            scored += getUserPoints(q, type, i);
-          }
+        // ==================== 初始化 ====================
+        function init() {
+            document.getElementById("totalQ").textContent = allQuestions.length;
+            renderQuestions();
+            showQuestion(0);
+            updateProgress();
         }
-      });
-      document.getElementById('scoreDisplay').textContent = '得分: ' + scored + ' / ' + total;
-    }
 
-    function getQuestionPoints(q, type) {
-      if (type === 'drag') return q.answers.length;
-      if (type === 'multi') return q.correct.length;
-      return 1;
-    }
+        // ==================== 渲染题目 ====================
+        function renderQuestions() {
+            var container = document.getElementById("questionsContainer");
+            container.innerHTML = "";
 
-    function getUserPoints(q, type, idx) {
-      const key = makeKey(type, idx);
-      const ans = userAnswers[key];
-      if (!ans) return 0;
-      if (type === 'drag') {
-        let pts = 0;
-        for (let i = 0; i < q.answers.length; i++) {
-          if (ans[i] === q.answers[i]) pts++;
+            allQuestions.forEach(function(q, index) {
+                var card = document.createElement("div");
+                card.className = "question-card";
+                card.id = "question-" + index;
+                card.dataset.index = index;
+
+                var typeClass = "type-" + q.type;
+                var typeName = {
+                    "single": "单选题",
+                    "multi": "多选题",
+                    "judge": "判断题",
+                    "drag": "拖拽填空"
+                }[q.type];
+
+                var html = `
+                    <div class="question-header">
+                        <span class="question-type ${typeClass}">${typeName}</span>
+                        <span class="question-number">第 ${index + 1} 题 / 共 ${allQuestions.length} 题</span>
+                    </div>
+                    <div class="question-title">${q.question}</div>
+                `;
+
+                if (q.type === "drag") {
+                    html += renderDragQuestion(q, index);
+                } else if (q.type === "single" || q.type === "multi") {
+                    html += renderChoiceQuestion(q, index);
+                } else if (q.type === "judge") {
+                    html += renderJudgeQuestion(q, index);
+                }
+
+                html += `
+                    <div class="explanation" id="explanation-${index}">
+                        <div class="explanation-title">解析</div>
+                        <div>${q.explanation}</div>
+                    </div>
+                    <div class="nav-buttons">
+                        <div class="nav-group">
+                            <button class="btn btn-outline" onclick="prevQuestion()" ${index === 0 ? "disabled" : ""}>上一题</button>
+                            <button class="btn btn-primary" onclick="checkAnswer(${index})">检查答案</button>
+                            <button class="btn btn-outline" onclick="resetQuestion(${index})">重置题目</button>
+                        </div>
+                        <div class="nav-group">
+                            <button class="btn btn-outline" onclick="nextQuestion()" ${index === allQuestions.length - 1 ? "disabled" : ""}>下一题</button>
+                        </div>
+                    </div>
+                `;
+
+                card.innerHTML = html;
+                container.appendChild(card);
+            });
         }
-        return pts;
-      }
-      if (type === 'single') {
-        return ans === q.correct ? 1 : 0;
-      }
-      if (type === 'multi') {
-        let pts = 0;
-        const correctSet = {};
-        for (let i = 0; i < q.correct.length; i++) correctSet[q.correct[i]] = true;
-        const userSet = {};
-        for (let i = 0; i < ans.length; i++) userSet[ans[i]] = true;
-        for (let k in correctSet) {
-          if (userSet[k]) pts++;
+
+        function renderDragQuestion(q, index) {
+            var html = `<div class="drag-sentence">${q.question}</div>`;
+            html += `<div class="drag-words" id="drag-words-${index}">`;
+            q.options.forEach(function(opt, i) {
+                html += `<div class="drag-word" draggable="true" data-value="${opt}" ondragstart="dragStart(event)" ondragend="dragEnd(event)">${opt}</div>`;
+            });
+            html += `</div>`;
+            html += `<div style="margin-top: 16px; text-align: center;">`;
+            html += `<button class="btn btn-outline" onclick="resetDrag(${index})">重置填空</button>`;
+            html += `</div>`;
+            return html;
         }
-        return pts;
-      }
-      return ans === q.correct ? 1 : 0;
-    }
 
-    function updateProgress() {
-      const total = countQuestions(currentType);
-      const text = total > 0 ? (currentIndex + 1) + ' / ' + total : '0 / 0';
-      document.getElementById('progressText').textContent = text;
-      const pct = total > 0 ? ((currentIndex + 1) / total * 100) : 0;
-      document.getElementById('progressFill').style.width = pct + '%';
-    }
-
-    function renderQuestion() {
-      const area = document.getElementById('questionArea');
-      const expl = document.getElementById('explanationArea');
-      area.innerHTML = '';
-      expl.innerHTML = '';
-      expl.style.display = 'none';
-      updateProgress();
-
-      const questions = getQuestions(currentType);
-      if (questions.length === 0) {
-        area.innerHTML = '<p style="text-align:center;color:var(--text-muted)">该题型暂无题目</p>';
-        return;
-      }
-      const q = questions[currentIndex];
-      const key = makeKey(currentType, currentIndex);
-
-      const qtext = document.createElement('div');
-      qtext.className = 'question-text';
-
-      if (currentType === 'drag') {
-        let html = q.question;
-        for (let i = 0; i < q.answers.length; i++) {
-          const filled = userAnswers[key] && userAnswers[key][i] ? userAnswers[key][i] : '';
-          let cls = 'blank';
-          if (checkedState[key]) {
-            if (filled === q.answers[i]) cls += ' correct';
-            else cls += ' wrong';
-          } else if (filled) {
-            cls += ' filled';
-          }
-          html = html.replace('{\/' + i + '}', '<span class="' + cls + '" data-blank="' + i + '">' + (filled || '____') + '</span>');
-          html = html.replace('{\*' + i + '}', '<span class="' + cls + '" data-blank="' + i + '">' + (filled || '____') + '</span>');
-          html = html.replace('{' + i + '}', '<span class="' + cls + '" data-blank="' + i + '">' + (filled || '____') + '</span>');
+        function renderChoiceQuestion(q, index) {
+            var html = `<div class="options-list" id="options-${index}">`;
+            q.options.forEach(function(opt, i) {
+                var label = String.fromCharCode(65 + i);
+                var inputType = q.type === "single" ? "radio" : "checkbox";
+                html += `
+                    <label class="option-item" onclick="selectOption(${index}, ${i}, '${inputType}')">
+                        <input type="${inputType}" name="q${index}" value="${i}" onchange="selectOption(${index}, ${i}, '${inputType}')">
+                        <span class="option-label">${label}.</span>
+                        <span>${opt}</span>
+                    </label>
+                `;
+            });
+            html += `</div>`;
+            return html;
         }
-        qtext.innerHTML = html;
-        area.appendChild(qtext);
 
-        const pool = document.createElement('div');
-        pool.className = 'draggables';
-        const used = userAnswers[key] || [];
-        for (let i = 0; i < q.options.length; i++) {
-          const opt = q.options[i];
-          const isUsed = used.indexOf(opt) !== -1;
-          const chip = document.createElement('div');
-          chip.className = 'draggable' + (isUsed ? ' used' : '');
-          chip.draggable = !isUsed;
-          chip.textContent = opt;
-          chip.dataset.value = opt;
-          if (!isUsed) setupDrag(chip);
-          pool.appendChild(chip);
+        function renderJudgeQuestion(q, index) {
+            var html = `<div class="options-list" id="options-${index}">`;
+            var options = [
+                { value: "true", label: "是 / True", text: "正确" },
+                { value: "false", label: "否 / False", text: "错误" }
+            ];
+            options.forEach(function(opt, i) {
+                html += `
+                    <label class="option-item" onclick="selectJudge(${index}, ${opt.value === "true"})">
+                        <input type="radio" name="q${index}" value="${opt.value}" onchange="selectJudge(${index}, ${opt.value === "true"})">
+                        <span class="option-label">${opt.label}</span>
+                        <span>(${opt.text})</span>
+                    </label>
+                `;
+            });
+            html += `</div>`;
+            return html;
         }
-        area.appendChild(pool);
 
-        if (checkedState[key]) {
-          const box = document.createElement('div');
-          box.className = 'explanation show correct-ex';
-          let exHtml = '<strong>解析：</strong><ul style="margin:8px 0 0 18px">';
-          for (let i = 0; i < q.explanations.length; i++) {
-            const isOk = userAnswers[key] && userAnswers[key][i] === q.answers[i];
-            exHtml += '<li><span style="color:' + (isOk ? 'var(--correct)' : 'var(--wrong)') + '">' + (isOk ? '✅' : '❌') + '</span> 空' + (i+1) + '：' + q.explanations[i] + '</li>';
-          }
-          exHtml += '</ul>';
-          box.innerHTML = exHtml;
-          expl.appendChild(box);
-          expl.style.display = 'block';
+        // ==================== 拖拽功能 ====================
+        function dragStart(e) {
+            e.target.classList.add("dragging");
+            e.dataTransfer.setData("text/plain", e.target.dataset.value);
+            e.dataTransfer.effectAllowed = "move";
         }
-      } else if (currentType === 'single') {
-        qtext.textContent = q.question;
-        area.appendChild(qtext);
-        const list = document.createElement('div');
-        list.className = 'options-list';
-        for (let i = 0; i < q.options.length; i++) {
-          const opt = document.createElement('label');
-          opt.className = 'option';
-          const isSel = userAnswers[key] === i;
-          if (checkedState[key]) {
-            if (i === q.correct) opt.classList.add('correct-ans');
-            else if (isSel) opt.classList.add('wrong-ans');
-          }
-          const radio = document.createElement('input');
-          radio.type = 'radio';
-          radio.name = 'singleOpt';
-          radio.checked = isSel;
-          radio.disabled = !!checkedState[key];
-          radio.addEventListener('change', function() {
-            userAnswers[key] = i;
-          });
-          const span = document.createElement('span');
-          span.className = 'label';
-          span.textContent = q.options[i];
-          opt.appendChild(radio);
-          opt.appendChild(span);
-          if (checkedState[key]) {
-            const mark = document.createElement('span');
-            mark.className = 'mark';
-            mark.textContent = i === q.correct ? '✅' : (isSel ? '❌' : '');
-            opt.appendChild(mark);
-          }
-          list.appendChild(opt);
+
+        function dragEnd(e) {
+            e.target.classList.remove("dragging");
         }
-        area.appendChild(list);
-        if (checkedState[key]) {
-          const box = document.createElement('div');
-          box.className = 'explanation show ' + (userAnswers[key] === q.correct ? 'correct-ex' : 'wrong-ex');
-          box.innerHTML = '<strong>解析：</strong><br>' + q.explanations[q.correct];
-          expl.appendChild(box);
-          expl.style.display = 'block';
+
+        function dragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "move";
         }
-      } else if (currentType === 'multi') {
-        qtext.textContent = q.question;
-        area.appendChild(qtext);
-        const list = document.createElement('div');
-        list.className = 'options-list';
-        const selSet = {};
-        const ans = userAnswers[key] || [];
-        for (let i = 0; i < ans.length; i++) selSet[ans[i]] = true;
-        const correctSet = {};
-        for (let i = 0; i < q.correct.length; i++) correctSet[q.correct[i]] = true;
-        for (let i = 0; i < q.options.length; i++) {
-          const opt = document.createElement('label');
-          opt.className = 'option';
-          const isSel = !!selSet[i];
-          if (checkedState[key]) {
-            if (correctSet[i]) opt.classList.add('correct-ans');
-            else if (isSel) opt.classList.add('wrong-ans');
-          }
-          const cb = document.createElement('input');
-          cb.type = 'checkbox';
-          cb.checked = isSel;
-          cb.disabled = !!checkedState[key];
-          cb.addEventListener('change', function() {
-            const a = userAnswers[key] || [];
-            const pos = a.indexOf(i);
-            if (pos >= 0) a.splice(pos, 1);
-            else a.push(i);
-            userAnswers[key] = a;
-          });
-          const span = document.createElement('span');
-          span.className = 'label';
-          span.textContent = q.options[i];
-          opt.appendChild(cb);
-          opt.appendChild(span);
-          if (checkedState[key]) {
-            const mark = document.createElement('span');
-            mark.className = 'mark';
-            mark.textContent = correctSet[i] ? '✅' : (isSel ? '❌' : '');
-            opt.appendChild(mark);
-          }
-          list.appendChild(opt);
+
+        function drop(e, index) {
+            e.preventDefault();
+            var value = e.dataTransfer.getData("text/plain");
+            var blank = e.target.closest(".drag-blank");
+            if (blank && !blank.classList.contains("filled")) {
+                blank.textContent = value;
+                blank.classList.add("filled");
+                blank.dataset.value = value;
+            }
         }
-        area.appendChild(list);
-        if (checkedState[key]) {
-          const box = document.createElement('div');
-          let ok = true;
-          for (let k in correctSet) { if (!selSet[k]) ok = false; }
-          for (let k in selSet) { if (!correctSet[k]) ok = false; }
-          box.className = 'explanation show ' + (ok ? 'correct-ex' : 'wrong-ex');
-          let exHtml = '<strong>解析：</strong><ul style="margin:8px 0 0 18px">';
-          for (let i = 0; i < q.options.length; i++) {
-            const isCorrect = !!correctSet[i];
-            const icon = isCorrect ? '✅' : (selSet[i] ? '❌' : '⬜');
-            exHtml += '<li>' + icon + ' ' + q.explanations[i] + '</li>';
-          }
-          exHtml += '</ul>';
-          box.innerHTML = exHtml;
-          expl.appendChild(box);
-          expl.style.display = 'block';
+
+        // ==================== 选择功能 ====================
+        function selectOption(qIndex, optIndex, inputType) {
+            var card = document.getElementById("question-" + qIndex);
+            var items = card.querySelectorAll(".option-item");
+
+            if (inputType === "radio") {
+                items.forEach(function(item) { item.classList.remove("selected"); });
+                items[optIndex].classList.add("selected");
+                state.answers[qIndex] = optIndex;
+            } else {
+                items[optIndex].classList.toggle("selected");
+                var selected = [];
+                items.forEach(function(item, i) {
+                    if (item.classList.contains("selected")) selected.push(i);
+                });
+                state.answers[qIndex] = selected;
+            }
         }
-      } else if (currentType === 'truefalse') {
-        qtext.textContent = q.question;
-        area.appendChild(qtext);
-        const list = document.createElement('div');
-        list.className = 'options-list';
-        const opts = [{val: true, label: '是 / True'}, {val: false, label: '否 / False'}];
-        for (let i = 0; i < opts.length; i++) {
-          const opt = document.createElement('label');
-          opt.className = 'option';
-          const v = opts[i].val;
-          const isSel = userAnswers[key] === v;
-          if (checkedState[key]) {
-            if (v === q.correct) opt.classList.add('correct-ans');
-            else if (isSel) opt.classList.add('wrong-ans');
-          }
-          const radio = document.createElement('input');
-          radio.type = 'radio';
-          radio.name = 'tfOpt';
-          radio.checked = isSel;
-          radio.disabled = !!checkedState[key];
-          radio.addEventListener('change', function() {
-            userAnswers[key] = v;
-          });
-          const span = document.createElement('span');
-          span.className = 'label';
-          span.textContent = opts[i].label;
-          opt.appendChild(radio);
-          opt.appendChild(span);
-          if (checkedState[key]) {
-            const mark = document.createElement('span');
-            mark.className = 'mark';
-            mark.textContent = v === q.correct ? '✅' : (isSel ? '❌' : '');
-            opt.appendChild(mark);
-          }
-          list.appendChild(opt);
+
+        function selectJudge(qIndex, value) {
+            var card = document.getElementById("question-" + qIndex);
+            var items = card.querySelectorAll(".option-item");
+            items.forEach(function(item) { item.classList.remove("selected"); });
+            items[value ? 0 : 1].classList.add("selected");
+            state.answers[qIndex] = value;
         }
-        area.appendChild(list);
-        if (checkedState[key]) {
-          const box = document.createElement('div');
-          const ok = userAnswers[key] === q.correct;
-          box.className = 'explanation show ' + (ok ? 'correct-ex' : 'wrong-ex');
-          box.innerHTML = '<strong>解析：</strong><br>' + (q.correct ? q.explanationTrue : q.explanationFalse);
-          expl.appendChild(box);
-          expl.style.display = 'block';
+
+        // ==================== 检查答案 ====================
+        function checkAnswer(index) {
+            var q = allQuestions[index];
+            var answer = state.answers[index];
+            var isCorrect = false;
+
+            if (answer === undefined || answer === null) {
+                alert("请先作答！");
+                return;
+            }
+
+            if (q.type === "single") {
+                isCorrect = answer === q.correct;
+                showChoiceResult(index, isCorrect, [q.correct]);
+            } else if (q.type === "multi") {
+                var ansArr = Array.isArray(answer) ? answer : [answer];
+                isCorrect = ansArr.length === q.correct.length &&
+                    ansArr.every(function(v) { return q.correct.includes(v); });
+                showChoiceResult(index, isCorrect, q.correct);
+            } else if (q.type === "judge") {
+                isCorrect = answer === q.correct;
+                showJudgeResult(index, isCorrect);
+            } else if (q.type === "drag") {
+                isCorrect = checkDragAnswer(index, q);
+                showDragResult(index, isCorrect, q);
+            }
+
+            if (isCorrect) {
+                state.score += getQuestionScore(q.type);
+            }
+
+            updateScore();
+            document.getElementById("explanation-" + index).classList.add("show");
         }
-      }
-    }
 
-    // ===== DRAG & DROP =====
-    function setupDrag(el) {
-      el.addEventListener('dragstart', function(e) {
-        e.dataTransfer.setData('text/plain', el.dataset.value);
-        el.classList.add('dragging');
-      });
-      el.addEventListener('dragend', function() {
-        el.classList.remove('dragging');
-      });
-    }
-
-    document.addEventListener('dragover', function(e) {
-      const blank = e.target.closest && e.target.closest('[data-blank]');
-      if (blank) e.preventDefault();
-    });
-
-    document.addEventListener('drop', function(e) {
-      const blank = e.target.closest && e.target.closest('[data-blank]');
-      if (!blank) return;
-      e.preventDefault();
-      const value = e.dataTransfer.getData('text/plain');
-      if (!value) return;
-      const bidx = parseInt(blank.dataset.blank, 10);
-      const key = makeKey(currentType, currentIndex);
-      if (!userAnswers[key]) userAnswers[key] = [];
-      userAnswers[key][bidx] = value;
-      renderQuestion();
-    });
-
-    // Also support click-to-fill on mobile
-    document.addEventListener('click', function(e) {
-      const blank = e.target.closest && e.target.closest('[data-blank]');
-      if (!blank) return;
-      if (checkedState[makeKey(currentType, currentIndex)]) return;
-      const key = makeKey(currentType, currentIndex);
-      const ans = userAnswers[key] || [];
-      const bidx = parseInt(blank.dataset.blank, 10);
-      if (ans[bidx]) {
-        delete ans[bidx];
-        renderQuestion();
-        return;
-      }
-      // Find first unused draggable
-      const chips = document.querySelectorAll('.draggable:not(.used)');
-      if (chips.length > 0) {
-        const val = chips[0].dataset.value;
-        if (!userAnswers[key]) userAnswers[key] = [];
-        userAnswers[key][bidx] = val;
-        renderQuestion();
-      }
-    });
-
-    // ===== CONTROLS =====
-    function switchTab(type) {
-      currentType = type;
-      currentIndex = 0;
-      document.querySelectorAll('.tab').forEach(function(t) {
-        t.classList.toggle('active', t.dataset.type === type);
-      });
-      renderQuestion();
-    }
-
-    document.querySelectorAll('.tab').forEach(function(tab) {
-      tab.addEventListener('click', function() {
-        switchTab(tab.dataset.type);
-      });
-    });
-
-    document.getElementById('btnPrev').addEventListener('click', function() {
-      if (currentIndex > 0) { currentIndex--; renderQuestion(); }
-    });
-
-    document.getElementById('btnNext').addEventListener('click', function() {
-      if (currentIndex + 1 < countQuestions(currentType)) { currentIndex++; renderQuestion(); }
-    });
-
-    document.getElementById('btnCheck').addEventListener('click', function() {
-      const key = makeKey(currentType, currentIndex);
-      if (countQuestions(currentType) === 0) return;
-      checkedState[key] = true;
-      updateScore();
-      renderQuestion();
-    });
-
-    document.getElementById('btnResetCurrent').addEventListener('click', function() {
-      const key = makeKey(currentType, currentIndex);
-      delete userAnswers[key];
-      delete checkedState[key];
-      updateScore();
-      renderQuestion();
-    });
-
-    document.getElementById('btnResetAll').addEventListener('click', function() {
-      if (!confirm('确定要重置所有答题记录吗？')) return;
-      userAnswers = {};
-      checkedState = {};
-      updateScore();
-      renderQuestion();
-    });
-
-    // ===== SHUFFLE =====
-    function shuffleArray(arr) {
-      for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        const tmp = arr[i];
-        arr[i] = arr[j];
-        arr[j] = tmp;
-      }
-    }
-
-    function buildIndexMap(oldLen, shuffledIndices) {
-      const map = {};
-      for (let newPos = 0; newPos < oldLen; newPos++) {
-        map[shuffledIndices[newPos]] = newPos;
-      }
-      return map;
-    }
-
-    document.getElementById('btnShuffle').addEventListener('click', function() {
-      if (!confirm('随机化会清空所有答题记录，确定继续？')) return;
-      userAnswers = {};
-      checkedState = {};
-
-      // Single
-      for (let qi = 0; qi < singleQuestions.length; qi++) {
-        const q = singleQuestions[qi];
-        const order = [];
-        for (let i = 0; i < q.options.length; i++) order.push(i);
-        shuffleArray(order);
-        const newOpts = [];
-        for (let i = 0; i < order.length; i++) newOpts.push(q.options[order[i]]);
-        const newExps = [];
-        for (let i = 0; i < order.length; i++) newExps.push(q.explanations[order[i]]);
-        const idxMap = buildIndexMap(q.options.length, order);
-        q.correct = idxMap[q.correct];
-        q.options = newOpts;
-        q.explanations = newExps;
-      }
-
-      // Multi
-      for (let qi = 0; qi < multiQuestions.length; qi++) {
-        const q = multiQuestions[qi];
-        const order = [];
-        for (let i = 0; i < q.options.length; i++) order.push(i);
-        shuffleArray(order);
-        const newOpts = [];
-        for (let i = 0; i < order.length; i++) newOpts.push(q.options[order[i]]);
-        const newExps = [];
-        for (let i = 0; i < order.length; i++) newExps.push(q.explanations[order[i]]);
-        const idxMap = buildIndexMap(q.options.length, order);
-        const newCorrect = [];
-        for (let i = 0; i < q.correct.length; i++) newCorrect.push(idxMap[q.correct[i]]);
-        q.correct = newCorrect;
-        q.options = newOpts;
-        q.explanations = newExps;
-      }
-
-      updateScore();
-      renderQuestion();
-    });
-
-    // ===== OVERVIEW =====
-    function openOverview() {
-      const grid = document.getElementById('overviewGrid');
-      grid.innerHTML = '';
-      const questions = getQuestions(currentType);
-      for (let i = 0; i < questions.length; i++) {
-        const cell = document.createElement('div');
-        const key = makeKey(currentType, i);
-        let cls = 'grid-item';
-        if (checkedState[key]) {
-          const pts = getUserPoints(questions[i], currentType, i);
-          const maxPts = getQuestionPoints(questions[i], currentType);
-          cls += pts === maxPts ? ' correct' : ' wrong';
-        } else {
-          cls += ' empty';
+        function getQuestionScore(type) {
+            return { "single": 10, "multi": 15, "judge": 5, "drag": 10 }[type];
         }
-        cell.className = cls;
-        cell.textContent = i + 1;
-        cell.addEventListener('click', function() {
-          currentIndex = i;
-          document.getElementById('overviewOverlay').classList.remove('show');
-          renderQuestion();
-        });
-        grid.appendChild(cell);
-      }
-      document.getElementById('overviewOverlay').classList.add('show');
-    }
 
-    document.getElementById('btnOverview').addEventListener('click', openOverview);
-    document.getElementById('btnCloseOverview').addEventListener('click', function() {
-      document.getElementById('overviewOverlay').classList.remove('show');
-    });
-    document.getElementById('overviewOverlay').addEventListener('click', function(e) {
-      if (e.target === document.getElementById('overviewOverlay')) {
-        document.getElementById('overviewOverlay').classList.remove('show');
-      }
-    });
+        function showChoiceResult(index, isCorrect, correctIndices) {
+            var card = document.getElementById("question-" + index);
+            var items = card.querySelectorAll(".option-item");
 
-    // ===== KEYBOARD NAV =====
-    document.addEventListener('keydown', function(e) {
-      if (e.key === 'ArrowLeft') document.getElementById('btnPrev').click();
-      if (e.key === 'ArrowRight') document.getElementById('btnNext').click();
-    });
+            items.forEach(function(item, i) {
+                item.classList.remove("selected");
+                if (correctIndices.includes(i)) {
+                    item.classList.add("correct");
+                } else if (item.querySelector("input").checked && !isCorrect) {
+                    item.classList.add("incorrect");
+                }
+                item.querySelector("input").disabled = true;
+            });
+        }
 
-    // ===== INIT =====
-    initBadges();
-    updateScore();
-    renderQuestion();
-  </script>
+        function showJudgeResult(index, isCorrect) {
+            var card = document.getElementById("question-" + index);
+            var items = card.querySelectorAll(".option-item");
+            items.forEach(function(item) {
+                item.classList.remove("selected");
+                item.querySelector("input").disabled = true;
+            });
+            if (isCorrect) {
+                items[allQuestions[index].correct ? 0 : 1].classList.add("correct");
+            } else {
+                items[allQuestions[index].correct ? 0 : 1].classList.add("correct");
+                items[allQuestions[index].correct ? 1 : 0].classList.add("incorrect");
+            }
+        }
+
+        function checkDragAnswer(index, q) {
+            var card = document.getElementById("question-" + index);
+            var blanks = card.querySelectorAll(".drag-blank");
+            if (blanks.length === 0) return false;
+            return blanks[0].dataset.value === q.blanks[0];
+        }
+
+        function showDragResult(index, isCorrect, q) {
+            var card = document.getElementById("question-" + index);
+            var blanks = card.querySelectorAll(".drag-blank");
+            blanks.forEach(function(blank, i) {
+                if (blank.dataset.value === q.blanks[i]) {
+                    blank.classList.add("correct");
+                } else {
+                    blank.classList.add("incorrect");
+                }
+            });
+        }
+
+        // ==================== 导航 ====================
+        function showQuestion(index) {
+            document.querySelectorAll(".question-card").forEach(function(c) { c.classList.remove("active"); });
+            var card = document.getElementById("question-" + index);
+            if (card) card.classList.add("active");
+            state.currentIndex = index;
+            updateProgress();
+        }
+
+        function nextQuestion() {
+            if (state.currentIndex < allQuestions.length - 1) {
+                showQuestion(state.currentIndex + 1);
+            } else {
+                showResult();
+            }
+        }
+
+        function prevQuestion() {
+            if (state.currentIndex > 0) {
+                showQuestion(state.currentIndex - 1);
+            }
+        }
+
+        function updateProgress() {
+            document.getElementById("currentQ").textContent = state.currentIndex + 1;
+            var pct = ((state.currentIndex + 1) / allQuestions.length) * 100;
+            document.getElementById("progressFill").style.width = pct + "%";
+        }
+
+        function updateScore() {
+            document.getElementById("scoreValue").textContent = state.score;
+        }
+
+        // ==================== 重置 ====================
+        function resetQuestion(index) {
+            delete state.answers[index];
+            var q = allQuestions[index];
+            var card = document.getElementById("question-" + index);
+
+            if (q.type === "drag") {
+                resetDrag(index);
+            } else {
+                var items = card.querySelectorAll(".option-item");
+                items.forEach(function(item) {
+                    item.classList.remove("selected", "correct", "incorrect");
+                    var input = item.querySelector("input");
+                    input.disabled = false;
+                    input.checked = false;
+                });
+            }
+
+            document.getElementById("explanation-" + index).classList.remove("show");
+        }
+
+        function resetDrag(index) {
+            var q = allQuestions[index];
+            var card = document.getElementById("question-" + index);
+            var sentence = card.querySelector(".drag-sentence");
+            sentence.innerHTML = q.question;
+            var wordsContainer = document.getElementById("drag-words-" + index);
+            wordsContainer.innerHTML = "";
+            q.options.forEach(function(opt) {
+                var div = document.createElement("div");
+                div.className = "drag-word";
+                div.draggable = true;
+                div.dataset.value = opt;
+                div.textContent = opt;
+                div.ondragstart = function(e) { dragStart(e); };
+                div.ondragend = function(e) { dragEnd(e); };
+                wordsContainer.appendChild(div);
+            });
+            document.getElementById("explanation-" + index).classList.remove("show");
+        }
+
+        function resetAll() {
+            state.answers = {};
+            state.score = 0;
+            state.currentIndex = 0;
+            updateScore();
+            document.getElementById("resultPanel").classList.remove("active");
+            document.getElementById("overviewPanel").classList.remove("active");
+            document.getElementById("scorePanel").style.display = "";
+            renderQuestions();
+            showQuestion(0);
+        }
+
+        // ==================== 洗牌 ====================
+        function shuffleOptions() {
+            allQuestions.forEach(function(q, index) {
+                if (q.type === "single" || q.type === "multi") {
+                    var originalOptions = q.options.slice();
+                    var indices = originalOptions.map(function(_, i) { return i; });
+                    for (var i = indices.length - 1; i > 0; i--) {
+                        var j = Math.floor(Math.random() * (i + 1));
+                        var temp = indices[i];
+                        indices[i] = indices[j];
+                        indices[j] = temp;
+                    }
+                    var newOptions = indices.map(function(i) { return originalOptions[i]; });
+                    var newCorrect;
+                    if (q.type === "single") {
+                        newCorrect = indices.indexOf(q.correct);
+                    } else {
+                        newCorrect = q.correct.map(function(c) { return indices.indexOf(c); }).sort(function(a, b) { return a - b; });
+                    }
+                    q.options = newOptions;
+                    q.correct = newCorrect;
+                }
+            });
+            state.shuffled = true;
+            renderQuestions();
+            showQuestion(state.currentIndex);
+        }
+
+        // ==================== 总览面板 ====================
+        function showOverview() {
+            document.getElementById("overviewPanel").classList.add("active");
+            renderOverview();
+        }
+
+        function hideOverview() {
+            document.getElementById("overviewPanel").classList.remove("active");
+        }
+
+        function renderOverview() {
+            var grid = document.getElementById("overviewGrid");
+            grid.innerHTML = "";
+
+            allQuestions.forEach(function(q, index) {
+                var item = document.createElement("div");
+                item.className = "overview-item";
+                item.textContent = index + 1;
+                item.onclick = function() {
+                    hideOverview();
+                    showQuestion(index);
+                };
+
+                var answer = state.answers[index];
+                if (answer === undefined || answer === null) {
+                    item.classList.add("unanswered");
+                } else {
+                    var isCorrect = false;
+                    if (q.type === "single") isCorrect = answer === q.correct;
+                    else if (q.type === "multi") {
+                        var ansArr = Array.isArray(answer) ? answer : [answer];
+                        isCorrect = ansArr.length === q.correct.length && ansArr.every(function(v) { return q.correct.includes(v); });
+                    } else if (q.type === "judge") isCorrect = answer === q.correct;
+                    else if (q.type === "drag") {
+                        var card = document.getElementById("question-" + index);
+                        if (card) {
+                            var blanks = card.querySelectorAll(".drag-blank");
+                            isCorrect = blanks.length > 0 && blanks[0].dataset.value === q.blanks[0];
+                        }
+                    }
+                    item.classList.add(isCorrect ? "correct" : "incorrect");
+                }
+
+                grid.appendChild(item);
+            });
+        }
+
+        function filterOverview(filter) {
+            document.querySelectorAll(".filter-btn").forEach(function(btn) { btn.classList.remove("active"); });
+            event.target.classList.add("active");
+
+            var items = document.querySelectorAll(".overview-item");
+            items.forEach(function(item) {
+                item.style.display = "";
+                if (filter === "unanswered" && !item.classList.contains("unanswered")) item.style.display = "none";
+                if (filter === "correct" && !item.classList.contains("correct")) item.style.display = "none";
+                if (filter === "incorrect" && !item.classList.contains("incorrect")) item.style.display = "none";
+            });
+        }
+
+        // ==================== 结果面板 ====================
+        function showResult() {
+            var correct = 0, incorrect = 0, unanswered = 0;
+            allQuestions.forEach(function(q, index) {
+                var ans = state.answers[index];
+                if (ans === undefined || ans === null) {
+                    unanswered++;
+                } else {
+                    var isCorrect = false;
+                    if (q.type === "single") isCorrect = ans === q.correct;
+                    else if (q.type === "multi") {
+                        var ansArr = Array.isArray(ans) ? ans : [ans];
+                        isCorrect = ansArr.length === q.correct.length && ansArr.every(function(v) { return q.correct.includes(v); });
+                    } else if (q.type === "judge") isCorrect = ans === q.correct;
+                    else if (q.type === "drag") {
+                        var card = document.getElementById("question-" + index);
+                        if (card) {
+                            var blanks = card.querySelectorAll(".drag-blank");
+                            isCorrect = blanks.length > 0 && blanks[0].dataset.value === q.blanks[0];
+                        }
+                    }
+                    if (isCorrect) correct++; else incorrect++;
+                }
+            });
+
+            document.getElementById("finalScore").textContent = state.score;
+            document.getElementById("statCorrect").textContent = correct;
+            document.getElementById("statIncorrect").textContent = incorrect;
+            document.getElementById("statUnanswered").textContent = unanswered;
+
+            var total = allQuestions.length;
+            var msg = "";
+            if (correct === total) msg = "🌟 完美！全部正确！";
+            else if (correct / total >= 0.8) msg = "👏 优秀！掌握得很扎实！";
+            else if (correct / total >= 0.6) msg = "👍 良好！还有提升空间。";
+            else msg = "💪 继续加油！建议重新复习相关知识点。";
+            document.getElementById("resultMessage").textContent = msg;
+
+            document.getElementById("resultPanel").classList.add("active");
+        }
+
+        function hideResult() {
+            document.getElementById("resultPanel").classList.remove("active");
+        }
+
+        // ==================== 启动 ====================
+        document.addEventListener("DOMContentLoaded", init);
+    </script>
 </body>
 </html>

@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>实验 15：Agent 沙箱环境 — LLM-in-Sandbox 与语义感知 Checkpoint/Restore 实验</title>
+<style>
+:root {
+  --bg: #f5f7fa;
+  --card-bg: #ffffff;
+  --text: #2c3e50;
+  --muted: #7f8c8d;
+  --accent: #3b82f6;
+  --accent-light: #e8f0fe;
+  --success: #27ae60;
+  --success-bg: #e8f8f0;
+  --danger: #e74c3c;
+  --danger-bg: #fdecea;
+  --warning: #f39c12;
+  --warning-bg: #fef5e7;
+  --border: #e1e8ed;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+.container { max-width: 960px; margin: 0 auto; padding: 20px; }
+header {
+  text-align: center; padding: 32px 16px 24px;
+}
+header h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 6px; }
+header .subtitle { color: var(--muted); font-size: 0.95rem; }
+.score-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px;
+  padding: 14px 18px; margin-bottom: 18px; box-shadow: var(--shadow);
+  flex-wrap: wrap; gap: 10px;
+}
+.score-bar .score { font-size: 1.25rem; font-weight: 700; color: var(--accent); }
+.score-bar .progress { flex: 1; height: 10px; background: #e9ecef; border-radius: 5px; margin: 0 14px; overflow: hidden; }
+.score-bar .progress-inner { height: 100%; background: var(--accent); border-radius: 5px; width: 0%; transition: width .3s ease; }
+.score-bar .nav-btns { display: flex; gap: 8px; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  border: 1px solid var(--border); background: var(--card-bg); color: var(--text);
+  padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 0.95rem;
+  transition: all .2s; user-select: none;
+}
+.btn:hover { background: var(--accent-light); border-color: var(--accent); }
+.btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn.primary:hover { background: #2563eb; }
+.btn.danger { background: var(--danger); color: #fff; border-color: var(--danger); }
+.btn.danger:hover { background: #c0392b; }
+.btn.success { background: var(--success); color: #fff; border-color: var(--success); }
+.btn.success:hover { background: #1e8449; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.card {
+  background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px;
+  padding: 22px; margin-bottom: 18px; box-shadow: var(--shadow); display: none;
+}
+.card.active { display: block; }
+.card .q-index { font-size: .85rem; color: var(--muted); margin-bottom: 6px; }
+.card .q-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 14px; }
+.card .q-desc { color: var(--muted); font-size: .95rem; margin-bottom: 14px; }
+.options { display: flex; flex-direction: column; gap: 10px; }
+.option {
+  display: flex; align-items: center; gap: 10px; padding: 12px 14px;
+  border: 1px solid var(--border); border-radius: 10px; cursor: pointer;
+  transition: all .15s; background: #fafbfc;
+}
+.option:hover { border-color: var(--accent); background: var(--accent-light); }
+.option input { flex-shrink: 0; }
+.option.correct { border-color: var(--success); background: var(--success-bg); }
+.option.wrong { border-color: var(--danger); background: var(--danger-bg); }
+.option.disabled { pointer-events: none; opacity: .85; }
+.option .opt-label { font-weight: 600; min-width: 22px; }
+
+/* Drag-drop fill-in */
+.fill-blank { display: inline-block; min-width: 120px; height: 36px; line-height: 34px; border: 2px dashed var(--border); border-radius: 8px; text-align: center; vertical-align: middle; margin: 0 4px; background: #fafbfc; transition: all .2s; }
+.fill-blank.filled { border-style: solid; border-color: var(--accent); background: var(--accent-light); color: var(--accent); font-weight: 600; }
+.fill-blank.correct { border-color: var(--success); background: var(--success-bg); color: var(--success); }
+.fill-blank.wrong { border-color: var(--danger); background: var(--danger-bg); color: var(--danger); }
+.draggables { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+.draggable {
+  padding: 8px 14px; border: 1px solid var(--border); border-radius: 8px;
+  background: var(--card-bg); cursor: grab; box-shadow: var(--shadow); font-weight: 500;
+}
+.draggable.dragging { opacity: .5; }
+.drop-zone { display: inline; }
+
+/* True/False */
+.tf-options { display: flex; gap: 14px; margin-top: 10px; }
+.tf-btn {
+  flex: 1; padding: 12px; border: 1px solid var(--border); border-radius: 10px;
+  background: #fafbfc; cursor: pointer; text-align: center; font-weight: 600;
+  transition: all .15s;
+}
+.tf-btn:hover { border-color: var(--accent); background: var(--accent-light); }
+.tf-btn.correct { border-color: var(--success); background: var(--success-bg); color: var(--success); }
+.tf-btn.wrong { border-color: var(--danger); background: var(--danger-bg); color: var(--danger); }
+.tf-btn.disabled { pointer-events: none; opacity: .85; }
+
+/* Result panel */
+.result-panel { display: none; margin-top: 16px; padding: 14px; border-radius: 10px; font-size: .95rem; }
+.result-panel.show { display: block; }
+.result-panel.correct { background: var(--success-bg); border: 1px solid var(--success); }
+.result-panel.wrong { background: var(--danger-bg); border: 1px solid var(--danger); }
+.result-panel .title { font-weight: 700; margin-bottom: 6px; }
+
+/* Overview */
+.overview { display: none; }
+.overview.active { display: block; }
+.overview-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 10px; margin-top: 14px; }
+.overview-item {
+  aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+  border-radius: 10px; border: 1px solid var(--border); background: #fafbfc;
+  cursor: pointer; font-weight: 700; font-size: .9rem; transition: all .15s;
+}
+.overview-item:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+.overview-item.correct { background: var(--success-bg); border-color: var(--success); color: var(--success); }
+.overview-item.wrong { background: var(--danger-bg); border-color: var(--danger); color: var(--danger); }
+.overview-item.answered { background: var(--warning-bg); border-color: var(--warning); color: var(--warning); }
+.overview-filters { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.overview-filters .btn { font-size: .85rem; padding: 6px 12px; }
+
+/* Final result */
+.final-result { display: none; text-align: center; padding: 40px 20px; }
+.final-result.active { display: block; }
+.final-result .big-score { font-size: 3rem; font-weight: 800; color: var(--accent); margin: 12px 0; }
+.final-result .grade { font-size: 1.2rem; color: var(--muted); margin-bottom: 20px; }
+
+/* Responsive */
+@media (max-width: 640px) {
+  .score-bar { flex-direction: column; align-items: stretch; }
+  .score-bar .progress { margin: 8px 0; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>实验 15：Agent 沙箱环境 — LLM-in-Sandbox 与语义感知 Checkpoint/Restore 实验</h1>
+    <div class="subtitle">互动知识卡牌 · 面试自测</div>
+  </header>
+
+  <div class="score-bar">
+    <div class="score" id="scoreDisplay">得分: 0 / 0</div>
+    <div class="progress"><div class="progress-inner" id="progressBar"></div></div>
+    <div class="nav-btns">
+      <button class="btn" id="btnPrev" onclick="goPrev()">⬅ 上一题</button>
+      <button class="btn" id="btnNext" onclick="goNext()">下一题 ➡</button>
+      <button class="btn" onclick="toggleOverview()">☰ 总览</button>
+      <button class="btn" onclick="resetAll()">🔄 重置全部</button>
+      <button class="btn" id="btnShuffle" onclick="shuffleOptions()">🎲 重新洗牌选项</button>
+    </div>
+  </div>
+
+  <div id="questionContainer"></div>
+
+  <div class="overview" id="overviewPanel">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+      <h3>题目总览</h3>
+      <div class="overview-filters">
+        <button class="btn" onclick="filterOverview('all')">全部</button>
+        <button class="btn" onclick="filterOverview('correct')">✅ 正确</button>
+        <button class="btn" onclick="filterOverview('wrong')">❌ 错误</button>
+        <button class="btn" onclick="filterOverview('unanswered')">⭕ 未答</button>
+      </div>
+    </div>
+    <div class="overview-grid" id="overviewGrid"></div>
+  </div>
+
+  <div class="final-result" id="finalResult">
+    <h2>🎉 答题完成！</h2>
+    <div class="big-score" id="finalScore">0</div>
+    <div class="grade" id="finalGrade">继续加油</div>
+    <div style="margin-top:20px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+      <button class="btn primary" onclick="showResultDetails()">🔍 返回查看</button>
+      <button class="btn success" onclick="resetAll()">🔄 继续做题</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// =========================
+// 题目数据
+// =========================
+var allQuestions = [
+  // ---------- 拖拽填空 (type: "drag") ----------
+  {
+    type: "drag",
+    title: "将正确的术语填入架构组件的空白处",
+    desc: "根据实验架构图，将左侧术语拖拽到正确的位置。",
+    blanks: [
+      { id: "b1", label: "①", correct: "沙箱环境" },
+      { id: "b2", label: "②", correct: "安全策略检查" },
+      { id: "b3", label: "③", correct: "语义感知" },
+      { id: "b4", label: "④", correct: "状态恢复" },
+    ],
+    choices: ["沙箱环境", "安全策略检查", "语义感知", "状态恢复", "外化记忆", "白名单机制"],
+    explanation: {
+      "沙箱环境": "Agent 代码的隔离执行环境，对应架构图中的 SandboxEnvironment。",
+      "安全策略检查": "负责边界检查、权限限制和危险操作拦截的模块。",
+      "语义感知": "Crab 的核心创新：只 checkpoint 发生变化的部分，而非全量 snapshot。",
+      "状态恢复": "Restore 模块的作用，从 checkpoint 恢复沙箱的完整状态。",
+    },
+  },
+  {
+    type: "drag",
+    title: "将评估指标填入对应的定义位置",
+    desc: "拖拽正确的指标名称到对应的定义描述中。",
+    blanks: [
+      { id: "b5", label: "A", correct: "安全拦截率" },
+      { id: "b6", label: "B", correct: "Checkpoint 压缩率" },
+      { id: "b7", label: "C", correct: "恢复正确率" },
+      { id: "b8", label: "D", correct: "误拦截率" },
+    ],
+    choices: ["安全拦截率", "Checkpoint 压缩率", "恢复正确率", "误拦截率", "执行成功率", "沙箱隔离度"],
+    explanation: {
+      "安全拦截率": "危险代码被拦截的比例，理想值为 100%，衡量安全策略有效性。",
+      "Checkpoint 压缩率": "语义感知 vs 全量 snapshot 的大小比，理想值 < 20%。",
+      "恢复正确率": "恢复后状态与预期一致的比例，理想值为 100%。",
+      "误拦截率": "合法代码被错误拦截的比例，理想值 < 5%。",
+    },
+  },
+  {
+    type: "drag",
+    title: "将 SafeArena 风险等级按严重程度排序填入",
+    desc: "将风险等级拖拽到从高到低的正确顺序位置。",
+    blanks: [
+      { id: "b9", label: "最高风险", correct: "Compliant" },
+      { id: "b10", label: "中高风险", correct: "Partial" },
+      { id: "b11", label: "安全", correct: "Refusal" },
+      { id: "b12", label: "意外安全", correct: "Error" },
+    ],
+    choices: ["Compliant", "Partial", "Refusal", "Error", "Blocked", "Allowed"],
+    explanation: {
+      "Compliant": "完全执行有害请求，最高风险。GPT-4o 的合规率高达 34.7%。",
+      "Partial": "部分执行有害请求，中高风险。",
+      "Refusal": "明确拒绝有害请求，属于安全响应。",
+      "Error": "执行出错导致未能完成有害请求，属于意外安全。",
+    },
+  },
+  // ---------- 单选题 (type: "single") ----------
+  {
+    type: "single",
+    title: "LLM-in-Sandbox 的核心理念是什么？",
+    options: [
+      { label: "A", text: "沙箱是 LLM 的外化认知扩展，文件系统作为外化记忆，代码执行作为外化计算" },
+      { label: "B", text: "沙箱仅用于隔离恶意代码，防止系统被破坏" },
+      { label: "C", text: "沙箱用于替代 LLM 的推理能力，减少 token 消耗" },
+      { label: "D", text: "沙箱是部署 LLM 模型的容器化运行环境" },
+    ],
+    correct: 0,
+    explanation: "LLM-in-Sandbox 的 insight 是将沙箱从'关坏人的笼子'重新定义为'扩展 LLM 能力的工具'，文件系统扩展记忆，代码执行扩展计算。",
+  },
+  {
+    type: "single",
+    title: "Crab 语义感知 Checkpoint/Restore 的核心优化是什么？",
+    options: [
+      { label: "A", text: "使用 Docker 容器替代进程隔离，提升安全性" },
+      { label: "B", text: "通过 eBPF 观察 OS 效应，只 checkpoint 发生变化的部分" },
+      { label: "C", text: "将 checkpoint 数据压缩后存储到云端" },
+      { label: "D", text: "在每次 LLM 生成代码前自动创建全量 snapshot" },
+    ],
+    correct: 1,
+    explanation: "Crab 通过 eBPF 观察 OS 可见效应（文件系统、进程、内存变化），智能选择 checkpoint 粒度，只记录变化的部分，checkpoint 流量减少 87%。",
+  },
+  {
+    type: "single",
+    title: "SafeArena 实验发现 GPT-4o 对有害 Web Agent 请求的合规率是多少？",
+    options: [
+      { label: "A", text: "12.3%" },
+      { label: "B", text: "22.8%" },
+      { label: "C", text: "34.7%" },
+      { label: "D", text: "51.2%" },
+    ],
+    correct: 2,
+    explanation: "SafeArena 发现 GPT-4o 对有害请求的合规率高达 34.7%，Claude-3.5 为 22.8%，说明安全对齐在 Web Agent 场景中严重迁移失败。",
+  },
+  {
+    type: "single",
+    title: "本实验中，SandboxEnvironment.execute_code() 使用什么机制实现代码隔离？",
+    options: [
+      { label: "A", text: "subprocess 启动独立进程执行代码" },
+      { label: "B", text: "exec() 在受限命名空间中执行，只暴露安全的内置函数" },
+      { label: "C", text: "Docker 容器隔离，每次任务启动新容器" },
+      { label: "D", text: "WASM 运行时执行，提供内存安全隔离" },
+    ],
+    correct: 1,
+    explanation: "本实验使用 exec() 在受限命名空间中执行代码，只暴露安全的内置函数（如 len、range、sum 等），不暴露 os、sys、subprocess 等危险模块。",
+  },
+  {
+    type: "single",
+    title: "语义感知 C/R 相比传统全量 C/R 的 checkpoint 压缩比大约是多少？",
+    options: [
+      { label: "A", text: "10×" },
+      { label: "B", text: "100×" },
+      { label: "C", text: "1000×" },
+      { label: "D", text: "50000×" },
+    ],
+    correct: 3,
+    explanation: "假设 10 轮任务每轮修改 2 个文件：全量 C/R 约 1GB，语义感知 C/R 约 20KB，压缩比约为 50000×。",
+  },
+  {
+    type: "single",
+    title: "SafetySandbox 使用什么机制检测危险代码？",
+    options: [
+      { label: "A", text: "运行时动态分析代码的 AST 树" },
+      { label: "B", text: "正则表达式匹配危险代码模式（如 import os、eval、exec 等）" },
+      { label: "C", text: "调用外部 AI 模型判断代码是否有害" },
+      { label: "D", text: "将代码放入 Docker 中试运行，观察系统调用" },
+    ],
+    correct: 1,
+    explanation: "SafetySandbox 使用 DANGEROUS_PATTERNS 正则列表匹配危险代码模式，如 import os、import sys、eval(、exec( 等。",
+  },
+  {
+    type: "single",
+    title: "CheckpointManager.create_checkpoint() 中，语义感知变化检测是如何实现的？",
+    options: [
+      { label: "A", text: "通过 eBPF 探针监控内核文件系统调用" },
+      { label: "B", text: "比较当前文件系统状态与上一次 checkpoint 的状态差异" },
+      { label: "C", text: "在每次文件操作后记录操作日志，checkpoint 时重放日志" },
+      { label: "D", text: "使用 ZFS 的增量快照功能自动获取变化" },
+    ],
+    correct: 1,
+    explanation: "本实验通过 SandboxEnvironment.get_file_changes() 比较当前文件系统状态与 previous_state 的差异，记录新增、修改、删除的文件列表。",
+  },
+  {
+    type: "single",
+    title: "ceLLMate 的主要贡献是什么？",
+    options: [
+      { label: "A", text: "提出语义感知 Checkpoint/Restore 机制" },
+      { label: "B", text: "实现浏览器级沙箱，限制环境权限，缩小 prompt injection 的 blast radius" },
+      { label: "C", text: "通过 eBPF 观察 OS 效应优化沙箱性能" },
+      { label: "D", text: "构建大规模 Web Agent 安全评估基准测试" },
+    ],
+    correct: 1,
+    explanation: "ceLLMate (arXiv:2512.12594) 实现浏览器级沙箱，限制环境权限，缩小 prompt injection 的 blast radius。",
+  },
+  {
+    type: "single",
+    title: "本实验中，exec() 相比 subprocess 的主要优势是什么？",
+    options: [
+      { label: "A", text: "隔离性更强，提供进程级隔离" },
+      { label: "B", text: "性能更高（毫秒级 vs 百毫秒级），状态保持更自然" },
+      { label: "C", text: "可以直接访问操作系统的所有资源" },
+      { label: "D", text: "支持多语言代码执行，不仅限于 Python" },
+    ],
+    correct: 1,
+    explanation: "exec() 性能为毫秒级（subprocess 为百毫秒级），且变量状态自然保持，无需序列化。但隔离性较弱，生产环境推荐使用 Docker 或 WASM。",
+  },
+  {
+    type: "single",
+    title: "SimulatedLLMAgent 在实验中的作用是什么？",
+    options: [
+      { label: "A", text: "调用真实 GPT-4 API 生成代码" },
+      { label: "B", text: "用规则模板模拟 LLM 根据任务类型生成代码" },
+      { label: "C", text: "评估 Agent 生成代码的安全性" },
+      { label: "D", text: "管理 checkpoint 的创建和恢复" },
+    ],
+    correct: 1,
+    explanation: "SimulatedLLMAgent 使用规则模板模拟 LLM：根据任务关键词（创建、读取、分析、危险）选择对应的代码模板，保证实验可复现。",
+  },
+  {
+    type: "single",
+    title: "沙箱文件系统 SandboxFileSystem 的核心设计特点是什么？",
+    options: [
+      { label: "A", text: "直接映射宿主机的真实文件系统，提供持久化存储" },
+      { label: "B", text: "完全隔离在内存中的虚拟文件系统，不影响真实系统" },
+      { label: "C", text: "使用 SQLite 数据库存储文件内容和元数据" },
+      { label: "D", text: "通过网络文件系统（NFS）挂载远程存储" },
+    ],
+    correct: 1,
+    explanation: "SandboxFileSystem 是完全隔离在内存中的虚拟文件系统，Agent 可以创建、读取、修改、删除文件，但所有操作都在沙箱内，不影响真实系统。",
+  },
+  // ---------- 多选题 (type: "multi") ----------
+  {
+    type: "multi",
+    title: "以下哪些属于本实验沙箱系统的核心模块？",
+    options: [
+      { label: "A", text: "SandboxFileSystem（沙箱文件系统）" },
+      { label: "B", text: "SandboxEnvironment（沙箱环境）" },
+      { label: "C", text: "SafetySandbox（安全沙箱）" },
+      { label: "D", text: "CheckpointManager（语义感知 C/R 管理器）" },
+      { label: "E", text: "KubernetesScheduler（容器调度器）" },
+      { label: "F", text: "SimulatedLLMAgent（模拟 LLM Agent）" },
+    ],
+    correct: [0,1,2,3,5],
+    explanation: "本实验包含 5 个核心模块：SandboxFileSystem、SandboxEnvironment、SafetySandbox、CheckpointManager、SimulatedLLMAgent。KubernetesScheduler 不在实验代码中。",
+  },
+  {
+    type: "multi",
+    title: "SafetySandbox 的 DANGEROUS_PATTERNS 包含哪些危险代码模式？",
+    options: [
+      { label: "A", text: "import os / import sys / import subprocess" },
+      { label: "B", text: "__import__ 动态导入" },
+      { label: "C", text: "eval( 和 exec( 动态执行" },
+      { label: "D", text: "open( 和 file( 文件操作" },
+      { label: "E", text: "socket 和 urllib / requests 网络操作" },
+      { label: "F", text: "print( 和 len( 等内置函数" },
+    ],
+    correct: [0,1,2,3,4],
+    explanation: "DANGEROUS_PATTERNS 包含 import os/sys/subprocess、__import__、eval/exec、open/file、socket/urllib/requests。print 和 len 是安全白名单中的函数，不属于危险模式。",
+  },
+  {
+    type: "multi",
+    title: "语义感知 Checkpoint/Restore 相比传统全量 C/R 的优势有哪些？",
+    options: [
+      { label: "A", text: "恢复正确率从 8% 提升到 100%" },
+      { label: "B", text: "Checkpoint 流量减少 87%" },
+      { label: "C", text: "将 checkpoint 工作重叠到 LLM 等待窗口中" },
+      { label: "D", text: "智能分类 checkpoint 粒度（无变化/仅文件/进程/全局）" },
+      { label: "E", text: "需要额外安装 Docker 或 ZFS 才能运行" },
+      { label: "F", text: "每次必须全量保存内存状态，保证一致性" },
+    ],
+    correct: [0,1,2,3],
+    explanation: "语义感知 C/R 的四大优势：恢复正确率 8%→100%、流量减少 87%、重叠到 LLM 等待窗口、智能分类粒度。它不需要 Docker/ZFS，也不强制全量保存内存。",
+  },
+  {
+    type: "multi",
+    title: "本实验的评估指标包括哪些？",
+    options: [
+      { label: "A", text: "安全拦截率" },
+      { label: "B", text: "执行成功率" },
+      { label: "C", text: "Checkpoint 压缩率" },
+      { label: "D", text: "恢复正确率" },
+      { label: "E", text: "沙箱隔离度" },
+      { label: "F", text: "误拦截率" },
+    ],
+    correct: [0,1,2,3,4,5],
+    explanation: "本实验定义了 6 个核心评估指标：安全拦截率、执行成功率、Checkpoint 压缩率、恢复正确率、沙箱隔离度、误拦截率。",
+  },
+  {
+    type: "multi",
+    title: "以下哪些场景配置属于实验中的场景矩阵？",
+    options: [
+      { label: "A", text: "快速测试：10 个危险模式，基础内置函数，每轮 checkpoint" },
+      { label: "B", text: "标准体验：20 个危险模式，完整安全内置，语义感知 C/R" },
+      { label: "C", text: "严格安全：50 个危险模式，最小白名单，每轮全量 C/R" },
+      { label: "D", text: "性能测试：20 个危险模式，完整白名单，无 checkpoint" },
+      { label: "E", text: "教学演示：5 个危险模式，宽松白名单，手动 checkpoint" },
+      { label: "F", text: "生产部署：100 个危险模式，Docker 隔离，实时 C/R" },
+    ],
+    correct: [0,1,2,3,4],
+    explanation: "实验定义了 5 个场景：快速测试、标准体验、严格安全、性能测试、教学演示。生产部署场景不在实验代码中，属于扩展方向。",
+  },
+  {
+    type: "multi",
+    title: "exec() 相比 subprocess 的优缺点对比中，正确的是？",
+    options: [
+      { label: "A", text: "exec() 隔离性较弱（命名空间隔离），subprocess 隔离性较强（进程隔离）" },
+      { label: "B", text: "exec() 性能为毫秒级，subprocess 为百毫秒级" },
+      { label: "C", text: "exec() 状态保持自然，subprocess 需要序列化" },
+      { label: "D", text: "exec() 生产适用性高，subprocess 仅适用于演示" },
+      { label: "E", text: "exec() 复杂度简单，subprocess 复杂度复杂" },
+      { label: "F", text: "生产环境推荐使用 Docker 容器或 WASM 沙箱" },
+    ],
+    correct: [0,1,2,4,5],
+    explanation: "exec() 隔离性较弱但性能高、状态保持自然、复杂度简单；subprocess 隔离性强但性能低、需要序列化。生产环境推荐 Docker 或 WASM。D 选项因果倒置：exec() 仅适用于演示，subprocess 更适用于生产。",
+  },
+  {
+    type: "multi",
+    title: "实验中提到的扩展方向包括哪些？",
+    options: [
+      { label: "A", text: "Docker 隔离：替换 exec() 为 Docker 容器" },
+      { label: "B", text: "真实 eBPF：集成 eBPF 观察 OS 效应" },
+      { label: "C", text: "网络沙箱：添加网络访问控制和模拟" },
+      { label: "D", text: "GPU 沙箱：支持 CUDA 代码执行" },
+      { label: "E", text: "对抗测试：自动化红队测试安全策略" },
+      { label: "F", text: "多 Agent：支持沙箱分叉和合并" },
+    ],
+    correct: [0,1,2,3,4,5],
+    explanation: "实验列出了 6 个扩展方向：Docker 隔离、真实 eBPF、网络沙箱、GPU 沙箱、对抗测试、多 Agent（沙箱分叉和合并）。",
+  },
+  // ---------- 判断题 (type: "tf") ----------
+  {
+    type: "tf",
+    title: "判断：Crab 的语义感知 C/R 需要每轮都创建全量 snapshot，只是压缩后存储。",
+    answer: false,
+    explanation: "错误。语义感知 C/R 的核心是只 checkpoint 发生变化的部分，而非全量 snapshot。传统 C/R 才是每轮全量 snapshot。",
+  },
+  {
+    type: "tf",
+    title: "判断：SafeArena 发现 Claude-3.5 对有害请求的合规率（22.8%）高于 GPT-4o（34.7%）。",
+    answer: false,
+    explanation: "错误。GPT-4o 的合规率（34.7%）高于 Claude-3.5（22.8%），说明 GPT-4o 在 Web Agent 场景中的安全对齐迁移失败更严重。",
+  },
+  {
+    type: "tf",
+    title: "判断：本实验的 SandboxFileSystem 直接操作宿主机的真实文件系统，只是限制了路径范围。",
+    answer: false,
+    explanation: "错误。SandboxFileSystem 是完全隔离在内存中的虚拟文件系统，所有文件操作都在 self.files 字典中进行，不影响真实系统。",
+  },
+  {
+    type: "tf",
+    title: "判断：CheckpointManager 的语义感知变化检测是通过比较当前状态与上一次 checkpoint 的状态差异实现的。",
+    answer: true,
+    explanation: "正确。CheckpointManager 维护 last_state，create_checkpoint 时调用 env.get_file_changes(self.last_state) 获取差异列表。",
+  },
+  {
+    type: "tf",
+    title: "判断：在沙箱中执行危险代码时，SafetySandbox 会在代码执行后拦截危险操作。",
+    answer: false,
+    explanation: "错误。SafetySandbox 在代码执行前进行静态检查（validate_code），如果检测到危险模式则直接拦截，不会进入执行阶段。",
+  },
+  {
+    type: "tf",
+    title: "判断：LLM-in-Sandbox 的实验中，将 100K token 的长文档放入沙箱文件处理后，token 消耗降至 13K，降低了约 8 倍。",
+    answer: true,
+    explanation: "正确。论文关键实验：通过文件读取和脚本处理，token 消耗从 100K 降至 13K，降低了约 8 倍。",
+  },
+  {
+    type: "tf",
+    title: "判断：本实验使用 subprocess 启动独立进程来执行 Agent 代码，因此隔离性较强。",
+    answer: false,
+    explanation: "错误。本实验使用 exec() 在受限命名空间中执行代码，隔离性较弱。subprocess 才提供进程级隔离，但本实验未使用。",
+  },
+  {
+    type: "tf",
+    title: "判断：SimulatedLLMAgent 的 generate_code 方法根据任务关键词选择代码模板，支持创建文件、读取文件、数据分析和危险操作测试。",
+    answer: true,
+    explanation: "正确。generate_code 通过 if-elif 匹配任务关键词：创建/写入 → 文件创建代码；读取/查看 → 文件列表代码；分析/计算 → 数据分析代码；危险/攻击 → 危险代码（用于测试拦截）。",
+  },
+];
+
+// =========================
+// 状态管理
+// =========================
+var state = {
+  current: 0,
+  answers: {},      // qIndex -> answer
+  checked: {},      // qIndex -> bool (是否已检查)
+  score: 0,
+  totalAnswered: 0,
+  filter: 'all',
+};
+
+function init() {
+  renderQuestion(state.current);
+  updateScoreBar();
+  renderOverview();
+}
+
+// =========================
+// 渲染题目
+// =========================
+function renderQuestion(idx) {
+  var container = document.getElementById('questionContainer');
+  var q = allQuestions[idx];
+  var html = '<div class="card active" data-idx="' + idx + '">';
+  html += '<div class="q-index">题目 ' + (idx+1) + ' / ' + allQuestions.length + ' · ' + typeLabel(q.type) + '</div>';
+  html += '<div class="q-title">' + escapeHtml(q.title) + '</div>';
+  if (q.desc) html += '<div class="q-desc">' + escapeHtml(q.desc) + '</div>';
+
+  if (q.type === 'single') {
+    html += '<div class="options">';
+    q.options.forEach(function(opt, i) {
+      var cls = '';
+      var checked = '';
+      if (state.checked[idx]) {
+        cls = (i === q.correct) ? 'correct' : (state.answers[idx] === i ? 'wrong' : '');
+        cls += ' disabled';
+      } else if (state.answers[idx] === i) {
+        checked = 'checked';
+      }
+      html += '<label class="option ' + cls + '">';
+      html += '<input type="radio" name="q' + idx + '" value="' + i + '" ' + checked + ' onchange="selectSingle(' + idx + ',' + i + ')">';
+      html += '<span class="opt-label">' + opt.label + '</span>';
+      html += '<span>' + escapeHtml(opt.text) + '</span>';
+      html += '</label>';
+    });
+    html += '</div>';
+  } else if (q.type === 'multi') {
+    html += '<div class="options">';
+    var ans = state.answers[idx] || [];
+    q.options.forEach(function(opt, i) {
+      var cls = '';
+      var checked = ans.includes(i) ? 'checked' : '';
+      if (state.checked[idx]) {
+        var isCorrect = q.correct.includes(i);
+        var isSelected = ans.includes(i);
+        if (isCorrect) cls = 'correct';
+        else if (isSelected) cls = 'wrong';
+        cls += ' disabled';
+      }
+      html += '<label class="option ' + cls + '">';
+      html += '<input type="checkbox" name="q' + idx + '" value="' + i + '" ' + checked + ' onchange="toggleMulti(' + idx + ',' + i + ')">';
+      html += '<span class="opt-label">' + opt.label + '</span>';
+      html += '<span>' + escapeHtml(opt.text) + '</span>';
+      html += '</label>';
+    });
+    html += '</div>';
+  } else if (q.type === 'tf') {
+    html += '<div class="tf-options">';
+    var ans = state.answers[idx];
+    var clsTrue = '', clsFalse = '';
+    if (state.checked[idx]) {
+      if (q.answer === true) clsTrue = 'correct'; else clsTrue = 'wrong';
+      if (q.answer === false) clsFalse = 'correct'; else clsFalse = 'wrong';
+      clsTrue += ' disabled'; clsFalse += ' disabled';
+    } else {
+      if (ans === true) clsTrue = 'correct';
+      if (ans === false) clsFalse = 'correct';
+    }
+    html += '<div class="tf-btn ' + clsTrue + '" onclick="selectTF(' + idx + ',true)">✅ 是</div>';
+    html += '<div class="tf-btn ' + clsFalse + '" onclick="selectTF(' + idx + ',false)">❌ 否</div>';
+    html += '</div>';
+  } else if (q.type === 'drag') {
+    html += renderDragQuestion(q, idx);
+  }
+
+  // 解析面板
+  html += '<div class="result-panel ' + (state.checked[idx] ? 'show' : '') + ' ' + (isCorrect(idx) ? 'correct' : 'wrong') + '" id="resultPanel' + idx + '">';
+  html += '<div class="title">' + (isCorrect(idx) ? '✅ 回答正确' : '❌ 回答错误') + '</div>';
+  html += '<div>' + escapeHtml(getExplanation(idx)) + '</div>';
+  html += '</div>';
+
+  // 操作按钮
+  html += '<div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;">';
+  if (!state.checked[idx]) {
+    html += '<button class="btn primary" onclick="checkAnswer(' + idx + ')">✅ 检查答案</button>';
+    html += '<button class="btn" onclick="resetQuestion(' + idx + ')">🔄 重置本题</button>';
+  } else {
+    html += '<button class="btn" disabled>已检查</button>';
+    html += '<button class="btn" onclick="resetQuestion(' + idx + ')">🔄 重新答题</button>';
+  }
+  html += '</div>';
+
+  html += '</div>';
+  container.innerHTML = html;
+
+  // 恢复拖拽事件
+  if (q.type === 'drag') initDragEvents(idx);
+
+  updateNavButtons();
+  updateProgress();
+}
+
+function typeLabel(t) {
+  return { single: '单选题', multi: '多选题', tf: '判断题', drag: '拖拽填空' }[t] || t;
+}
+
+// =========================
+// 拖拽填空渲染
+// =========================
+function renderDragQuestion(q, idx) {
+  var html = '<div style="line-height:2.2;font-size:1.05rem;">';
+  var ans = state.answers[idx] || {};
+  q.blanks.forEach(function(b) {
+    var val = ans[b.id] || '';
+    var cls = '';
+    if (state.checked[idx]) {
+      cls = (val === b.correct) ? 'correct' : 'wrong';
+    } else if (val) {
+      cls = 'filled';
+    }
+    html += '<span class="fill-blank ' + cls + '" data-blank="' + b.id + '" data-idx="' + idx + '">';
+    html += val ? escapeHtml(val) : b.label;
+    html += '</span>';
+  });
+  html += '</div>';
+  html += '<div class="draggables">';
+  var used = Object.values(ans);
+  q.choices.forEach(function(ch) {
+    var usedClass = used.includes(ch) ? 'style="opacity:.5;pointer-events:none;"' : '';
+    html += '<div class="draggable" draggable="true" data-choice="' + escapeHtml(ch) + '" ' + usedClass + '>' + escapeHtml(ch) + '</div>';
+  });
+  html += '</div>';
+  return html;
+}
+
+function initDragEvents(idx) {
+  var q = allQuestions[idx];
+  if (state.checked[idx]) return;
+  var draggables = document.querySelectorAll('.draggable');
+  var blanks = document.querySelectorAll('.fill-blank');
+  draggables.forEach(function(el) {
+    el.addEventListener('dragstart', function(e) {
+      e.dataTransfer.setData('text/plain', el.dataset.choice);
+      el.classList.add('dragging');
+    });
+    el.addEventListener('dragend', function() {
+      el.classList.remove('dragging');
+    });
+  });
+  blanks.forEach(function(el) {
+    el.addEventListener('dragover', function(e) { e.preventDefault(); });
+    el.addEventListener('drop', function(e) {
+      e.preventDefault();
+      var choice = e.dataTransfer.getData('text/plain');
+      if (!choice) return;
+      var blankId = el.dataset.blank;
+      var qIdx = parseInt(el.dataset.idx);
+      if (!state.answers[qIdx]) state.answers[qIdx] = {};
+      state.answers[qIdx][blankId] = choice;
+      renderQuestion(qIdx);
+    });
+    // 点击移除
+    el.addEventListener('click', function() {
+      if (state.checked[idx]) return;
+      var blankId = el.dataset.blank;
+      var qIdx = parseInt(el.dataset.idx);
+      if (state.answers[qIdx] && state.answers[qIdx][blankId]) {
+        delete state.answers[qIdx][blankId];
+        renderQuestion(qIdx);
+      }
+    });
+  });
+}
+
+// =========================
+// 答题交互
+// =========================
+function selectSingle(idx, optIdx) {
+  if (state.checked[idx]) return;
+  state.answers[idx] = optIdx;
+  renderQuestion(idx);
+}
+
+function toggleMulti(idx, optIdx) {
+  if (state.checked[idx]) return;
+  var ans = state.answers[idx] || [];
+  var pos = ans.indexOf(optIdx);
+  if (pos >= 0) ans.splice(pos, 1); else ans.push(optIdx);
+  state.answers[idx] = ans;
+  renderQuestion(idx);
+}
+
+function selectTF(idx, val) {
+  if (state.checked[idx]) return;
+  state.answers[idx] = val;
+  renderQuestion(idx);
+}
+
+// =========================
+// 检查答案
+// =========================
+function checkAnswer(idx) {
+  if (state.checked[idx]) return;
+  var q = allQuestions[idx];
+  var ans = state.answers[idx];
+  if (ans === undefined || ans === null || (typeof ans === 'object' && Object.keys(ans).length === 0)) {
+    alert('请先作答再检查答案');
+    return;
+  }
+  state.checked[idx] = true;
+  state.totalAnswered++;
+  if (isCorrect(idx)) state.score++;
+  renderQuestion(idx);
+  updateScoreBar();
+  renderOverview();
+  // 自动跳转到下一题
+  if (idx < allQuestions.length - 1) {
+    setTimeout(function() { goNext(); }, 600);
+  } else {
+    setTimeout(function() { showFinalResult(); }, 800);
+  }
+}
+
+function isCorrect(idx) {
+  var q = allQuestions[idx];
+  var ans = state.answers[idx];
+  if (ans === undefined || ans === null) return false;
+  if (q.type === 'single') return ans === q.correct;
+  if (q.type === 'multi') {
+    if (!Array.isArray(ans) || ans.length !== q.correct.length) return false;
+    return q.correct.every(function(c) { return ans.includes(c); });
+  }
+  if (q.type === 'tf') return ans === q.answer;
+  if (q.type === 'drag') {
+    if (!ans || typeof ans !== 'object') return false;
+    return q.blanks.every(function(b) { return ans[b.id] === b.correct; });
+  }
+  return false;
+}
+
+function getExplanation(idx) {
+  var q = allQuestions[idx];
+  if (q.type === 'single') return q.explanation;
+  if (q.type === 'multi') return q.explanation;
+  if (q.type === 'tf') return q.explanation;
+  if (q.type === 'drag') {
+    var ans = state.answers[idx] || {};
+    var parts = [];
+    q.blanks.forEach(function(b) {
+      var user = ans[b.id] || '(未填)';
+      var correct = b.correct;
+      var mark = (user === correct) ? '✅' : '❌';
+      parts.push(mark + ' ' + b.label + '：你填"' + user + '"，正确答案是"' + correct + '" — ' + (q.explanation[correct] || ''));
+    });
+    return parts.join('\n');
+  }
+  return '';
+}
+
+// =========================
+// 导航
+// =========================
+function goPrev() {
+  if (state.current > 0) {
+    state.current--;
+    renderQuestion(state.current);
+  }
+}
+function goNext() {
+  if (state.current < allQuestions.length - 1) {
+    state.current++;
+    renderQuestion(state.current);
+  }
+}
+function updateNavButtons() {
+  document.getElementById('btnPrev').disabled = state.current === 0;
+  document.getElementById('btnNext').disabled = state.current === allQuestions.length - 1;
+}
+function updateProgress() {
+  var pct = ((state.current + 1) / allQuestions.length) * 100;
+  document.getElementById('progressBar').style.width = pct + '%';
+}
+
+// =========================
+// 分数与总览
+// =========================
+function updateScoreBar() {
+  document.getElementById('scoreDisplay').textContent = '得分: ' + state.score + ' / ' + state.totalAnswered + ' (已答 ' + state.totalAnswered + '/' + allQuestions.length + ')';
+}
+
+function toggleOverview() {
+  var panel = document.getElementById('overviewPanel');
+  var container = document.getElementById('questionContainer');
+  var finalResult = document.getElementById('finalResult');
+  if (panel.classList.contains('active')) {
+    panel.classList.remove('active');
+    container.style.display = 'block';
+    finalResult.style.display = 'none';
+  } else {
+    panel.classList.add('active');
+    container.style.display = 'none';
+    finalResult.style.display = 'none';
+    renderOverview();
+  }
+}
+
+function renderOverview() {
+  var grid = document.getElementById('overviewGrid');
+  var html = '';
+  allQuestions.forEach(function(q, i) {
+    var cls = '';
+    if (state.checked[i]) {
+      cls = isCorrect(i) ? 'correct' : 'wrong';
+    } else if (state.answers[i] !== undefined && state.answers[i] !== null && (typeof state.answers[i] !== 'object' || Object.keys(state.answers[i]).length > 0)) {
+      cls = 'answered';
+    }
+    // 过滤
+    if (state.filter === 'correct' && cls !== 'correct') return;
+    if (state.filter === 'wrong' && cls !== 'wrong') return;
+    if (state.filter === 'unanswered' && cls !== '') return;
+    html += '<div class="overview-item ' + cls + '" onclick="jumpToQuestion(' + i + ')">' + (i+1) + '</div>';
+  });
+  grid.innerHTML = html || '<div style="color:var(--muted);grid-column:1/-1;">无符合条件的题目</div>';
+}
+
+function filterOverview(f) {
+  state.filter = f;
+  renderOverview();
+}
+
+function jumpToQuestion(idx) {
+  state.current = idx;
+  document.getElementById('overviewPanel').classList.remove('active');
+  document.getElementById('questionContainer').style.display = 'block';
+  document.getElementById('finalResult').style.display = 'none';
+  renderQuestion(idx);
+}
+
+// =========================
+// 最终结果
+// =========================
+function showFinalResult() {
+  document.getElementById('questionContainer').style.display = 'none';
+  document.getElementById('overviewPanel').classList.remove('active');
+  document.getElementById('finalResult').classList.add('active');
+  document.getElementById('finalResult').style.display = 'block';
+  var score = state.score;
+  var total = state.totalAnswered;
+  var pct = total > 0 ? Math.round((score / total) * 100) : 0;
+  document.getElementById('finalScore').textContent = score + ' / ' + total + ' (' + pct + '%)';
+  var grade = '';
+  if (pct >= 90) grade = '🏆 优秀！你对 Agent 沙箱的理解非常深入';
+  else if (pct >= 75) grade = '👍 良好！大部分概念已掌握，再巩固一下细节';
+  else if (pct >= 60) grade = '👌 及格！基础概念有了，建议回顾实验文档加深理解';
+  else grade = '📚 继续加油！建议重新阅读实验文档，重点关注错题';
+  document.getElementById('finalGrade').textContent = grade;
+}
+
+function showResultDetails() {
+  document.getElementById('finalResult').classList.remove('active');
+  document.getElementById('finalResult').style.display = 'none';
+  toggleOverview();
+}
+
+// =========================
+// 重置
+// =========================
+function resetQuestion(idx) {
+  state.checked[idx] = false;
+  state.answers[idx] = undefined;
+  // 重新计算分数
+  var oldScore = state.score;
+  state.score = 0;
+  state.totalAnswered = 0;
+  allQuestions.forEach(function(q, i) {
+    if (state.checked[i]) {
+      state.totalAnswered++;
+      if (isCorrect(i)) state.score++;
+    }
+  });
+  renderQuestion(idx);
+  updateScoreBar();
+  renderOverview();
+}
+
+function resetAll() {
+  state.current = 0;
+  state.answers = {};
+  state.checked = {};
+  state.score = 0;
+  state.totalAnswered = 0;
+  state.filter = 'all';
+  document.getElementById('overviewPanel').classList.remove('active');
+  document.getElementById('finalResult').classList.remove('active');
+  document.getElementById('finalResult').style.display = 'none';
+  document.getElementById('questionContainer').style.display = 'block';
+  renderQuestion(0);
+  updateScoreBar();
+  renderOverview();
+}
+
+// =========================
+// 洗牌选项
+// =========================
+function shuffleOptions() {
+  allQuestions.forEach(function(q) {
+    if (q.type === 'single' || q.type === 'multi') {
+      var oldCorrect = q.correct;
+      var opts = q.options.slice();
+      // Fisher-Yates shuffle
+      for (var i = opts.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var tmp = opts[i]; opts[i] = opts[j]; opts[j] = tmp;
+      }
+      // 重新标记 A/B/C/D
+      opts.forEach(function(o, idx) {
+        o.label = String.fromCharCode(65 + idx);
+      });
+      // 更新 correct 索引
+      if (q.type === 'single') {
+        q.correct = opts.findIndex(function(o) { return o.text === q.options[oldCorrect].text; });
+      } else {
+        q.correct = oldCorrect.map(function(ci) {
+          return opts.findIndex(function(o) { return o.text === q.options[ci].text; });
+        });
+      }
+      q.options = opts;
+    }
+  });
+  renderQuestion(state.current);
+  alert('🎲 选项已重新洗牌！');
+}
+
+// =========================
+// 工具函数
+// =========================
+function escapeHtml(str) {
+  if (typeof str !== 'string') return str;
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// 启动
+init();
+</script>
+</body>
+</html>

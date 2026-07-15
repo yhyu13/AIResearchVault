@@ -1,1232 +1,826 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Generative Agents 社交模拟面试知识自测</title>
-  <style>
-    :root {
-      --bg-body: #FAF8F5;
-      --bg-card: #FFFFFF;
-      --bg-warm: #F5F0E8;
-      --primary: #2D5F5F;
-      --primary-light: #3D7A7A;
-      --accent: #4A7C59;
-      --accent-light: #E8F3E8;
-      --text-main: #2C2C2C;
-      --text-muted: #6B6B6B;
-      --border: #D8D2C8;
-      --shadow: rgba(0,0,0,0.06);
-      --correct: #3A8C5D;
-      --correct-bg: #EAF6EE;
-      --wrong: #C44B4B;
-      --wrong-bg: #FCEAEA;
-      --warning: #C9943A;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>实验 11：Generative Agents 社交模拟实验（简化版）— 互动知识卡牌</title>
+<style>
+  :root {
+    --bg: #f7f5f0;
+    --card: #ffffff;
+    --primary: #2d6a4f;
+    --primary-soft: #e9f5ec;
+    --accent: #b08968;
+    --accent-soft: #f4ebe0;
+    --danger: #c0392b;
+    --danger-soft: #fdecea;
+    --success: #27ae60;
+    --success-soft: #e8f8f0;
+    --text: #2c3e50;
+    --text-secondary: #7f8c8d;
+    --border: #e0e0e0;
+    --shadow: 0 4px 12px rgba(0,0,0,0.08);
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Segoe UI", "Microsoft YaHei", "PingFang SC", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    min-height: 100vh;
+    padding: 16px;
+  }
+  .app-header {
+    text-align: center;
+    padding: 20px 0 12px;
+  }
+  .app-header h1 { font-size: 1.5rem; color: var(--primary); margin-bottom: 6px; }
+  .app-header p { color: var(--text-secondary); font-size: 0.9rem; }
+  .score-bar {
+    position: sticky; top: 0; z-index: 50;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 12px 16px; margin: 12px 0;
+    display: flex; align-items: center; justify-content: space-between;
+    box-shadow: var(--shadow);
+  }
+  .score-left { display: flex; align-items: center; gap: 12px; }
+  .score-pill {
+    background: var(--primary-soft); color: var(--primary);
+    padding: 6px 12px; border-radius: 999px; font-weight: 700; font-size: 0.95rem;
+  }
+  .progress-wrap { flex: 1; max-width: 260px; margin-left: 12px; }
+  .progress-track { height: 8px; background: #e0e0e0; border-radius: 999px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--primary); width: 0%; transition: width .3s ease; }
+  .score-right { display: flex; gap: 8px; }
+  .btn {
+    border: none; border-radius: 8px; padding: 8px 12px; cursor: pointer;
+    font-size: 0.9rem; font-weight: 600; transition: transform .1s, opacity .2s;
+  }
+  .btn:active { transform: scale(0.98); }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-accent { background: var(--accent); color: #fff; }
+  .btn-outline { background: transparent; color: var(--primary); border: 1px solid var(--primary); }
+  .btn-danger { background: var(--danger); color: #fff; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+  .container { max-width: 900px; margin: 0 auto; }
+  .card {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 20px; margin-bottom: 16px; box-shadow: var(--shadow);
+  }
+  .card h2 { font-size: 1.15rem; color: var(--primary); margin-bottom: 10px; }
+  .card .meta { color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 12px; }
 
-    body {
-      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
-      background: var(--bg-body);
-      color: var(--text-main);
-      line-height: 1.6;
-      min-height: 100vh;
-    }
+  .options { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+  .option {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; cursor: pointer;
+    background: #fff; transition: background .2s, border-color .2s;
+  }
+  .option:hover { background: #fafafa; }
+  .option input { accent-color: var(--primary); }
+  .option.correct { border-color: var(--success); background: var(--success-soft); }
+  .option.wrong { border-color: var(--danger); background: var(--danger-soft); }
+  .option.disabled { pointer-events: none; opacity: .9; }
 
-    .container {
-      max-width: 720px;
-      margin: 0 auto;
-      padding: 16px;
-    }
+  .drag-pool { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+  .drag-item {
+    padding: 8px 12px; background: var(--accent-soft); color: var(--accent);
+    border: 1px dashed var(--accent); border-radius: 8px; cursor: grab; font-weight: 600;
+    user-select: none; touch-action: none;
+  }
+  .drag-item.dragging { opacity: .6; }
+  .drop-zone {
+    display: inline-block; min-width: 120px; padding: 6px 10px; border: 2px dashed var(--border);
+    border-radius: 6px; text-align: center; color: var(--text-secondary); margin: 0 4px;
+    vertical-align: middle; transition: border-color .2s, background .2s;
+  }
+  .drop-zone.drag-over { border-color: var(--primary); background: var(--primary-soft); }
+  .drop-zone.filled { border-style: solid; border-color: var(--accent); color: var(--accent); font-weight: 700; }
+  .drop-zone.correct-zone { border-color: var(--success); background: var(--success-soft); color: var(--success); }
+  .drop-zone.wrong-zone { border-color: var(--danger); background: var(--danger-soft); color: var(--danger); }
 
-    header {
-      text-align: center;
-      margin-bottom: 20px;
-    }
+  .tf-wrap { display: flex; gap: 12px; margin-top: 10px; }
+  .tf-btn {
+    flex: 1; padding: 10px; border: 1px solid var(--border); border-radius: 8px;
+    background: #fff; cursor: pointer; text-align: center; font-weight: 600;
+    transition: background .2s, border-color .2s;
+  }
+  .tf-btn:hover { background: #fafafa; }
+  .tf-btn.selected { border-color: var(--primary); background: var(--primary-soft); }
+  .tf-btn.correct { border-color: var(--success); background: var(--success-soft); color: var(--success); }
+  .tf-btn.wrong { border-color: var(--danger); background: var(--danger-soft); color: var(--danger); }
 
-    header h1 {
-      font-size: 1.6rem;
-      color: var(--primary);
-      margin-bottom: 4px;
-    }
+  .actions { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+  .explain {
+    margin-top: 12px; padding: 12px; border-radius: 8px; background: #f4f6f8;
+    border-left: 4px solid var(--primary); font-size: 0.92rem; display: none;
+  }
+  .explain.show { display: block; }
 
-    header .topic {
-      font-size: 0.95rem;
-      color: var(--text-muted);
-    }
+  .nav-bar { display: flex; align-items: center; justify-content: space-between; margin: 16px 0; }
+  .nav-bar .btn { min-width: 100px; }
 
-    .score-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 12px 16px;
-      margin-bottom: 16px;
-      box-shadow: 0 2px 8px var(--shadow);
-    }
+  .overview { display: none; }
+  .overview.show { display: block; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 8px; margin-top: 12px; }
+  .thumb {
+    aspect-ratio: 1; border-radius: 8px; border: 1px solid var(--border); display: flex;
+    align-items: center; justify-content: center; font-weight: 700; font-size: 0.9rem; cursor: pointer;
+    background: #fff; transition: transform .1s;
+  }
+  .thumb:hover { transform: translateY(-2px); }
+  .thumb.correct { background: var(--success-soft); border-color: var(--success); color: var(--success); }
+  .thumb.wrong { background: var(--danger-soft); border-color: var(--danger); color: var(--danger); }
+  .thumb.unchecked { background: #f0f0f0; color: var(--text-secondary); }
+  .filter-bar { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+  .filter-btn { padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border); background: #fff; cursor: pointer; font-size: 0.85rem; }
+  .filter-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
 
-    .score-bar .score {
-      font-size: 1.1rem;
-      font-weight: 600;
-      color: var(--primary);
-    }
+  .result-screen { display: none; text-align: center; padding: 30px 10px; }
+  .result-screen.show { display: block; }
+  .big-score { font-size: 3rem; font-weight: 800; color: var(--primary); }
+  .result-msg { margin: 10px 0 20px; color: var(--text-secondary); }
 
-    .score-bar .actions {
-      display: flex;
-      gap: 8px;
-    }
+  .hidden { display: none !important; }
 
-    .btn {
-      border: none;
-      border-radius: 8px;
-      padding: 8px 14px;
-      font-size: 0.85rem;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      font-family: inherit;
-    }
-
-    .btn-sm { padding: 6px 10px; font-size: 0.78rem; }
-
-    .btn-primary {
-      background: var(--primary);
-      color: #fff;
-    }
-    .btn-primary:hover { background: var(--primary-light); }
-
-    .btn-secondary {
-      background: var(--bg-warm);
-      color: var(--text-main);
-      border: 1px solid var(--border);
-    }
-    .btn-secondary:hover { background: #EDE8DE; }
-
-    .btn-warning {
-      background: #FFF8E6;
-      color: #8A6D1F;
-      border: 1px solid #F0E0B0;
-    }
-    .btn-warning:hover { background: #FFF0CC; }
-
-    .tabs {
-      display: flex;
-      gap: 6px;
-      margin-bottom: 16px;
-      flex-wrap: wrap;
-    }
-
-    .tab {
-      flex: 1;
-      min-width: 80px;
-      text-align: center;
-      padding: 10px 8px;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      background: var(--bg-card);
-      color: var(--text-muted);
-      cursor: pointer;
-      font-size: 0.88rem;
-      transition: all 0.2s ease;
-    }
-
-    .tab.active {
-      background: var(--primary);
-      color: #fff;
-      border-color: var(--primary);
-      font-weight: 600;
-    }
-
-    .tab .badge {
-      display: inline-block;
-      margin-left: 4px;
-      background: rgba(255,255,255,0.25);
-      padding: 1px 6px;
-      border-radius: 10px;
-      font-size: 0.72rem;
-    }
-
-    .card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 20px;
-      box-shadow: 0 2px 12px var(--shadow);
-      margin-bottom: 16px;
-    }
-
-    .progress-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-    }
-
-    .progress-bar {
-      flex: 1;
-      height: 8px;
-      background: #EAE5DC;
-      border-radius: 4px;
-      overflow: hidden;
-      margin: 0 12px;
-    }
-
-    .progress-bar .fill {
-      height: 100%;
-      background: var(--primary);
-      border-radius: 4px;
-      transition: width 0.3s ease;
-    }
-
-    .question-text {
-      font-size: 1.05rem;
-      font-weight: 500;
-      margin-bottom: 18px;
-      line-height: 1.7;
-    }
-
-    .question-text .blank {
-      display: inline-block;
-      min-width: 80px;
-      padding: 3px 10px;
-      margin: 0 3px;
-      border: 2px dashed var(--border);
-      border-radius: 6px;
-      background: var(--bg-warm);
-      color: var(--text-muted);
-      font-size: 0.9rem;
-      text-align: center;
-      vertical-align: middle;
-      transition: all 0.2s ease;
-    }
-
-    .question-text .blank.filled {
-      border-style: solid;
-      border-color: var(--primary);
-      background: #F0F7F7;
-      color: var(--primary);
-      font-weight: 600;
-    }
-
-    .question-text .blank.correct {
-      border-color: var(--correct);
-      background: var(--correct-bg);
-      color: var(--correct);
-    }
-
-    .question-text .blank.wrong {
-      border-color: var(--wrong);
-      background: var(--wrong-bg);
-      color: var(--wrong);
-    }
-
-    .draggables {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: 18px;
-    }
-
-    .draggable {
-      padding: 8px 14px;
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      cursor: grab;
-      font-size: 0.9rem;
-      user-select: none;
-      transition: all 0.2s ease;
-    }
-
-    .draggable:hover {
-      border-color: var(--primary);
-      box-shadow: 0 2px 6px var(--shadow);
-    }
-
-    .draggable.dragging {
-      opacity: 0.5;
-      cursor: grabbing;
-    }
-
-    .draggable.used {
-      opacity: 0.4;
-      pointer-events: none;
-    }
-
-    .options-list {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      margin-bottom: 18px;
-    }
-
-    .option {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 12px 14px;
-      border: 1.5px solid var(--border);
-      border-radius: 10px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      background: var(--bg-card);
-    }
-
-    .option:hover { border-color: var(--primary-light); background: #F7FBFB; }
-
-    .option input[type="radio"],
-    .option input[type="checkbox"] {
-      width: 18px;
-      height: 18px;
-      accent-color: var(--primary);
-      flex-shrink: 0;
-    }
-
-    .option .label {
-      flex: 1;
-      font-size: 0.95rem;
-    }
-
-    .option.correct-ans {
-      border-color: var(--correct);
-      background: var(--correct-bg);
-    }
-
-    .option.wrong-ans {
-      border-color: var(--wrong);
-      background: var(--wrong-bg);
-    }
-
-    .option .mark {
-      font-size: 1.1rem;
-      font-weight: 700;
-      margin-left: auto;
-    }
-
-    .explanation {
-      display: none;
-      margin-top: 8px;
-      padding: 12px 14px;
-      border-radius: 8px;
-      font-size: 0.9rem;
-      line-height: 1.6;
-    }
-
-    .explanation.show { display: block; }
-
-    .explanation.correct-ex {
-      background: var(--correct-bg);
-      color: #2A6B44;
-      border: 1px solid #B8E0C8;
-    }
-
-    .explanation.wrong-ex {
-      background: var(--wrong-bg);
-      color: #8A3333;
-      border: 1px solid #F0C0C0;
-    }
-
-    .nav-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .nav-bar .btn { flex: 1; }
-
-    .overview-btn {
-      text-align: center;
-      margin-top: 12px;
-    }
-
-    .overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.35);
-      z-index: 100;
-      justify-content: center;
-      align-items: center;
-      padding: 20px;
-    }
-
-    .overlay.show { display: flex; }
-
-    .overlay-content {
-      background: var(--bg-card);
-      border-radius: 14px;
-      padding: 20px;
-      width: 100%;
-      max-width: 480px;
-      max-height: 80vh;
-      overflow-y: auto;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.15);
-    }
-
-    .overlay-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-    }
-
-    .overlay-header h2 {
-      font-size: 1.15rem;
-      color: var(--primary);
-    }
-
-    .grid-overview {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
-      gap: 8px;
-    }
-
-    .grid-item {
-      aspect-ratio: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 8px;
-      border: 1.5px solid var(--border);
-      font-size: 0.9rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.15s ease;
-    }
-
-    .grid-item:hover { transform: scale(1.05); }
-
-    .grid-item.empty { background: var(--bg-body); color: var(--text-muted); }
-    .grid-item.correct { background: var(--correct-bg); color: var(--correct); border-color: #A0D8B3; }
-    .grid-item.wrong { background: var(--wrong-bg); color: var(--wrong); border-color: #E8A0A0; }
-
-    .legend {
-      display: flex;
-      gap: 14px;
-      justify-content: center;
-      margin-top: 14px;
-      font-size: 0.8rem;
-      color: var(--text-muted);
-    }
-
-    .legend span { display: flex; align-items: center; gap: 4px; }
-    .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
-    .dot-empty { background: #D8D2C8; }
-    .dot-correct { background: var(--correct); }
-    .dot-wrong { background: var(--wrong); }
-
-    @media (max-width: 520px) {
-      .container { padding: 10px; }
-      header h1 { font-size: 1.3rem; }
-      .card { padding: 14px; }
-      .tab { font-size: 0.8rem; padding: 8px 4px; }
-      .question-text { font-size: 0.97rem; }
-    }
-  </style>
+  @media (max-width: 640px) {
+    .score-bar { flex-wrap: wrap; gap: 8px; }
+    .progress-wrap { max-width: none; width: 100%; margin-left: 0; }
+    .app-header h1 { font-size: 1.2rem; }
+  }
+</style>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1>Generative Agents 社交模拟面试知识自测</h1>
-      <div class="topic">记忆流、反思与涌现社交行为<br>请完成以下题目检验掌握程度</div>
-    </header>
+<div class="container">
+  <div class="app-header">
+    <h1>实验 11：Generative Agents 社交模拟实验（简化版）</h1>
+    <p>互动知识卡牌 — 基于 Park et al., UIST 2023 论文核心机制</p>
+  </div>
 
-    <div class="score-bar">
-      <div class="score" id="scoreDisplay">得分: 0 / 0</div>
-      <div class="actions">
-        <button class="btn btn-warning btn-sm" id="btnShuffle">随机选项</button>
-        <button class="btn btn-secondary btn-sm" id="btnResetAll">重置所有</button>
+  <div class="score-bar">
+    <div class="score-left">
+      <div class="score-pill">得分: <span id="scoreVal">0</span></div>
+      <div class="progress-wrap">
+        <div class="progress-track"><div class="progress-fill" id="progressBar"></div></div>
+        <div style="font-size:.75rem;color:var(--text-secondary);margin-top:4px;text-align:center;">
+          <span id="currentQ">1</span> / <span id="totalQ">0</span>
+        </div>
       </div>
     </div>
-
-    <div class="tabs" id="tabBar">
-      <div class="tab active" data-type="drag">拖拽填空<span class="badge" id="badgeDrag">0</span></div>
-      <div class="tab" data-type="single">单选题<span class="badge" id="badgeSingle">0</span></div>
-      <div class="tab" data-type="multi">多选题<span class="badge" id="badgeMulti">0</span></div>
-      <div class="tab" data-type="truefalse">判断题<span class="badge" id="badgeTrueFalse">0</span></div>
-    </div>
-
-    <div class="card" id="quizCard">
-      <div class="progress-row">
-        <span id="progressText">1 / 1</span>
-        <div class="progress-bar"><div class="fill" id="progressFill" style="width:0%"></div></div>
-        <button class="btn btn-secondary btn-sm" id="btnOverview">总览</button>
-      </div>
-
-      <div id="questionArea"></div>
-
-      <div id="explanationArea"></div>
-
-      <div style="display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;">
-        <button class="btn btn-primary" id="btnCheck">检查答案</button>
-        <button class="btn btn-secondary" id="btnResetCurrent">重置当前题</button>
-      </div>
-
-      <div class="nav-bar" style="margin-top:16px;">
-        <button class="btn btn-secondary" id="btnPrev">上一题</button>
-        <button class="btn btn-secondary" id="btnNext">下一题</button>
-      </div>
+    <div class="score-right">
+      <button class="btn btn-outline" id="btnOverview" onclick="toggleOverview()">📋 总览</button>
+      <button class="btn btn-outline" onclick="shuffleAll()">🎲 重新洗牌选项</button>
     </div>
   </div>
 
-  <div class="overlay" id="overviewOverlay">
-    <div class="overlay-content">
-      <div class="overlay-header">
-        <h2>题目总览</h2>
-        <button class="btn btn-secondary btn-sm" id="btnCloseOverview">关闭</button>
-      </div>
-      <div class="grid-overview" id="overviewGrid"></div>
-      <div class="legend">
-        <span><span class="dot dot-empty"></span>未答</span>
-        <span><span class="dot dot-correct"></span>正确</span>
-        <span><span class="dot dot-wrong"></span>错误</span>
-      </div>
+  <div id="quizArea"></div>
+
+  <div class="nav-bar">
+    <button class="btn btn-outline" id="btnPrev" onclick="prevQuestion()">⬅ 上一题</button>
+    <button class="btn btn-primary" id="btnCheck" onclick="checkCurrent()">✅ 检查答案</button>
+    <button class="btn btn-outline" id="btnReset" onclick="resetCurrent()">🔄 重置题目</button>
+    <button class="btn btn-outline" id="btnNext" onclick="nextQuestion()">下一题 ➡</button>
+  </div>
+
+  <div class="overview card" id="overviewPanel">
+    <h2>总览面板</h2>
+    <div class="filter-bar">
+      <button class="filter-btn active" onclick="filterThumbs('all')">全部</button>
+      <button class="filter-btn" onclick="filterThumbs('correct')">✅ 正确</button>
+      <button class="filter-btn" onclick="filterThumbs('wrong')">❌ 错误</button>
+      <button class="filter-btn" onclick="filterThumbs('unchecked')">⬜ 未答</button>
+    </div>
+    <div class="grid" id="thumbGrid"></div>
+    <div class="actions" style="margin-top:12px;">
+      <button class="btn btn-danger" onclick="resetAll()">🗑 重置全部</button>
     </div>
   </div>
 
-  <script>
-    // ===== DATA PLACEHOLDERS =====
-    // DRAG_QUESTIONS_PLACEHOLDER_START
-    const dragQuestions = [
+  <div class="result-screen card" id="resultScreen">
+    <div class="big-score" id="finalScore">0</div>
+    <div class="result-msg" id="finalMsg">完成所有题目后查看结果</div>
+    <div class="actions" style="justify-content:center;">
+      <button class="btn btn-outline" onclick="showQuestion(0)">🔍 返回查看</button>
+      <button class="btn btn-primary" onclick="resetAll()">🔄 继续做题</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ===================== 数据 =====================
+  var allQuestions = [
+    // ---------- 拖拽填空 (5道) ----------
     {
-        "question": "记忆检索的复合评分公式为：{0} × overlap + {1} × importance_norm + {2} × recency",
-        "options": [
-            "0.5",
-            "0.3",
-            "0.2",
-            "0.4",
-            "0.6",
-            "0.1"
-        ],
-        "answers": [
-            "0.5",
-            "0.3",
-            "0.2"
-        ],
-        "explanations": [
-            "相关性（overlap）权重为 0.5，是检索评分的首要因素。",
-            "重要性归一化（importance_norm）权重为 0.3，高重要性记忆优先召回。",
-            "时效性（recency）权重为 0.2，采用指数衰减模型，时间常数为 8 小时。"
-        ]
+      type: "dragfill",
+      question: "Generative Agent 的三层架构从上到下依次为：观察层 → __1__ → __2__ → 行为层。",
+      blanks: ["记忆流(Memory Stream)", "反思层(Reflection)"],
+      pool: ["记忆流(Memory Stream)", "反思层(Reflection)", "规划层(Planning)", "情感层(Emotion)", "感知层(Perception)"],
+      explanation: "正确顺序是：观察层 → 记忆流 → 反思层 → 规划层 → 行为层。题目中只填前两个空，记忆流负责记录观察，反思层对高频主题进行抽象总结。"
     },
     {
-        "question": "反思触发条件：同一关键词在 {0} 小时内出现至少 {1} 次，且最大反思深度为 {2} 层。",
-        "options": [
-            "24",
-            "8",
-            "2",
-            "12",
-            "6",
-            "3"
-        ],
-        "answers": [
-            "24",
-            "8",
-            "2"
-        ],
-        "explanations": [
-            "反思只统计最近 24 小时内的记忆，避免过时主题触发无意义反思。",
-            "REFLECTION_THRESHOLD 设置为 8，即同一关键词在 24h 内出现 ≥8 次时触发。",
-            "MAX_REFLECTION_DEPTH = 2，防止无限递归反思导致记忆流被抽象记忆淹没。"
-        ]
-    }
-];
-    // DRAG_QUESTIONS_PLACEHOLDER_END
-
-    // SINGLE_QUESTIONS_PLACEHOLDER_START
-    const singleQuestions = [
-    {
-        "question": "在 ImportanceScorer 中，包含 '争吵' 关键词的记忆会获得多少额外加分？",
-        "options": [
-            "+0.5",
-            "+1.0",
-            "+2.0",
-            "+3.0"
-        ],
-        "correct": 3,
-        "explanations": [
-            "ROUTINE_KEYWORDS（如起床、吃饭）才会 -0.5。",
-            "包含其他 Agent 名称时 +1.0。",
-            "SOCIAL_KEYWORDS（如聊天、邀请）+2.0。",
-            "HIGH_IMPACT_KEYWORDS（如争吵、冲突、礼物）+3.0，只加一次最高分。"
-        ]
+      type: "dragfill",
+      question: "记忆检索的复合评分公式为：score = 0.5 × __1__ + 0.3 × __2__ + 0.2 × 时效性。",
+      blanks: ["相关性", "重要性"],
+      pool: ["相关性", "重要性", "情感值", "随机性", "社交度"],
+      explanation: "论文中检索公式包含相关性(relevance)、重要性(importance)和时效性(recency)三个维度，权重分别为 0.5、0.3、0.2。"
     },
     {
-        "question": "三种记忆类型中，哪种天然获得最高的基础重要性加分？",
-        "options": [
-            "OBSERVATION",
-            "REFLECTION",
-            "PLAN",
-            "EVENT"
-        ],
-        "correct": 1,
-        "explanations": [
-            "OBSERVATION 是基础观察，无额外加分（base 3.0）。",
-            "REFLECTION 获得 +2.0 加分，因为抽象层次高，重要性天然更高。",
-            "PLAN 仅 +0.5 加分。",
-            "EVENT 不是有效的 MemoryType 枚举值。"
-        ]
+      type: "dragfill",
+      question: "在 ImportanceScorer 中，包含关键词'争吵'的记忆会被归类为 __1__ 影响事件，基础分额外加 __2__ 分。",
+      blanks: ["高", "3.0"],
+      pool: ["高", "低", "3.0", "2.0", "1.0"],
+      explanation: "HIGH_IMPACT_KEYWORDS 包含'争吵'等情绪事件，匹配后 base_score += 3.0，属于高影响事件。"
     },
     {
-        "question": "Agent 的每日计划模板主要依据什么来选择？",
-        "options": [
-            "当前时间",
-            "当前位置",
-            "性格特征（traits）",
-            "能量值（energy）"
-        ],
-        "correct": 2,
-        "explanations": [
-            "时间只决定计划的顺序，不是模板选择依据。",
-            "位置是计划执行的结果，而非选择依据。",
-            "_get_plan_templates 方法根据 traits 中是否包含 '外向'/'内向' 等关键词选择不同活动模板。",
-            "energy 只在执行阶段以每步 -2.0 消耗，不影响计划模板选择。"
-        ]
+      type: "dragfill",
+      question: "Agent 的社交关系分数范围被限制在 __1__ 到 __2__ 之间。",
+      blanks: ["-10", "10"],
+      pool: ["-10", "0", "5", "10", "100"],
+      explanation: "代码中通过 max(-10, min(10, score)) 将关系分数限制在 [-10, 10] 区间。"
     },
     {
-        "question": "当两个 Agent 的关系分数 relationship_score > 5 时，交互类型会判定为？",
-        "options": [
-            "neutral",
-            "neutral_positive",
-            "friendly",
-            "hostile"
-        ],
-        "correct": 2,
-        "explanations": [
-            "neutral 对应关系分数 ≤ 0 的情况。",
-            "neutral_positive 对应 0 < 分数 ≤ 5。",
-            "friendly 对应分数 > 5，会触发热情问候、邀请、分享故事等友好对话模板。",
-            "hostile 对应分数 < -3。"
-        ]
-    }
-];
-    // SINGLE_QUESTIONS_PLACEHOLDER_END
+      type: "dragfill",
+      question: "当同主题记忆数量达到 __1__ 条时触发反思，反思层级上限为 __2__。",
+      blanks: ["8", "2"],
+      pool: ["5", "8", "10", "2", "3"],
+      explanation: "REFLECTION_THRESHOLD = 8 表示同主题记忆达到 8 条触发反思；MAX_REFLECTION_DEPTH = 2 表示最多 2 层反思。"
+    },
 
-    // MULTI_QUESTIONS_PLACEHOLDER_START
-    const multiQuestions = [
+    // ---------- 单选题 (10道) ----------
     {
-        "question": "MemoryNode 数据结构包含以下哪些字段？",
-        "options": [
-            "agent_name",
-            "memory_type",
-            "importance",
-            "depth",
-            "dialogue_history"
-        ],
-        "correct": [
-            0,
-            1,
-            2,
-            3
-        ],
-        "explanations": [
-            "agent_name 标识记忆所属 Agent。",
-            "memory_type 枚举值：OBSERVATION / REFLECTION / PLAN。",
-            "importance 为 1-10 的浮点评分。",
-            "depth 表示反思层级，0=原始观察。",
-            "dialogue_history 不是 MemoryNode 的字段，对话内容直接存入 content。"
-        ]
+      type: "single",
+      question: "Generative Agents 论文中，原始系统部署了多少个 Agent？",
+      options: ["10 个", "25 个", "3 个", "50 个"],
+      answer: 1,
+      explanation: "论文中部署了 25 个 Agent；本实验简化为 3 个（Alice, Bob, Carol）。"
     },
     {
-        "question": "ImportanceScorer 的评分规则中，以下哪些说法是正确的？",
-        "options": [
-            "反思类型记忆 +2.0",
-            "社交关键词（如聊天、邀请）+2.0",
-            "日常关键词（如起床、吃饭）-0.5",
-            "包含其他 Agent 名称 +1.0"
-        ],
-        "correct": [
-            0,
-            1,
-            2,
-            3
-        ],
-        "explanations": [
-            "REFLECTION 类型在 base_score 上额外 +2.0。",
-            "SOCIAL_KEYWORDS 匹配时 +2.0，仅加一次。",
-            "ROUTINE_KEYWORDS 匹配时 -0.5，降低日常琐事的重要性。",
-            "内容中包含 Alice/Bob/Carol 等其他 Agent 名称时 +1.0。"
-        ]
+      type: "single",
+      question: "记忆流中，当记忆数量超过 MEMORY_CAPACITY 时，如何移除旧记忆？",
+      options: ["随机移除", "移除时间最久的", "按重要性+时间排序后移除最低分", "只移除观察类记忆"],
+      answer: 2,
+      explanation: "代码中 self.memory_stream.sort(key=lambda m: (m.importance, m.timestamp)) 后移除最低分且最旧的记忆。"
     },
     {
-        "question": "本实验观察到的涌现社交行为包括哪些？",
-        "options": [
-            "社交聚会（邀请/共同活动）",
-            "关系形成（正反馈循环累积强关系）",
-            "计划变更（社交邀请打断原有计划）",
-            "主题反思（高频地点触发抽象概念）"
-        ],
-        "correct": [
-            0,
-            1,
-            2,
-            3
-        ],
-        "explanations": [
-            "Alice 等外向 Agent 会邀请他人，形成 2 人小团体。",
-            "频繁互动使关系分数累积，产生 >5 的强社交纽带。",
-            "replan 方法允许 Agent 接受邀请并自适应调整行程。",
-            "高频访问地点（如咖啡馆）达到阈值后触发反思。"
-        ]
-    }
-];
-    // MULTI_QUESTIONS_PLACEHOLDER_END
-
-    // TRUEFALSE_QUESTIONS_PLACEHOLDER_START
-    const trueFalseQuestions = [
-    {
-        "question": "本实验使用真实 LLM（如 GPT-3.5）进行对话和反思生成。",
-        "correct": false,
-        "explanationTrue": "错误。本实验使用基于规则的模板系统替代 LLM，所有对话和反思均通过预定义模板和随机选择生成。",
-        "explanationFalse": "正确。本实验明确使用基于规则的模板生成，而非真实 LLM，以保证高可复现性和极低计算成本。"
+      type: "single",
+      question: "以下哪个地点在代码中被定义为 Location 枚举值？",
+      options: ["学校", "咖啡馆", "医院", "图书馆"],
+      answer: 1,
+      explanation: "Location 枚举包含 HOME(家)、CAFE(咖啡馆)、PARK(公园) 三个值。"
     },
     {
-        "question": "Memory Stream 的最大容量设置为 200 条记忆，超出后会移除重要性最低且最旧的记忆。",
-        "correct": true,
-        "explanationTrue": "正确。MEMORY_CAPACITY = 200，超出时按 (importance, timestamp) 排序并移除最低分的记忆。",
-        "explanationFalse": "错误。代码中明确实现了容量限制：超出 200 条后排序并移除最低重要性且最旧的记忆。"
+      type: "single",
+      question: "Agent 的每日计划生成依据是什么？",
+      options: ["随机选择", "当前能量值", "性格特征（traits）", "其他 Agent 的计划"],
+      answer: 2,
+      explanation: "_get_plan_templates() 根据 traits 中的'外向/内向'等关键词选择不同的计划模板。"
     },
     {
-        "question": "当 Agent 的当前计划 is_interruptible=False 时，即使同位置有其他 Agent，也绝不会发生社交交互。",
-        "correct": true,
-        "explanationTrue": "正确。Environment.step() 中检查 plan1.is_interruptible 和 plan2.is_interruptible，任一方不可中断则跳过交互。",
-        "explanationFalse": "错误。代码中明确检查了 is_interruptible，不可中断的计划会阻止交互发生。"
+      type: "single",
+      question: "两个 Agent 交互时，如果一方计划 is_interruptible = False，会发生什么？",
+      options: ["强制交互", "跳过交互", "降低交互概率", "延长计划时间"],
+      answer: 1,
+      explanation: "代码中明确检查 if plan1 and not plan1.is_interruptible: continue，即跳过不可中断计划的 Agent 的交互。"
     },
     {
-        "question": "论文中的 25 个 Agent 和本实验的 3 个 Agent 都使用了基于规则的模板生成（非 LLM）。",
-        "correct": false,
-        "explanationTrue": "错误。论文使用真实 LLM（GPT-3.5）进行语言生成；本实验才是使用基于规则的模板生成。",
-        "explanationFalse": "正确。论文使用 GPT-3.5 进行对话和反思生成，本实验为简化教学目的改用规则模板。"
+      type: "single",
+      question: "社交重新规划（_check_social_replan）触发的条件是什么？",
+      options: ["任意两个 Agent 相遇", "关系分数 > 5 且随机概率 < 0.3", "能量值低于 50", "反思数量超过阈值"],
+      answer: 1,
+      explanation: "代码中 if a1.relationships[a2.name] > 5 and random.random() < 0.3 才会触发社交重新规划。"
+    },
+    {
+      type: "single",
+      question: "以下哪个 MemoryType 的枚举值代表反思产生的抽象记忆？",
+      options: ["OBSERVATION", "REFLECTION", "PLAN", "SOCIAL"],
+      answer: 1,
+      explanation: "MemoryType.REFLECTION 对应反思产生的抽象记忆；OBSERVATION 是直接观察，PLAN 是计划相关记忆。"
+    },
+    {
+      type: "single",
+      question: "时效性评分（recency）的计算公式中，时间常数 RECENCY_DECAY_HOURS 是多少？",
+      options: ["4.0 小时", "8.0 小时", "12.0 小时", "24.0 小时"],
+      answer: 1,
+      explanation: "代码中 RECENCY_DECAY_HOURS = 8.0，recency = max(0, 1 - hours_ago / 8.0)。"
+    },
+    {
+      type: "single",
+      question: "在 _update_relationship 中，'friendly' 交互类型的关系变化 delta 是多少？",
+      options: ["0.5", "1.0", "1.5", "2.0"],
+      answer: 2,
+      explanation: "friendly: +1.5, neutral_positive: +0.5, neutral: 0.0, hostile: -2.0。"
+    },
+    {
+      type: "single",
+      question: "本实验与论文原系统相比，最大的简化差异是什么？",
+      options: ["Agent 数量减少", "使用基于规则的模板代替 LLM", "地点数量减少", "时间步长变大"],
+      answer: 1,
+      explanation: "虽然 Agent 数量和地点都减少了，但核心差异是语言生成从真实 LLM 改为基于规则的模板系统。"
+    },
+
+    // ---------- 多选题 (6道) ----------
+    {
+      type: "multi",
+      question: "以下哪些属于 ImportanceScorer 中的 HIGH_IMPACT_KEYWORDS？",
+      options: ["争吵", "聊天", "生病", "工作", "道歉", "阅读"],
+      answer: [0, 2, 4],
+      explanation: "HIGH_IMPACT_KEYWORDS 包含争吵、冲突、生气、道歉、表白、失望、惊喜、礼物、帮助、拯救、生病、获奖、丢失、找到。聊天和工作属于 SOCIAL/ROUTINE。"
+    },
+    {
+      type: "multi",
+      question: "记忆节点 MemoryNode 包含哪些字段？",
+      options: ["agent_name", "content", "timestamp", "memory_type", "importance", "relationship_score"],
+      answer: [0, 1, 2, 3, 4],
+      explanation: "MemoryNode 包含 agent_name, content, timestamp, memory_type, importance, keywords, depth, retrieval_score；不包含 relationship_score（关系分数在 Agent 中维护）。"
+    },
+    {
+      type: "multi",
+      question: "以下哪些条件会阻止 Agent 之间的交互？",
+      options: ["不在同一位置", "一方计划不可中断", "关系分数为负数", "能量值低于 0", "随机概率未命中", "反思数量不足"],
+      answer: [0, 1, 4],
+      explanation: "不在同一位置无法交互；is_interruptible=False 会跳过；random.random() < interact_prob 未命中也会跳过。关系分数负数和反思数量不影响交互触发。"
+    },
+    {
+      type: "multi",
+      question: "PlanNode 包含哪些属性？",
+      options: ["description", "start_time", "end_time", "location", "priority", "energy_cost"],
+      answer: [0, 1, 2, 3, 4],
+      explanation: "PlanNode 有 description, start_time, end_time, location, priority, is_interruptible, source；没有 energy_cost（能量在 act() 中直接减 2.0）。"
+    },
+    {
+      type: "multi",
+      question: "以下哪些属于涌现行为（emergence）的观察指标？",
+      options: ["社交关系演变", "计划变更次数", "代码行数", "反思生成数量", "位置访问分布", "编译时间"],
+      answer: [0, 1, 3, 4],
+      explanation: "评估指标包括社交关系演变、计划变更次数、反思生成数量、位置访问分布、涌现行为计数；代码行数和编译时间不是评估指标。"
+    },
+    {
+      type: "multi",
+      question: "以下哪些场景配置属于标准模拟的推荐参数？",
+      options: ["Agent 数量: 3", "时间步长: 30min", "记忆容量: 200", "反思阈值: 8", "Agent 数量: 5", "反思阈值: 3"],
+      answer: [0, 1, 2, 3],
+      explanation: "标准模拟参数：3 个 Agent、30min 步长、记忆容量 200、反思阈值 8。5 个 Agent/阈值 3 是密集社交/极简模式的参数。"
+    },
+
+    // ---------- 判断题 (6道) ----------
+    {
+      type: "tf",
+      question: "反思（Reflection）必须由 LLM 生成，基于规则的模板无法产生有效的反思。",
+      answer: false,
+      explanation: "错误。本实验使用基于规则的模板生成反思，且论文的核心洞察是：只要具备记忆存储、关系建模、规划重算三个机制，就能产生涌现行为，LLM 只是提升语言质量。"
+    },
+    {
+      type: "tf",
+      question: "如果所有计划的 is_interruptible 都设为 False，Agent 将变成'机器人'，不会产生社交适应。",
+      answer: true,
+      explanation: "正确。代码中不可中断计划会跳过交互，社交重新规划也无法触发。论文中的计划层级本质上是为可中断性提供粒度。"
+    },
+    {
+      type: "tf",
+      question: "记忆检索时，时效性（recency）的权重比重要性（importance）更高。",
+      answer: false,
+      explanation: "错误。检索公式中相关性权重 0.5，重要性 0.3，时效性 0.2。时效性权重最低，不是最高。"
+    },
+    {
+      type: "tf",
+      question: "Agent 之间的关系分数可以无限增长，没有上限。",
+      answer: false,
+      explanation: "错误。代码中通过 max(-10, min(10, score)) 将关系分数严格限制在 [-10, 10] 区间。"
+    },
+    {
+      type: "tf",
+      question: "当反思数量等于 0 时，应该检查 REFLECTION_THRESHOLD 是否太高，或模拟时间是否太短。",
+      answer: true,
+      explanation: "正确。这是初学者调试清单中的明确建议：反思不生成时，检查阈值是否过高或时间是否不足。"
+    },
+    {
+      type: "tf",
+      question: "在 _generate_reflection 中，深度反思（depth > 1）会在同一主题只有 1 条反思时触发。",
+      answer: false,
+      explanation: "错误。深度反思需要 len(self.reflections[keyword]) >= 2 且 related[0].depth < MAX_REFLECTION_DEPTH，即至少已有 2 条反思才会触发更高层级。"
     }
-];
-    // TRUEFALSE_QUESTIONS_PLACEHOLDER_END
+  ];
 
-    // ===== STATE =====
-    let currentType = 'drag';
-    let currentIndex = 0;
-    let userAnswers = {};
-    let checkedState = {};
+  // ===================== 状态 =====================
+  var state = {
+    current: 0,
+    answers: [], // 每道题的用户答案
+    checked: [], // 每道题是否已检查
+    score: 0,
+    shuffled: false
+  };
 
-    // ===== HELPERS =====
-    function makeKey(type, index) {
-      return type + ':' + index;
+  function initState() {
+    state.answers = allQuestions.map(function() { return null; });
+    state.checked = allQuestions.map(function() { return false; });
+    state.score = 0;
+    state.current = 0;
+  }
+
+  // ===================== 渲染 =====================
+  function renderQuestion(index) {
+    var q = allQuestions[index];
+    var html = '<div class="card" id="qcard">';
+    html += '<div class="meta">' + typeLabel(q.type) + ' · 第 ' + (index + 1) + ' 题</div>';
+    html += '<h2>' + escapeHtml(q.question) + '</h2>';
+
+    if (q.type === "dragfill") {
+      html += renderDragFill(q, index);
+    } else if (q.type === "single") {
+      html += renderSingle(q, index);
+    } else if (q.type === "multi") {
+      html += renderMulti(q, index);
+    } else if (q.type === "tf") {
+      html += renderTF(q, index);
     }
 
-    function getQuestions(type) {
-      if (type === 'drag') return dragQuestions;
-      if (type === 'single') return singleQuestions;
-      if (type === 'multi') return multiQuestions;
-      return trueFalseQuestions;
-    }
+    html += '<div class="explain" id="explain_' + index + '">' + escapeHtml(q.explanation) + '</div>';
+    html += '</div>';
+    document.getElementById("quizArea").innerHTML = html;
+    updateProgress();
+    updateNav();
+    if (state.checked[index]) { showExplain(index); }
+  }
 
-    function getBadgeId(type) {
-      if (type === 'drag') return 'badgeDrag';
-      if (type === 'single') return 'badgeSingle';
-      if (type === 'multi') return 'badgeMulti';
-      return 'badgeTrueFalse';
-    }
+  function typeLabel(t) {
+    var map = { dragfill: "拖拽填空", single: "单选题", multi: "多选题", tf: "判断题" };
+    return map[t] || t;
+  }
 
-    function countQuestions(type) {
-      return getQuestions(type).length;
-    }
+  function escapeHtml(s) {
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
 
-    function allTypes() {
-      return ['drag', 'single', 'multi', 'truefalse'];
-    }
-
-    // ===== RENDER =====
-    function initBadges() {
-      allTypes().forEach(function(t) {
-        document.getElementById(getBadgeId(t)).textContent = countQuestions(t);
-      });
-    }
-
-    function updateScore() {
-      let total = 0, scored = 0;
-      allTypes().forEach(function(type) {
-        const list = getQuestions(type);
-        for (let i = 0; i < list.length; i++) {
-          const q = list[i];
-          const key = makeKey(type, i);
-          if (checkedState[key]) {
-            total += getQuestionPoints(q, type);
-            scored += getUserPoints(q, type, i);
-          }
+  // ---------- 拖拽填空 ----------
+  function renderDragFill(q, idx) {
+    var user = state.answers[idx] || [];
+    var parts = q.question.split(/__(\d+)__/g);
+    var filled = 0;
+    var html = '<div style="line-height:2.2;font-size:1.05rem;">';
+    for (var i = 0; i < parts.length; i++) {
+      if (/^\d+$/.test(parts[i])) {
+        var bidx = parseInt(parts[i], 10) - 1;
+        var val = user[bidx] || "";
+        var cls = "drop-zone";
+        if (state.checked[idx]) {
+          cls += val === q.blanks[bidx] ? " correct-zone" : " wrong-zone";
+        } else if (val) {
+          cls += " filled";
         }
-      });
-      document.getElementById('scoreDisplay').textContent = '得分: ' + scored + ' / ' + total;
-    }
-
-    function getQuestionPoints(q, type) {
-      if (type === 'drag') return q.answers.length;
-      if (type === 'multi') return q.correct.length;
-      return 1;
-    }
-
-    function getUserPoints(q, type, idx) {
-      const key = makeKey(type, idx);
-      const ans = userAnswers[key];
-      if (!ans) return 0;
-      if (type === 'drag') {
-        let pts = 0;
-        for (let i = 0; i < q.answers.length; i++) {
-          if (ans[i] === q.answers[i]) pts++;
-        }
-        return pts;
-      }
-      if (type === 'single') {
-        return ans === q.correct ? 1 : 0;
-      }
-      if (type === 'multi') {
-        let pts = 0;
-        const correctSet = {};
-        for (let i = 0; i < q.correct.length; i++) correctSet[q.correct[i]] = true;
-        const userSet = {};
-        for (let i = 0; i < ans.length; i++) userSet[ans[i]] = true;
-        for (let k in correctSet) {
-          if (userSet[k]) pts++;
-        }
-        return pts;
-      }
-      return ans === q.correct ? 1 : 0;
-    }
-
-    function updateProgress() {
-      const total = countQuestions(currentType);
-      const text = total > 0 ? (currentIndex + 1) + ' / ' + total : '0 / 0';
-      document.getElementById('progressText').textContent = text;
-      const pct = total > 0 ? ((currentIndex + 1) / total * 100) : 0;
-      document.getElementById('progressFill').style.width = pct + '%';
-    }
-
-    function renderQuestion() {
-      const area = document.getElementById('questionArea');
-      const expl = document.getElementById('explanationArea');
-      area.innerHTML = '';
-      expl.innerHTML = '';
-      expl.style.display = 'none';
-      updateProgress();
-
-      const questions = getQuestions(currentType);
-      if (questions.length === 0) {
-        area.innerHTML = '<p style="text-align:center;color:var(--text-muted)">该题型暂无题目</p>';
-        return;
-      }
-      const q = questions[currentIndex];
-      const key = makeKey(currentType, currentIndex);
-
-      const qtext = document.createElement('div');
-      qtext.className = 'question-text';
-
-      if (currentType === 'drag') {
-        let html = q.question;
-        for (let i = 0; i < q.answers.length; i++) {
-          const filled = userAnswers[key] && userAnswers[key][i] ? userAnswers[key][i] : '';
-          let cls = 'blank';
-          if (checkedState[key]) {
-            if (filled === q.answers[i]) cls += ' correct';
-            else cls += ' wrong';
-          } else if (filled) {
-            cls += ' filled';
-          }
-          html = html.replace('{\/' + i + '}', '<span class="' + cls + '" data-blank="' + i + '">' + (filled || '____') + '</span>');
-          html = html.replace('{\*' + i + '}', '<span class="' + cls + '" data-blank="' + i + '">' + (filled || '____') + '</span>');
-          html = html.replace('{' + i + '}', '<span class="' + cls + '" data-blank="' + i + '">' + (filled || '____') + '</span>');
-        }
-        qtext.innerHTML = html;
-        area.appendChild(qtext);
-
-        const pool = document.createElement('div');
-        pool.className = 'draggables';
-        const used = userAnswers[key] || [];
-        for (let i = 0; i < q.options.length; i++) {
-          const opt = q.options[i];
-          const isUsed = used.indexOf(opt) !== -1;
-          const chip = document.createElement('div');
-          chip.className = 'draggable' + (isUsed ? ' used' : '');
-          chip.draggable = !isUsed;
-          chip.textContent = opt;
-          chip.dataset.value = opt;
-          if (!isUsed) setupDrag(chip);
-          pool.appendChild(chip);
-        }
-        area.appendChild(pool);
-
-        if (checkedState[key]) {
-          const box = document.createElement('div');
-          box.className = 'explanation show correct-ex';
-          let exHtml = '<strong>解析：</strong><ul style="margin:8px 0 0 18px">';
-          for (let i = 0; i < q.explanations.length; i++) {
-            const isOk = userAnswers[key] && userAnswers[key][i] === q.answers[i];
-            exHtml += '<li><span style="color:' + (isOk ? 'var(--correct)' : 'var(--wrong)') + '">' + (isOk ? '✅' : '❌') + '</span> 空' + (i+1) + '：' + q.explanations[i] + '</li>';
-          }
-          exHtml += '</ul>';
-          box.innerHTML = exHtml;
-          expl.appendChild(box);
-          expl.style.display = 'block';
-        }
-      } else if (currentType === 'single') {
-        qtext.textContent = q.question;
-        area.appendChild(qtext);
-        const list = document.createElement('div');
-        list.className = 'options-list';
-        for (let i = 0; i < q.options.length; i++) {
-          const opt = document.createElement('label');
-          opt.className = 'option';
-          const isSel = userAnswers[key] === i;
-          if (checkedState[key]) {
-            if (i === q.correct) opt.classList.add('correct-ans');
-            else if (isSel) opt.classList.add('wrong-ans');
-          }
-          const radio = document.createElement('input');
-          radio.type = 'radio';
-          radio.name = 'singleOpt';
-          radio.checked = isSel;
-          radio.disabled = !!checkedState[key];
-          radio.addEventListener('change', function() {
-            userAnswers[key] = i;
-          });
-          const span = document.createElement('span');
-          span.className = 'label';
-          span.textContent = q.options[i];
-          opt.appendChild(radio);
-          opt.appendChild(span);
-          if (checkedState[key]) {
-            const mark = document.createElement('span');
-            mark.className = 'mark';
-            mark.textContent = i === q.correct ? '✅' : (isSel ? '❌' : '');
-            opt.appendChild(mark);
-          }
-          list.appendChild(opt);
-        }
-        area.appendChild(list);
-        if (checkedState[key]) {
-          const box = document.createElement('div');
-          box.className = 'explanation show ' + (userAnswers[key] === q.correct ? 'correct-ex' : 'wrong-ex');
-          box.innerHTML = '<strong>解析：</strong><br>' + q.explanations[q.correct];
-          expl.appendChild(box);
-          expl.style.display = 'block';
-        }
-      } else if (currentType === 'multi') {
-        qtext.textContent = q.question;
-        area.appendChild(qtext);
-        const list = document.createElement('div');
-        list.className = 'options-list';
-        const selSet = {};
-        const ans = userAnswers[key] || [];
-        for (let i = 0; i < ans.length; i++) selSet[ans[i]] = true;
-        const correctSet = {};
-        for (let i = 0; i < q.correct.length; i++) correctSet[q.correct[i]] = true;
-        for (let i = 0; i < q.options.length; i++) {
-          const opt = document.createElement('label');
-          opt.className = 'option';
-          const isSel = !!selSet[i];
-          if (checkedState[key]) {
-            if (correctSet[i]) opt.classList.add('correct-ans');
-            else if (isSel) opt.classList.add('wrong-ans');
-          }
-          const cb = document.createElement('input');
-          cb.type = 'checkbox';
-          cb.checked = isSel;
-          cb.disabled = !!checkedState[key];
-          cb.addEventListener('change', function() {
-            const a = userAnswers[key] || [];
-            const pos = a.indexOf(i);
-            if (pos >= 0) a.splice(pos, 1);
-            else a.push(i);
-            userAnswers[key] = a;
-          });
-          const span = document.createElement('span');
-          span.className = 'label';
-          span.textContent = q.options[i];
-          opt.appendChild(cb);
-          opt.appendChild(span);
-          if (checkedState[key]) {
-            const mark = document.createElement('span');
-            mark.className = 'mark';
-            mark.textContent = correctSet[i] ? '✅' : (isSel ? '❌' : '');
-            opt.appendChild(mark);
-          }
-          list.appendChild(opt);
-        }
-        area.appendChild(list);
-        if (checkedState[key]) {
-          const box = document.createElement('div');
-          let ok = true;
-          for (let k in correctSet) { if (!selSet[k]) ok = false; }
-          for (let k in selSet) { if (!correctSet[k]) ok = false; }
-          box.className = 'explanation show ' + (ok ? 'correct-ex' : 'wrong-ex');
-          let exHtml = '<strong>解析：</strong><ul style="margin:8px 0 0 18px">';
-          for (let i = 0; i < q.options.length; i++) {
-            const isCorrect = !!correctSet[i];
-            const icon = isCorrect ? '✅' : (selSet[i] ? '❌' : '⬜');
-            exHtml += '<li>' + icon + ' ' + q.explanations[i] + '</li>';
-          }
-          exHtml += '</ul>';
-          box.innerHTML = exHtml;
-          expl.appendChild(box);
-          expl.style.display = 'block';
-        }
-      } else if (currentType === 'truefalse') {
-        qtext.textContent = q.question;
-        area.appendChild(qtext);
-        const list = document.createElement('div');
-        list.className = 'options-list';
-        const opts = [{val: true, label: '是 / True'}, {val: false, label: '否 / False'}];
-        for (let i = 0; i < opts.length; i++) {
-          const opt = document.createElement('label');
-          opt.className = 'option';
-          const v = opts[i].val;
-          const isSel = userAnswers[key] === v;
-          if (checkedState[key]) {
-            if (v === q.correct) opt.classList.add('correct-ans');
-            else if (isSel) opt.classList.add('wrong-ans');
-          }
-          const radio = document.createElement('input');
-          radio.type = 'radio';
-          radio.name = 'tfOpt';
-          radio.checked = isSel;
-          radio.disabled = !!checkedState[key];
-          radio.addEventListener('change', function() {
-            userAnswers[key] = v;
-          });
-          const span = document.createElement('span');
-          span.className = 'label';
-          span.textContent = opts[i].label;
-          opt.appendChild(radio);
-          opt.appendChild(span);
-          if (checkedState[key]) {
-            const mark = document.createElement('span');
-            mark.className = 'mark';
-            mark.textContent = v === q.correct ? '✅' : (isSel ? '❌' : '');
-            opt.appendChild(mark);
-          }
-          list.appendChild(opt);
-        }
-        area.appendChild(list);
-        if (checkedState[key]) {
-          const box = document.createElement('div');
-          const ok = userAnswers[key] === q.correct;
-          box.className = 'explanation show ' + (ok ? 'correct-ex' : 'wrong-ex');
-          box.innerHTML = '<strong>解析：</strong><br>' + (q.correct ? q.explanationTrue : q.explanationFalse);
-          expl.appendChild(box);
-          expl.style.display = 'block';
-        }
+        html += '<span class="' + cls + '" data-blank="' + bidx + '" ondrop="drop(event)" ondragover="allowDrop(event)" onclick="clearBlank(' + idx + ',' + bidx + ')">' + (val || "【填空" + (bidx + 1) + "】") + '</span>';
+        if (val) filled++;
+      } else {
+        html += escapeHtml(parts[i]);
       }
     }
-
-    // ===== DRAG & DROP =====
-    function setupDrag(el) {
-      el.addEventListener('dragstart', function(e) {
-        e.dataTransfer.setData('text/plain', el.dataset.value);
-        el.classList.add('dragging');
-      });
-      el.addEventListener('dragend', function() {
-        el.classList.remove('dragging');
-      });
-    }
-
-    document.addEventListener('dragover', function(e) {
-      const blank = e.target.closest && e.target.closest('[data-blank]');
-      if (blank) e.preventDefault();
-    });
-
-    document.addEventListener('drop', function(e) {
-      const blank = e.target.closest && e.target.closest('[data-blank]');
-      if (!blank) return;
-      e.preventDefault();
-      const value = e.dataTransfer.getData('text/plain');
-      if (!value) return;
-      const bidx = parseInt(blank.dataset.blank, 10);
-      const key = makeKey(currentType, currentIndex);
-      if (!userAnswers[key]) userAnswers[key] = [];
-      userAnswers[key][bidx] = value;
-      renderQuestion();
-    });
-
-    // Also support click-to-fill on mobile
-    document.addEventListener('click', function(e) {
-      const blank = e.target.closest && e.target.closest('[data-blank]');
-      if (!blank) return;
-      if (checkedState[makeKey(currentType, currentIndex)]) return;
-      const key = makeKey(currentType, currentIndex);
-      const ans = userAnswers[key] || [];
-      const bidx = parseInt(blank.dataset.blank, 10);
-      if (ans[bidx]) {
-        delete ans[bidx];
-        renderQuestion();
-        return;
-      }
-      // Find first unused draggable
-      const chips = document.querySelectorAll('.draggable:not(.used)');
-      if (chips.length > 0) {
-        const val = chips[0].dataset.value;
-        if (!userAnswers[key]) userAnswers[key] = [];
-        userAnswers[key][bidx] = val;
-        renderQuestion();
+    html += '</div>';
+    html += '<div class="drag-pool" id="pool_' + idx + '">';
+    var used = user || [];
+    q.pool.forEach(function(item) {
+      if (used.indexOf(item) === -1) {
+        html += '<span class="drag-item" draggable="true" ondragstart="drag(event)" data-val="' + escapeHtml(item) + '">' + escapeHtml(item) + '</span>';
       }
     });
+    html += '</div>';
+    return html;
+  }
 
-    // ===== CONTROLS =====
-    function switchTab(type) {
-      currentType = type;
-      currentIndex = 0;
-      document.querySelectorAll('.tab').forEach(function(t) {
-        t.classList.toggle('active', t.dataset.type === type);
-      });
-      renderQuestion();
+  window.drag = function(ev) {
+    ev.dataTransfer.setData("text/plain", ev.target.getAttribute("data-val"));
+    ev.target.classList.add("dragging");
+  };
+  window.allowDrop = function(ev) { ev.preventDefault(); };
+  window.drop = function(ev) {
+    ev.preventDefault();
+    var val = ev.dataTransfer.getData("text/plain");
+    if (!val) return;
+    var blankIdx = parseInt(ev.target.getAttribute("data-blank"), 10);
+    setBlank(state.current, blankIdx, val);
+  };
+  function setBlank(qidx, bidx, val) {
+    var arr = state.answers[qidx] ? state.answers[qidx].slice() : [];
+    arr[bidx] = val;
+    state.answers[qidx] = arr;
+    renderQuestion(qidx);
+  }
+  window.clearBlank = function(qidx, bidx) {
+    if (state.checked[qidx]) return;
+    var arr = state.answers[qidx] ? state.answers[qidx].slice() : [];
+    arr[bidx] = "";
+    state.answers[qidx] = arr;
+    renderQuestion(qidx);
+  };
+
+  // ---------- 单选题 ----------
+  function renderSingle(q, idx) {
+    var user = state.answers[idx];
+    var html = '<div class="options">';
+    q.options.forEach(function(opt, i) {
+      var cls = "option";
+      if (state.checked[idx]) {
+        cls += " disabled";
+        if (i === q.answer) cls += " correct";
+        else if (i === user) cls += " wrong";
+      } else if (i === user) {
+        cls += " selected";
+      }
+      html += '<label class="' + cls + '" onclick="selectSingle(' + idx + ',' + i + ')">';
+      html += '<input type="radio" name="single_' + idx + '" ' + (i === user ? 'checked' : '') + '>';
+      html += '<span>' + String.fromCharCode(65 + i) + '. ' + escapeHtml(opt) + '</span>';
+      html += '</label>';
+    });
+    html += '</div>';
+    return html;
+  }
+  window.selectSingle = function(idx, val) {
+    if (state.checked[idx]) return;
+    state.answers[idx] = val;
+    renderQuestion(idx);
+  };
+
+  // ---------- 多选题 ----------
+  function renderMulti(q, idx) {
+    var user = state.answers[idx] || [];
+    var html = '<div class="options">';
+    q.options.forEach(function(opt, i) {
+      var cls = "option";
+      var checked = user.indexOf(i) !== -1;
+      if (state.checked[idx]) {
+        cls += " disabled";
+        var isCorrect = q.answer.indexOf(i) !== -1;
+        if (isCorrect) cls += " correct";
+        else if (checked) cls += " wrong";
+      } else if (checked) {
+        cls += " selected";
+      }
+      html += '<label class="' + cls + '" onclick="toggleMulti(' + idx + ',' + i + ')">';
+      html += '<input type="checkbox" ' + (checked ? 'checked' : '') + '>';
+      html += '<span>' + String.fromCharCode(65 + i) + '. ' + escapeHtml(opt) + '</span>';
+      html += '</label>';
+    });
+    html += '</div>';
+    return html;
+  }
+  window.toggleMulti = function(idx, val) {
+    if (state.checked[idx]) return;
+    var arr = state.answers[idx] ? state.answers[idx].slice() : [];
+    var pos = arr.indexOf(val);
+    if (pos === -1) arr.push(val);
+    else arr.splice(pos, 1);
+    state.answers[idx] = arr;
+    renderQuestion(idx);
+  };
+
+  // ---------- 判断题 ----------
+  function renderTF(q, idx) {
+    var user = state.answers[idx];
+    var html = '<div class="tf-wrap">';
+    var opts = [{v: true, l: "是 / True"}, {v: false, l: "否 / False"}];
+    opts.forEach(function(o) {
+      var cls = "tf-btn";
+      if (state.checked[idx]) {
+        cls += " disabled";
+        if (o.v === q.answer) cls += " correct";
+        else if (o.v === user) cls += " wrong";
+      } else if (o.v === user) {
+        cls += " selected";
+      }
+      html += '<div class="' + cls + '" onclick="selectTF(' + idx + ',' + o.v + ')">' + escapeHtml(o.l) + '</div>';
+    });
+    html += '</div>';
+    return html;
+  }
+  window.selectTF = function(idx, val) {
+    if (state.checked[idx]) return;
+    state.answers[idx] = val;
+    renderQuestion(idx);
+  };
+
+  // ===================== 检查/重置 =====================
+  window.checkCurrent = function() {
+    var idx = state.current;
+    var q = allQuestions[idx];
+    var ans = state.answers[idx];
+    var correct = false;
+
+    if (q.type === "dragfill") {
+      if (!ans || ans.length < q.blanks.length) { alert("请先完成所有填空"); return; }
+      correct = true;
+      for (var i = 0; i < q.blanks.length; i++) {
+        if (ans[i] !== q.blanks[i]) { correct = false; break; }
+      }
+    } else if (q.type === "single") {
+      if (ans === null || ans === undefined) { alert("请先选择一个答案"); return; }
+      correct = (ans === q.answer);
+    } else if (q.type === "multi") {
+      if (!ans || ans.length === 0) { alert("请至少选择一个选项"); return; }
+      var sortedUser = ans.slice().sort(function(a,b){return a-b;});
+      var sortedAns = q.answer.slice().sort(function(a,b){return a-b;});
+      correct = JSON.stringify(sortedUser) === JSON.stringify(sortedAns);
+    } else if (q.type === "tf") {
+      if (ans === null || ans === undefined) { alert("请先选择是或否"); return; }
+      correct = (ans === q.answer);
     }
 
-    document.querySelectorAll('.tab').forEach(function(tab) {
-      tab.addEventListener('click', function() {
-        switchTab(tab.dataset.type);
-      });
-    });
+    state.checked[idx] = true;
+    recalcScore();
+    renderQuestion(idx);
+    showExplain(idx);
+    updateThumbs();
+  };
 
-    document.getElementById('btnPrev').addEventListener('click', function() {
-      if (currentIndex > 0) { currentIndex--; renderQuestion(); }
-    });
+  function showExplain(idx) {
+    var el = document.getElementById("explain_" + idx);
+    if (el) el.classList.add("show");
+  }
 
-    document.getElementById('btnNext').addEventListener('click', function() {
-      if (currentIndex + 1 < countQuestions(currentType)) { currentIndex++; renderQuestion(); }
-    });
-
-    document.getElementById('btnCheck').addEventListener('click', function() {
-      const key = makeKey(currentType, currentIndex);
-      if (countQuestions(currentType) === 0) return;
-      checkedState[key] = true;
-      updateScore();
-      renderQuestion();
-    });
-
-    document.getElementById('btnResetCurrent').addEventListener('click', function() {
-      const key = makeKey(currentType, currentIndex);
-      delete userAnswers[key];
-      delete checkedState[key];
-      updateScore();
-      renderQuestion();
-    });
-
-    document.getElementById('btnResetAll').addEventListener('click', function() {
-      if (!confirm('确定要重置所有答题记录吗？')) return;
-      userAnswers = {};
-      checkedState = {};
-      updateScore();
-      renderQuestion();
-    });
-
-    // ===== SHUFFLE =====
-    function shuffleArray(arr) {
-      for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        const tmp = arr[i];
-        arr[i] = arr[j];
-        arr[j] = tmp;
+  function recalcScore() {
+    var total = 0;
+    for (var i = 0; i < allQuestions.length; i++) {
+      if (!state.checked[i]) continue;
+      var q = allQuestions[i];
+      var ans = state.answers[i];
+      var pts = 0;
+      if (q.type === "dragfill") {
+        var ok = true;
+        for (var j = 0; j < q.blanks.length; j++) { if (ans[j] !== q.blanks[j]) { ok = false; break; } }
+        pts = ok ? 1 : 0;
+      } else if (q.type === "single" || q.type === "tf") {
+        pts = (ans === q.answer) ? 1 : 0;
+      } else if (q.type === "multi") {
+        var su = (ans || []).slice().sort(function(a,b){return a-b;});
+        var sa = q.answer.slice().sort(function(a,b){return a-b;});
+        pts = (JSON.stringify(su) === JSON.stringify(sa)) ? 1 : 0;
       }
+      total += pts;
     }
+    state.score = total;
+    document.getElementById("scoreVal").textContent = total + " / " + allQuestions.length;
+  }
 
-    function buildIndexMap(oldLen, shuffledIndices) {
-      const map = {};
-      for (let newPos = 0; newPos < oldLen; newPos++) {
-        map[shuffledIndices[newPos]] = newPos;
-      }
-      return map;
-    }
+  window.resetCurrent = function() {
+    var idx = state.current;
+    state.answers[idx] = null;
+    state.checked[idx] = false;
+    renderQuestion(idx);
+    recalcScore();
+    updateThumbs();
+  };
 
-    document.getElementById('btnShuffle').addEventListener('click', function() {
-      if (!confirm('随机化会清空所有答题记录，确定继续？')) return;
-      userAnswers = {};
-      checkedState = {};
+  window.resetAll = function() {
+    if (!confirm("确定要清空所有答题记录吗？")) return;
+    initState();
+    document.getElementById("overviewPanel").classList.remove("show");
+    document.getElementById("resultScreen").classList.remove("show");
+    renderQuestion(0);
+    recalcScore();
+    updateThumbs();
+  };
 
-      // Single
-      for (let qi = 0; qi < singleQuestions.length; qi++) {
-        const q = singleQuestions[qi];
-        const order = [];
-        for (let i = 0; i < q.options.length; i++) order.push(i);
-        shuffleArray(order);
-        const newOpts = [];
-        for (let i = 0; i < order.length; i++) newOpts.push(q.options[order[i]]);
-        const newExps = [];
-        for (let i = 0; i < order.length; i++) newExps.push(q.explanations[order[i]]);
-        const idxMap = buildIndexMap(q.options.length, order);
-        q.correct = idxMap[q.correct];
-        q.options = newOpts;
-        q.explanations = newExps;
-      }
+  // ===================== 导航 =====================
+  function updateProgress() {
+    document.getElementById("currentQ").textContent = state.current + 1;
+    document.getElementById("totalQ").textContent = allQuestions.length;
+    var pct = ((state.current + 1) / allQuestions.length) * 100;
+    document.getElementById("progressBar").style.width = pct + "%";
+  }
+  function updateNav() {
+    document.getElementById("btnPrev").disabled = state.current === 0;
+    document.getElementById("btnNext").disabled = state.current === allQuestions.length - 1;
+  }
+  window.prevQuestion = function() {
+    if (state.current > 0) { state.current--; renderQuestion(state.current); }
+  };
+  window.nextQuestion = function() {
+    if (state.current < allQuestions.length - 1) { state.current++; renderQuestion(state.current); }
+  };
+  window.showQuestion = function(idx) {
+    document.getElementById("overviewPanel").classList.remove("show");
+    document.getElementById("resultScreen").classList.remove("show");
+    state.current = idx;
+    renderQuestion(idx);
+  };
 
-      // Multi
-      for (let qi = 0; qi < multiQuestions.length; qi++) {
-        const q = multiQuestions[qi];
-        const order = [];
-        for (let i = 0; i < q.options.length; i++) order.push(i);
-        shuffleArray(order);
-        const newOpts = [];
-        for (let i = 0; i < order.length; i++) newOpts.push(q.options[order[i]]);
-        const newExps = [];
-        for (let i = 0; i < order.length; i++) newExps.push(q.explanations[order[i]]);
-        const idxMap = buildIndexMap(q.options.length, order);
-        const newCorrect = [];
-        for (let i = 0; i < q.correct.length; i++) newCorrect.push(idxMap[q.correct[i]]);
-        q.correct = newCorrect;
-        q.options = newOpts;
-        q.explanations = newExps;
-      }
-
-      updateScore();
-      renderQuestion();
-    });
-
-    // ===== OVERVIEW =====
-    function openOverview() {
-      const grid = document.getElementById('overviewGrid');
-      grid.innerHTML = '';
-      const questions = getQuestions(currentType);
-      for (let i = 0; i < questions.length; i++) {
-        const cell = document.createElement('div');
-        const key = makeKey(currentType, i);
-        let cls = 'grid-item';
-        if (checkedState[key]) {
-          const pts = getUserPoints(questions[i], currentType, i);
-          const maxPts = getQuestionPoints(questions[i], currentType);
-          cls += pts === maxPts ? ' correct' : ' wrong';
-        } else {
-          cls += ' empty';
+  // ===================== 总览面板 =====================
+  window.toggleOverview = function() {
+    var panel = document.getElementById("overviewPanel");
+    panel.classList.toggle("show");
+    if (panel.classList.contains("show")) updateThumbs();
+  };
+  function updateThumbs() {
+    var grid = document.getElementById("thumbGrid");
+    var html = "";
+    for (var i = 0; i < allQuestions.length; i++) {
+      var cls = "thumb";
+      if (state.checked[i]) {
+        var q = allQuestions[i];
+        var ans = state.answers[i];
+        var ok = false;
+        if (q.type === "dragfill") {
+          ok = true;
+          for (var j = 0; j < q.blanks.length; j++) { if (ans[j] !== q.blanks[j]) { ok = false; break; } }
+        } else if (q.type === "single" || q.type === "tf") {
+          ok = (ans === q.answer);
+        } else if (q.type === "multi") {
+          var su = (ans || []).slice().sort(function(a,b){return a-b;});
+          var sa = q.answer.slice().sort(function(a,b){return a-b;});
+          ok = JSON.stringify(su) === JSON.stringify(sa);
         }
-        cell.className = cls;
-        cell.textContent = i + 1;
-        cell.addEventListener('click', function() {
-          currentIndex = i;
-          document.getElementById('overviewOverlay').classList.remove('show');
-          renderQuestion();
+        cls += ok ? " correct" : " wrong";
+      } else {
+        cls += " unchecked";
+      }
+      html += '<div class="' + cls + '" onclick="showQuestion(' + i + ')">' + (i + 1) + '</div>';
+    }
+    grid.innerHTML = html;
+  }
+  window.filterThumbs = function(filter) {
+    var btns = document.querySelectorAll(".filter-btn");
+    btns.forEach(function(b) { b.classList.remove("active"); });
+    event.target.classList.add("active");
+    var thumbs = document.querySelectorAll(".thumb");
+    thumbs.forEach(function(t) {
+      t.style.display = "flex";
+      if (filter === "correct" && !t.classList.contains("correct")) t.style.display = "none";
+      if (filter === "wrong" && !t.classList.contains("wrong")) t.style.display = "none";
+      if (filter === "unchecked" && !t.classList.contains("unchecked")) t.style.display = "none";
+    });
+  };
+
+  // ===================== 洗牌 =====================
+  function shuffleArray(arr) {
+    var a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+    }
+    return a;
+  }
+  window.shuffleAll = function() {
+    allQuestions.forEach(function(q) {
+      if (q.type === "single" || q.type === "multi") {
+        var oldAns = q.answer;
+        var isMulti = Array.isArray(oldAns);
+        var mapping = {};
+        var newOptions = [];
+        var indices = q.options.map(function(_, i){ return i; });
+        var shuffledIndices = shuffleArray(indices);
+        shuffledIndices.forEach(function(oldIdx, newIdx) {
+          mapping[oldIdx] = newIdx;
+          newOptions[newIdx] = q.options[oldIdx];
         });
-        grid.appendChild(cell);
-      }
-      document.getElementById('overviewOverlay').classList.add('show');
-    }
-
-    document.getElementById('btnOverview').addEventListener('click', openOverview);
-    document.getElementById('btnCloseOverview').addEventListener('click', function() {
-      document.getElementById('overviewOverlay').classList.remove('show');
-    });
-    document.getElementById('overviewOverlay').addEventListener('click', function(e) {
-      if (e.target === document.getElementById('overviewOverlay')) {
-        document.getElementById('overviewOverlay').classList.remove('show');
+        q.options = newOptions;
+        if (isMulti) {
+          q.answer = oldAns.map(function(oldIdx){ return mapping[oldIdx]; });
+        } else {
+          q.answer = mapping[oldAns];
+        }
       }
     });
+    state.shuffled = true;
+    renderQuestion(state.current);
+    alert("选项已重新洗牌！");
+  };
 
-    // ===== KEYBOARD NAV =====
-    document.addEventListener('keydown', function(e) {
-      if (e.key === 'ArrowLeft') document.getElementById('btnPrev').click();
-      if (e.key === 'ArrowRight') document.getElementById('btnNext').click();
-    });
+  // ===================== 结果 =====================
+  function showResult() {
+    document.getElementById("quizArea").innerHTML = "";
+    document.getElementById("overviewPanel").classList.remove("show");
+    document.getElementById("resultScreen").classList.add("show");
+    document.getElementById("finalScore").textContent = state.score + " / " + allQuestions.length;
+    var pct = Math.round((state.score / allQuestions.length) * 100);
+    var msg = "";
+    if (pct >= 90) msg = "🎉 太棒了！你对 Generative Agents 的机制理解非常透彻！";
+    else if (pct >= 70) msg = "👍 不错！大部分核心概念已经掌握，再巩固一下细节。";
+    else if (pct >= 50) msg = "💪 基本了解框架，建议重点复习记忆检索公式和反思触发条件。";
+    else msg = "📚 建议重新阅读实验文档，特别关注三层架构和评估指标之间的关系。";
+    document.getElementById("finalMsg").textContent = msg + "（正确率 " + pct + "%）";
+  }
 
-    // ===== INIT =====
-    initBadges();
-    updateScore();
-    renderQuestion();
-  </script>
+  // 检查是否全部完成
+  function checkAllDone() {
+    var allDone = state.checked.every(function(v){ return v; });
+    if (allDone) showResult();
+  }
+  // 覆盖 checkCurrent 后追加检查
+  var originalCheck = window.checkCurrent;
+  window.checkCurrent = function() {
+    originalCheck();
+    checkAllDone();
+  };
+
+  // ===================== 初始化 =====================
+  initState();
+  document.getElementById("totalQ").textContent = allQuestions.length;
+  renderQuestion(0);
+  recalcScore();
+  updateThumbs();
+})();
+</script>
 </body>
 </html>

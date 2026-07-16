@@ -1,0 +1,1721 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Speculative Decoding 的蒙特卡洛框架分析 — 互动知识卡牌</title>
+<style>
+/* ===== CSS Variables ===== */
+:root {
+  --bg-primary: #1a1a2e;
+  --bg-secondary: #16213e;
+  --bg-card: #0f3460;
+  --bg-card-hover: #1a4a7a;
+  --text-primary: #e0e0e0;
+  --text-secondary: #a0a0b0;
+  --accent: #e94560;
+  --accent-light: #ff6b81;
+  --success: #2ecc71;
+  --success-bg: rgba(46, 204, 113, 0.15);
+  --error: #e74c3c;
+  --error-bg: rgba(231, 76, 60, 0.15);
+  --warning: #f39c12;
+  --border: #2a3b5c;
+  --shadow: rgba(0,0,0,0.3);
+  --font-main: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-mono: 'Consolas', 'Monaco', 'Courier New', monospace;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-main);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  line-height: 1.6;
+}
+
+/* ===== Header ===== */
+header {
+  background: var(--bg-secondary);
+  padding: 1rem 1.5rem;
+  border-bottom: 2px solid var(--accent);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+header h1 {
+  font-size: 1.1rem;
+  color: var(--accent-light);
+}
+
+header .controls {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.btn {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  padding: 0.45rem 0.9rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+  font-family: var(--font-main);
+}
+
+.btn:hover { background: var(--bg-card-hover); border-color: var(--accent); }
+.btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent-light); }
+.btn-success { background: var(--success); border-color: var(--success); color: #fff; }
+.btn-success:hover { opacity: 0.85; }
+.btn-warning { background: var(--warning); border-color: var(--warning); color: #1a1a2e; }
+.btn-warning:hover { opacity: 0.85; }
+
+/* ===== Progress Bar ===== */
+.progress-bar {
+  background: var(--bg-secondary);
+  padding: 0.6rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+}
+
+.progress-track {
+  flex: 1;
+  height: 8px;
+  background: var(--bg-card);
+  border-radius: 4px;
+  margin: 0 1rem;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+  width: 0%;
+}
+
+.progress-text { font-size: 0.85rem; color: var(--text-secondary); white-space: nowrap; }
+.score-bar { font-size: 0.9rem; color: var(--success); font-weight: bold; white-space: nowrap; }
+
+/* ===== Main Container ===== */
+.container { max-width: 900px; margin: 0 auto; padding: 1.5rem; }
+
+/* ===== Question Card ===== */
+.question-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  display: none;
+  animation: fadeIn 0.3s ease;
+}
+
+.question-card.active { display: block; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.question-type-badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  margin-bottom: 0.8rem;
+  font-weight: bold;
+}
+
+.badge-drag { background: #9b59b6; color: #fff; }
+.badge-single { background: #3498db; color: #fff; }
+.badge-multi { background: #e67e22; color: #fff; }
+.badge-tf { background: #1abc9c; color: #fff; }
+
+.question-title {
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+  color: var(--text-primary);
+  line-height: 1.7;
+}
+
+/* ===== Drag & Drop ===== */
+.drag-container { display: flex; flex-wrap: wrap; gap: 0.8rem; margin-bottom: 1rem; }
+
+.drag-item {
+  background: var(--bg-card);
+  border: 2px dashed var(--border);
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  cursor: grab;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+.drag-item:hover { border-color: var(--accent); background: var(--bg-card-hover); }
+.drag-item.dragging { opacity: 0.5; cursor: grabbing; }
+.drag-item.used { opacity: 0.4; pointer-events: none; border-style: solid; }
+
+.drop-zone {
+  display: inline-block;
+  min-width: 100px;
+  height: 36px;
+  line-height: 32px;
+  border: 2px dashed var(--border);
+  border-radius: 6px;
+  background: var(--bg-primary);
+  text-align: center;
+  vertical-align: middle;
+  margin: 0 0.3rem;
+  transition: all 0.2s;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.drop-zone.drag-over { border-color: var(--accent); background: rgba(233,69,96,0.1); }
+.drop-zone.filled { border-style: solid; border-color: var(--accent); color: var(--accent-light); font-weight: bold; }
+.drop-zone.correct { border-color: var(--success); background: var(--success-bg); color: var(--success); }
+.drop-zone.wrong { border-color: var(--error); background: var(--error-bg); color: var(--error); }
+
+/* ===== Options ===== */
+.options-list { display: flex; flex-direction: column; gap: 0.6rem; }
+
+.option-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.8rem 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.option-item:hover { background: var(--bg-card-hover); border-color: var(--accent); }
+
+.option-item.selected { border-color: var(--accent); background: rgba(233,69,96,0.1); }
+.option-item.correct-ans { border-color: var(--success); background: var(--success-bg); }
+.option-item.wrong-ans { border-color: var(--error); background: var(--error-bg); }
+.option-item.disabled { pointer-events: none; opacity: 0.7; }
+
+.option-marker {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.75rem; font-weight: bold; flex-shrink: 0;
+}
+
+.option-item.selected .option-marker { border-color: var(--accent); background: var(--accent); color: #fff; }
+.option-item.correct-ans .option-marker { border-color: var(--success); background: var(--success); color: #fff; }
+.option-item.wrong-ans .option-marker { border-color: var(--error); background: var(--error); color: #fff; }
+
+/* ===== TF Buttons ===== */
+.tf-buttons { display: flex; gap: 1rem; margin-top: 0.5rem; }
+
+.tf-btn {
+  flex: 1;
+  padding: 0.8rem;
+  border-radius: 8px;
+  border: 2px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: var(--font-main);
+}
+
+.tf-btn:hover { border-color: var(--accent); }
+.tf-btn.selected { border-color: var(--accent); background: rgba(233,69,96,0.1); }
+.tf-btn.correct-ans { border-color: var(--success); background: var(--success-bg); }
+.tf-btn.wrong-ans { border-color: var(--error); background: var(--error-bg); }
+.tf-btn.disabled { pointer-events: none; opacity: 0.7; }
+
+/* ===== Explanation ===== */
+.explanation {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 8px;
+  display: none;
+  font-size: 0.9rem;
+  line-height: 1.7;
+}
+
+.explanation.show { display: block; }
+.explanation.correct { background: var(--success-bg); border-left: 4px solid var(--success); }
+.explanation.wrong { background: var(--error-bg); border-left: 4px solid var(--error); }
+
+.detail-link { margin-top: 0.6rem; }
+.detail-link a { color: var(--accent-light); font-size: 0.85rem; text-decoration: none; }
+.detail-link a:hover { text-decoration: underline; }
+
+/* ===== Navigation ===== */
+.nav-buttons {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1.5rem;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* ===== Dashboard Overlay ===== */
+.dashboard-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(10,10,20,0.95);
+  z-index: 200;
+  display: none;
+  overflow-y: auto;
+  padding: 1.5rem;
+}
+
+.dashboard-overlay.open { display: block; }
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.dashboard-header h2 { color: var(--accent-light); }
+
+.dashboard-stats {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.stat-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.8rem 1.2rem;
+  min-width: 120px;
+  text-align: center;
+}
+
+.stat-card .stat-value { font-size: 1.5rem; font-weight: bold; color: var(--accent-light); }
+
+.filter-buttons { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.dashboard-card {
+  background: var(--bg-secondary);
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  padding: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.dashboard-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+.dashboard-card.correct { border-color: var(--success); }
+.dashboard-card.wrong { border-color: var(--error); }
+.dashboard-card.unanswered { border-color: var(--border); opacity: 0.7; }
+
+.dashboard-card .card-type { font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.3rem; }
+.dashboard-card .card-title { font-size: 0.85rem; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* ===== Result Page ===== */
+.result-page {
+  display: none;
+  text-align: center;
+  padding: 3rem 1.5rem;
+  animation: fadeIn 0.5s ease;
+}
+
+.result-page.show { display: block; }
+
+.result-score {
+  font-size: 4rem;
+  font-weight: bold;
+  color: var(--accent-light);
+  margin: 1rem 0;
+}
+
+.result-message { font-size: 1.2rem; color: var(--text-secondary); margin-bottom: 2rem; }
+
+.result-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+  max-width: 600px;
+  margin: 0 auto 2rem;
+}
+
+/* ===== Hidden ===== */
+.hidden { display: none !important; }
+
+/* ===== Responsive ===== */
+@media (max-width: 600px) {
+  header h1 { font-size: 0.95rem; }
+  .question-title { font-size: 1rem; }
+  .dashboard-grid { grid-template-columns: 1fr; }
+  .result-score { font-size: 3rem; }
+  .nav-buttons { flex-direction: column; }
+  .nav-buttons .btn { width: 100%; }
+}
+
+@media (max-width: 400px) {
+  .container { padding: 1rem; }
+  .question-card { padding: 1rem; }
+  .progress-bar { flex-direction: column; gap: 0.5rem; align-items: flex-start; }
+  .progress-track { width: 100%; margin: 0; }
+}
+</style>
+</head>
+<body>
+
+<!-- ===== Header ===== -->
+<header>
+  <h1>⚡ Speculative Decoding 蒙特卡洛框架 — 互动知识卡牌</h1>
+  <div class="controls">
+    <button class="btn" onclick="openDashboard()">📊 题目总览</button>
+    <button class="btn" onclick="shuffleAllAnswers()">🎲 重新洗牌选项</button>
+    <button class="btn btn-warning" onclick="resetAll()">🔄 重置所有分数</button>
+  </div>
+</header>
+
+<!-- ===== Progress Bar ===== -->
+<div class="progress-bar" id="progressBar">
+  <span class="progress-text" id="progressText">第 1 / 28 题</span>
+  <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+  <span class="score-bar" id="scoreBar">得分: 0 / 28</span>
+</div>
+
+<!-- ===== Main Container ===== -->
+<div class="container" id="mainContainer">
+
+  <!-- ===== Drag Questions ===== -->
+  <div class="question-card active" data-type="drag" data-index="0">
+    <span class="question-type-badge badge-drag">拖拽填空</span>
+    <div class="question-title">
+      单 token 接受率：β = E<sub>x~q</sub>[min(1, p/q)] = Σ<sub>x</sub> min(p,q) = 1 − <span class="drop-zone" data-index="0"></span>，该量又称为 <span class="drop-zone" data-index="1"></span> distance（= ½‖p−q‖<sub>1</sub>）。
+    </div>
+    <div class="drag-container" id="dragPool0"></div>
+    <div class="explanation" id="exp0"></div>
+    <div class="nav-buttons">
+      <button class="btn" onclick="prevQuestion()">⬅️ 上一题</button>
+      <button class="btn btn-primary" onclick="checkDrag(0)">检查答案</button>
+      <button class="btn" onclick="resetQuestion(0)">重置</button>
+      <button class="btn" onclick="nextQuestion()">下一题 ➡️</button>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="drag" data-index="1">
+    <span class="question-type-badge badge-drag">拖拽填空</span>
+    <div class="question-title">
+      无偏性证明的两个关键量：逐点恒等式 min(p,q) + <span class="drop-zone" data-index="0"></span> = p 精确成立；拒绝概率 P(拒绝) = Σ<sub>x</sub>(q−p)<sub>+</sub> = <span class="drop-zone" data-index="1"></span>。
+    </div>
+    <div class="drag-container" id="dragPool1"></div>
+    <div class="explanation" id="exp1"></div>
+    <div class="nav-buttons">
+      <button class="btn" onclick="prevQuestion()">⬅️ 上一题</button>
+      <button class="btn btn-primary" onclick="checkDrag(1)">检查答案</button>
+      <button class="btn" onclick="resetQuestion(1)">重置</button>
+      <button class="btn" onclick="nextQuestion()">下一题 ➡️</button>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="drag" data-index="2">
+    <span class="question-type-badge badge-drag">拖拽填空</span>
+    <div class="question-title">
+      i.i.d. 假设下的单轮期望 token 数：E[N] = Σ<sub>k=0</sub><sup>γ</sup> α<sup>k</sup> = <span class="drop-zone" data-index="0"></span>；γ→∞ 时 E[N] → <span class="drop-zone" data-index="1"></span>。
+    </div>
+    <div class="drag-container" id="dragPool2"></div>
+    <div class="explanation" id="exp2"></div>
+    <div class="nav-buttons">
+      <button class="btn" onclick="prevQuestion()">⬅️ 上一题</button>
+      <button class="btn btn-primary" onclick="checkDrag(2)">检查答案</button>
+      <button class="btn" onclick="resetQuestion(2)">重置</button>
+      <button class="btn" onclick="nextQuestion()">下一题 ➡️</button>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="drag" data-index="3">
+    <span class="question-type-badge badge-drag">拖拽填空</span>
+    <div class="question-title">
+      期望 wall-clock 加速比 = (1−α<sup>γ+1</sup>) / [(1−α)·<span class="drop-zone" data-index="0"></span>]；Corollary 3.9：只要 <span class="drop-zone" data-index="1"></span> 就存在使加速 &gt; 1 的 γ。
+    </div>
+    <div class="drag-container" id="dragPool3"></div>
+    <div class="explanation" id="exp3"></div>
+    <div class="nav-buttons">
+      <button class="btn" onclick="prevQuestion()">⬅️ 上一题</button>
+      <button class="btn btn-primary" onclick="checkDrag(3)">检查答案</button>
+      <button class="btn" onclick="resetQuestion(3)">重置</button>
+      <button class="btn" onclick="nextQuestion()">下一题 ➡️</button>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="drag" data-index="4">
+    <span class="question-type-badge badge-drag">拖拽填空</span>
+    <div class="question-title">
+      单轮流程：draft 自回归采样 γ 个猜测 → target <span class="drop-zone" data-index="0"></span> 算出 γ+1 个分布 → 逐位以 min(1, p/q) 决定接受 → 首个拒绝位置从 <span class="drop-zone" data-index="1"></span> 采样兜底 token。
+    </div>
+    <div class="drag-container" id="dragPool4"></div>
+    <div class="explanation" id="exp4"></div>
+    <div class="nav-buttons">
+      <button class="btn" onclick="prevQuestion()">⬅️ 上一题</button>
+      <button class="btn btn-primary" onclick="checkDrag(4)">检查答案</button>
+      <button class="btn" onclick="resetQuestion(4)">重置</button>
+      <button class="btn" onclick="nextQuestion()">下一题 ➡️</button>
+    </div>
+  </div>
+
+  <!-- ===== Single Choice Questions ===== -->
+  <div class="question-card" data-type="single" data-index="0">
+    <span class="question-type-badge badge-single">单选题</span>
+    <div class="question-title">speculative sampling 中，draft token x<sub>i</sub> 的接受概率 A(x<sub>i</sub>) 是？</div>
+    <div class="options-list" id="single0"></div>
+    <div class="explanation" id="expSingle0"></div>
+    <div class="nav-buttons">
+      <button class="btn" onclick="prevQuestion()">⬅️ 上一题</button>
+      <button class="btn btn-primary" onclick="checkSingle(0)">检查答案</button>
+      <button class="btn" onclick="resetQuestion(5)">重置</button>
+      <button class="btn" onclick="nextQuestion()">下一题 ➡️</button>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="single" data-index="1">
+    <span class="question-type-badge badge-single">单选题</span>
+    <div class="question-title">由 β = Σ<sub>x</sub> min(p,q) 与恒等式 min(a,b) = (a+b−|a−b|)/2 化简，可得 β = ?</div>
+    <div class="options-list" id="single1"></div>
+    <div class="explanation" id="expSingle1"></div>
+    <div class="nav-buttons">
+      <button class="btn" onclick="prevQuestion()">⬅️ 上一题</button>
+      <button class="btn btn-primary" onclick="checkSingle(1)">检查答案</button>
+      <button class="btn" onclick="resetQuestion(6)">重置</button>
+      <button class="btn" onclick="nextQuestion()">下一题 ➡️</button>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="single" data-index="2">
+    <span class="question-type-badge badge-single">单选题</span>
+    <div class="question-title">无偏性证明中，「拒绝后残差重采」分支对 P(X=x) 的贡献等于？</div>
+    <div class="options-list" id="single2"></div>
+    <div class="explanation" id="expSingle2"></div>
+    <div class="nav-buttons">
+      <button class="btn" onclick="prevQuestion()">⬅️ 上一题</button>
+      <button class="btn btn-primary" onclick="checkSingle(2)">检查答案</button>
+      <button class="btn" onclick="resetQuestion(7)">重置</button>
+      <button class="btn" onclick="nextQuestion()">下一题 ➡️</button>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="single" data-index="3">
+    <span class="question-type-badge badge-single">单选题</span>
+    <div class="question-title">单 token 的拒绝概率 P(拒绝) 等于？</div>
+    <div class="options-list" id="single3"></div>
+    <div class="explanation" id="expSingle3"></div>
+    <div class="nav-buttons">
+      <button class="btn" onclick="prevQuestion()">⬅️ 上一题</button>
+      <button class="btn btn-primary" onclick="checkSingle(3)">检查答案</button>
+      <button class="btn" onclick="resetQuestion(8)">重置</button>
+      <button class="btn" onclick="nextQuestion()">下一题 ➡️</button>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="single" data-index="4">
+    <span class="question-type-badge badge-single">单选题</span>
+    <div class="question-title">i.i.d. 接受率 α、草稿长度 γ 时，单轮期望 token 数 E[N] = ?</div>
+    <div class="options-list" id="single4"></div>
+    <div class="explanation" id="expSingle4"></div>
+    <div class="nav-buttons">
+      <button class="btn" onclick="prevQuestion()">⬅️ 上一题</button>
+      <button class="btn btn-primary" onclick="checkSingle(4)">检查答案</button>
+      <button class="btn" onclick="resetQuestion(9)">重置</button>
+      <button class="btn" onclick="nextQuestion()">下一题 ➡️</button>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="single" data-index="5">
+    <span class="question-type-badge badge-single">单选题</span>
+    <div class="question-title">例题（Leviathan Table 2，EnDe，T5-small，argmax）：γ=7、α=0.75、实测加速 3.4X。由 S = E[N]/(γc+1) 反解，c ≈ ?</div>
+    <div class="options-list" id="single5"></div>
+    <div class="explanation" id="expSingle5"></div>
+    <div class="nav-buttons">
+      <button class="btn" onclick="prevQuestion()">⬅️ 上一题</button>
+      <button class="btn btn-primary" onclick="checkSingle(5)">检查答案</button>
+      <button class="btn" onclick="resetQuestion(10)">重置</button>
+      <button class="btn" onclick="nextQuestion()">下一题 ➡️</button>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="single" data-index="6">
+    <span class="question-type-badge badge-single">单选题</span>
+    <div class="question-title">Corollary 3.9：存在使期望加速比 &gt; 1 的 γ，其条件是？</div>
+    <div class="options-list" id="single6"></div>
+    <div class="explanation" id="expSingle6"></div>
+    <div class="nav-buttons">
+      <button class="btn" onclick="prevQuestion()">⬅️ 上一题</button>
+      <button class="btn btn-primary" onclick="checkSingle(6)">检查答案</button>
+      <button class="btn" onclick="resetQuestion(11)">重置</button>
+      <button class="btn" onclick="nextQuestion()">下一题 ➡️</button>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="single" data-index="7">
+    <span class="question-type-badge badge-single">单选题</span>
+    <div class="question-title">maximal coupling 视角下，β = 1 − D<sub>TV</sub> 的理论地位是？</div>
+    <div class="options-list" id="single7"></div>
+    <div class="explanation" id="expSingle7"></div>
+    <div class="nav-buttons">
+      <button class="btn" onclick="prevQuestion()">⬅️ 上一题</button>
+      <button class="btn btn-primary" onclick="checkSingle(7)">检查答案</button>
+      <button class="btn" onclick="resetQuestion(12)">重置</button>
+      <button class="btn" onclick="nextQuestion()">下一题 ➡️</button>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="single" data-index="8">
+    <span class="question-type-badge badge-single">单选题</span>
+    <div class="question-title">下列变体中，训练成本为 0 且 c ≈ 0 的是？</div>
+    <div class="options-list" id="single8"></div>
+    <div class="explanation" id="expSingle8"></div>
+    <div class="nav-buttons">
+      <button class="btn" onclick="prevQuestion()">⬅️ 上一题</button>
+      <button class="btn btn-primary" onclick="checkSingle(8)">检查答案</button>
+      <button class="btn" onclick="resetQuestion(13)">重置</button>
+      <button class="btn" onclick="nextQuestion()">下一题 ➡️</button>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="single" data-index="9">
+    <span class="question-type-badge badge-single">单选题</span>
+    <div class="question-title">vLLM 生产实测（Llama3-70B，4×H100）：高 QPS 下 draft model 与 n-gram 的表现分别是？</div>
+    <div class="options-list" id="single9"></div>
+    <div class="explanation" id="expSingle9"></div>
+    <div class="nav-buttons">
+      <button class="btn" onclick="prevQuestion()">⬅️ 上一题</button>
+      <button class="btn btn-primary" onclick="checkSingle(9)">检查答案</button>
+      <button class="btn" onclick="resetQuestion(14)">重置</button>
+      <button class="btn" onclick="nextQuestion()">下一题 ➡️</button>
+    </div>
+  </div>
+
+  <!-- ===== Multi Choice Questions ===== -->
+  <div class="question-card" data-type="multi" data-index="0">
+    <span class="question-type-badge badge-multi">多选题</span>
+    <div class="question-title">speculative sampling 与经典 rejection sampling 的本质差异包括？（多选）</div>
+    <div class="options-list" id="multi0"></div>
+    <div class="explanation" id="expMulti0"></div>
+    <div class="nav-buttons">
+      <button class="btn" onclick="prevQuestion()">⬅️ 上一题</button>
+      <button class="btn btn-primary" onclick="checkMulti(0)">检查答案</button>
+      <button class="btn" onclick="resetQuestion(15)">重置</button>
+      <button class="btn" onclick="nextQuestion()">下一题 ➡️</button>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="multi" data-index="1">
+    <span class="question-type-badge badge-multi">多选题</span>
+    <div class="question-title">高 QPS 下 speculative decoding 减速 / 失效的原因包括？（多选）</div>
+    <div class="options-list" id="multi1"></div>
+    <div class="explanation" id="expMulti1"></div>
+    <div class="nav-buttons">
+      <button class="btn" onclick="prevQuestion()">⬅️ 上一题</button>
+      <button class="btn btn-primary" onclick="checkMulti(1)">检查答案</button>
+      <button class="btn" onclick="resetQuestion(16)">重置</button>
+      <button class="btn" onclick="nextQuestion()">下一题 ➡️</button>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="multi" data-index="2">
+    <span class="question-type-badge badge-multi">多选题</span>
+    <div class="question-title">关于各变体的机制与训练成本，正确的有？（多选）</div>
+    <div class="options-list" id="multi2"></div>
+    <div class="explanation" id="expMulti2"></div>
+    <div class="nav-buttons">
+      <button class="btn" onclick="prevQuestion()">⬅️ 上一题</button>
+      <button class="btn btn-primary" onclick="checkMulti(2)">检查答案</button>
+      <button class="btn" onclick="resetQuestion(17)">重置</button>
+      <button class="btn" onclick="nextQuestion()">下一题 ➡️</button>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="multi" data-index="3">
+    <span class="question-type-badge badge-multi">多选题</span>
+    <div class="question-title">与经典 Monte Carlo 家族的同构对照，下列说法正确的有？（多选）</div>
+    <div class="options-list" id="multi3"></div>
+    <div class="explanation" id="expMulti3"></div>
+    <div class="nav-buttons">
+      <button class="btn" onclick="prevQuestion()">⬅️ 上一题</button>
+      <button class="btn btn-primary" onclick="checkMulti(3)">检查答案</button>
+      <button class="btn" onclick="resetQuestion(18)">重置</button>
+      <button class="btn" onclick="nextQuestion()">下一题 ➡️</button>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="multi" data-index="4">
+    <span class="question-type-badge badge-multi">多选题</span>
+    <div class="question-title">关于期望加速比公式 (1−α<sup>γ+1</sup>) / [(1−α)(γc+1)]，下列说法正确的有？（多选）</div>
+    <div class="options-list" id="multi4"></div>
+    <div class="explanation" id="expMulti4"></div>
+    <div class="nav-buttons">
+      <button class="btn" onclick="prevQuestion()">⬅️ 上一题</button>
+      <button class="btn btn-primary" onclick="checkMulti(4)">检查答案</button>
+      <button class="btn" onclick="resetQuestion(19)">重置</button>
+      <button class="btn" onclick="nextQuestion()">下一题 ➡️</button>
+    </div>
+  </div>
+
+  <!-- ===== True/False Questions ===== -->
+  <div class="question-card" data-type="tf" data-index="0">
+    <span class="question-type-badge badge-tf">判断题</span>
+    <div class="question-title">speculative decoding 改变了 target 模型的输出分布，本质上是一种近似采样方法。</div>
+    <div class="tf-buttons" id="tf0">
+      <button class="tf-btn" data-value="true" onclick="selectTF(0, true)">✅ 是</button>
+      <button class="tf-btn" data-value="false" onclick="selectTF(0, false)">❌ 否</button>
+    </div>
+    <div class="explanation" id="expTF0"></div>
+    <div class="nav-buttons">
+      <button class="btn" onclick="prevQuestion()">⬅️ 上一题</button>
+      <button class="btn btn-primary" onclick="checkTF(0)">检查答案</button>
+      <button class="btn" onclick="resetQuestion(20)">重置</button>
+      <button class="btn" onclick="nextQuestion()">下一题 ➡️</button>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="tf" data-index="1">
+    <span class="question-type-badge badge-tf">判断题</span>
+    <div class="question-title">接受率 α 越高，wall-clock 加速就一定越大。</div>
+    <div class="tf-buttons" id="tf1">
+      <button class="tf-btn" data-value="true" onclick="selectTF(1, true)">✅ 是</button>
+      <button class="tf-btn" data-value="false" onclick="selectTF(1, false)">❌ 否</button>
+    </div>
+    <div class="explanation" id="expTF1"></div>
+    <div class="nav-buttons">
+      <button class="btn" onclick="prevQuestion()">⬅️ 上一题</button>
+      <button class="btn btn-primary" onclick="checkTF(1)">检查答案</button>
+      <button class="btn" onclick="resetQuestion(21)">重置</button>
+      <button class="btn" onclick="nextQuestion()">下一题 ➡️</button>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="tf" data-index="2">
+    <span class="question-type-badge badge-tf">判断题</span>
+    <div class="question-title">经典 rejection sampling 要求 supp(q) ⊇ supp(p)，speculative sampling 也同样要求 draft 分布的支撑覆盖 target 分布。</div>
+    <div class="tf-buttons" id="tf2">
+      <button class="tf-btn" data-value="true" onclick="selectTF(2, true)">✅ 是</button>
+      <button class="tf-btn" data-value="false" onclick="selectTF(2, false)">❌ 否</button>
+    </div>
+    <div class="explanation" id="expTF2"></div>
+    <div class="nav-buttons">
+      <button class="btn" onclick="prevQuestion()">⬅️ 上一题</button>
+      <button class="btn btn-primary" onclick="checkTF(2)">检查答案</button>
+      <button class="btn" onclick="resetQuestion(22)">重置</button>
+      <button class="btn" onclick="nextQuestion()">下一题 ➡️</button>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="tf" data-index="3">
+    <span class="question-type-badge badge-tf">判断题</span>
+    <div class="question-title">vLLM 生产实测表明，高 QPS 下 speculative decoding 仍然稳定加速。</div>
+    <div class="tf-buttons" id="tf3">
+      <button class="tf-btn" data-value="true" onclick="selectTF(3, true)">✅ 是</button>
+      <button class="tf-btn" data-value="false" onclick="selectTF(3, false)">❌ 否</button>
+    </div>
+    <div class="explanation" id="expTF3"></div>
+    <div class="nav-buttons">
+      <button class="btn" onclick="prevQuestion()">⬅️ 上一题</button>
+      <button class="btn btn-primary" onclick="checkTF(3)">检查答案</button>
+      <button class="btn" onclick="resetQuestion(23)">重置</button>
+      <button class="btn" onclick="nextQuestion()">下一题 ➡️</button>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="tf" data-index="4">
+    <span class="question-type-badge badge-tf">判断题</span>
+    <div class="question-title">Medusa 是严格无损（lossless）的 speculative 加速方法。</div>
+    <div class="tf-buttons" id="tf4">
+      <button class="tf-btn" data-value="true" onclick="selectTF(4, true)">✅ 是</button>
+      <button class="tf-btn" data-value="false" onclick="selectTF(4, false)">❌ 否</button>
+    </div>
+    <div class="explanation" id="expTF4"></div>
+    <div class="nav-buttons">
+      <button class="btn" onclick="prevQuestion()">⬅️ 上一题</button>
+      <button class="btn btn-primary" onclick="checkTF(4)">检查答案</button>
+      <button class="btn" onclick="resetQuestion(24)">重置</button>
+      <button class="btn" onclick="nextQuestion()">下一题 ➡️</button>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="tf" data-index="5">
+    <span class="question-type-badge badge-tf">判断题</span>
+    <div class="question-title">speculative sampling 的无偏性证明依赖连续变量的 Jacobian 换元（change-of-variables）。</div>
+    <div class="tf-buttons" id="tf5">
+      <button class="tf-btn" data-value="true" onclick="selectTF(5, true)">✅ 是</button>
+      <button class="tf-btn" data-value="false" onclick="selectTF(5, false)">❌ 否</button>
+    </div>
+    <div class="explanation" id="expTF5"></div>
+    <div class="nav-buttons">
+      <button class="btn" onclick="prevQuestion()">⬅️ 上一题</button>
+      <button class="btn btn-primary" onclick="checkTF(5)">检查答案</button>
+      <button class="btn" onclick="resetQuestion(25)">重置</button>
+      <button class="btn" onclick="nextQuestion()">下一题 ➡️</button>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="tf" data-index="6">
+    <span class="question-type-badge badge-tf">判断题</span>
+    <div class="question-title">speculative sampling 每轮至少产出 1 个 token，因此串行调用 target 模型的次数不多于标准自回归解码。</div>
+    <div class="tf-buttons" id="tf6">
+      <button class="tf-btn" data-value="true" onclick="selectTF(6, true)">✅ 是</button>
+      <button class="tf-btn" data-value="false" onclick="selectTF(6, false)">❌ 否</button>
+    </div>
+    <div class="explanation" id="expTF6"></div>
+    <div class="nav-buttons">
+      <button class="btn" onclick="prevQuestion()">⬅️ 上一题</button>
+      <button class="btn btn-primary" onclick="checkTF(6)">检查答案</button>
+      <button class="btn" onclick="resetQuestion(26)">重置</button>
+      <button class="btn" onclick="nextQuestion()">下一题 ➡️</button>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="tf" data-index="7">
+    <span class="question-type-badge badge-tf">判断题</span>
+    <div class="question-title">i.i.d. 假设下，γ→∞ 时 E[N] → 1/(1−α)；oracle-γ（每步预知最优 γ）下 E[N] = 1/(1−α)。</div>
+    <div class="tf-buttons" id="tf7">
+      <button class="tf-btn" data-value="true" onclick="selectTF(7, true)">✅ 是</button>
+      <button class="tf-btn" data-value="false" onclick="selectTF(7, false)">❌ 否</button>
+    </div>
+    <div class="explanation" id="expTF7"></div>
+    <div class="nav-buttons">
+      <button class="btn" onclick="prevQuestion()">⬅️ 上一题</button>
+      <button class="btn btn-primary" onclick="checkTF(7)">检查答案</button>
+      <button class="btn" onclick="resetQuestion(27)">重置</button>
+      <button class="btn" onclick="nextQuestion()">下一题 ➡️</button>
+    </div>
+  </div>
+
+</div><!-- end container -->
+
+<!-- ===== Dashboard Overlay ===== -->
+<div class="dashboard-overlay" id="dashboardOverlay">
+  <div class="dashboard-header">
+    <h2>📊 题目总览</h2>
+    <button class="btn btn-primary" onclick="closeDashboard()">关闭</button>
+  </div>
+  <div class="dashboard-stats">
+    <div class="stat-card"><div class="stat-value" id="statTotal">28</div><div>总题数</div></div>
+    <div class="stat-card"><div class="stat-value" id="statCorrect">0</div><div style="color:var(--success)">正确</div></div>
+    <div class="stat-card"><div class="stat-value" id="statWrong">0</div><div style="color:var(--error)">错误</div></div>
+    <div class="stat-card"><div class="stat-value" id="statUnanswered">28</div><div style="color:var(--text-secondary)">未答</div></div>
+  </div>
+  <div class="filter-buttons">
+    <button class="btn btn-primary" onclick="filterDashboard('all')">全部</button>
+    <button class="btn btn-success" onclick="filterDashboard('correct')">正确</button>
+    <button class="btn" style="background:var(--error);color:#fff;border-color:var(--error)" onclick="filterDashboard('wrong')">错误</button>
+    <button class="btn" onclick="filterDashboard('unanswered')">未答</button>
+  </div>
+  <div class="dashboard-grid" id="dashboardGrid"></div>
+</div>
+
+<!-- ===== Result Page ===== -->
+<div class="result-page" id="resultPage">
+  <h2>🎉 答题完成！</h2>
+  <div class="result-score" id="finalScore">0</div>
+  <div class="result-message" id="resultMessage">继续加油！</div>
+  <div class="result-details">
+    <div class="stat-card"><div class="stat-value" id="resCorrect">0</div><div style="color:var(--success)">正确</div></div>
+    <div class="stat-card"><div class="stat-value" id="resWrong">0</div><div style="color:var(--error)">错误</div></div>
+    <div class="stat-card"><div class="stat-value" id="resUnanswered">0</div><div style="color:var(--text-secondary)">未答</div></div>
+    <div class="stat-card"><div class="stat-value" id="resAccuracy">0%</div><div>正确率</div></div>
+  </div>
+  <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin-top:2rem;">
+    <button class="btn btn-primary" onclick="openDashboard()">📊 返回查看</button>
+    <button class="btn btn-success" onclick="continueQuiz()">📝 继续做题</button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// 题目数据
+// ============================================================
+
+const dragQuestions = [
+  {
+    answers: ["D_TV(p,q)", "total variation"],
+    pool: ["D_TV(p,q)", "total variation", "KL(p‖q)", "Wasserstein", "χ² 散度", "Hellinger"],
+    explanations: [
+      "✅ 正确：β = Σ<sub>x</sub> min(p,q) = 1 − ½‖p−q‖<sub>1</sub> = 1 − <strong>D_TV(p,q)</strong>（Leviathan Theorem 3.5 + Lemma 3.3）。",
+      "✅ 正确：D_TV 即 <strong>total variation</strong> 距离。Leviathan 原文记作 D_LK（Definition 3.2），数值上恰等于 D_TV；=0 ⟺ p=q，=1 ⟺ 支撑集不交。"
+    ],
+    detailLink: "Speculative-Decoding-蒙特卡洛框架分析.md#二、接受率闭式：$\\beta = 1 - D_{\\mathrm{TV}}(p,q)$ 与 maximal coupling 上界"
+  },
+  {
+    answers: ["(p−q)₊", "D_TV(p,q)"],
+    pool: ["(p−q)₊", "D_TV(p,q)", "(q−p)₊", "1/2", "KL(p‖q)", "2·D_TV(p,q)"],
+    explanations: [
+      "✅ 正确：逐点恒等式 min(p,q) + <strong>(p−q)₊</strong> = p——a≥b 时左式 = b+(a−b) = a；a&lt;b 时左式 = a+0 = a。这是整个无偏性证明的唯一引擎。",
+      "✅ 正确：P(拒绝) = 1 − Σmin(p,q) = Σ(q−p)₊ = <strong>D_TV(p,q)</strong>（由 Σ(p−q)=0 知 Σ(p−q)₊ = Σ(q−p)₊），两分支权重由 D_TV 自动配平。"
+    ],
+    detailLink: "Speculative-Decoding-蒙特卡洛框架分析.md#三、无偏性证明：离散测度分解，而非 Jacobian 换元"
+  },
+  {
+    answers: ["(1−α^(γ+1))/(1−α)", "1/(1−α)"],
+    pool: ["(1−α^(γ+1))/(1−α)", "1/(1−α)", "(1−α^γ)/(1−α)", "α/(1−α)", "(γ+1)·α", "1/(1+α)"],
+    explanations: [
+      "✅ 正确：E[N] = Σ<sub>k=0</sub><sup>γ</sup> P(N&gt;k) = Σ<sub>k=0</sub><sup>γ</sup> α<sup>k</sup> = <strong>(1−α^(γ+1))/(1−α)</strong>——正整值随机变量的 survival function 求和公式。",
+      "✅ 正确：γ→∞ 时几何级数收敛到 <strong>1/(1−α)</strong>；N 是「成功率 1−α、截断于 γ+1」的 capped geometric 变量。"
+    ],
+    detailLink: "Speculative-Decoding-蒙特卡洛框架分析.md#四、期望产出与 wall-clock 加速比"
+  },
+  {
+    answers: ["(γc+1)", "α > c"],
+    pool: ["(γc+1)", "α > c", "(γ+c)", "c > α", "α·γ", "α = c"],
+    explanations: [
+      "✅ 正确：单轮成本 = T·<strong>(γc+1)</strong>（γ 次 draft 串行 + 1 次 target 并行验证），期望加速比 = E[N] / (γc+1)。",
+      "✅ 正确：Corollary 3.9——只要 <strong>α &gt; c</strong> 就存在使加速 &gt;1 的 γ；γ=1 时加速至少 (1+α)/(1+c)。"
+    ],
+    detailLink: "Speculative-Decoding-蒙特卡洛框架分析.md#四、期望产出与 wall-clock 加速比"
+  },
+  {
+    answers: ["一次并行前向", "残差分布 norm((p−q)₊)"],
+    pool: ["一次并行前向", "残差分布 norm((p−q)₊)", "γ 次串行前向", "均匀分布 U(V)", "包络分布 M·q", "提议分布 q 本身"],
+    explanations: [
+      "✅ 正确：target 对 γ+1 个位置<strong>一次并行前向</strong>——memory-bound 工况下这与算 1 个位置的延迟几乎相同，这是加速的物理基础。",
+      "✅ 正确：拒绝时从<strong>残差分布 norm((p−q)₊)</strong> 采样兜底 token，保证每轮至少产出 1 个且输出分布精确无偏。"
+    ],
+    detailLink: "Speculative-Decoding-蒙特卡洛框架分析.md#一、形式化：逐 token 的 modified rejection sampling"
+  }
+];
+
+const singleQuestions = [
+  {
+    question: "speculative sampling 中，draft token x<sub>i</sub> 的接受概率 A(x<sub>i</sub>) 是？",
+    options: ["min(1, q(x)/p(x))", "min(1, p(x)/q(x))", "p(x)/(M·q(x))（M 为包络常数）", "norm((p(x)−q(x))<sub>+</sub>)"],
+    correct: 1,
+    explanations: [
+      "❌ 错误：分子分母写反了——q/p 会让接受率随 proposal 概率增大而变大，方向错误。",
+      "✅ 正确：A(x) = min(1, p(x)/q(x))，逐位采 r<sub>i</sub> ~ U(0,1)，r<sub>i</sub> ≤ A(x<sub>i</sub>) 则接受。与 rejection sampling 接受核同形，但无包络常数。",
+      "❌ 错误：p/(Mq) 是经典 RS 的接受核；speculative sampling 没有包络常数 M，这是两者的本质差异之一。",
+      "❌ 错误：norm((p−q)<sub>+</sub>) 是拒绝后的残差兜底分布（分支二），不是接受概率。"
+    ],
+    detailLink: "Speculative-Decoding-蒙特卡洛框架分析.md#一、形式化：逐 token 的 modified rejection sampling"
+  },
+  {
+    question: "由 β = Σ<sub>x</sub> min(p,q) 与恒等式 min(a,b) = (a+b−|a−b|)/2 化简，可得 β = ?",
+    options: ["1 − KL(p‖q)", "1 − ‖p−q‖<sub>1</sub>", "1 − ½‖p−q‖<sub>1</sub>", "exp(−D<sub>TV</sub>(p,q))"],
+    correct: 2,
+    explanations: [
+      "❌ 错误：KL 散度不出现在该恒等式中——推导只用 min(a,b) = (a+b−|a−b|)/2 与 Σp = Σq = 1。",
+      "❌ 错误：系数错。½‖p−q‖<sub>1</sub> 才是 D_TV；少乘 ½ 会让 β 在分布不重叠时取到 −1 而非 0。",
+      "✅ 正确：β = ½Σ(p+q) − ½Σ|p−q| = 1 − ½‖p−q‖<sub>1</sub> = 1 − D<sub>TV</sub>(p,q)。",
+      "❌ 错误：指数形式与本推导无关，β 是线性闭式。"
+    ],
+    detailLink: "Speculative-Decoding-蒙特卡洛框架分析.md#二、接受率闭式：$\\beta = 1 - D_{\\mathrm{TV}}(p,q)$ 与 maximal coupling 上界"
+  },
+  {
+    question: "无偏性证明中，「拒绝后残差重采」分支对 P(X=x) 的贡献等于？",
+    options: ["min(p(x), q(x))", "q(x)·min(1, p(x)/q(x))", "½|p(x)−q(x)|", "(p(x)−q(x))<sub>+</sub>"],
+    correct: 3,
+    explanations: [
+      "❌ 错误：min(p,q) 是分支一（采到并接受）的贡献，不是残差分支。",
+      "❌ 错误：q·min(1, p/q) 逐点等于 min(p,q)，仍是分支一的展开形式。",
+      "❌ 错误：½|p−q| 只是 D_TV 的逐点形状，与残差分支的贡献无关。",
+      "✅ 正确：P(拒绝)·r(x) = Σ(q−p)₊ · (p−q)₊/Σ(p−q)₊ = (p(x)−q(x))<sub>+</sub>。与分支一合并：min(p,q) + (p−q)₊ = p，∎。"
+    ],
+    detailLink: "Speculative-Decoding-蒙特卡洛框架分析.md#三、无偏性证明：离散测度分解，而非 Jacobian 换元"
+  },
+  {
+    question: "单 token 的拒绝概率 P(拒绝) 等于？",
+    options: ["D<sub>TV</sub>(p,q)", "1 − D<sub>TV</sub>(p,q)", "½", "α<sup>γ+1</sup>"],
+    correct: 0,
+    explanations: [
+      "✅ 正确：P(拒绝) = 1 − Σ<sub>x</sub>min(p,q) = Σ<sub>x</sub>(q−p)<sub>+</sub> = D<sub>TV</sub>(p,q)——拒绝概率恰好等于 total variation 距离。",
+      "❌ 错误：1 − D_TV 是接受率 β，恰为拒绝概率的补。",
+      "❌ 错误：½ 无任何依据；P(拒绝) 由 p 与 q 的重叠度决定，取值范围 [0,1]。",
+      "❌ 错误：α<sup>γ+1</sup> 出现在 E[N] 公式的分子里，与单 token 拒绝概率无关。"
+    ],
+    detailLink: "Speculative-Decoding-蒙特卡洛框架分析.md#三、无偏性证明：离散测度分解，而非 Jacobian 换元"
+  },
+  {
+    question: "i.i.d. 接受率 α、草稿长度 γ 时，单轮期望 token 数 E[N] = ?",
+    options: ["(1−α<sup>γ</sup>)/(1−α)", "γ·α + 1", "(1−α<sup>γ+1</sup>)/(1−α)", "1/(1−α)，与 γ 无关"],
+    correct: 2,
+    explanations: [
+      "❌ 错误：指数应为 γ+1——P(N&gt;k) = α<sup>k</sup> 对 k = 0..γ 求和共 γ+1 项。",
+      "❌ 错误：E[N] 是几何级数部分和，不是 γ 的线性函数。",
+      "✅ 正确：E[N] = Σ<sub>k=0</sub><sup>γ</sup> P(N&gt;k) = Σ<sub>k=0</sub><sup>γ</sup> α<sup>k</sup> = (1−α<sup>γ+1</sup>)/(1−α)，即截断于 γ+1 的 capped geometric。",
+      "❌ 错误：1/(1−α) 只是 γ→∞ 的极限；有限 γ 时 E[N] 严格小于它。"
+    ],
+    detailLink: "Speculative-Decoding-蒙特卡洛框架分析.md#四、期望产出与 wall-clock 加速比"
+  },
+  {
+    question: "例题（Leviathan Table 2，EnDe，T5-small，argmax）：γ=7、α=0.75、实测加速 3.4X。由 S = E[N]/(γc+1) 反解，c ≈ ?",
+    options: ["0.84%", "5%", "12.8%", "25%"],
+    correct: 0,
+    explanations: [
+      "✅ 正确：E[N] = (1−0.75⁸)/0.25 ≈ 3.5996；3.5996/3.4 ≈ 1.0587 = 7c+1 ⇒ c ≈ 0.0084 ≈ 0.84%，与论文声明的「实验中 c &lt; 0.05」自洽。",
+      "❌ 错误：5% 是论文声明的 c 上界（c &lt; 0.05），不是本行数据的反解值。",
+      "❌ 错误：12.8% 是 Chen et al. 为 Chinchilla 70B 专门训练的 4B draft 的 c，张冠李戴。",
+      "❌ 错误：25% = 1−α，纯属干扰项。"
+    ],
+    detailLink: "Speculative-Decoding-蒙特卡洛框架分析.md#四、期望产出与 wall-clock 加速比"
+  },
+  {
+    question: "Corollary 3.9：存在使期望加速比 &gt; 1 的 γ，其条件是？",
+    options: ["γ ≥ 5", "c = 0", "α ≥ 0.9", "α > c"],
+    correct: 3,
+    explanations: [
+      "❌ 错误：γ 的下界不是条件本身——γ 是可调参数，没有固定的最小值门槛。",
+      "❌ 错误：c = 0 是理想极限（n-gram 路线近似达到），不是加速 &gt;1 的必要条件。",
+      "❌ 错误：α 不需要那么高——例如 α = 0.6、c = 0.1 时也存在可加速的 γ。",
+      "✅ 正确：只要 α &gt; c 就存在使加速 &gt;1 的 γ；γ=1 时加速至少 (1+α)/(1+c)。"
+    ],
+    detailLink: "Speculative-Decoding-蒙特卡洛框架分析.md#四、期望产出与 wall-clock 加速比"
+  },
+  {
+    question: "maximal coupling 视角下，β = 1 − D<sub>TV</sub> 的理论地位是？",
+    options: ["只是本算法的经验观察，可以被更聪明的接受规则突破", "任何「把 q 样本直接当作 p 样本接受」方案的概率上限", "仅当 supp(q) ⊇ supp(p) 时才成立", "等价于经典 RS 的接受率 1/M"],
+    correct: 1,
+    explanations: [
+      "❌ 错误：它是耦合不等式 P(X=Y) ≤ Σmin(p,q) 取到等号的结果，不可突破——宣称「改进接受规则本身」的工作都值得先怀疑。",
+      "✅ 正确：maximal coupling 构造达到等号；改进空间只剩让 q 更接近 p（EAGLE / MTP / 蒸馏）或压低 c（n-gram / 特征层小 draft）。",
+      "❌ 错误：speculative sampling 不要求支撑覆盖——q(x)=0 而 p(x)&gt;0 的位置由残差分支精确补上。",
+      "❌ 错误：经典 RS 给定 M 的接受率 1/M 一般远低于 1 − D_TV。"
+    ],
+    detailLink: "Speculative-Decoding-蒙特卡洛框架分析.md#二、接受率闭式：$\\beta = 1 - D_{\\mathrm{TV}}(p,q)$ 与 maximal coupling 上界"
+  },
+  {
+    question: "下列变体中，训练成本为 0 且 c ≈ 0 的是？",
+    options: ["EAGLE（0.24B–0.99B 可训练参数，4×A100 训 1–2 天）", "Medusa-2（联合微调 backbone 与 heads）", "n-gram / prompt lookup（查表 / 复制匹配 span）", "MTP（预训练中联合训练，不可事后插装）"],
+    correct: 2,
+    explanations: [
+      "❌ 错误：EAGLE 需要在 ShareGPT ~68k 对话上训练特征层 draft 模块，成本不低。",
+      "❌ 错误：Medusa-2 要联合微调；Medusa-1 也需训练额外的 decoding heads。",
+      "✅ 正确：n-gram 查表与 prompt lookup 复制输入/参考文档中的匹配 span，零训练、c≈0；收益完全取决于输入-输出重叠度（摘要、RAG、多轮对话强，开放生成弱）。",
+      "❌ 错误：MTP 把草稿能力内化进预训练目标，训练成本最高且与权重耦合，仅适用自研模型。"
+    ],
+    detailLink: "Speculative-Decoding-蒙特卡洛框架分析.md#六、变体对比：提高 $\\alpha$ × 压低 $c$ 的两条主线"
+  },
+  {
+    question: "vLLM 生产实测（Llama3-70B，4×H100）：高 QPS 下 draft model 与 n-gram 的表现分别是？",
+    options: ["1.4x 减速 / 1.8x 减速", "1.5x 加速 / 2.8x 加速", "2.8x 加速 / 1.5x 加速", "基本持平，无显著变化"],
+    correct: 0,
+    explanations: [
+      "✅ 正确：高 QPS 下 continuous batching 已把 GPU 打满（compute-bound），验证的额外 FLOPs 直接变延迟——draft model 1.4x 减速、n-gram 1.8x 减速。",
+      "❌ 错误：1.5x / 2.8x 加速是 QPS=1 的低负载结果，工况张冠李戴。",
+      "❌ 错误：两个数字颠倒且工况错误。",
+      "❌ 错误：高 QPS 下不是持平而是明确减速（另有 issue #10318 复现性争议，引用 vLLM 数据必须注明）。"
+    ],
+    detailLink: "Speculative-Decoding-蒙特卡洛框架分析.md#五、工程现实：低 QPS 加速 vs 高 QPS 减速"
+  }
+];
+
+const multiQuestions = [
+  {
+    question: "speculative sampling 与经典 rejection sampling 的本质差异包括？（多选）",
+    options: ["无需包络常数 M（不存在 Mq ≥ p 的约束）", "不要求 supp(q) ⊇ supp(p)：q(x)=0 而 p(x)>0 的位置由残差分支补上", "拒绝不废弃样本，而是从残差分布 norm((p−q)<sub>+</sub>) 重采样", "接受核为 p(x)/(M·q(x))", "每轮至少产出 1 个 token，串行调用 target 次数不多于标准自回归", "输出分布只是 p 的近似，需要渐近论证"],
+    correct: [0, 1, 2, 4],
+    explanations: [
+      "✅ 正确：没有包络常数，接受核就是 min(1, p/q) 本身。",
+      "✅ 正确：残差分支精确补上 proposal 未覆盖的区域——这是离散测度分解，不是「带包络的接受-废弃」。",
+      "✅ 正确：拒绝事件被用作切换到残差测度的随机信号，而非浪费。",
+      "❌ 错误：含 M 的接受核是经典 RS 的形式；speculative sampling 没有 M。",
+      "✅ 正确：拒绝时残差重采样兜底，每轮产出 1 到 γ+1 个 token。",
+      "❌ 错误：每轮精确 ~p，无渐近、无 burn-in，链式法则保证全序列精确。"
+    ],
+    detailLink: "Speculative-Decoding-蒙特卡洛框架分析.md#三、无偏性证明：离散测度分解，而非 Jacobian 换元"
+  },
+  {
+    question: "高 QPS 下 speculative decoding 减速 / 失效的原因包括？（多选）",
+    options: ["工况翻转：memory-bound → compute-bound，验证的额外 FLOPs 直接变延迟", "算力放大：Theorem 3.11 的放大因子在 α 中等时 &gt; 1，变成 throughput tax", "batch 内接受稀释：任一序列拒绝即全体停止，等效接受率降为 α<sup>b</sup>", "MoE 病理：draft token 集合激活更多 expert，验证耗时增加 2–3x", "接受率被钉死在 maximal coupling 上界 1 − D<sub>TV</sub>", "长 prompt + 大 batch：验证把每步 token 数从 b 放大到 b(γ+1)，超出硬件甜区"],
+    correct: [0, 1, 2, 3, 5],
+    explanations: [
+      "✅ 正确：低 batch 时并行验证几乎免费；高 QPS 下 GPU 已被打满（vLLM 博客；Nightjar 报告高负载最多退化 30.25%）。",
+      "✅ 正确：吞吐导向场景里总 FLOPs 就是成本，speculation 变成 throughput tax（Leviathan §3.4）。",
+      "✅ 正确：朴素实现下 α=0.8、b=5 时等效接受率降至 0.8⁵≈33%，期望前进仅 ~1.5 token（Amazon BASS）。",
+      "✅ 正确：MoE 上 speculation 可致最多 1.5x 减速（Cascade, MICRO 2025）。",
+      "❌ 错误：maximal coupling 上界是接受率的理论性质，决定的是改进方向，不是高 QPS 减速的工况原因。",
+      "✅ 正确：该工况下可比非投机解码慢 2 倍以上（Amazon, arXiv:2404.19124）。"
+    ],
+    detailLink: "Speculative-Decoding-蒙特卡洛框架分析.md#五、工程现实：低 QPS 加速 vs 高 QPS 减速"
+  },
+  {
+    question: "关于各变体的机制与训练成本，正确的有？（多选）",
+    options: ["MTP 模块可事后插装到任意开源模型上", "n-gram / prompt lookup 的训练成本为 0", "Medusa-1 冻结 backbone、只训练额外的 decoding heads", "Medusa 的 typical acceptance 在 T &gt; 0 时仍严格无损", "EAGLE 在 second-top-layer 特征上自回归，并用超前一步 token 消除特征不确定性", "EAGLE-2 引入 context-aware dynamic draft tree，用 draft 置信度扩展重排"],
+    correct: [1, 2, 4, 5],
+    explanations: [
+      "❌ 错误：MTP 与预训练耦合、不可事后插装，仅适用于自研模型（DeepSeek-V3 路线）。",
+      "✅ 正确：查表 / 复制 span，零训练零额外模型，c≈0。",
+      "✅ 正确：M1 冻结 backbone 只训 heads；M2 才是联合微调。",
+      "❌ 错误：T&gt;0 的 typical acceptance 不保证无损；EAGLE-3 据此只在 T=0 与 Medusa 比较。",
+      "✅ 正确：核心洞见「特征层自回归比 token 层容易」（one-layer draft 上准确率比 token 路线高约 30%）+ 超前一步 token。",
+      "✅ 正确：EAGLE-2 发现 draft 置信度是 well-calibrated 的接受率近似，据此做动态树，比 EAGLE 快 20–40%。"
+    ],
+    detailLink: "Speculative-Decoding-蒙特卡洛框架分析.md#六、变体对比：提高 $\\alpha$ × 压低 $c$ 的两条主线"
+  },
+  {
+    question: "与经典 Monte Carlo 家族的同构对照，下列说法正确的有？（多选）",
+    options: ["speculative sampling 依赖 detailed balance 与 burn-in 保证收敛", "IS 无接受/拒绝，给样本赋权 w = p/q", "MH 拒绝 = 驻留当前状态，产生相关样本", "RIS 有限 M 下重采样样本仅近似 ~p，需 M→∞ 收敛或配合权重做无偏估计", "speculative 单轮即产出无权重、精确 ~p 的样本，随机性代价体现为接受 token 数的 capped-geometric 波动", "经典 RS 拒绝即废弃，期望 M 次提议才产出一个样本"],
+    correct: [1, 2, 3, 4, 5],
+    explanations: [
+      "❌ 错误：speculative 是有限步精确——无 detailed balance、无 burn-in、无渐近论证，比 MCMC / RIS 家族的校正逻辑都干净。",
+      "✅ 正确：IS 的标准定义——估计无偏，但加权样本本身不服从 p。",
+      "✅ 正确：MH 标准性质——驻留导致样本相关、有效样本量下降。",
+      "✅ 正确：RIS 的近似性——这正是它与 speculative「单轮精确」的本质差异。",
+      "✅ 正确：精确采样 vs 加权近似的关键差异；speculative 的「随机性代价」不体现为权重方差。",
+      "✅ 正确：经典 RS 接受率 1/M，高维词表下可用 M 通常巨大，接受率不可接受。"
+    ],
+    detailLink: "Speculative-Decoding-蒙特卡洛框架分析.md#七、与经典 Monte Carlo 家族（含 RIS）的同构对照"
+  },
+  {
+    question: "关于期望加速比公式 (1−α<sup>γ+1</sup>) / [(1−α)(γc+1)]，下列说法正确的有？（多选）",
+    options: ["α 越大加速比一定越大，与 c、γ 无关", "c→0 且 γ 大时，加速比 → 1/(1−α)", "Leviathan Table 2 中 T5-large draft 的 α 最高（0.82），故加速也最高", "γ=1 时加速至少为 (1+α)/(1+c)", "理论示例：α=0.8、γ=5、c=0 时加速 3.69x", "Table 2 存在实测高于 c=0 理论值的行（2.64x vs 3.1x），归因于 i.i.d. 近似与实现细节"],
+    correct: [1, 3, 4, 5],
+    explanations: [
+      "❌ 错误：加速比同时取决于 α、c、γ——T5-large 就是反例，单看接受率会被骗过。",
+      "✅ 正确：几何级数极限；oracle-γ 下 E[N] = 1/(1−α)，论文估计可比固定 γ 再高约 60%。",
+      "❌ 错误：T5-large α 最高但加速最低（1.7X），因为 c 涨得比 α 快——选 draft 要看公式整体。",
+      "✅ 正确：Corollary 3.9 的推论。",
+      "✅ 正确：Table 1 理论示例（另一组：α=0.9、γ=10 ⇒ 6.86x）。",
+      "✅ 正确：CNN/DM T5-small 行（Leviathan §A.3）——引用时公式值与实测值应并列。"
+    ],
+    detailLink: "Speculative-Decoding-蒙特卡洛框架分析.md#四、期望产出与 wall-clock 加速比"
+  }
+];
+
+const trueFalseQuestions = [
+  {
+    question: "speculative decoding 改变了 target 模型的输出分布，本质上是一种近似采样方法。",
+    correct: false,
+    explanationTrue: "❌ 常见误解：把它当成「以精度换速度」的近似方法。实际上输出分布与 target 模型严格一致（identical within hardware numerics），XSum / HumanEval 指标持平也做了经验验证。",
+    explanationFalse: "✅ 正确理解：speculative sampling 严格无偏——min(p,q) + (p−q)<sub>+</sub> = p 逐点成立，每轮精确 ~p，链式法则保证整条轨迹的联合分布等于 target 的自回归分布。",
+    detailLink: "Speculative-Decoding-蒙特卡洛框架分析.md#三、无偏性证明：离散测度分解，而非 Jacobian 换元"
+  },
+  {
+    question: "接受率 α 越高，wall-clock 加速就一定越大。",
+    correct: false,
+    explanationTrue: "❌ 常见误解：只看分子 E[N]。反例：Leviathan Table 2 中 T5-large draft 的 α 最高（0.82）但加速最低（1.7X），因为 c 涨得比 α 快。",
+    explanationFalse: "✅ 正确理解：加速比 = (1−α<sup>γ+1</sup>) / [(1−α)(γc+1)]，同时取决于 α、c、γ；选 draft 要看公式整体，不能被「更大的 draft」骗过。",
+    detailLink: "Speculative-Decoding-蒙特卡洛框架分析.md#经验教训"
+  },
+  {
+    question: "经典 rejection sampling 要求 supp(q) ⊇ supp(p)，speculative sampling 也同样要求 draft 分布的支撑覆盖 target 分布。",
+    correct: false,
+    explanationTrue: "❌ 常见误解：把 speculative 当作「带包络的接受-废弃」。它根本没有包络常数，自然没有支撑覆盖要求。",
+    explanationFalse: "✅ 正确理解：q(x)=0 而 p(x)>0 的位置全部落入残差分支（(p−q)<sub>+</sub> = p），由重采样精确补上——它是离散测度分解 p = min(p,q) + (p−q)<sub>+</sub>，不是经典 RS。",
+    detailLink: "Speculative-Decoding-蒙特卡洛框架分析.md#三、无偏性证明：离散测度分解，而非 Jacobian 换元"
+  },
+  {
+    question: "vLLM 生产实测表明，高 QPS 下 speculative decoding 仍然稳定加速。",
+    correct: false,
+    explanationTrue: "❌ 常见误解：把 QPS=1 的 1.5–2.8x 加速外推到高负载。高 QPS 下 continuous batching 已打满 GPU，验证 FLOPs 无处隐藏。",
+    explanationFalse: "✅ 正确理解：高 QPS 下 draft model 1.4x 减速、n-gram 1.8x 减速（vLLM 博客）。生产部署必须配动态 speculative length 或 utility-driven 启停（Cascade：utility &lt; 1 即关闭）。",
+    detailLink: "Speculative-Decoding-蒙特卡洛框架分析.md#五、工程现实：低 QPS 加速 vs 高 QPS 减速"
+  },
+  {
+    question: "Medusa 是严格无损（lossless）的 speculative 加速方法。",
+    correct: false,
+    explanationTrue: "❌ 常见误解：Medusa-1/2 只在 T=0（greedy）下无损；T&gt;0 的 typical acceptance 放宽了接受条件，不保证输出分布严格等于 p。",
+    explanationFalse: "✅ 正确理解：T&gt;0 非严格无损——EAGLE-3 论文据此只在 T=0 与 Medusa 比较。凡是「放宽接受条件提高接受率」的变体，都要问一句：输出分布还是严格等于 p 吗？",
+    detailLink: "Speculative-Decoding-蒙特卡洛框架分析.md#六、变体对比：提高 $\\alpha$ × 压低 $c$ 的两条主线"
+  },
+  {
+    question: "speculative sampling 的无偏性证明依赖连续变量的 Jacobian 换元（change-of-variables）。",
+    correct: false,
+    explanationTrue: "❌ 常见误解：把它与 ReSTIR shift mapping 的 |∂x′/∂x| 路线混为一谈——那边是连续空间积分换元，这边是离散分布的加法分解，是完全不同的数学机制。",
+    explanationFalse: "✅ 正确理解：证明只需要逐点恒等式 min(p,q) + (p−q)<sub>+</sub> = p 与拒绝概率 = D<sub>TV</sub> 的配平——没有双射、没有密度变换、没有 Jacobian。",
+    detailLink: "Speculative-Decoding-蒙特卡洛框架分析.md#三、无偏性证明：离散测度分解，而非 Jacobian 换元"
+  },
+  {
+    question: "speculative sampling 每轮至少产出 1 个 token，因此串行调用 target 模型的次数不多于标准自回归解码。",
+    correct: true,
+    explanationTrue: "✅ 正确理解：即使首个位置就拒绝，残差分布重采样也会兜底产出 1 个 token；全接受时一轮最多 γ+1 个（n 个接受 + bonus token t）。",
+    explanationFalse: "❌ 常见误解：以为拒绝就「白跑一轮」没有产出。实际上拒绝事件触发残差重采样，当轮必有产出。",
+    detailLink: "Speculative-Decoding-蒙特卡洛框架分析.md#一、形式化：逐 token 的 modified rejection sampling"
+  },
+  {
+    question: "i.i.d. 假设下，γ→∞ 时 E[N] → 1/(1−α)；oracle-γ（每步预知最优 γ）下 E[N] = 1/(1−α)。",
+    correct: true,
+    explanationTrue: "✅ 正确理解：E[N] = (1−α<sup>γ+1</sup>)/(1−α) 是几何级数部分和，γ→∞ 趋于 1/(1−α)；论文估计 oracle-γ 可比固定 γ 再高约 60%（§3.5，假设算力无限）。",
+    explanationFalse: "❌ 常见误解：以为 E[N] 随 γ 线性增长或无界。实际上它被 1/(1−α) 封顶——N 是截断于 γ+1 的 capped geometric 变量。",
+    detailLink: "Speculative-Decoding-蒙特卡洛框架分析.md#四、期望产出与 wall-clock 加速比"
+  }
+];
+
+// ============================================================
+// 全局状态
+// ============================================================
+
+let currentQuestion = 0;
+const totalQuestions = dragQuestions.length + singleQuestions.length + multiQuestions.length + trueFalseQuestions.length;
+
+const state = {
+  drag: dragQuestions.map(() => ({ answers: [], checked: false, correct: false })),
+  single: singleQuestions.map(() => ({ selected: -1, checked: false, correct: false })),
+  multi: multiQuestions.map(() => ({ selected: [], checked: false, correct: false })),
+  tf: trueFalseQuestions.map(() => ({ selected: null, checked: false, correct: false }))
+};
+
+// 所有题目的统一索引
+const allQuestions = [];
+
+function buildAllQuestions() {
+  allQuestions.length = 0;
+  dragQuestions.forEach((q, i) => allQuestions.push({ type: 'drag', index: i, title: q.answers.join(' / ') }));
+  singleQuestions.forEach((q, i) => allQuestions.push({ type: 'single', index: i, title: q.question }));
+  multiQuestions.forEach((q, i) => allQuestions.push({ type: 'multi', index: i, title: q.question }));
+  trueFalseQuestions.forEach((q, i) => allQuestions.push({ type: 'tf', index: i, title: q.question }));
+}
+buildAllQuestions();
+
+// ============================================================
+// 初始化渲染
+// ============================================================
+
+function initDragQuestions() {
+  dragQuestions.forEach((q, qi) => {
+    const pool = document.getElementById('dragPool' + qi);
+    if (!pool) return;
+    pool.innerHTML = '';
+    q.pool.forEach((term, ti) => {
+      const el = document.createElement('div');
+      el.className = 'drag-item';
+      el.draggable = true;
+      el.textContent = term;
+      el.dataset.term = term;
+      el.dataset.qi = qi;
+      el.addEventListener('dragstart', onDragStart);
+      el.addEventListener('dragend', onDragEnd);
+      pool.appendChild(el);
+    });
+
+    const zones = document.querySelectorAll(`.question-card[data-type="drag"][data-index="${qi}"] .drop-zone`);
+    zones.forEach((zone, zi) => {
+      zone.dataset.qi = qi;
+      zone.dataset.zi = zi;
+      zone.addEventListener('dragover', onDragOver);
+      zone.addEventListener('dragleave', onDragLeave);
+      zone.addEventListener('drop', onDrop);
+    });
+  });
+}
+
+function initSingleQuestions() {
+  singleQuestions.forEach((q, qi) => {
+    const list = document.getElementById('single' + qi);
+    if (!list) return;
+    list.innerHTML = '';
+    q.options.forEach((opt, oi) => {
+      const el = document.createElement('div');
+      el.className = 'option-item';
+      el.dataset.oi = oi;
+      el.innerHTML = `<div class="option-marker">${String.fromCharCode(65 + oi)}</div><div>${opt}</div>`;
+      el.addEventListener('click', () => selectSingle(qi, oi));
+      list.appendChild(el);
+    });
+  });
+}
+
+function initMultiQuestions() {
+  multiQuestions.forEach((q, qi) => {
+    const list = document.getElementById('multi' + qi);
+    if (!list) return;
+    list.innerHTML = '';
+    q.options.forEach((opt, oi) => {
+      const el = document.createElement('div');
+      el.className = 'option-item';
+      el.dataset.oi = oi;
+      el.innerHTML = `<div class="option-marker">${String.fromCharCode(65 + oi)}</div><div>${opt}</div>`;
+      el.addEventListener('click', () => toggleMulti(qi, oi));
+      list.appendChild(el);
+    });
+  });
+}
+
+// ============================================================
+// 拖拽逻辑
+// ============================================================
+
+let draggedEl = null;
+
+function onDragStart(e) {
+  draggedEl = e.target;
+  e.target.classList.add('dragging');
+  e.dataTransfer.setData('text/plain', e.target.dataset.term);
+}
+
+function onDragEnd(e) {
+  e.target.classList.remove('dragging');
+  draggedEl = null;
+}
+
+function onDragOver(e) {
+  e.preventDefault();
+  e.currentTarget.classList.add('drag-over');
+}
+
+function onDragLeave(e) {
+  e.currentTarget.classList.remove('drag-over');
+}
+
+function onDrop(e) {
+  e.preventDefault();
+  const zone = e.currentTarget;
+  zone.classList.remove('drag-over');
+  const term = e.dataTransfer.getData('text/plain');
+  const qi = parseInt(zone.dataset.qi);
+  const zi = parseInt(zone.dataset.zi);
+
+  if (state.drag[qi].checked) return;
+
+  zone.textContent = term;
+  zone.classList.add('filled');
+  state.drag[qi].answers[zi] = term;
+
+  // 标记已使用的拖拽项
+  const pool = document.getElementById('dragPool' + qi);
+  pool.querySelectorAll('.drag-item').forEach(el => {
+    if (el.dataset.term === term) el.classList.add('used');
+  });
+}
+
+// ============================================================
+// 单选逻辑
+// ============================================================
+
+function selectSingle(qi, oi) {
+  if (state.single[qi].checked) return;
+  state.single[qi].selected = oi;
+  const list = document.getElementById('single' + qi);
+  list.querySelectorAll('.option-item').forEach(el => el.classList.remove('selected'));
+  list.querySelector(`.option-item[data-oi="${oi}"]`).classList.add('selected');
+}
+
+// ============================================================
+// 多选逻辑
+// ============================================================
+
+function toggleMulti(qi, oi) {
+  if (state.multi[qi].checked) return;
+  const sel = state.multi[qi].selected;
+  const idx = sel.indexOf(oi);
+  if (idx >= 0) sel.splice(idx, 1);
+  else sel.push(oi);
+
+  const list = document.getElementById('multi' + qi);
+  list.querySelectorAll('.option-item').forEach(el => {
+    const itemOi = parseInt(el.dataset.oi);
+    if (sel.includes(itemOi)) el.classList.add('selected');
+    else el.classList.remove('selected');
+  });
+}
+
+// ============================================================
+// 判断逻辑
+// ============================================================
+
+function selectTF(qi, val) {
+  if (state.tf[qi].checked) return;
+  state.tf[qi].selected = val;
+  const btns = document.getElementById('tf' + qi).querySelectorAll('.tf-btn');
+  btns.forEach(b => b.classList.remove('selected'));
+  btns[val ? 0 : 1].classList.add('selected');
+}
+
+// ============================================================
+// 检查答案
+// ============================================================
+
+function checkDrag(qi) {
+  const s = state.drag[qi];
+  if (s.answers.length < dragQuestions[qi].answers.length || s.answers.some(a => !a)) {
+    alert('请先完成所有填空！');
+    return;
+  }
+  s.checked = true;
+
+  let allCorrect = true;
+  const zones = document.querySelectorAll(`.question-card[data-type="drag"][data-index="${qi}"] .drop-zone`);
+  zones.forEach((zone, zi) => {
+    const isCorrect = s.answers[zi] === dragQuestions[qi].answers[zi];
+    zone.classList.remove('filled');
+    zone.classList.add(isCorrect ? 'correct' : 'wrong');
+    if (!isCorrect) allCorrect = false;
+  });
+
+  // 禁用拖拽项
+  const pool = document.getElementById('dragPool' + qi);
+  pool.querySelectorAll('.drag-item').forEach(el => { el.draggable = false; el.style.cursor = 'default'; });
+
+  s.correct = allCorrect;
+  showExplanation('exp' + qi, allCorrect, formatDragExplanation(qi, allCorrect));
+  updateScore();
+}
+
+function formatDragExplanation(qi, allCorrect) {
+  const q = dragQuestions[qi];
+  let html = allCorrect ? '<strong>🎉 全部正确！</strong><br>' : '<strong>❌ 有错误，请看解析：</strong><br>';
+  q.explanations.forEach((exp, i) => {
+    html += `<div style="margin:0.5rem 0;padding:0.5rem;background:var(--bg-primary);border-radius:4px;">${i+1}. ${exp}</div>`;
+  });
+  html += detailLinkHtml(q);
+  return html;
+}
+
+function checkSingle(qi) {
+  const s = state.single[qi];
+  if (s.selected < 0) { alert('请选择一个答案！'); return; }
+  s.checked = true;
+  const correct = s.selected === singleQuestions[qi].correct;
+  s.correct = correct;
+
+  const list = document.getElementById('single' + qi);
+  list.querySelectorAll('.option-item').forEach(el => {
+    el.classList.add('disabled');
+    const oi = parseInt(el.dataset.oi);
+    if (oi === singleQuestions[qi].correct) el.classList.add('correct-ans');
+    else if (oi === s.selected) el.classList.add('wrong-ans');
+  });
+
+  showExplanation('expSingle' + qi, correct, formatOptionExplanation(singleQuestions[qi]));
+  updateScore();
+}
+
+function checkMulti(qi) {
+  const s = state.multi[qi];
+  if (s.selected.length === 0) { alert('请至少选择一个答案！'); return; }
+  s.checked = true;
+
+  const correctSet = new Set(multiQuestions[qi].correct);
+  const selSet = new Set(s.selected);
+  const isCorrect = correctSet.size === selSet.size && [...correctSet].every(v => selSet.has(v));
+  s.correct = isCorrect;
+
+  const list = document.getElementById('multi' + qi);
+  list.querySelectorAll('.option-item').forEach(el => {
+    el.classList.add('disabled');
+    const oi = parseInt(el.dataset.oi);
+    if (correctSet.has(oi)) el.classList.add('correct-ans');
+    else if (selSet.has(oi)) el.classList.add('wrong-ans');
+  });
+
+  showExplanation('expMulti' + qi, isCorrect, formatOptionExplanation(multiQuestions[qi]));
+  updateScore();
+}
+
+function checkTF(qi) {
+  const s = state.tf[qi];
+  if (s.selected === null) { alert('请选择是或否！'); return; }
+  s.checked = true;
+  const correct = s.selected === trueFalseQuestions[qi].correct;
+  s.correct = correct;
+
+  const btns = document.getElementById('tf' + qi).querySelectorAll('.tf-btn');
+  btns.forEach(b => {
+    b.classList.add('disabled');
+    const val = b.dataset.value === 'true';
+    if (val === trueFalseQuestions[qi].correct) b.classList.add('correct-ans');
+    else if (val === s.selected) b.classList.add('wrong-ans');
+  });
+
+  const q = trueFalseQuestions[qi];
+  const exp = correct ? (s.selected ? q.explanationTrue : q.explanationFalse) : (s.selected ? q.explanationTrue : q.explanationFalse);
+  showExplanation('expTF' + qi, correct, exp + detailLinkHtml(q));
+  updateScore();
+}
+
+function formatOptionExplanation(q) {
+  let html = '';
+  q.explanations.forEach((exp, i) => {
+    html += `<div style="margin:0.4rem 0;padding:0.4rem 0.8rem;background:var(--bg-primary);border-radius:4px;">${String.fromCharCode(65+i)}. ${exp}</div>`;
+  });
+  html += detailLinkHtml(q);
+  return html;
+}
+
+function detailLinkHtml(q) {
+  if (q.detailLink) {
+    return `<div class="detail-link"><a href="${q.detailLink}" target="_blank">📎 查看详情文档</a></div>`;
+  }
+  return '';
+}
+
+function showExplanation(id, isCorrect, html) {
+  const el = document.getElementById(id);
+  el.innerHTML = html;
+  el.className = 'explanation show ' + (isCorrect ? 'correct' : 'wrong');
+}
+
+// ============================================================
+// 导航
+// ============================================================
+
+function showQuestion(index) {
+  if (index < 0 || index >= totalQuestions) return;
+  currentQuestion = index;
+
+  document.querySelectorAll('.question-card').forEach(c => c.classList.remove('active'));
+  const cards = document.querySelectorAll('.question-card');
+  if (cards[index]) cards[index].classList.add('active');
+
+  updateProgress();
+}
+
+function nextQuestion() {
+  if (currentQuestion < totalQuestions - 1) showQuestion(currentQuestion + 1);
+  else showResult();
+}
+
+function prevQuestion() {
+  if (currentQuestion > 0) showQuestion(currentQuestion - 1);
+}
+
+function updateProgress() {
+  document.getElementById('progressText').textContent = `第 ${currentQuestion + 1} / ${totalQuestions} 题`;
+  document.getElementById('progressFill').style.width = ((currentQuestion + 1) / totalQuestions * 100) + '%';
+}
+
+// ============================================================
+// 计分系统
+// ============================================================
+
+function updateScore() {
+  let correct = 0;
+  state.drag.forEach(s => { if (s.correct) correct++; });
+  state.single.forEach(s => { if (s.correct) correct++; });
+  state.multi.forEach(s => { if (s.correct) correct++; });
+  state.tf.forEach(s => { if (s.correct) correct++; });
+  document.getElementById('scoreBar').textContent = `得分: ${correct} / ${totalQuestions}`;
+}
+
+// ============================================================
+// 重置
+// ============================================================
+
+function resetQuestion(globalIndex) {
+  const card = document.querySelectorAll('.question-card')[globalIndex];
+  if (!card) return;
+  const type = card.dataset.type;
+  const index = parseInt(card.dataset.index);
+
+  if (type === 'drag') {
+    state.drag[index] = { answers: [], checked: false, correct: false };
+    const zones = card.querySelectorAll('.drop-zone');
+    zones.forEach(z => { z.textContent = ''; z.className = 'drop-zone'; });
+    const pool = document.getElementById('dragPool' + index);
+    pool.querySelectorAll('.drag-item').forEach(el => { el.classList.remove('used'); el.draggable = true; el.style.cursor = 'grab'; });
+    document.getElementById('exp' + index).className = 'explanation';
+  } else if (type === 'single') {
+    state.single[index] = { selected: -1, checked: false, correct: false };
+    const list = document.getElementById('single' + index);
+    list.querySelectorAll('.option-item').forEach(el => { el.className = 'option-item'; });
+    document.getElementById('expSingle' + index).className = 'explanation';
+  } else if (type === 'multi') {
+    state.multi[index] = { selected: [], checked: false, correct: false };
+    const list = document.getElementById('multi' + index);
+    list.querySelectorAll('.option-item').forEach(el => { el.className = 'option-item'; });
+    document.getElementById('expMulti' + index).className = 'explanation';
+  } else if (type === 'tf') {
+    state.tf[index] = { selected: null, checked: false, correct: false };
+    const btns = document.getElementById('tf' + index).querySelectorAll('.tf-btn');
+    btns.forEach(b => { b.className = 'tf-btn'; });
+    document.getElementById('expTF' + index).className = 'explanation';
+  }
+  updateScore();
+}
+
+function resetAll() {
+  // 重置状态
+  state.drag = dragQuestions.map(() => ({ answers: [], checked: false, correct: false }));
+  state.single = singleQuestions.map(() => ({ selected: -1, checked: false, correct: false }));
+  state.multi = multiQuestions.map(() => ({ selected: [], checked: false, correct: false }));
+  state.tf = trueFalseQuestions.map(() => ({ selected: null, checked: false, correct: false }));
+
+  // 重置 UI
+  document.querySelectorAll('.question-card').forEach((card, gi) => resetQuestion(gi));
+
+  // 恢复隐藏的元素
+  document.getElementById('progressBar').classList.remove('hidden');
+  document.getElementById('mainContainer').classList.remove('hidden');
+  document.getElementById('resultPage').classList.remove('show');
+
+  showQuestion(0);
+  updateScore();
+}
+
+// ============================================================
+// 总览面板
+// ============================================================
+
+function openDashboard() {
+  renderDashboardGrid('all');
+  document.getElementById('dashboardOverlay').classList.add('open');
+}
+
+function closeDashboard() {
+  document.getElementById('dashboardOverlay').classList.remove('open');
+}
+
+function renderDashboardGrid(filter) {
+  const grid = document.getElementById('dashboardGrid');
+  grid.innerHTML = '';
+
+  let correctCount = 0, wrongCount = 0, unansweredCount = 0;
+
+  allQuestions.forEach((q, gi) => {
+    let status = 'unanswered';
+    let s;
+    if (q.type === 'drag') s = state.drag[q.index];
+    else if (q.type === 'single') s = state.single[q.index];
+    else if (q.type === 'multi') s = state.multi[q.index];
+    else s = state.tf[q.index];
+
+    if (s.checked) {
+      if (s.correct) { status = 'correct'; correctCount++; }
+      else { status = 'wrong'; wrongCount++; }
+    } else unansweredCount++;
+
+    if (filter === 'correct' && status !== 'correct') return;
+    if (filter === 'wrong' && status !== 'wrong') return;
+    if (filter === 'unanswered' && status !== 'unanswered') return;
+
+    const card = document.createElement('div');
+    card.className = 'dashboard-card ' + status;
+    const typeLabel = q.type === 'drag' ? '拖拽' : q.type === 'single' ? '单选' : q.type === 'multi' ? '多选' : '判断';
+    card.innerHTML = `<div class="card-type">${gi+1}. ${typeLabel}</div><div class="card-title">${q.title.substring(0, 60)}${q.title.length > 60 ? '...' : ''}</div>`;
+    card.addEventListener('click', () => { closeDashboard(); showQuestion(gi); });
+    grid.appendChild(card);
+  });
+
+  document.getElementById('statCorrect').textContent = correctCount;
+  document.getElementById('statWrong').textContent = wrongCount;
+  document.getElementById('statUnanswered').textContent = unansweredCount;
+}
+
+function filterDashboard(type) {
+  renderDashboardGrid(type);
+}
+
+// ============================================================
+// 结果页
+// ============================================================
+
+function showResult() {
+  let correct = 0, wrong = 0, unanswered = 0;
+  state.drag.forEach(s => { if (!s.checked) unanswered++; else if (s.correct) correct++; else wrong++; });
+  state.single.forEach(s => { if (!s.checked) unanswered++; else if (s.correct) correct++; else wrong++; });
+  state.multi.forEach(s => { if (!s.checked) unanswered++; else if (s.correct) correct++; else wrong++; });
+  state.tf.forEach(s => { if (!s.checked) unanswered++; else if (s.correct) correct++; else wrong++; });
+
+  const accuracy = totalQuestions > 0 ? Math.round(correct / totalQuestions * 100) : 0;
+
+  document.getElementById('finalScore').textContent = correct + ' / ' + totalQuestions;
+  document.getElementById('resCorrect').textContent = correct;
+  document.getElementById('resWrong').textContent = wrong;
+  document.getElementById('resUnanswered').textContent = unanswered;
+  document.getElementById('resAccuracy').textContent = accuracy + '%';
+
+  let msg = '';
+  if (accuracy >= 90) msg = '🏆 优秀！你对 Speculative Decoding 的蒙特卡洛框架已经掌握得非常扎实！';
+  else if (accuracy >= 70) msg = '👍 良好！大部分知识点已掌握，再巩固一下细节。';
+  else if (accuracy >= 50) msg = '📚 及格！还有提升空间，建议重读源笔记的推导部分。';
+  else msg = '💪 加油！建议仔细阅读 Speculative-Decoding-蒙特卡洛框架分析.md 后再来挑战。';
+  document.getElementById('resultMessage').textContent = msg;
+
+  document.getElementById('progressBar').classList.add('hidden');
+  document.getElementById('mainContainer').classList.add('hidden');
+  document.getElementById('resultPage').classList.add('show');
+}
+
+function continueQuiz() {
+  document.getElementById('progressBar').classList.remove('hidden');
+  document.getElementById('mainContainer').classList.remove('hidden');
+  document.getElementById('resultPage').classList.remove('show');
+  showQuestion(totalQuestions - 1);
+}
+
+// ============================================================
+// 洗牌功能
+// ============================================================
+
+function shuffleArray(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+
+function shuffleQuestionData(questions) {
+  questions.forEach(q => {
+    const pairs = q.options.map((opt, i) => ({ opt, expl: q.explanations[i] }));
+    shuffleArray(pairs);
+    q.options = pairs.map(p => p.opt);
+    q.explanations = pairs.map(p => p.expl);
+    // 重新查找正确答案索引
+    q.correct = pairs.findIndex(p => p.expl.startsWith('✅'));
+  });
+}
+
+function shuffleMultiQuestionData(questions) {
+  questions.forEach(q => {
+    const pairs = q.options.map((opt, i) => ({ opt, expl: q.explanations[i], isCorrect: q.correct.includes(i) }));
+    shuffleArray(pairs);
+    q.options = pairs.map(p => p.opt);
+    q.explanations = pairs.map(p => p.expl);
+    q.correct = [];
+    pairs.forEach((p, i) => { if (p.isCorrect) q.correct.push(i); });
+  });
+}
+
+function shuffleAllAnswers() {
+  if (!confirm('重新洗牌将清空所有答题记录，确定继续吗？')) return;
+  shuffleQuestionData(singleQuestions);
+  shuffleQuestionData(multiQuestions); // 多选题也洗牌选项
+  shuffleMultiQuestionData(multiQuestions);
+  // 重置所有状态
+  resetAll();
+  // 重新渲染选项
+  initSingleQuestions();
+  initMultiQuestions();
+  showQuestion(0);
+}
+
+// ============================================================
+// 初始化
+// ============================================================
+
+function init() {
+  initDragQuestions();
+  initSingleQuestions();
+  initMultiQuestions();
+  updateProgress();
+  updateScore();
+}
+
+init();
+</script>
+
+</body>
+</html>

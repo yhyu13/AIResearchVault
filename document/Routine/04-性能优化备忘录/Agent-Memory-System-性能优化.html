@@ -1,0 +1,1860 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agent Memory System 性能优化：写入离线化 + KV-form 记忆 — 互动知识卡牌</title>
+<style>
+/* ===== CSS Variables ===== */
+:root {
+  --bg-primary: #1a1a2e;
+  --bg-secondary: #16213e;
+  --bg-card: #0f3460;
+  --bg-card-hover: #1a4a7a;
+  --text-primary: #e0e0e0;
+  --text-secondary: #a0a0b0;
+  --accent: #e94560;
+  --accent-light: #ff6b81;
+  --success: #2ecc71;
+  --success-bg: rgba(46, 204, 113, 0.15);
+  --error: #e74c3c;
+  --error-bg: rgba(231, 76, 60, 0.15);
+  --warning: #f39c12;
+  --border: #2a3b5c;
+  --shadow: rgba(0,0,0,0.3);
+  --font-main: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-mono: 'Consolas', 'Monaco', 'Courier New', monospace;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-main);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  line-height: 1.6;
+}
+
+/* ===== Header ===== */
+header {
+  background: var(--bg-secondary);
+  padding: 1rem 1.5rem;
+  border-bottom: 2px solid var(--accent);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+header h1 {
+  font-size: 1.1rem;
+  color: var(--accent-light);
+}
+
+header .subtitle {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-top: 0.2rem;
+}
+
+header .controls {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.btn {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  padding: 0.45rem 0.9rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+  font-family: var(--font-main);
+}
+
+.btn:hover { background: var(--bg-card-hover); border-color: var(--accent); }
+.btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent-light); }
+.btn-success { background: var(--success); border-color: var(--success); color: #fff; }
+.btn-success:hover { opacity: 0.85; }
+.btn-warning { background: var(--warning); border-color: var(--warning); color: #1a1a2e; }
+.btn-warning:hover { opacity: 0.85; }
+
+/* ===== Progress Bar ===== */
+.progress-bar {
+  background: var(--bg-secondary);
+  padding: 0.6rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+}
+
+.progress-track {
+  flex: 1;
+  height: 8px;
+  background: var(--bg-card);
+  border-radius: 4px;
+  margin: 0 1rem;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+  width: 0%;
+}
+
+.progress-text { font-size: 0.85rem; color: var(--text-secondary); white-space: nowrap; }
+.score-bar { font-size: 0.9rem; color: var(--success); font-weight: bold; white-space: nowrap; }
+
+/* ===== Main Container ===== */
+.container { max-width: 900px; margin: 0 auto; padding: 1.5rem; }
+
+/* ===== Question Card ===== */
+.question-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  display: none;
+  animation: fadeIn 0.3s ease;
+}
+
+.question-card.active { display: block; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.question-type-badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  margin-bottom: 0.8rem;
+  font-weight: bold;
+}
+
+.badge-drag { background: #9b59b6; color: #fff; }
+.badge-single { background: #3498db; color: #fff; }
+.badge-multi { background: #e67e22; color: #fff; }
+.badge-tf { background: #1abc9c; color: #fff; }
+
+.question-title {
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+  color: var(--text-primary);
+  line-height: 1.7;
+}
+
+/* ===== Drag & Drop ===== */
+.drag-container { display: flex; flex-wrap: wrap; gap: 0.8rem; margin-bottom: 1rem; }
+
+.drag-item {
+  background: var(--bg-card);
+  border: 2px dashed var(--border);
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  cursor: grab;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+.drag-item:hover { border-color: var(--accent); background: var(--bg-card-hover); }
+.drag-item.dragging { opacity: 0.5; cursor: grabbing; }
+.drag-item.used { opacity: 0.4; pointer-events: none; border-style: solid; }
+
+.drop-zone {
+  display: inline-block;
+  min-width: 100px;
+  height: 36px;
+  line-height: 32px;
+  border: 2px dashed var(--border);
+  border-radius: 6px;
+  background: var(--bg-primary);
+  text-align: center;
+  vertical-align: middle;
+  margin: 0 0.3rem;
+  transition: all 0.2s;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.drop-zone.drag-over { border-color: var(--accent); background: rgba(233,69,96,0.1); }
+.drop-zone.filled { border-style: solid; border-color: var(--accent); color: var(--accent-light); font-weight: bold; }
+.drop-zone.correct { border-color: var(--success); background: var(--success-bg); color: var(--success); }
+.drop-zone.wrong { border-color: var(--error); background: var(--error-bg); color: var(--error); }
+
+/* ===== Options ===== */
+.options-list { display: flex; flex-direction: column; gap: 0.6rem; }
+
+.option-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.8rem 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.option-item:hover { background: var(--bg-card-hover); border-color: var(--accent); }
+
+.option-item.selected { border-color: var(--accent); background: rgba(233,69,96,0.1); }
+.option-item.correct-ans { border-color: var(--success); background: var(--success-bg); }
+.option-item.wrong-ans { border-color: var(--error); background: var(--error-bg); }
+.option-item.disabled { pointer-events: none; opacity: 0.7; }
+
+.option-marker {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.75rem; font-weight: bold; flex-shrink: 0;
+}
+
+.option-item.selected .option-marker { border-color: var(--accent); background: var(--accent); color: #fff; }
+.option-item.correct-ans .option-marker { border-color: var(--success); background: var(--success); color: #fff; }
+.option-item.wrong-ans .option-marker { border-color: var(--error); background: var(--error); color: #fff; }
+
+/* ===== TF Buttons ===== */
+.tf-buttons { display: flex; gap: 1rem; margin-top: 0.5rem; }
+
+.tf-btn {
+  flex: 1;
+  padding: 0.8rem;
+  border-radius: 8px;
+  border: 2px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: var(--font-main);
+}
+
+.tf-btn:hover { border-color: var(--accent); }
+.tf-btn.selected { border-color: var(--accent); background: rgba(233,69,96,0.1); }
+.tf-btn.correct-ans { border-color: var(--success); background: var(--success-bg); }
+.tf-btn.wrong-ans { border-color: var(--error); background: var(--error-bg); }
+.tf-btn.disabled { pointer-events: none; opacity: 0.7; }
+
+/* ===== Explanation ===== */
+.explanation {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 8px;
+  display: none;
+  font-size: 0.9rem;
+  line-height: 1.7;
+}
+
+.explanation.show { display: block; }
+.explanation.correct { background: var(--success-bg); border-left: 4px solid var(--success); }
+.explanation.wrong { background: var(--error-bg); border-left: 4px solid var(--error); }
+
+/* ===== Navigation ===== */
+.nav-buttons {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1.5rem;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* ===== Dashboard Overlay ===== */
+.dashboard-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(10,10,20,0.95);
+  z-index: 200;
+  display: none;
+  overflow-y: auto;
+  padding: 1.5rem;
+}
+
+.dashboard-overlay.open { display: block; }
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.dashboard-header h2 { color: var(--accent-light); }
+
+.dashboard-stats {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.stat-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.8rem 1.2rem;
+  min-width: 120px;
+  text-align: center;
+}
+
+.stat-card .stat-value { font-size: 1.5rem; font-weight: bold; color: var(--accent-light); }
+
+.filter-buttons { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.dashboard-card {
+  background: var(--bg-secondary);
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  padding: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.dashboard-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+.dashboard-card.correct { border-color: var(--success); }
+.dashboard-card.wrong { border-color: var(--error); }
+.dashboard-card.unanswered { border-color: var(--border); opacity: 0.7; }
+
+.dashboard-card .card-type { font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.3rem; }
+.dashboard-card .card-title { font-size: 0.85rem; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* ===== Result Page ===== */
+.result-page {
+  display: none;
+  text-align: center;
+  padding: 3rem 1.5rem;
+  animation: fadeIn 0.5s ease;
+}
+
+.result-page.show { display: block; }
+
+.result-score {
+  font-size: 4rem;
+  font-weight: bold;
+  color: var(--accent-light);
+  margin: 1rem 0;
+}
+
+.result-message { font-size: 1.2rem; color: var(--text-secondary); margin-bottom: 2rem; }
+
+.result-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+  max-width: 600px;
+  margin: 0 auto 2rem;
+}
+
+/* ===== Hidden ===== */
+.hidden { display: none !important; }
+
+/* ===== Responsive ===== */
+@media (max-width: 600px) {
+  header h1 { font-size: 0.95rem; }
+  .question-title { font-size: 1rem; }
+  .dashboard-grid { grid-template-columns: 1fr; }
+  .result-score { font-size: 3rem; }
+  .nav-buttons { flex-direction: column; }
+  .nav-buttons .btn { width: 100%; }
+}
+
+@media (max-width: 400px) {
+  .container { padding: 1rem; }
+  .question-card { padding: 1rem; }
+  .progress-bar { flex-direction: column; gap: 0.5rem; align-items: flex-start; }
+  .progress-track { width: 100%; margin: 0; }
+}
+</style>
+</head>
+<body>
+
+<!-- ===== Header ===== -->
+<header>
+  <div>
+    <h1>🧠 Agent Memory 性能优化 — 互动知识卡牌</h1>
+    <div class="subtitle">主题：从全上下文到「写入离线化 + KV-form 记忆」 · 来源笔记：Agent-Memory-System-性能优化.md（04-性能优化备忘录，2026-07-16）</div>
+  </div>
+  <div class="controls">
+    <button class="btn" onclick="openDashboard()">📊 题目总览</button>
+    <button class="btn" onclick="shuffleAllAnswers()">🎲 重新洗牌选项</button>
+    <button class="btn btn-warning" onclick="resetAll()">🔄 重置所有分数</button>
+  </div>
+</header>
+
+<!-- ===== Progress Bar ===== -->
+<div class="progress-bar" id="progressBar">
+  <span class="progress-text" id="progressText">第 1 / 30 题</span>
+  <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+  <span class="score-bar" id="scoreBar">得分: 0 / 30</span>
+</div>
+
+<!-- ===== Main Container ===== -->
+<div class="container" id="mainContainer">
+
+  <!-- ===== Drag Questions ===== -->
+  <div class="question-card active" data-type="drag" data-index="0">
+    <span class="question-type-badge badge-drag">拖拽填空</span>
+    <div class="question-title">
+      Mem0 论文（arXiv:2504.19413）在 LOCOMO 基准上的 full-context 基线：tokens / query ≈ <span class="drop-zone" data-index="0"></span>，p95 端到端延迟 ≈ <span class="drop-zone" data-index="1"></span>。
+    </div>
+    <div class="drag-container" id="dragPool0"></div>
+    <div class="explanation" id="exp0"></div>
+    <div class="nav-buttons">
+      <button class="btn" onclick="prevQuestion()">⬅️ 上一题</button>
+      <button class="btn btn-primary" onclick="checkDrag(0)">检查答案</button>
+      <button class="btn" onclick="resetQuestion(0)">重置</button>
+      <button class="btn" onclick="nextQuestion()">下一题 ➡️</button>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="drag" data-index="1">
+    <span class="question-type-badge badge-drag">拖拽填空</span>
+    <div class="question-title">
+      Mem0 的记忆写入是两阶段流水线：第一阶段 <span class="drop-zone" data-index="0"></span> 由 LLM 从消息对 (m<sub>t−1</sub>, m<sub>t</sub>) 提取候选事实集 Ω；第二阶段 <span class="drop-zone" data-index="1"></span> 对每个候选事实检索 top-s 相似记忆，再由 LLM 仲裁 ADD / UPDATE / DELETE / NOOP。
+    </div>
+    <div class="drag-container" id="dragPool1"></div>
+    <div class="explanation" id="exp1"></div>
+    <div class="nav-buttons">
+      <button class="btn" onclick="prevQuestion()">⬅️ 上一题</button>
+      <button class="btn btn-primary" onclick="checkDrag(1)">检查答案</button>
+      <button class="btn" onclick="resetQuestion(1)">重置</button>
+      <button class="btn" onclick="nextQuestion()">下一题 ➡️</button>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="drag" data-index="2">
+    <span class="question-type-badge badge-drag">拖拽填空</span>
+    <div class="question-title">
+      LightMem 口径反解：令 C<sub>base</sub> = 1，则 C<sub>off</sub> = 1/38 − 1/106 ≈ <span class="drop-zone" data-index="0"></span>，离线整合约占总成本的 <span class="drop-zone" data-index="1"></span>。
+    </div>
+    <div class="drag-container" id="dragPool2"></div>
+    <div class="explanation" id="exp2"></div>
+    <div class="nav-buttons">
+      <button class="btn" onclick="prevQuestion()">⬅️ 上一题</button>
+      <button class="btn btn-primary" onclick="checkDrag(2)">检查答案</button>
+      <button class="btn" onclick="resetQuestion(2)">重置</button>
+      <button class="btn" onclick="nextQuestion()">下一题 ➡️</button>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="drag" data-index="3">
+    <span class="question-type-badge badge-drag">拖拽填空</span>
+    <div class="question-title">
+      KV cache 显存推导（Llama-3-70B 量级，GQA，FP16）：M<sub>KV</sub> / n = 2 × 80 × 8 × 128 × 2 B ≈ <span class="drop-zone" data-index="0"></span> /token，26K tokens 历史 ≈ <span class="drop-zone" data-index="1"></span> /会话。
+    </div>
+    <div class="drag-container" id="dragPool3"></div>
+    <div class="explanation" id="exp3"></div>
+    <div class="nav-buttons">
+      <button class="btn" onclick="prevQuestion()">⬅️ 上一题</button>
+      <button class="btn btn-primary" onclick="checkDrag(3)">检查答案</button>
+      <button class="btn" onclick="resetQuestion(3)">重置</button>
+      <button class="btn" onclick="nextQuestion()">下一题 ➡️</button>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="drag" data-index="4">
+    <span class="question-type-badge badge-drag">拖拽填空</span>
+    <div class="question-title">
+      MemOS 把记忆统一为三态并调度其转化：<span class="drop-zone" data-index="0"></span>（文本，检索注入）⇄ <span class="drop-zone" data-index="1"></span>（KV-form，attention cache 直注）⇄ parameter（蒸馏进权重）。
+    </div>
+    <div class="drag-container" id="dragPool4"></div>
+    <div class="explanation" id="exp4"></div>
+    <div class="nav-buttons">
+      <button class="btn" onclick="prevQuestion()">⬅️ 上一题</button>
+      <button class="btn btn-primary" onclick="checkDrag(4)">检查答案</button>
+      <button class="btn" onclick="resetQuestion(4)">重置</button>
+      <button class="btn" onclick="nextQuestion()">下一题 ➡️</button>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="drag" data-index="5">
+    <span class="question-type-badge badge-drag">拖拽填空</span>
+    <div class="question-title">
+      第三方复现（SwiftMem, arXiv:2601.08160, Table 2）：Mem0 的 search 阶段耗时 <span class="drop-zone" data-index="0"></span>，而其纯索引检索仅需 <span class="drop-zone" data-index="1"></span> —— 约 70 倍差距几乎全部来自检索链路中引入的 LLM 调用。
+    </div>
+    <div class="drag-container" id="dragPool5"></div>
+    <div class="explanation" id="exp5"></div>
+    <div class="nav-buttons">
+      <button class="btn" onclick="prevQuestion()">⬅️ 上一题</button>
+      <button class="btn btn-primary" onclick="checkDrag(5)">检查答案</button>
+      <button class="btn" onclick="resetQuestion(5)">重置</button>
+      <button class="btn" onclick="nextQuestion()">下一题 ➡️</button>
+    </div>
+  </div>
+
+  <!-- ===== Single Choice Questions ===== -->
+  <div class="question-card" data-type="single" data-index="0">
+    <span class="question-type-badge badge-single">单选题</span>
+    <div class="question-title">Agent 记忆系统在线开销的「主矛盾」在哪里？</div>
+    <div class="options-list" id="single0"></div>
+    <div class="explanation" id="expSingle0"></div>
+    <div class="nav-buttons">
+      <button class="btn" onclick="prevQuestion()">⬅️ 上一题</button>
+      <button class="btn btn-primary" onclick="checkSingle(0)">检查答案</button>
+      <button class="btn" onclick="resetQuestion(6)">重置</button>
+      <button class="btn" onclick="nextQuestion()">下一题 ➡️</button>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="single" data-index="1">
+    <span class="question-type-badge badge-single">单选题</span>
+    <div class="question-title">Mem0 外部记忆把单次查询的输入 token 从 ≈26,000 压缩到约多少？</div>
+    <div class="options-list" id="single1"></div>
+    <div class="explanation" id="expSingle1"></div>
+    <div class="nav-buttons">
+      <button class="btn" onclick="prevQuestion()">⬅️ 上一题</button>
+      <button class="btn btn-primary" onclick="checkSingle(1)">检查答案</button>
+      <button class="btn" onclick="resetQuestion(7)">重置</button>
+      <button class="btn" onclick="nextQuestion()">下一题 ➡️</button>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="single" data-index="2">
+    <span class="question-type-badge badge-single">单选题</span>
+    <div class="question-title">self-attention 的 prefill FLOPs ≈ 4·L·d<sub>model</sub>·n²。注入长度 n 从 26,000 降至 1,764 时，attention 部分 FLOPs 约缩减多少倍？</div>
+    <div class="options-list" id="single2"></div>
+    <div class="explanation" id="expSingle2"></div>
+    <div class="nav-buttons">
+      <button class="btn" onclick="prevQuestion()">⬅️ 上一题</button>
+      <button class="btn btn-primary" onclick="checkSingle(2)">检查答案</button>
+      <button class="btn" onclick="resetQuestion(8)">重置</button>
+      <button class="btn" onclick="nextQuestion()">下一题 ➡️</button>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="single" data-index="3">
+    <span class="question-type-badge badge-single">单选题</span>
+    <div class="question-title">Zep auto search 报告的检索延迟（p50 / p95）是？</div>
+    <div class="options-list" id="single3"></div>
+    <div class="explanation" id="expSingle3"></div>
+    <div class="nav-buttons">
+      <button class="btn" onclick="prevQuestion()">⬅️ 上一题</button>
+      <button class="btn btn-primary" onclick="checkSingle(3)">检查答案</button>
+      <button class="btn" onclick="resetQuestion(9)">重置</button>
+      <button class="btn" onclick="nextQuestion()">下一题 ➡️</button>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="single" data-index="4">
+    <span class="question-type-badge badge-single">单选题</span>
+    <div class="question-title">LightMem 纯在线 token ↓106×、总 token（含离线）↓38×（LongMemEval 口径）。联立两式反解，离线整合成本 C<sub>off</sub> 与在线剩余成本 C<sub>on</sub> 之比约为？</div>
+    <div class="options-list" id="single4"></div>
+    <div class="explanation" id="expSingle4"></div>
+    <div class="nav-buttons">
+      <button class="btn" onclick="prevQuestion()">⬅️ 上一题</button>
+      <button class="btn btn-primary" onclick="checkSingle(4)">检查答案</button>
+      <button class="btn" onclick="resetQuestion(10)">重置</button>
+      <button class="btn" onclick="nextQuestion()">下一题 ➡️</button>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="single" data-index="5">
+    <span class="question-type-badge badge-single">单选题</span>
+    <div class="question-title">SwiftMem 复现中，Mem0 search 784 ms vs 纯索引 11 ms（≈70×）。这一差距的主要来源是？</div>
+    <div class="options-list" id="single5"></div>
+    <div class="explanation" id="expSingle5"></div>
+    <div class="nav-buttons">
+      <button class="btn" onclick="prevQuestion()">⬅️ 上一题</button>
+      <button class="btn btn-primary" onclick="checkSingle(5)">检查答案</button>
+      <button class="btn" onclick="resetQuestion(11)">重置</button>
+      <button class="btn" onclick="nextQuestion()">下一题 ➡️</button>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="single" data-index="6">
+    <span class="question-type-badge badge-single">单选题</span>
+    <div class="question-title">Mem0 论文中，token 节省 &gt;90% 的质量代价是 LOCOMO J 分数从 72.9% 变为？</div>
+    <div class="options-list" id="single6"></div>
+    <div class="explanation" id="expSingle6"></div>
+    <div class="nav-buttons">
+      <button class="btn" onclick="prevQuestion()">⬅️ 上一题</button>
+      <button class="btn btn-primary" onclick="checkSingle(6)">检查答案</button>
+      <button class="btn" onclick="resetQuestion(12)">重置</button>
+      <button class="btn" onclick="nextQuestion()">下一题 ➡️</button>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="single" data-index="7">
+    <span class="question-type-badge badge-single">单选题</span>
+    <div class="question-title">MemOS 的 KV-form 记忆（activation memory）「绕开 prefill」的成本逻辑是？</div>
+    <div class="options-list" id="single7"></div>
+    <div class="explanation" id="expSingle7"></div>
+    <div class="nav-buttons">
+      <button class="btn" onclick="prevQuestion()">⬅️ 上一题</button>
+      <button class="btn btn-primary" onclick="checkSingle(7)">检查答案</button>
+      <button class="btn" onclick="resetQuestion(13)">重置</button>
+      <button class="btn" onclick="nextQuestion()">下一题 ➡️</button>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="single" data-index="8">
+    <span class="question-type-badge badge-single">单选题</span>
+    <div class="question-title">第三方复现（SwiftMem, GPT-4o-mini）中 Mem0 的 J 仅 0.613，与论文自报的 66.9% 存在显著偏差。引用这类数字的正确做法是？</div>
+    <div class="options-list" id="single8"></div>
+    <div class="explanation" id="expSingle8"></div>
+    <div class="nav-buttons">
+      <button class="btn" onclick="prevQuestion()">⬅️ 上一题</button>
+      <button class="btn btn-primary" onclick="checkSingle(8)">检查答案</button>
+      <button class="btn" onclick="resetQuestion(14)">重置</button>
+      <button class="btn" onclick="nextQuestion()">下一题 ➡️</button>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="single" data-index="9">
+    <span class="question-type-badge badge-single">单选题</span>
+    <div class="question-title">高并发场景下，全上下文方案（26K tokens/会话）在系统层会先耗尽什么资源？</div>
+    <div class="options-list" id="single9"></div>
+    <div class="explanation" id="expSingle9"></div>
+    <div class="nav-buttons">
+      <button class="btn" onclick="prevQuestion()">⬅️ 上一题</button>
+      <button class="btn btn-primary" onclick="checkSingle(9)">检查答案</button>
+      <button class="btn" onclick="resetQuestion(15)">重置</button>
+      <button class="btn" onclick="nextQuestion()">下一题 ➡️</button>
+    </div>
+  </div>
+
+  <!-- ===== Multi Choice Questions ===== -->
+  <div class="question-card" data-type="multi" data-index="0">
+    <span class="question-type-badge badge-multi">多选题</span>
+    <div class="question-title">全上下文方案（full-context stuffing）的「三重不可扩展」指哪些？（多选）</div>
+    <div class="options-list" id="multi0"></div>
+    <div class="explanation" id="expMulti0"></div>
+    <div class="nav-buttons">
+      <button class="btn" onclick="prevQuestion()">⬅️ 上一题</button>
+      <button class="btn btn-primary" onclick="checkMulti(0)">检查答案</button>
+      <button class="btn" onclick="resetQuestion(16)">重置</button>
+      <button class="btn" onclick="nextQuestion()">下一题 ➡️</button>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="multi" data-index="1">
+    <span class="question-type-badge badge-multi">多选题</span>
+    <div class="question-title">端到端延迟分解 T<sub>e2e</sub> = T<sub>retrieval</sub> + T<sub>generation</sub> 中，属于检索段 T<sub>retrieval</sub> 的组件有？（多选）</div>
+    <div class="options-list" id="multi1"></div>
+    <div class="explanation" id="expMulti1"></div>
+    <div class="nav-buttons">
+      <button class="btn" onclick="prevQuestion()">⬅️ 上一题</button>
+      <button class="btn btn-primary" onclick="checkMulti(1)">检查答案</button>
+      <button class="btn" onclick="resetQuestion(17)">重置</button>
+      <button class="btn" onclick="nextQuestion()">下一题 ➡️</button>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="multi" data-index="2">
+    <span class="question-type-badge badge-multi">多选题</span>
+    <div class="question-title">LightMem 报告的四组成本口径中，哪些属于「纯在线」口径（用户感知路径）？（多选）</div>
+    <div class="options-list" id="multi2"></div>
+    <div class="explanation" id="expMulti2"></div>
+    <div class="nav-buttons">
+      <button class="btn" onclick="prevQuestion()">⬅️ 上一题</button>
+      <button class="btn btn-primary" onclick="checkMulti(2)">检查答案</button>
+      <button class="btn" onclick="resetQuestion(18)">重置</button>
+      <button class="btn" onclick="nextQuestion()">下一题 ➡️</button>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="multi" data-index="3">
+    <span class="question-type-badge badge-multi">多选题</span>
+    <div class="question-title">哪些实测数据支持「纯检索路径可压进 200 ms 内，LLM-in-the-loop 是延迟重尾主要来源」？（多选）</div>
+    <div class="options-list" id="multi3"></div>
+    <div class="explanation" id="expMulti3"></div>
+    <div class="nav-buttons">
+      <button class="btn" onclick="prevQuestion()">⬅️ 上一题</button>
+      <button class="btn btn-primary" onclick="checkMulti(3)">检查答案</button>
+      <button class="btn" onclick="resetQuestion(19)">重置</button>
+      <button class="btn" onclick="nextQuestion()">下一题 ➡️</button>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="multi" data-index="4">
+    <span class="question-type-badge badge-multi">多选题</span>
+    <div class="question-title">关于 gating / 遗忘策略的成本特性，正确的有？（多选）</div>
+    <div class="options-list" id="multi4"></div>
+    <div class="explanation" id="expMulti4"></div>
+    <div class="nav-buttons">
+      <button class="btn" onclick="prevQuestion()">⬅️ 上一题</button>
+      <button class="btn btn-primary" onclick="checkMulti(4)">检查答案</button>
+      <button class="btn" onclick="resetQuestion(20)">重置</button>
+      <button class="btn" onclick="nextQuestion()">下一题 ➡️</button>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="multi" data-index="5">
+    <span class="question-type-badge badge-multi">多选题</span>
+    <div class="question-title">引用任何记忆系统精度数字的「三件套」包括？（多选）</div>
+    <div class="options-list" id="multi5"></div>
+    <div class="explanation" id="expMulti5"></div>
+    <div class="nav-buttons">
+      <button class="btn" onclick="prevQuestion()">⬅️ 上一题</button>
+      <button class="btn btn-primary" onclick="checkMulti(5)">检查答案</button>
+      <button class="btn" onclick="resetQuestion(21)">重置</button>
+      <button class="btn" onclick="nextQuestion()">下一题 ➡️</button>
+    </div>
+  </div>
+
+  <!-- ===== True/False Questions ===== -->
+  <div class="question-card" data-type="tf" data-index="0">
+    <span class="question-type-badge badge-tf">判断题</span>
+    <div class="question-title">记忆系统的延迟瓶颈主要在检索路径。</div>
+    <div class="tf-buttons" id="tf0">
+      <button class="tf-btn" data-value="true" onclick="selectTF(0, true)">✅ 是</button>
+      <button class="tf-btn" data-value="false" onclick="selectTF(0, false)">❌ 否</button>
+    </div>
+    <div class="explanation" id="expTF0"></div>
+    <div class="nav-buttons">
+      <button class="btn" onclick="prevQuestion()">⬅️ 上一题</button>
+      <button class="btn btn-primary" onclick="checkTF(0)">检查答案</button>
+      <button class="btn" onclick="resetQuestion(22)">重置</button>
+      <button class="btn" onclick="nextQuestion()">下一题 ➡️</button>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="tf" data-index="1">
+    <span class="question-type-badge badge-tf">判断题</span>
+    <div class="question-title">sleep-time 离线整合消除了记忆写入成本。</div>
+    <div class="tf-buttons" id="tf1">
+      <button class="tf-btn" data-value="true" onclick="selectTF(1, true)">✅ 是</button>
+      <button class="tf-btn" data-value="false" onclick="selectTF(1, false)">❌ 否</button>
+    </div>
+    <div class="explanation" id="expTF1"></div>
+    <div class="nav-buttons">
+      <button class="btn" onclick="prevQuestion()">⬅️ 上一题</button>
+      <button class="btn btn-primary" onclick="checkTF(1)">检查答案</button>
+      <button class="btn" onclick="resetQuestion(23)">重置</button>
+      <button class="btn" onclick="nextQuestion()">下一题 ➡️</button>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="tf" data-index="2">
+    <span class="question-type-badge badge-tf">判断题</span>
+    <div class="question-title">Mem0 的 token 节省（&gt;90%）是帕累托改进，没有质量代价。</div>
+    <div class="tf-buttons" id="tf2">
+      <button class="tf-btn" data-value="true" onclick="selectTF(2, true)">✅ 是</button>
+      <button class="tf-btn" data-value="false" onclick="selectTF(2, false)">❌ 否</button>
+    </div>
+    <div class="explanation" id="expTF2"></div>
+    <div class="nav-buttons">
+      <button class="btn" onclick="prevQuestion()">⬅️ 上一题</button>
+      <button class="btn btn-primary" onclick="checkTF(2)">检查答案</button>
+      <button class="btn" onclick="resetQuestion(24)">重置</button>
+      <button class="btn" onclick="nextQuestion()">下一题 ➡️</button>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="tf" data-index="3">
+    <span class="question-type-badge badge-tf">判断题</span>
+    <div class="question-title">memory 文本注入对 prefix caching 命中率 η 的影响已有公开量化研究。</div>
+    <div class="tf-buttons" id="tf3">
+      <button class="tf-btn" data-value="true" onclick="selectTF(3, true)">✅ 是</button>
+      <button class="tf-btn" data-value="false" onclick="selectTF(3, false)">❌ 否</button>
+    </div>
+    <div class="explanation" id="expTF3"></div>
+    <div class="nav-buttons">
+      <button class="btn" onclick="prevQuestion()">⬅️ 上一题</button>
+      <button class="btn btn-primary" onclick="checkTF(3)">检查答案</button>
+      <button class="btn" onclick="resetQuestion(25)">重置</button>
+      <button class="btn" onclick="nextQuestion()">下一题 ➡️</button>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="tf" data-index="4">
+    <span class="question-type-badge badge-tf">判断题</span>
+    <div class="question-title">厂商自报的 benchmark 数字（如 Mem0 官方博客 2026 的 LOCOMO 91.6%）可以直接引用。</div>
+    <div class="tf-buttons" id="tf4">
+      <button class="tf-btn" data-value="true" onclick="selectTF(4, true)">✅ 是</button>
+      <button class="tf-btn" data-value="false" onclick="selectTF(4, false)">❌ 否</button>
+    </div>
+    <div class="explanation" id="expTF4"></div>
+    <div class="nav-buttons">
+      <button class="btn" onclick="prevQuestion()">⬅️ 上一题</button>
+      <button class="btn btn-primary" onclick="checkTF(4)">检查答案</button>
+      <button class="btn" onclick="resetQuestion(26)">重置</button>
+      <button class="btn" onclick="nextQuestion()">下一题 ➡️</button>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="tf" data-index="5">
+    <span class="question-type-badge badge-tf">判断题</span>
+    <div class="question-title">MemOS 的 KV-form 记忆把「高频访问 + 语义稳定」的 plaintext 条目预编码为 KV 格式直注 attention cache，之后每查询的边际成本趋近于零。</div>
+    <div class="tf-buttons" id="tf5">
+      <button class="tf-btn" data-value="true" onclick="selectTF(5, true)">✅ 是</button>
+      <button class="tf-btn" data-value="false" onclick="selectTF(5, false)">❌ 否</button>
+    </div>
+    <div class="explanation" id="expTF5"></div>
+    <div class="nav-buttons">
+      <button class="btn" onclick="prevQuestion()">⬅️ 上一题</button>
+      <button class="btn btn-primary" onclick="checkTF(5)">检查答案</button>
+      <button class="btn" onclick="resetQuestion(27)">重置</button>
+      <button class="btn" onclick="nextQuestion()">下一题 ➡️</button>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="tf" data-index="6">
+    <span class="question-type-badge badge-tf">判断题</span>
+    <div class="question-title">Mem0^g（图变体）在不增加延迟的前提下提升了精度。</div>
+    <div class="tf-buttons" id="tf6">
+      <button class="tf-btn" data-value="true" onclick="selectTF(6, true)">✅ 是</button>
+      <button class="tf-btn" data-value="false" onclick="selectTF(6, false)">❌ 否</button>
+    </div>
+    <div class="explanation" id="expTF6"></div>
+    <div class="nav-buttons">
+      <button class="btn" onclick="prevQuestion()">⬅️ 上一题</button>
+      <button class="btn btn-primary" onclick="checkTF(6)">检查答案</button>
+      <button class="btn" onclick="resetQuestion(28)">重置</button>
+      <button class="btn" onclick="nextQuestion()">下一题 ➡️</button>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="tf" data-index="7">
+    <span class="question-type-badge badge-tf">判断题</span>
+    <div class="question-title">LightMem 在把在线成本压低数量级的同时，QA 准确率反而提升（LongMemEval 最高 +7.7% / LoCoMo 最高 +29.3%）。</div>
+    <div class="tf-buttons" id="tf7">
+      <button class="tf-btn" data-value="true" onclick="selectTF(7, true)">✅ 是</button>
+      <button class="tf-btn" data-value="false" onclick="selectTF(7, false)">❌ 否</button>
+    </div>
+    <div class="explanation" id="expTF7"></div>
+    <div class="nav-buttons">
+      <button class="btn" onclick="prevQuestion()">⬅️ 上一题</button>
+      <button class="btn btn-primary" onclick="checkTF(7)">检查答案</button>
+      <button class="btn" onclick="resetQuestion(29)">重置</button>
+      <button class="btn" onclick="nextQuestion()">下一题 ➡️</button>
+    </div>
+  </div>
+
+</div><!-- end container -->
+
+<!-- ===== Dashboard Overlay ===== -->
+<div class="dashboard-overlay" id="dashboardOverlay">
+  <div class="dashboard-header">
+    <h2>📊 题目总览</h2>
+    <button class="btn btn-primary" onclick="closeDashboard()">关闭</button>
+  </div>
+  <div class="dashboard-stats">
+    <div class="stat-card"><div class="stat-value" id="statTotal">30</div><div>总题数</div></div>
+    <div class="stat-card"><div class="stat-value" id="statCorrect">0</div><div style="color:var(--success)">正确</div></div>
+    <div class="stat-card"><div class="stat-value" id="statWrong">0</div><div style="color:var(--error)">错误</div></div>
+    <div class="stat-card"><div class="stat-value" id="statUnanswered">30</div><div style="color:var(--text-secondary)">未答</div></div>
+  </div>
+  <div class="filter-buttons">
+    <button class="btn btn-primary" onclick="filterDashboard('all')">全部</button>
+    <button class="btn btn-success" onclick="filterDashboard('correct')">正确</button>
+    <button class="btn" style="background:var(--error);color:#fff;border-color:var(--error)" onclick="filterDashboard('wrong')">错误</button>
+    <button class="btn" onclick="filterDashboard('unanswered')">未答</button>
+  </div>
+  <div class="dashboard-grid" id="dashboardGrid"></div>
+</div>
+
+<!-- ===== Result Page ===== -->
+<div class="result-page" id="resultPage">
+  <h2>🎉 答题完成！</h2>
+  <div class="result-score" id="finalScore">0</div>
+  <div class="result-message" id="resultMessage">继续加油！</div>
+  <div class="result-details">
+    <div class="stat-card"><div class="stat-value" id="resCorrect">0</div><div style="color:var(--success)">正确</div></div>
+    <div class="stat-card"><div class="stat-value" id="resWrong">0</div><div style="color:var(--error)">错误</div></div>
+    <div class="stat-card"><div class="stat-value" id="resUnanswered">0</div><div style="color:var(--text-secondary)">未答</div></div>
+    <div class="stat-card"><div class="stat-value" id="resAccuracy">0%</div><div>正确率</div></div>
+  </div>
+  <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin-top:2rem;">
+    <button class="btn btn-primary" onclick="openDashboard()">📊 返回查看</button>
+    <button class="btn btn-success" onclick="continueQuiz()">📝 继续做题</button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// 题目数据
+// ============================================================
+
+const dragQuestions = [
+  {
+    answers: ["≈26,000", "≈17 s"],
+    pool: ["≈26,000", "≈17 s", "≈1,764", "≈1.44 s", "≈8,000", "≈2.6 s"],
+    explanations: [
+      "✅ 正确：full-context 把历史全量注入，tokens/query ≈ <strong>26,000</strong>（正文；第三方转述精确值 26,031，🟡 Atlan 2026），token 成本、TTFT、KV cache 显存三重不可扩展。",
+      "✅ 正确：p95 端到端延迟 ≈ <strong>17 s</strong>（正文 around 17 seconds；转述 17.12 s），LLM 生成主导——质量上界（J≈72.9%）但经济上不可用。"
+    ],
+    detailLink: "Agent-Memory-System-性能优化.md#优化前：瓶颈画像"
+  },
+  {
+    answers: ["Extraction", "Update"],
+    pool: ["Extraction", "Update", "Retrieval", "Rerank", "Prefill", "Decode"],
+    explanations: [
+      "✅ 正确：<strong>Extraction</strong>：LLM 函数 φ(P) 从消息对提取候选事实集 Ω = {ω₁,…,ωₙ}，prompt P 含异步刷新的会话摘要 S（不阻塞主流水线），实验配置 m = 10。",
+      "✅ 正确：<strong>Update</strong>：每个候选事实先检索 top-s（s = 10）相似记忆，再由 LLM 经 tool call 仲裁 ADD / UPDATE / DELETE / NOOP——两阶段合计每消息对 ≥ 2 次额外 LLM 调用。"
+    ],
+    detailLink: "Agent-Memory-System-性能优化.md#一、主矛盾判定：在线开销在写入/整合路径，而非检索路径"
+  },
+  {
+    answers: ["≈0.0169", "≈64%"],
+    pool: ["≈0.0169", "≈64%", "≈0.358", "≈36%", "≈1.79", "≈106%"],
+    explanations: [
+      "✅ 正确：令 C<sub>base</sub> = 1，C<sub>on</sub> ≈ 1/106，C<sub>on</sub>+C<sub>off</sub> ≈ 1/38，故 C<sub>off</sub> ≈ 1/38 − 1/106 = 68/4028 ≈ <strong>0.0169</strong>。",
+      "✅ 正确：离线占比 = 1 − 38/106 ≈ <strong>0.642</strong>（约 64%）；C<sub>off</sub>/C<sub>on</sub> ≈ 106/38 − 1 ≈ 1.79——sleep-time 是转移成本而非消除成本。"
+    ],
+    detailLink: "Agent-Memory-System-性能优化.md#一、主矛盾判定：在线开销在写入/整合路径，而非检索路径"
+  },
+  {
+    answers: ["0.33 MB", "≈8.5 GB"],
+    pool: ["0.33 MB", "≈8.5 GB", "3.3 MB", "≈85 GB", "0.033 MB", "≈0.85 GB"],
+    explanations: [
+      "✅ 正确：M<sub>KV</sub>/n = 2·L·H<sub>kv</sub>·d<sub>h</sub>·b = 2 × 80 × 8 × 128 × 2 B = 327,680 B ≈ <strong>0.33 MB/token</strong>（因子 2 对应 K、V 两份；GQA 下 H<sub>kv</sub> = 8）。",
+      "✅ 正确：26,000 × 0.33 MB ≈ <strong>8.5 GB</strong> KV cache——每会话。高并发下显存先被 KV cache 打满而非权重，这是全上下文方案必须走外部记忆路线的硬约束。"
+    ],
+    detailLink: "Agent-Memory-System-性能优化.md#三、token 成本与 prefill/显存的定量关系"
+  },
+  {
+    answers: ["plaintext", "activation"],
+    pool: ["plaintext", "activation", "embedding", "checkpoint", "sparse", "delta"],
+    explanations: [
+      "✅ 正确：<strong>plaintext</strong>：文本形态，检索后注入 context——每查询都要付 T<sub>prefill</sub>(n<sub>ret</sub>)。",
+      "✅ 正确：<strong>activation</strong>（KV-form）：预编码为 KV 格式直注 attention cache 并预置 GPU，之后每查询边际成本趋近于零——与 OS 的 page promotion 同构；parameter 态则是蒸馏进权重。"
+    ],
+    detailLink: "Agent-Memory-System-性能优化.md#四、前沿：memory × KV cache 的交互"
+  },
+  {
+    answers: ["784 ms", "11 ms"],
+    pool: ["784 ms", "11 ms", "115 ms", "83 ms", "173 ms", "167 ms"],
+    explanations: [
+      "✅ 正确：Mem0 的 search 阶段耗时 <strong>784 ms</strong>（✅ arXiv:2601.08160 Table 2，第三方复现）——检索链路中引入了 LLM 做查询处理/结果仲裁。",
+      "✅ 正确：纯索引检索仅需 <strong>11 ms</strong>——约 70 倍差距说明瓶颈不在向量索引本身；检索路径的优化原则是「去 LLM 化」。"
+    ],
+    detailLink: "Agent-Memory-System-性能优化.md#二、检索路径优化：纯检索已进入 100–200 ms 区间"
+  }
+];
+
+const singleQuestions = [
+  {
+    question: "Agent 记忆系统在线开销的「主矛盾」在哪里？",
+    options: [
+      "向量索引（HNSW）的查询复杂度过高",
+      "embedding 模型推理太慢",
+      "写入/整合路径的 LLM-in-the-loop：每消息对 ≥2 次额外 LLM 调用",
+      "记忆库的网络带宽不足"
+    ],
+    correct: 2,
+    explanations: [
+      "❌ 错误：HNSW 平均查询复杂度 O(log N)，毫秒级且随记忆库规模对数增长，可控。",
+      "❌ 错误：本地小模型 embedding <10 ms；远程 API 50–200 ms（网络主导）也可本地化消除。",
+      "✅ 正确：Mem0 每消息对 ≥2 次额外 LLM 调用（Extraction + Update 仲裁），秒级且逐轮发生，与回答本身的主调用同量级——检索路径已可压到 100–200 ms，主矛盾在写入侧。",
+      "❌ 错误：带宽不是该延迟分解模型中的瓶颈项。"
+    ],
+    detailLink: "Agent-Memory-System-性能优化.md#一、主矛盾判定：在线开销在写入/整合路径，而非检索路径"
+  },
+  {
+    question: "Mem0 外部记忆把单次查询的输入 token 从 ≈26,000 压缩到约多少？",
+    options: [
+      "≈1,764 tokens（约 -93%）",
+      "≈2,680 tokens（约 -90%）",
+      "≈5,200 tokens（约 -80%）",
+      "≈13,000 tokens（约 -50%）"
+    ],
+    correct: 0,
+    explanations: [
+      "✅ 正确：n<sub>hist</sub> ≈ 26,031 vs n<sub>ret</sub> ≈ <strong>1,764</strong> tokens/query，单次查询输入 token 约 -93%（幅度 >90% 为 ✅ 论文摘要；精确值 🟡 Atlan 转述）。",
+      "❌ 错误：2,680 是 Zep auto search 的中位注入 context（🟡 厂商自报），不是 Mem0 的数字。",
+      "❌ 错误：-80% 是 MemMachine 的二手引述数字（🟡，未回溯原文），与 Mem0 无关。",
+      "❌ 错误：-50% 无出处。"
+    ],
+    detailLink: "Agent-Memory-System-性能优化.md#三、token 成本与 prefill/显存的定量关系"
+  },
+  {
+    question: "self-attention 的 prefill FLOPs ≈ 4·L·d<sub>model</sub>·n²。注入长度 n 从 26,000 降至 1,764 时，attention 部分 FLOPs 约缩减多少倍？",
+    options: [
+      "≈14.7×",
+      "≈38×",
+      "≈106×",
+      "≈217×"
+    ],
+    correct: 3,
+    explanations: [
+      "❌ 错误：14.7× 是线性投影部分（FLOPs ≈ 8Ld²n，随 n 线性缩放）的缩减。",
+      "❌ 错误：38× 是 LightMem 总 token 口径的节省倍数，与 prefill FLOPs 无关。",
+      "❌ 错误：106× 是 LightMem 纯在线 token 口径，也不是 FLOPs 缩减。",
+      "✅ 正确：(1,764/26,000)² ≈ (0.0678)² ≈ 0.46%，即约 <strong>217×</strong> 缩减——平方项对注入长度极其敏感。"
+    ],
+    detailLink: "Agent-Memory-System-性能优化.md#三、token 成本与 prefill/显存的定量关系"
+  },
+  {
+    question: "Zep auto search 报告的检索延迟（p50 / p95）是？",
+    options: [
+      "83 / 167 ms",
+      "115 / 173 ms",
+      "784 ms（search 阶段）",
+      "11 ms（纯索引）"
+    ],
+    correct: 1,
+    explanations: [
+      "❌ 错误：83/167 ms 是 LightMem 的检索延迟（🟡 经 arXiv:2604.07798 引述）。",
+      "✅ 正确：Zep auto search p50/p95 = <strong>115/173 ms</strong>（🟡 getzep.com/research，厂商自报）——单次 API 调用、免调参 hybrid search。",
+      "❌ 错误：784 ms 是 Mem0 的第三方复现口径（SwiftMem）。",
+      "❌ 错误：11 ms 是 SwiftMem 纯索引的 search 耗时。"
+    ],
+    detailLink: "Agent-Memory-System-性能优化.md#二、检索路径优化：纯检索已进入 100–200 ms 区间"
+  },
+  {
+    question: "LightMem 纯在线 token ↓106×、总 token（含离线）↓38×（LongMemEval 口径）。联立两式反解，离线整合成本 C<sub>off</sub> 与在线剩余成本 C<sub>on</sub> 之比约为？",
+    options: [
+      "≈0.36",
+      "≈0.64",
+      "≈1.79",
+      "≈2.79"
+    ],
+    correct: 2,
+    explanations: [
+      "❌ 错误：0.358 = C<sub>on</sub>/(C<sub>on</sub>+C<sub>off</sub>)，是在线成本占总成本的比例，不是两者之比。",
+      "❌ 错误：0.642 是离线占总成本的比例（≈64%），题目问的是 C<sub>off</sub>/C<sub>on</sub>。",
+      "✅ 正确：C<sub>off</sub>/C<sub>on</sub> = (C<sub>base</sub>/38)÷(C<sub>base</sub>/106) − 1 = 106/38 − 1 ≈ <strong>1.79</strong>——离线绝对成本约是在线剩余的 1.8 倍。",
+      "❌ 错误：106/38 ≈ 2.79 忘记减 1。"
+    ],
+    detailLink: "Agent-Memory-System-性能优化.md#一、主矛盾判定：在线开销在写入/整合路径，而非检索路径"
+  },
+  {
+    question: "SwiftMem 复现中，Mem0 search 784 ms vs 纯索引 11 ms（≈70×）。这一差距的主要来源是？",
+    options: [
+      "检索链路中引入的 LLM 调用（查询处理 / 结果仲裁）",
+      "HNSW 索引规模过大导致查询变慢",
+      "embedding 维度太高拖慢相似度计算",
+      "向量数据库的磁盘 I/O 瓶颈"
+    ],
+    correct: 0,
+    explanations: [
+      "✅ 正确：约 70 倍差距几乎全部来自检索链路中引入的 LLM 调用（✅ arXiv:2601.08160 Table 2），而非向量索引本身——检索路径优化原则是「去 LLM 化」。",
+      "❌ 错误：HNSW 平均查询复杂度 O(log N)，毫秒级，纯索引实测仅 11 ms。",
+      "❌ 错误：无实测依据，且纯索引 11 ms 已含 embedding 相似度计算。",
+      "❌ 错误：无实测依据。"
+    ],
+    detailLink: "Agent-Memory-System-性能优化.md#优化前：瓶颈画像"
+  },
+  {
+    question: "Mem0 论文中，token 节省 >90% 的质量代价是 LOCOMO J 分数从 72.9% 变为？",
+    options: [
+      "72.5%（-0.4 pt，几乎无损）",
+      "66.9%（-6 pt）",
+      "68.4%（-4.5 pt）",
+      "61.3%（-11.6 pt）"
+    ],
+    correct: 1,
+    explanations: [
+      "❌ 错误：并非无损——论文明确报告了可感知的精度下降。",
+      "✅ 正确：J 72.9% → <strong>66.9%</strong>（-6 pt，✅ arXiv:2504.19413）——外部记忆用精度换经济性与延迟，不是帕累托改进。",
+      "❌ 错误：68.4% 是 Mem0^g 图变体的 J（用 +81% p95 延迟换回约 +1.5 pt）。",
+      "❌ 错误：0.613 是第三方复现口径（SwiftMem, GPT-4o-mini judge），与论文自报口径不能直接相减比较。"
+    ],
+    detailLink: "Agent-Memory-System-性能优化.md#五、质量-成本权衡：token 节省不是免费的"
+  },
+  {
+    question: "MemOS 的 KV-form 记忆（activation memory）「绕开 prefill」的成本逻辑是？",
+    options: [
+      "每查询重新 prefill 记忆文本，成本与 plaintext 注入相同",
+      "把记忆蒸馏进模型权重，推理时零开销",
+      "用更小的模型在线重算 KV，降低单次编码单价",
+      "对高频稳定条目一次性预付编码成本并预置 GPU，之后每查询边际成本趋近于零"
+    ],
+    correct: 3,
+    explanations: [
+      "❌ 错误：那是 plaintext 注入——每查询都要付 T<sub>prefill</sub>(n<sub>ret</sub>)。",
+      "❌ 错误：那是 parameter 态（蒸馏进权重），不是 activation 态。",
+      "❌ 错误：无此设计。",
+      "✅ 正确：KV-form 直注后每查询仅 attention 多读 n<sub>ret</sub> 个 KV 位置（带宽开销而非 prefill 计算）；对「高频访问 + 语义稳定」条目预付摊销后净收益为正——与 OS page promotion（磁盘→内存→TLB）同构。"
+    ],
+    detailLink: "Agent-Memory-System-性能优化.md#四、前沿：memory × KV cache 的交互"
+  },
+  {
+    question: "第三方复现（SwiftMem, GPT-4o-mini）中 Mem0 的 J 仅 0.613，与论文自报的 66.9% 存在显著偏差。引用这类数字的正确做法是？",
+    options: [
+      "必须注明「来源版本 + 评测口径（LLM-as-Judge 模型）+ 自报还是第三方复现」三件套",
+      "直接采用厂商自报的更高数字",
+      "取自报数字与复现数字的平均值",
+      "据此判定该记忆系统完全无效"
+    ],
+    correct: 0,
+    explanations: [
+      "✅ 正确：三件套缺一不可；Mem0 官方博客 2026 新数字（91.6%，🟡）与 2025 论文的 66.9% 也不是同一版本，不可混用。",
+      "❌ 错误：自报数字不可直接引用——中文二手文章流传的「Mem0 LOCOMO 92.5」表格即系张冠李戴，禁止使用。",
+      "❌ 错误：不同版本、不同 judge 口径的数字不能算术平均。",
+      "❌ 错误：复现偏差 ≠ 系统无效，它只说明引用必须带口径标签。"
+    ],
+    detailLink: "Agent-Memory-System-性能优化.md#五、质量-成本权衡：token 节省不是免费的"
+  },
+  {
+    question: "高并发场景下，全上下文方案（26K tokens/会话）在系统层会先耗尽什么资源？",
+    options: [
+      "模型权重占用的显存",
+      "CPU 内存",
+      "KV cache 显存（≈8.5 GB/会话）",
+      "网络带宽"
+    ],
+    correct: 2,
+    explanations: [
+      "❌ 错误：权重显存占用固定，不随会话数增长。",
+      "❌ 错误：KV cache 驻留 GPU 显存，不是 CPU 内存。",
+      "✅ 正确：0.33 MB/token × 26K ≈ <strong>8.5 GB/会话</strong>——高并发下显存先被 KV cache 打满而非权重，这是全上下文方案在系统层不可扩展、必须走外部记忆路线的硬约束。",
+      "❌ 错误：带宽不是该推导中的瓶颈项。"
+    ],
+    detailLink: "Agent-Memory-System-性能优化.md#三、token 成本与 prefill/显存的定量关系"
+  }
+];
+
+const multiQuestions = [
+  {
+    question: "全上下文方案（full-context stuffing）的「三重不可扩展」指哪些？（多选）",
+    options: [
+      "token 成本随历史长度线性增长",
+      "KV cache 显存随历史增长（26K tokens ≈ 8.5 GB/会话）",
+      "embedding 模型无法编码长文本",
+      "prefill 中 attention 部分 FLOPs 随 n² 增长",
+      "HNSW 索引查询复杂度随历史爆炸",
+      "LLM 权重必须随对话频繁重训"
+    ],
+    correct: [0, 1, 3],
+    explanations: [
+      "✅ 正确：历史无限增长 ⇒ 每查询输入 token（≈26,000）线性累积，API 成本不可扩展。",
+      "✅ 正确：0.33 MB/token × 26K ≈ 8.5 GB/会话，高并发下显存先被 KV cache 打满。",
+      "❌ 错误：三重不可扩展指 token 成本、TTFT、KV cache 显存——与 embedding 编码能力无关。",
+      "✅ 正确：attention 部分 FLOPs ≈ 4Ld<sub>model</sub>n²，prefill/TTFT 随 n² 恶化。",
+      "❌ 错误：HNSW 查询复杂度 O(log N)，毫秒级可控，恰是外部记忆方案的优势。",
+      "❌ 错误：全上下文方案不涉及权重更新。"
+    ],
+    detailLink: "Agent-Memory-System-性能优化.md#优化前：瓶颈画像"
+  },
+  {
+    question: "端到端延迟分解 T<sub>e2e</sub> = T<sub>retrieval</sub> + T<sub>generation</sub> 中，属于检索段 T<sub>retrieval</sub> 的组件有？（多选）",
+    options: [
+      "T<sub>prefill</sub>(n<sub>ctx</sub>)",
+      "T<sub>embed</sub>(q)",
+      "T<sub>ANN</sub>(q)",
+      "T<sub>decode</sub>",
+      "T<sub>rerank</sub>(q, k)",
+      "T<sub>inject</sub>"
+    ],
+    correct: [1, 2, 4, 5],
+    explanations: [
+      "❌ 错误：T<sub>prefill</sub> 属于生成段 T<sub>generation</sub>，随注入 token 数近似线性（attention 部分随 n²）。",
+      "✅ 正确：查询向量化是检索第一步；本地小模型 <10 ms，远程 API 50–200 ms 可本地化消除。",
+      "✅ 正确：HNSW 近似最近邻查询，O(log N) 毫秒级。",
+      "❌ 错误：T<sub>decode</sub> 属于生成段。",
+      "✅ 正确：cross-encoder 约 k 次 forward；若用 LLM rerank 则直接进入百毫秒–秒级，是重尾来源。",
+      "✅ 正确：检索结果注入 context 是检索段的收尾环节。"
+    ],
+    detailLink: "Agent-Memory-System-性能优化.md#优化前：瓶颈画像"
+  },
+  {
+    question: "LightMem 报告的四组成本口径中，哪些属于「纯在线」口径（用户感知路径）？（多选）",
+    options: [
+      "总 token（含离线整合）最高 ↓38× / 20.9×",
+      "纯在线 test-time token 最高 ↓106× / 117×",
+      "总 API 调用（含离线）最高 ↓30× / 55.5×",
+      "纯在线 API 调用最高 ↓159× / 310×",
+      "离线整合成本降为零",
+      "LOCOMO J 分数下降 6 pt"
+    ],
+    correct: [1, 3],
+    explanations: [
+      "❌ 错误：那是总成本口径（含离线整合），才是系统设计的真实预算。",
+      "✅ 正确：纯在线 test-time token ↓106×/117× 是用户感知路径上的成本口径（延迟/SLO 视角）。",
+      "❌ 错误：那是总口径（含离线）。",
+      "✅ 正确：纯在线 API 调用 ↓159×/310× 同属纯在线口径。",
+      "❌ 错误：离线约占总成本 64%、C<sub>off</sub>/C<sub>on</sub> ≈ 1.79——是转移而非消除。",
+      "❌ 错误：J −6 pt 是 Mem0 的质量代价，不是 LightMem 的成本口径。"
+    ],
+    detailLink: "Agent-Memory-System-性能优化.md#一、主矛盾判定：在线开销在写入/整合路径，而非检索路径"
+  },
+  {
+    question: "哪些实测数据支持「纯检索路径可压进 200 ms 内，LLM-in-the-loop 是延迟重尾主要来源」？（多选）",
+    options: [
+      "HNSW 查询复杂度 O(N) 是主要瓶颈",
+      "LightMem 检索 p50/p95 = 83/167 ms",
+      "Mem0 search 784 ms vs 纯索引 11 ms（≈70×）",
+      "远程 embedding API 的延迟无法优化",
+      "Zep auto search p50/p95 = 115/173 ms",
+      "SwiftMem 纯索引 search = 11 ms"
+    ],
+    correct: [1, 2, 4, 5],
+    explanations: [
+      "❌ 错误：HNSW 是 O(log N) 而非 O(N)，毫秒级可控。",
+      "✅ 正确：LightMem p50/p95 = 83/167 ms（🟡 经 arXiv:2604.07798 引述），稳定在 200 ms 内。",
+      "✅ 正确：约 70 倍差距几乎全部来自检索链路引入的 LLM 调用（✅ arXiv:2601.08160 Table 2），是 LLM-in-the-loop 重尾的直接证据。",
+      "❌ 错误：远程 embedding 50–200 ms（网络主导）可通过本地化小模型（<10 ms）消除。",
+      "✅ 正确：Zep 115/173 ms（🟡 厂商自报）——单次 API 调用、免调参 hybrid search。",
+      "✅ 正确：纯索引 11 ms 说明向量索引本身远非瓶颈。"
+    ],
+    detailLink: "Agent-Memory-System-性能优化.md#二、检索路径优化：纯检索已进入 100–200 ms 区间"
+  },
+  {
+    question: "关于 gating / 遗忘策略的成本特性，正确的有？（多选）",
+    options: [
+      "gating 的首要调参目标是提升精度",
+      "Bounded buffer 把存储增长从 O(N) 压到 O(1)、检索从 O(log N) 压到 O(log B)",
+      "遗忘机制会增加检索路径延迟",
+      "Utility gating 以通过率 ρ 线性缩放期望存储 E[S(N)] = ρN·s̄ 与候选集",
+      "指数时间衰减使候选集规模随 λ 指数收缩",
+      "Scheduled consolidation 把删除与合并成本移出在线路径"
+    ],
+    correct: [1, 3, 4, 5],
+    explanations: [
+      "❌ 错误：这三个旋钮的调参目标首先是 SLO 与预算，其次才是精度——精度损失用 LOCOMO/LongMemEval 类基准回归兜底。",
+      "✅ 正确：存储硬上界 S ≤ B ⇒「遗忘是成本特性而非精度特性」的最直接论证（CraniMem FIFO buffer）。",
+      "❌ 错误：遗忘缩小候选集规模，降低而非增加检索成本。",
+      "✅ 正确：写入仅当效用 u(x) > τ，期望存储与候选集同比缩小 ρ 倍。",
+      "✅ 正确：a<sub>i</sub>(t) = a<sub>i</sub>(t₀)·e<sup>−λ(t−t₀)</sup>，衰减至阈值以下批量 prune（Ebbinghaus 遗忘曲线 R = e<sup>−t/S</sup> 同属一族）。",
+      "✅ 正确：离线 replay 高效用 trace 进长期存储、prune 低效用项（CraniMem / LightMem / HiMem 共有）。"
+    ],
+    detailLink: "Agent-Memory-System-性能优化.md#六、生产级优化手段清单"
+  },
+  {
+    question: "引用任何记忆系统精度数字的「三件套」包括？（多选）",
+    options: [
+      "来源版本",
+      "论文页数",
+      "评测口径（LLM-as-Judge 模型）",
+      "作者单位",
+      "自报还是第三方复现",
+      "GitHub star 数"
+    ],
+    correct: [0, 2, 4],
+    explanations: [
+      "✅ 正确：Mem0 2025 论文的 66.9% 与官方博客 2026 新数字（91.6%，🟡）不是同一版本，不可混用。",
+      "❌ 错误：页数与数字可信度无关。",
+      "✅ 正确：LLM-as-Judge 用哪个模型直接决定 J 分数口径（如 SwiftMem 复现用 GPT-4o-mini）。",
+      "❌ 错误：作者单位不是引用口径要素。",
+      "✅ 正确：Mem0 论文自报 66.9% vs 第三方复现 0.613——自报/复现属性必须标注。",
+      "❌ 错误：star 数与精度数字无关。"
+    ],
+    detailLink: "Agent-Memory-System-性能优化.md#经验教训"
+  }
+];
+
+const trueFalseQuestions = [
+  {
+    question: "记忆系统的延迟瓶颈主要在检索路径。",
+    correct: false,
+    explanationTrue: "❌ 常见误解：检索路径看似显眼，但纯 embedding + ANN + 轻量 rerank 已稳定压进 100–200 ms（Zep 115/173 ms、LightMem 83/167 ms），不是主矛盾。",
+    explanationFalse: "✅ 正确理解：主矛盾在写入/整合路径——Mem0 每消息对 ≥2 次额外 LLM 调用（Extraction + Update 仲裁），秒级且逐轮发生；优化优先级：写入离线化 > 检索去 LLM 化 > 注入压缩。",
+    detailLink: "Agent-Memory-System-性能优化.md#经验教训"
+  },
+  {
+    question: "sleep-time 离线整合消除了记忆写入成本。",
+    correct: false,
+    explanationTrue: "❌ 常见误解：把成本移到离线并不等于成本消失——离线整合本身也要花 token 和 API 调用。",
+    explanationFalse: "✅ 正确理解：sleep-time update 是转移而非消除——总成本口径节省仅 ↓20.9–38×（对比纯在线 ↓106–117×），反解离线约占总成本 64%、C_off/C_on ≈ 1.79；系统设计预算必须按总口径，汇报只说在线口径是误导。",
+    detailLink: "Agent-Memory-System-性能优化.md#一、主矛盾判定：在线开销在写入/整合路径，而非检索路径"
+  },
+  {
+    question: "Mem0 的 token 节省（>90%）是帕累托改进，没有质量代价。",
+    correct: false,
+    explanationTrue: "❌ 常见误解：token 大降看似纯赚，但基准分数明确下滑。",
+    explanationFalse: "✅ 正确理解：代价是 LOCOMO J 72.9% → 66.9%（-6 pt，✅ arXiv:2504.19413）——用精度换经济性与延迟的显式交换；选型时应先把质量容忍度写成约束，再在约束下最大化成本节省。",
+    detailLink: "Agent-Memory-System-性能优化.md#五、质量-成本权衡：token 节省不是免费的"
+  },
+  {
+    question: "memory 文本注入对 prefix caching 命中率 η 的影响已有公开量化研究。",
+    correct: false,
+    explanationTrue: "❌ 常见误解：prefix caching 本身很成熟，直觉上应该有人测过这个交互——但并没有。",
+    explanationFalse: "✅ 正确理解：截至 2026-07-16 未找到针对该交互的公开量化研究（η 的实测数据），标注为研究空白；固定槽位、按稳定度排序、记忆块置前三个策略对 η 的影响是可以直接做实验发结果的点。",
+    detailLink: "Agent-Memory-System-性能优化.md#四、前沿：memory × KV cache 的交互"
+  },
+  {
+    question: "厂商自报的 benchmark 数字（如 Mem0 官方博客 2026 的 LOCOMO 91.6%）可以直接引用。",
+    correct: false,
+    explanationTrue: "❌ 常见误解：官方数字看似权威，但 91.6%（🟡 厂商自报，2026 新版）与 2025 论文的 66.9% 不是同一版本，且第三方复现仅 0.613。",
+    explanationFalse: "✅ 正确理解：必须带三件套——来源版本、评测口径（LLM-as-Judge 模型）、自报还是第三方复现；中文二手文章流传的「Mem0 LOCOMO 92.5 / P95 <50ms」表格与 arXiv:2504.19413 原文严重不符，系张冠李戴，禁止使用。",
+    detailLink: "Agent-Memory-System-性能优化.md#经验教训"
+  },
+  {
+    question: "MemOS 的 KV-form 记忆把「高频访问 + 语义稳定」的 plaintext 条目预编码为 KV 格式直注 attention cache，之后每查询的边际成本趋近于零。",
+    correct: true,
+    explanationTrue: "✅ 正确：plaintext 注入每查询都要付 T_prefill(n_ret)；KV-form 直注一次性预付编码成本并预置 GPU，之后仅 attention 多读 n_ret 个 KV 位置（带宽开销而非 prefill 计算）——与 OS 的 page promotion（磁盘 → 内存 → TLB）同构。",
+    explanationFalse: "❌ 错误：这正是 MemOS MemScheduler 的核心机制（✅ arXiv:2507.03724），也是 break-even 模型中 C_write/Q 被 Q 摊薄的极限形态。",
+    detailLink: "Agent-Memory-System-性能优化.md#四、前沿：memory × KV cache 的交互"
+  },
+  {
+    question: "Mem0^g（图变体）在不增加延迟的前提下提升了精度。",
+    correct: false,
+    explanationTrue: "❌ 常见误解：约 +1.5 pt 的精度看似白捡，实则代价昂贵。",
+    explanationFalse: "✅ 正确理解：Mem0^g 用 +81% 的 p95 延迟（1.44 s → 2.6 s）换回约 +1.5 pt 精度（66.9% → 68.4%）——结构化关系建模边际收益递减，是否值得取决于任务对多跳关系的依赖度。",
+    detailLink: "Agent-Memory-System-性能优化.md#五、质量-成本权衡：token 节省不是免费的"
+  },
+  {
+    question: "LightMem 在把在线成本压低数量级的同时，QA 准确率反而提升（LongMemEval 最高 +7.7% / LoCoMo 最高 +29.3%）。",
+    correct: true,
+    explanationTrue: "✅ 正确（✅ arXiv:2510.18866 摘要）：「写入路径重构」与「注入压缩」不同——更干净的离线整合在降低在线成本的同时还可能提升质量，权衡方向与 Mem0 相反。",
+    explanationFalse: "❌ 错误：这是 LightMem 论文摘要明确报告的结果；写入离线化不是单纯的精度换成本。",
+    detailLink: "Agent-Memory-System-性能优化.md#五、质量-成本权衡：token 节省不是免费的"
+  }
+];
+
+// ============================================================
+// 全局状态
+// ============================================================
+
+let currentQuestion = 0;
+const totalQuestions = dragQuestions.length + singleQuestions.length + multiQuestions.length + trueFalseQuestions.length;
+
+const state = {
+  drag: dragQuestions.map(() => ({ answers: [], checked: false, correct: false })),
+  single: singleQuestions.map(() => ({ selected: -1, checked: false, correct: false })),
+  multi: multiQuestions.map(() => ({ selected: [], checked: false, correct: false })),
+  tf: trueFalseQuestions.map(() => ({ selected: null, checked: false, correct: false }))
+};
+
+// 所有题目的统一索引
+const allQuestions = [];
+
+function buildAllQuestions() {
+  allQuestions.length = 0;
+  dragQuestions.forEach((q, i) => allQuestions.push({ type: 'drag', index: i, title: q.answers.join(' / ') }));
+  singleQuestions.forEach((q, i) => allQuestions.push({ type: 'single', index: i, title: q.question }));
+  multiQuestions.forEach((q, i) => allQuestions.push({ type: 'multi', index: i, title: q.question }));
+  trueFalseQuestions.forEach((q, i) => allQuestions.push({ type: 'tf', index: i, title: q.question }));
+}
+buildAllQuestions();
+
+// ============================================================
+// 初始化渲染
+// ============================================================
+
+function initDragQuestions() {
+  dragQuestions.forEach((q, qi) => {
+    const pool = document.getElementById('dragPool' + qi);
+    if (!pool) return;
+    pool.innerHTML = '';
+    q.pool.forEach((term, ti) => {
+      const el = document.createElement('div');
+      el.className = 'drag-item';
+      el.draggable = true;
+      el.textContent = term;
+      el.dataset.term = term;
+      el.dataset.qi = qi;
+      el.addEventListener('dragstart', onDragStart);
+      el.addEventListener('dragend', onDragEnd);
+      pool.appendChild(el);
+    });
+
+    const zones = document.querySelectorAll(`.question-card[data-type="drag"][data-index="${qi}"] .drop-zone`);
+    zones.forEach((zone, zi) => {
+      zone.dataset.qi = qi;
+      zone.dataset.zi = zi;
+      zone.addEventListener('dragover', onDragOver);
+      zone.addEventListener('dragleave', onDragLeave);
+      zone.addEventListener('drop', onDrop);
+    });
+  });
+}
+
+function initSingleQuestions() {
+  singleQuestions.forEach((q, qi) => {
+    const list = document.getElementById('single' + qi);
+    if (!list) return;
+    list.innerHTML = '';
+    q.options.forEach((opt, oi) => {
+      const el = document.createElement('div');
+      el.className = 'option-item';
+      el.dataset.oi = oi;
+      el.innerHTML = `<div class="option-marker">${String.fromCharCode(65 + oi)}</div><div>${opt}</div>`;
+      el.addEventListener('click', () => selectSingle(qi, oi));
+      list.appendChild(el);
+    });
+  });
+}
+
+function initMultiQuestions() {
+  multiQuestions.forEach((q, qi) => {
+    const list = document.getElementById('multi' + qi);
+    if (!list) return;
+    list.innerHTML = '';
+    q.options.forEach((opt, oi) => {
+      const el = document.createElement('div');
+      el.className = 'option-item';
+      el.dataset.oi = oi;
+      el.innerHTML = `<div class="option-marker">${String.fromCharCode(65 + oi)}</div><div>${opt}</div>`;
+      el.addEventListener('click', () => toggleMulti(qi, oi));
+      list.appendChild(el);
+    });
+  });
+}
+
+// ============================================================
+// 拖拽逻辑
+// ============================================================
+
+let draggedEl = null;
+
+function onDragStart(e) {
+  draggedEl = e.target;
+  e.target.classList.add('dragging');
+  e.dataTransfer.setData('text/plain', e.target.dataset.term);
+}
+
+function onDragEnd(e) {
+  e.target.classList.remove('dragging');
+  draggedEl = null;
+}
+
+function onDragOver(e) {
+  e.preventDefault();
+  e.currentTarget.classList.add('drag-over');
+}
+
+function onDragLeave(e) {
+  e.currentTarget.classList.remove('drag-over');
+}
+
+function onDrop(e) {
+  e.preventDefault();
+  const zone = e.currentTarget;
+  zone.classList.remove('drag-over');
+  const term = e.dataTransfer.getData('text/plain');
+  const qi = parseInt(zone.dataset.qi);
+  const zi = parseInt(zone.dataset.zi);
+
+  if (state.drag[qi].checked) return;
+
+  zone.textContent = term;
+  zone.classList.add('filled');
+  state.drag[qi].answers[zi] = term;
+
+  // 标记已使用的拖拽项
+  const pool = document.getElementById('dragPool' + qi);
+  pool.querySelectorAll('.drag-item').forEach(el => {
+    if (el.dataset.term === term) el.classList.add('used');
+  });
+}
+
+// ============================================================
+// 单选逻辑
+// ============================================================
+
+function selectSingle(qi, oi) {
+  if (state.single[qi].checked) return;
+  state.single[qi].selected = oi;
+  const list = document.getElementById('single' + qi);
+  list.querySelectorAll('.option-item').forEach(el => el.classList.remove('selected'));
+  list.querySelector(`.option-item[data-oi="${oi}"]`).classList.add('selected');
+}
+
+// ============================================================
+// 多选逻辑
+// ============================================================
+
+function toggleMulti(qi, oi) {
+  if (state.multi[qi].checked) return;
+  const sel = state.multi[qi].selected;
+  const idx = sel.indexOf(oi);
+  if (idx >= 0) sel.splice(idx, 1);
+  else sel.push(oi);
+
+  const list = document.getElementById('multi' + qi);
+  list.querySelectorAll('.option-item').forEach(el => {
+    const itemOi = parseInt(el.dataset.oi);
+    if (sel.includes(itemOi)) el.classList.add('selected');
+    else el.classList.remove('selected');
+  });
+}
+
+// ============================================================
+// 判断逻辑
+// ============================================================
+
+function selectTF(qi, val) {
+  if (state.tf[qi].checked) return;
+  state.tf[qi].selected = val;
+  const btns = document.getElementById('tf' + qi).querySelectorAll('.tf-btn');
+  btns.forEach(b => b.classList.remove('selected'));
+  btns[val ? 0 : 1].classList.add('selected');
+}
+
+// ============================================================
+// 检查答案
+// ============================================================
+
+function checkDrag(qi) {
+  const s = state.drag[qi];
+  if (s.answers.length < dragQuestions[qi].answers.length || s.answers.some(a => !a)) {
+    alert('请先完成所有填空！');
+    return;
+  }
+  s.checked = true;
+
+  let allCorrect = true;
+  const zones = document.querySelectorAll(`.question-card[data-type="drag"][data-index="${qi}"] .drop-zone`);
+  zones.forEach((zone, zi) => {
+    const isCorrect = s.answers[zi] === dragQuestions[qi].answers[zi];
+    zone.classList.remove('filled');
+    zone.classList.add(isCorrect ? 'correct' : 'wrong');
+    if (!isCorrect) allCorrect = false;
+  });
+
+  // 禁用拖拽项
+  const pool = document.getElementById('dragPool' + qi);
+  pool.querySelectorAll('.drag-item').forEach(el => { el.draggable = false; el.style.cursor = 'default'; });
+
+  s.correct = allCorrect;
+  showExplanation('exp' + qi, allCorrect, formatDragExplanation(qi, allCorrect));
+  updateScore();
+}
+
+function formatDragExplanation(qi, allCorrect) {
+  const q = dragQuestions[qi];
+  let html = allCorrect ? '<strong>🎉 全部正确！</strong><br>' : '<strong>❌ 有错误，请看解析：</strong><br>';
+  q.explanations.forEach((exp, i) => {
+    html += `<div style="margin:0.5rem 0;padding:0.5rem;background:var(--bg-primary);border-radius:4px;">${i+1}. ${exp}</div>`;
+  });
+  return html;
+}
+
+function checkSingle(qi) {
+  const s = state.single[qi];
+  if (s.selected < 0) { alert('请选择一个答案！'); return; }
+  s.checked = true;
+  const correct = s.selected === singleQuestions[qi].correct;
+  s.correct = correct;
+
+  const list = document.getElementById('single' + qi);
+  list.querySelectorAll('.option-item').forEach(el => {
+    el.classList.add('disabled');
+    const oi = parseInt(el.dataset.oi);
+    if (oi === singleQuestions[qi].correct) el.classList.add('correct-ans');
+    else if (oi === s.selected) el.classList.add('wrong-ans');
+  });
+
+  showExplanation('expSingle' + qi, correct, formatOptionExplanation(singleQuestions[qi].explanations));
+  updateScore();
+}
+
+function checkMulti(qi) {
+  const s = state.multi[qi];
+  if (s.selected.length === 0) { alert('请至少选择一个答案！'); return; }
+  s.checked = true;
+
+  const correctSet = new Set(multiQuestions[qi].correct);
+  const selSet = new Set(s.selected);
+  const isCorrect = correctSet.size === selSet.size && [...correctSet].every(v => selSet.has(v));
+  s.correct = isCorrect;
+
+  const list = document.getElementById('multi' + qi);
+  list.querySelectorAll('.option-item').forEach(el => {
+    el.classList.add('disabled');
+    const oi = parseInt(el.dataset.oi);
+    if (correctSet.has(oi)) el.classList.add('correct-ans');
+    else if (selSet.has(oi)) el.classList.add('wrong-ans');
+  });
+
+  showExplanation('expMulti' + qi, isCorrect, formatOptionExplanation(multiQuestions[qi].explanations));
+  updateScore();
+}
+
+function checkTF(qi) {
+  const s = state.tf[qi];
+  if (s.selected === null) { alert('请选择是或否！'); return; }
+  s.checked = true;
+  const correct = s.selected === trueFalseQuestions[qi].correct;
+  s.correct = correct;
+
+  const btns = document.getElementById('tf' + qi).querySelectorAll('.tf-btn');
+  btns.forEach(b => {
+    b.classList.add('disabled');
+    const val = b.dataset.value === 'true';
+    if (val === trueFalseQuestions[qi].correct) b.classList.add('correct-ans');
+    else if (val === s.selected) b.classList.add('wrong-ans');
+  });
+
+  const q = trueFalseQuestions[qi];
+  const exp = correct ? (s.selected ? q.explanationTrue : q.explanationFalse) : (s.selected ? q.explanationTrue : q.explanationFalse);
+  showExplanation('expTF' + qi, correct, exp);
+  updateScore();
+}
+
+function formatOptionExplanation(explanations) {
+  let html = '';
+  explanations.forEach((exp, i) => {
+    html += `<div style="margin:0.4rem 0;padding:0.4rem 0.8rem;background:var(--bg-primary);border-radius:4px;">${String.fromCharCode(65+i)}. ${exp}</div>`;
+  });
+  return html;
+}
+
+function showExplanation(id, isCorrect, html) {
+  const el = document.getElementById(id);
+  el.innerHTML = html;
+  el.className = 'explanation show ' + (isCorrect ? 'correct' : 'wrong');
+}
+
+// ============================================================
+// 导航
+// ============================================================
+
+function showQuestion(index) {
+  if (index < 0 || index >= totalQuestions) return;
+  currentQuestion = index;
+
+  document.querySelectorAll('.question-card').forEach(c => c.classList.remove('active'));
+  const cards = document.querySelectorAll('.question-card');
+  if (cards[index]) cards[index].classList.add('active');
+
+  updateProgress();
+}
+
+function nextQuestion() {
+  if (currentQuestion < totalQuestions - 1) showQuestion(currentQuestion + 1);
+  else showResult();
+}
+
+function prevQuestion() {
+  if (currentQuestion > 0) showQuestion(currentQuestion - 1);
+}
+
+function updateProgress() {
+  document.getElementById('progressText').textContent = `第 ${currentQuestion + 1} / ${totalQuestions} 题`;
+  document.getElementById('progressFill').style.width = ((currentQuestion + 1) / totalQuestions * 100) + '%';
+}
+
+// ============================================================
+// 计分系统
+// ============================================================
+
+function updateScore() {
+  let correct = 0;
+  state.drag.forEach(s => { if (s.correct) correct++; });
+  state.single.forEach(s => { if (s.correct) correct++; });
+  state.multi.forEach(s => { if (s.correct) correct++; });
+  state.tf.forEach(s => { if (s.correct) correct++; });
+  document.getElementById('scoreBar').textContent = `得分: ${correct} / ${totalQuestions}`;
+}
+
+// ============================================================
+// 重置
+// ============================================================
+
+function resetQuestion(globalIndex) {
+  const card = document.querySelectorAll('.question-card')[globalIndex];
+  if (!card) return;
+  const type = card.dataset.type;
+  const index = parseInt(card.dataset.index);
+
+  if (type === 'drag') {
+    state.drag[index] = { answers: [], checked: false, correct: false };
+    const zones = card.querySelectorAll('.drop-zone');
+    zones.forEach(z => { z.textContent = ''; z.className = 'drop-zone'; });
+    const pool = document.getElementById('dragPool' + index);
+    pool.querySelectorAll('.drag-item').forEach(el => { el.classList.remove('used'); el.draggable = true; el.style.cursor = 'grab'; });
+    document.getElementById('exp' + index).className = 'explanation';
+  } else if (type === 'single') {
+    state.single[index] = { selected: -1, checked: false, correct: false };
+    const list = document.getElementById('single' + index);
+    list.querySelectorAll('.option-item').forEach(el => { el.className = 'option-item'; });
+    document.getElementById('expSingle' + index).className = 'explanation';
+  } else if (type === 'multi') {
+    state.multi[index] = { selected: [], checked: false, correct: false };
+    const list = document.getElementById('multi' + index);
+    list.querySelectorAll('.option-item').forEach(el => { el.className = 'option-item'; });
+    document.getElementById('expMulti' + index).className = 'explanation';
+  } else if (type === 'tf') {
+    state.tf[index] = { selected: null, checked: false, correct: false };
+    const btns = document.getElementById('tf' + index).querySelectorAll('.tf-btn');
+    btns.forEach(b => { b.className = 'tf-btn'; });
+    document.getElementById('expTF' + index).className = 'explanation';
+  }
+  updateScore();
+}
+
+function resetAll() {
+  // 重置状态
+  state.drag = dragQuestions.map(() => ({ answers: [], checked: false, correct: false }));
+  state.single = singleQuestions.map(() => ({ selected: -1, checked: false, correct: false }));
+  state.multi = multiQuestions.map(() => ({ selected: [], checked: false, correct: false }));
+  state.tf = trueFalseQuestions.map(() => ({ selected: null, checked: false, correct: false }));
+
+  // 重置 UI
+  document.querySelectorAll('.question-card').forEach((card, gi) => resetQuestion(gi));
+
+  // 恢复隐藏的元素
+  document.getElementById('progressBar').classList.remove('hidden');
+  document.getElementById('mainContainer').classList.remove('hidden');
+  document.getElementById('resultPage').classList.remove('show');
+
+  showQuestion(0);
+  updateScore();
+}
+
+// ============================================================
+// 总览面板
+// ============================================================
+
+function openDashboard() {
+  renderDashboardGrid('all');
+  document.getElementById('dashboardOverlay').classList.add('open');
+}
+
+function closeDashboard() {
+  document.getElementById('dashboardOverlay').classList.remove('open');
+}
+
+function renderDashboardGrid(filter) {
+  const grid = document.getElementById('dashboardGrid');
+  grid.innerHTML = '';
+
+  let correctCount = 0, wrongCount = 0, unansweredCount = 0;
+
+  allQuestions.forEach((q, gi) => {
+    let status = 'unanswered';
+    let s;
+    if (q.type === 'drag') s = state.drag[q.index];
+    else if (q.type === 'single') s = state.single[q.index];
+    else if (q.type === 'multi') s = state.multi[q.index];
+    else s = state.tf[q.index];
+
+    if (s.checked) {
+      if (s.correct) { status = 'correct'; correctCount++; }
+      else { status = 'wrong'; wrongCount++; }
+    } else unansweredCount++;
+
+    if (filter === 'correct' && status !== 'correct') return;
+    if (filter === 'wrong' && status !== 'wrong') return;
+    if (filter === 'unanswered' && status !== 'unanswered') return;
+
+    const card = document.createElement('div');
+    card.className = 'dashboard-card ' + status;
+    const typeLabel = q.type === 'drag' ? '拖拽' : q.type === 'single' ? '单选' : q.type === 'multi' ? '多选' : '判断';
+    card.innerHTML = `<div class="card-type">${gi+1}. ${typeLabel}</div><div class="card-title">${q.title.substring(0, 60)}${q.title.length > 60 ? '...' : ''}</div>`;
+    card.addEventListener('click', () => { closeDashboard(); showQuestion(gi); });
+    grid.appendChild(card);
+  });
+
+  document.getElementById('statCorrect').textContent = correctCount;
+  document.getElementById('statWrong').textContent = wrongCount;
+  document.getElementById('statUnanswered').textContent = unansweredCount;
+}
+
+function filterDashboard(type) {
+  renderDashboardGrid(type);
+}
+
+// ============================================================
+// 结果页
+// ============================================================
+
+function showResult() {
+  let correct = 0, wrong = 0, unanswered = 0;
+  state.drag.forEach(s => { if (!s.checked) unanswered++; else if (s.correct) correct++; else wrong++; });
+  state.single.forEach(s => { if (!s.checked) unanswered++; else if (s.correct) correct++; else wrong++; });
+  state.multi.forEach(s => { if (!s.checked) unanswered++; else if (s.correct) correct++; else wrong++; });
+  state.tf.forEach(s => { if (!s.checked) unanswered++; else if (s.correct) correct++; else wrong++; });
+
+  const accuracy = totalQuestions > 0 ? Math.round(correct / totalQuestions * 100) : 0;
+
+  document.getElementById('finalScore').textContent = correct + ' / ' + totalQuestions;
+  document.getElementById('resCorrect').textContent = correct;
+  document.getElementById('resWrong').textContent = wrong;
+  document.getElementById('resUnanswered').textContent = unanswered;
+  document.getElementById('resAccuracy').textContent = accuracy + '%';
+
+  let msg = '';
+  if (accuracy >= 90) msg = '🏆 优秀！你对 Agent Memory 性能优化已经掌握得非常扎实！';
+  else if (accuracy >= 70) msg = '👍 良好！大部分知识点已掌握，再巩固一下细节。';
+  else if (accuracy >= 50) msg = '📚 及格！还有提升空间，建议重新阅读性能优化备忘录。';
+  else msg = '💪 加油！建议仔细阅读 Agent-Memory-System-性能优化.md 后再来挑战。';
+  document.getElementById('resultMessage').textContent = msg;
+
+  document.getElementById('progressBar').classList.add('hidden');
+  document.getElementById('mainContainer').classList.add('hidden');
+  document.getElementById('resultPage').classList.add('show');
+}
+
+function continueQuiz() {
+  document.getElementById('progressBar').classList.remove('hidden');
+  document.getElementById('mainContainer').classList.remove('hidden');
+  document.getElementById('resultPage').classList.remove('show');
+  showQuestion(totalQuestions - 1);
+}
+
+// ============================================================
+// 洗牌功能
+// ============================================================
+
+function shuffleArray(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+
+function shuffleQuestionData(questions) {
+  questions.forEach(q => {
+    const pairs = q.options.map((opt, i) => ({ opt, expl: q.explanations[i] }));
+    shuffleArray(pairs);
+    q.options = pairs.map(p => p.opt);
+    q.explanations = pairs.map(p => p.expl);
+    // 重新查找正确答案索引
+    q.correct = pairs.findIndex(p => p.expl.startsWith('✅'));
+  });
+}
+
+function shuffleMultiQuestionData(questions) {
+  questions.forEach(q => {
+    const pairs = q.options.map((opt, i) => ({ opt, expl: q.explanations[i], isCorrect: q.correct.includes(i) }));
+    shuffleArray(pairs);
+    q.options = pairs.map(p => p.opt);
+    q.explanations = pairs.map(p => p.expl);
+    q.correct = [];
+    pairs.forEach((p, i) => { if (p.isCorrect) q.correct.push(i); });
+  });
+}
+
+function shuffleAllAnswers() {
+  if (!confirm('重新洗牌将清空所有答题记录，确定继续吗？')) return;
+  shuffleQuestionData(singleQuestions);
+  shuffleQuestionData(multiQuestions); // 多选题也洗牌选项
+  shuffleMultiQuestionData(multiQuestions);
+  // 重置所有状态
+  resetAll();
+  // 重新渲染选项
+  initSingleQuestions();
+  initMultiQuestions();
+  showQuestion(0);
+}
+
+// ============================================================
+// 初始化
+// ============================================================
+
+function init() {
+  initDragQuestions();
+  initSingleQuestions();
+  initMultiQuestions();
+  updateProgress();
+  updateScore();
+}
+
+init();
+</script>
+
+</body>
+</html>

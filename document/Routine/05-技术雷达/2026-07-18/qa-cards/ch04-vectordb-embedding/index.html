@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ch04 · Vector DB & Embedding 面试卡牌</title>
+<style>
+  :root{
+    --bg:#faf7f2; --card:#fffdf9; --ink:#3a342c; --ink2:#7a7062;
+    --accent:#b07d4f; --accent-soft:#f3e6d8; --line:#e8e0d4;
+    --ok:#5d7d5a; --ok-bg:#eef4ec; --bad:#a85c4e; --bad-bg:#f8ece8;
+    --warn:#a8873e; --radius:14px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;line-height:1.65;padding:16px}
+  .wrap{max-width:860px;margin:0 auto}
+  header{margin-bottom:18px}
+  h1{font-size:1.35rem;font-weight:700}
+  .sub{color:var(--ink2);font-size:.85rem;margin-top:4px}
+  .toolbar{display:flex;gap:10px;margin:14px 0;flex-wrap:wrap}
+  .btn{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;padding:8px 14px;font-size:.85rem;cursor:pointer;transition:all .15s}
+  .btn:hover{border-color:var(--accent);color:var(--accent)}
+  .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .btn.primary:hover{opacity:.9;color:#fff}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .progress-shell{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:12px 16px;margin-bottom:14px}
+  .progress-meta{display:flex;justify-content:space-between;font-size:.82rem;color:var(--ink2);margin-bottom:8px}
+  .progress-track{height:8px;background:var(--accent-soft);border-radius:99px;overflow:hidden}
+  .progress-fill{height:100%;background:var(--accent);border-radius:99px;transition:width .25s}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:22px;min-height:340px}
+  .q-type{display:inline-block;font-size:.72rem;letter-spacing:.05em;color:var(--accent);background:var(--accent-soft);border-radius:99px;padding:3px 10px;margin-bottom:12px}
+  .q-title{font-size:1.05rem;font-weight:600;margin-bottom:16px;white-space:pre-wrap}
+  .opt{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:10px;padding:11px 13px;margin-bottom:10px;cursor:pointer;transition:all .15s;background:#fff}
+  .opt:hover{border-color:var(--accent)}
+  .opt.sel{border-color:var(--accent);background:var(--accent-soft)}
+  .opt.correct{border-color:var(--ok);background:var(--ok-bg)}
+  .opt.wrong{border-color:var(--bad);background:var(--bad-bg)}
+  .opt .mark{font-weight:700;width:20px;flex-shrink:0}
+  .opt .body{flex:1}
+  .exp{font-size:.8rem;color:var(--ink2);margin-top:6px;padding-top:6px;border-top:1px dashed var(--line);display:none}
+  .exp.show{display:block}
+  /* drag-fill */
+  .pool{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0;padding:12px;border:1px dashed var(--line);border-radius:10px;background:#fff}
+  .chip{border:1px solid var(--accent);background:var(--accent-soft);color:var(--ink);border-radius:99px;padding:5px 14px;font-size:.85rem;cursor:grab;user-select:none}
+  .chip.used{opacity:.3;cursor:not-allowed}
+  .blank{display:inline-flex;align-items:center;justify-content:center;min-width:110px;min-height:32px;border-bottom:2px solid var(--accent);border-radius:6px;background:var(--accent-soft);margin:0 4px;padding:2px 10px;font-size:.9rem;cursor:pointer;vertical-align:middle;color:var(--accent);font-weight:600}
+  .blank.filled{color:var(--ink);background:#fff;border:1px solid var(--accent)}
+  .blank.correct{border-color:var(--ok);background:var(--ok-bg)}
+  .blank.wrong{border-color:var(--bad);background:var(--bad-bg)}
+  .dragline{font-size:1rem;line-height:2.6}
+  .blank-exp{font-size:.8rem;color:var(--ink2);margin:6px 0;padding:8px 10px;border-left:3px solid var(--accent);background:var(--accent-soft);border-radius:0 8px 8px 0;display:none}
+  .blank-exp.show{display:block}
+  .tf-row{display:flex;gap:12px}
+  .tf-row .btn{flex:1;padding:14px;font-size:.95rem}
+  .tf-row .btn.sel{border-color:var(--accent);background:var(--accent-soft)}
+  .tf-row .btn.correct{border-color:var(--ok);background:var(--ok-bg)}
+  .tf-row .btn.wrong{border-color:var(--bad);background:var(--bad-bg)}
+  .card-actions{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap}
+  .feedback{margin-top:14px;font-size:.9rem;font-weight:600;padding:10px 14px;border-radius:10px;display:none}
+  .feedback.show{display:block}
+  .feedback.ok{background:var(--ok-bg);color:var(--ok)}
+  .feedback.no{background:var(--bad-bg);color:var(--bad)}
+  nav.qnav{display:flex;justify-content:space-between;align-items:center;margin-top:16px;gap:10px}
+  /* overview */
+  .overlay{position:fixed;inset:0;background:rgba(58,52,44,.4);display:none;align-items:center;justify-content:center;z-index:50;padding:16px}
+  .overlay.show{display:flex}
+  .panel{background:var(--card);border-radius:var(--radius);max-width:720px;width:100%;max-height:85vh;overflow:auto;padding:22px}
+  .panel h2{font-size:1.1rem;margin-bottom:12px}
+  .filters{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+  .filters .btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(58px,1fr));gap:8px}
+  .thumb{border:1px solid var(--line);border-radius:10px;padding:8px 4px;text-align:center;font-size:.75rem;cursor:pointer;background:#fff}
+  .thumb:hover{border-color:var(--accent)}
+  .thumb .t{font-size:.68rem;color:var(--ink2)}
+  .thumb.st-ok{background:var(--ok-bg);border-color:var(--ok)}
+  .thumb.st-bad{background:var(--bad-bg);border-color:var(--bad)}
+  .thumb.st-cur{outline:2px solid var(--accent)}
+  /* result */
+  .result-box{text-align:center;padding:30px 10px}
+  .result-score{font-size:3rem;font-weight:800;color:var(--accent)}
+  .result-detail{color:var(--ink2);margin:10px 0 22px}
+  .hidden{display:none!important}
+  @media (max-width:560px){
+    .card{padding:16px}
+    .tf-row{flex-direction:column}
+    h1{font-size:1.15rem}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🗂 ch04 · Vector DB &amp; Embedding</h1>
+    <div class="sub">技术雷达 k3 · 模块卡牌 · 数据来源：Tool_Use_MCP_Agent_Infra_2025_2026_Research_Brief.md §4</div>
+  </header>
+
+  <div class="toolbar">
+    <button class="btn" id="btnShuffle">🎲 重新洗牌选项</button>
+    <button class="btn" id="btnResetAll">🔄 重置所有分数</button>
+    <button class="btn" id="btnOverview">📋 总览面板</button>
+  </div>
+
+  <div class="progress-shell" id="progressShell">
+    <div class="progress-meta">
+      <span id="progressText">第 1 / 13 题</span>
+      <span id="scoreText">得分 0 / 13</span>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:8%"></div></div>
+  </div>
+
+  <div class="card" id="cardBox"></div>
+
+  <nav class="qnav" id="qnav">
+    <button class="btn" id="btnPrev">← 上一题</button>
+    <button class="btn primary" id="btnResult" style="display:none">查看结果</button>
+    <button class="btn" id="btnNext">下一题 →</button>
+  </nav>
+
+  <div class="card hidden" id="resultBox">
+    <div class="result-box">
+      <div>🎯 最终结果</div>
+      <div class="result-score" id="resultScore">0 / 13</div>
+      <div class="result-detail" id="resultDetail"></div>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+        <button class="btn" id="btnReview">返回查看（总览）</button>
+        <button class="btn primary" id="btnContinue">继续做题</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overviewOverlay">
+  <div class="panel">
+    <h2>📋 答题总览</h2>
+    <div class="filters" id="filters">
+      <button class="btn active" data-f="all">全部</button>
+      <button class="btn" data-f="ok">✅ 正确</button>
+      <button class="btn" data-f="bad">❌ 错误</button>
+      <button class="btn" data-f="todo">⬜ 未答</button>
+    </div>
+    <div class="grid" id="thumbGrid"></div>
+    <div style="margin-top:16px;text-align:right"><button class="btn" id="btnCloseOv">关闭</button></div>
+  </div>
+</div>
+
+<script>
+/* ============ 数据（严格出自源文件 §4） ============ */
+const allQuestions = [
+  { type:"drag",
+    title:"正确的 vector DB benchmark 协议：先固定 ____（例如 99%），*再* 比较 ____ / ____。",
+    blanks:["recall","QPS","p99 latency"],
+    pool:["recall","QPS","p99 latency","throughput","dimension","ef_search"],
+    blankExp:[
+      "协议第一步是 fix recall（例如 99%），因为 recall 与 throughput 在同一条 trade-off 曲线上。",
+      "固定 recall 后比较 QPS —— 直接比较未指定 recall 的 raw QPS 是 meaningless 的。",
+      "除 QPS 外，p99 latency 是固定 recall 后要比较的另一个指标。"
+    ],
+    explain:"源文件 §4.1：Correct benchmark protocol —— fix recall (e.g., 99%), then compare QPS / p99 latency。"
+  },
+  { type:"drag",
+    title:"标准 hybrid retrieval 配方：____ + ____ + ____，其中 RRF score $= \\sum_i \\frac{1}{k + rank_i}$，k = ____。",
+    blanks:["BM25","dense","RRF","60"],
+    pool:["BM25","dense","RRF","60","sparse","100","cross-encoder"],
+    blankExp:[
+      "第一项是 BM25（lexical 检索分支）。",
+      "第二项是 dense（向量检索分支）。",
+      "用 RRF（Reciprocal Rank Fusion）融合两路结果。",
+      "源文件明确给出 RRF 的 k = 60。"
+    ],
+    explain:"源文件 §4.3：Standard recipe —— BM25 + dense + RRF，RRF score = Σ 1/(k + rank_i)，k = 60。"
+  },
+  { type:"single",
+    title:"在 50M vectors × 1536d、99% recall 的 benchmark 上，pgvectorscale 的 QPS 是多少？",
+    options:["41 QPS","471 QPS","1,536 QPS","68.32 QPS"],
+    correct:1,
+    optExp:[
+      "❌ 41 QPS 是同测试中 Qdrant 的成绩，不是 pgvectorscale。",
+      "✅ 471 QPS（99% recall）—— 约为 Qdrant 41 QPS 的 11×。",
+      "❌ 1536 是向量维度（1536d），不是吞吐数字。",
+      "❌ 68.32 是 Gemini Embedding 的 MTEB(Multilingual) 分数，与 QPS 无关。"
+    ]
+  },
+  { type:"single",
+    title:"HNSW vs. DiskANN 的分水岭：DiskANN 在什么条件下获胜？",
+    options:["索引能放进 RAM 时","只要维度超过 1536d 就获胜","索引超出内存规模时","只要数据集小于 50M 就获胜"],
+    correct:2,
+    optExp:[
+      "❌ 索引 fits RAM 时是 HNSW 获胜的区间。",
+      "❌ 分水岭是内存规模，不是维度数。",
+      "✅ 源文件 §4.1：HNSW wins when the index fits RAM; DiskANN wins beyond memory scale。",
+      "❌ 分水岭是内存规模，不是数据集条数的绝对阈值。"
+    ]
+  },
+  { type:"single",
+    title:"Qwen3-Embedding-8B 在 MTEB(Multilingual) 上的得分是？",
+    options:["64.52","65.52","68.32","70.58"],
+    correct:3,
+    optExp:[
+      "❌ 64.52 是 OpenAI text-embedding-3-large 的分数。",
+      "❌ 65.52 是 jina-embeddings-v3 的分数。",
+      "❌ 68.32 是 Gemini Embedding 的分数。",
+      "✅ 70.58 —— 超过 Gemini Embedding（68.32）与 OpenAI text-embedding-3-large（64.52），开源权重领跑多语言榜。"
+    ]
+  },
+  { type:"single",
+    title:"jina-v4 相对 jina-embeddings-v3 的架构变化是？",
+    options:["转向 late interaction（ColBERT-style multi-vector）","引入 Multi-LoRA task adapters","改为 tri-modal 输出","开源协议改为 MIT"],
+    correct:0,
+    optExp:[
+      "✅ 源文件 §4.2：jina-v4 moves to late interaction (ColBERT-style multi-vector)。",
+      "❌ Multi-LoRA task adapters 是 jina-embeddings-v3（65.52）的特征。",
+      "❌ tri-modal 输出（dense + sparse + multi-vector）是 BGE-M3 的特征。",
+      "❌ MIT license 是 BGE-M3 的协议，与 jina-v4 无关。"
+    ]
+  },
+  { type:"single",
+    title:"MRL（Matryoshka Representation Learning）的作用是？",
+    options:["用多向量 late interaction 提升召回","截断维度，用精度换存储/延迟，且无需重新训练","把 BM25 与 dense 融合为单路排序","在训练后把 dense 向量量化为 sparse 向量"],
+    correct:1,
+    optExp:[
+      "❌ late interaction / multi-vector 是 jina-v4 的路线，不是 MRL。",
+      "✅ 源文件 §4.2：MRL is now standard —— truncate dimensions to trade accuracy for storage/latency without retraining。",
+      "❌ 融合 BM25 与 dense 的是 RRF，不是 MRL。",
+      "❌ MRL 是截断维度，不是 dense→sparse 量化。"
+    ]
+  },
+  { type:"multi",
+    title:"关于 BGE-M3，源文件提到的特征有哪些？（多选）",
+    options:["tri-modal 输出：dense + sparse + multi-vector","单一模型同时产出三种表示","MIT license","Multi-LoRA task adapters，得分 65.52"],
+    correct:[0,1,2],
+    optExp:[
+      "✅ 源文件 §4.2：BGE-M3 —— tri-modal output (dense + sparse + multi-vector)。",
+      "✅ 三种表示 in one model。",
+      "✅ BGE-M3 采用 MIT license。",
+      "❌ Multi-LoRA task adapters、65.52 是 jina-embeddings-v3 的特征，不要张冠李戴。"
+    ]
+  },
+  { type:"multi",
+    title:"关于 Qdrant 的 filtered ANN 差异化能力，正确的说法有？（多选）",
+    options:["query planner 在 payload-index-first 与 HNSW-first 两种策略间选择","策略选择依据 per query cardinality","对重 metadata filtering 的场景很重要","在 50M×1536d、99% recall 无过滤 benchmark 上 QPS 领先 pgvectorscale"],
+    correct:[0,1,2],
+    optExp:[
+      "✅ 源文件 §4.1：planner chooses between payload-index-first vs. HNSW-first strategies。",
+      "✅ 选择是 per query cardinality 的。",
+      "✅ which matters for heavy metadata filtering。",
+      "❌ 恰恰相反：无过滤 99% recall benchmark 上 Qdrant 是 41 QPS，落后 pgvectorscale 的 471 QPS（~11×）。Qdrant 的差异化在 filtered ANN。"
+    ]
+  },
+  { type:"tf",
+    title:"「HNSW 在所有数据规模下都优于 DiskANN。」",
+    answer:false,
+    explain:"✅ 正确理解：HNSW 与 DiskANN 存在分水岭——索引能放进 RAM 时 HNSW 获胜；超出内存规模（beyond memory scale）时 DiskANN 获胜。<br>❌ 常见误解：这是典型的『过度泛化』——把 HNSW 在内存内区间的优势无边界地推广到所有规模，忽略了 fits RAM 这个边界条件。"
+  },
+  { type:"tf",
+    title:"「在排序栈顶叠加 cross-encoder reranker，典型增益约为 +5~15 nDCG@10；Cohere Rerank v4 Pro 在 enterprise search suites 上报告 +17.2pp。」",
+    answer:true,
+    explain:"✅ 正确理解：源文件 §4.3 原文——Cross-encoder reranker on top: typical +5~15 nDCG@10; Cohere Rerank v4 Pro reports +17.2pp on enterprise search suites。<br>❌ 常见误解：把 +17.2pp 当作典型增益——+17.2pp 是特定厂商在 enterprise suites 上的报告值，典型区间是 +5~15 nDCG@10，二者不可混用。"
+  },
+  { type:"tf",
+    title:"「比较两个 vector DB 时，直接对比未指定 recall 的 raw QPS 是合理且有意义的 benchmark 方法。」",
+    answer:false,
+    explain:"✅ 正确理解：正确协议是先 fix recall（如 99%），再比较 QPS / p99 latency；recall 与 throughput 在同一条 trade-off 曲线上。<br>❌ 常见误解：忽略边界条件——不固定 recall 时，任何系统都可以通过牺牲 recall 刷高 QPS，因此 raw QPS 对比是 meaningless 的（源文件原话）。"
+  },
+  { type:"tf",
+    title:"「使用 MRL 截断 embedding 维度以节省存储/延迟时，必须重新训练模型。」",
+    answer:false,
+    explain:"✅ 正确理解：MRL 的核心卖点就是 truncate dimensions to trade accuracy for storage/latency *without retraining*，目前已成为 standard。<br>❌ 常见误解：因果倒置——MRL 在训练时就把重要信息压进前序维度，推理期直接截断即可；『需要重训』恰恰是被 MRL 消除的旧痛点。"
+  }
+];
+
+/* ============ 状态 ============ */
+let cur = 0;
+let answers = allQuestions.map(()=>null); // single: idx; multi: [idx]; tf: bool; drag: [str...]
+let checked = allQuestions.map(()=>false);
+const $ = id => document.getElementById(id);
+
+function isCorrect(i){
+  const q = allQuestions[i], a = answers[i];
+  if(a===null) return false;
+  if(q.type==="single") return a===q.correct;
+  if(q.type==="tf") return a===q.answer;
+  if(q.type==="multi"){
+    if(!Array.isArray(a)||a.length!==q.correct.length) return false;
+    return q.correct.every(c=>a.includes(c));
+  }
+  if(q.type==="drag"){
+    return Array.isArray(a)&&a.length===q.blanks.length&&a.every((v,j)=>v===q.blanks[j]);
+  }
+  return false;
+}
+function score(){ return allQuestions.reduce((s,_,i)=>s+(checked[i]&&isCorrect(i)?1:0),0); }
+function answeredCount(){ return answers.filter(a=>a!==null).length; }
+
+/* ============ 渲染 ============ */
+function render(){
+  const q = allQuestions[cur];
+  const box = $("cardBox");
+  const typeLabel = {drag:"🧩 拖拽填空",single:"🔘 单选题",multi:"☑️ 多选题",tf:"⚖️ 判断题"}[q.type];
+  let h = `<span class="q-type">${typeLabel}</span>`;
+  if(q.type!=="drag") h += `<div class="q-title">${q.title}</div>`;
+  if(q.type==="single"||q.type==="multi"){
+    q.options.forEach((o,idx)=>{
+      const sel = isSel(q,idx)?" sel":"";
+      h += `<div class="opt${sel}" data-idx="${idx}">
+        <span class="mark">${q.type==="single"?"○":"☐"}</span>
+        <div class="body">${o}<div class="exp" id="exp-${idx}">${q.optExp[idx]}</div></div>
+      </div>`;
+    });
+  }else if(q.type==="tf"){
+    h += `<div class="tf-row">
+      <button class="btn${answers[cur]===true?" sel":""}" data-tf="true">✔ 正确</button>
+      <button class="btn${answers[cur]===false?" sel":""}" data-tf="false">✘ 错误</button>
+    </div>
+    <div class="exp" id="tf-exp">${q.explain}</div>`;
+  }else if(q.type==="drag"){
+    h += `<div class="dragline">` + q.title.split("____").map((seg,i)=>{
+      return i<q.blanks.length ? seg+`<span class="blank" data-b="${i}">［拖入］</span>` : seg;
+    }).join("") + `</div>`;
+    h += `<div class="pool">` + q.pool.map(p=>{
+      const used = answers[cur]&&answers[cur].includes(p);
+      return `<span class="chip${used?" used":""}" draggable="${!used}" data-v="${p}">${p}</span>`;
+    }).join("") + `</div>`;
+    h += q.blankExp.map((e,i)=>`<div class="blank-exp" id="bexp-${i}"><b>空 ${i+1}（答案：${q.blanks[i]}）</b>：${e}</div>`).join("");
+  }
+  h += `<div class="card-actions">
+    <button class="btn primary" id="btnCheck">检查答案</button>
+    <button class="btn" id="btnReset">重置本题</button>
+  </div>
+  <div class="feedback" id="fb"></div>
+  <div class="exp" id="qexp" style="margin-top:10px">${q.explain||""}</div>`;
+  box.innerHTML = h;
+  bindEvents(q);
+  if(checked[cur]) showCheckedState(q,false);
+  updateChrome();
+}
+function isSel(q,idx){
+  const a = answers[cur];
+  if(q.type==="single") return a===idx;
+  if(q.type==="multi") return Array.isArray(a)&&a.includes(idx);
+  return false;
+}
+function bindEvents(q){
+  if(q.type==="single"||q.type==="multi"){
+    document.querySelectorAll(".opt").forEach(el=>{
+      el.onclick = ()=>{
+        if(checked[cur]) return;
+        const idx = +el.dataset.idx;
+        if(q.type==="single"){ answers[cur]=idx; }
+        else{
+          let a = Array.isArray(answers[cur])?answers[cur].slice():[];
+          a = a.includes(idx)?a.filter(x=>x!==idx):[...a,idx];
+          answers[cur]=a;
+        }
+        render();
+      };
+    });
+  }else if(q.type==="tf"){
+    document.querySelectorAll("[data-tf]").forEach(el=>{
+      el.onclick = ()=>{ if(checked[cur])return; answers[cur] = el.dataset.tf==="true"; render(); };
+    });
+  }else if(q.type==="drag"){
+    let dragVal = null;
+    document.querySelectorAll(".chip").forEach(c=>{
+      c.addEventListener("dragstart",e=>{ if(c.classList.contains("used")){e.preventDefault();return;} dragVal=c.dataset.v; });
+      // touch/click fallback: tap chip then tap blank
+      c.addEventListener("click",()=>{ if(!c.classList.contains("used")&&!checked[cur]){ window._tapChip = c.dataset.v; document.querySelectorAll(".chip").forEach(x=>x.style.outline=""); c.style.outline="2px solid var(--accent)"; }});
+    });
+    document.querySelectorAll(".blank").forEach(b=>{
+      b.addEventListener("dragover",e=>e.preventDefault());
+      b.addEventListener("drop",e=>{ e.preventDefault(); if(dragVal&&!checked[cur]) placeBlank(+b.dataset.b,dragVal); dragVal=null; });
+      b.addEventListener("click",()=>{
+        if(checked[cur]) return;
+        const bi = +b.dataset.b;
+        if(window._tapChip){ placeBlank(bi,window._tapChip); window._tapChip=null; }
+        else if(answers[cur]&&answers[cur][bi]){ const a=answers[cur].slice(); a[bi]=null; answers[cur]=a; render(); }
+      });
+    });
+    // restore filled blanks
+    if(Array.isArray(answers[cur])){
+      answers[cur].forEach((v,i)=>{ if(v){ const b=document.querySelector(`.blank[data-b="${i}"]`); if(b){b.textContent=v;b.classList.add("filled");} }});
+    }
+  }
+  $("btnCheck").onclick = checkAnswer;
+  $("btnReset").onclick = ()=>{ answers[cur]=null; checked[cur]=false; render(); };
+}
+function placeBlank(bi,val){
+  let a = Array.isArray(answers[cur])?answers[cur].slice():new Array(allQuestions[cur].blanks.length).fill(null);
+  const prev = a.indexOf(val); if(prev>=0) a[prev]=null;
+  a[bi]=val; answers[cur]=a; render();
+}
+function checkAnswer(){
+  const q = allQuestions[cur];
+  if(answers[cur]===null || (q.type==="drag"&&(!Array.isArray(answers[cur])||answers[cur].some(v=>!v))) || (q.type==="multi"&&(!answers[cur]||answers[cur].length===0))){
+    const fb=$("fb"); fb.className="feedback show no"; fb.textContent="请先作答再检查。"; return;
+  }
+  checked[cur]=true;
+  showCheckedState(q,true);
+  updateChrome();
+}
+function showCheckedState(q,announce){
+  const ok = isCorrect(cur);
+  const fb=$("fb");
+  fb.className="feedback show "+(ok?"ok":"no");
+  fb.textContent = ok?"✅ 回答正确！":"❌ 回答错误，查看逐选项解析。";
+  if(q.type==="single"||q.type==="multi"){
+    document.querySelectorAll(".opt").forEach(el=>{
+      const idx=+el.dataset.idx;
+      const should = q.type==="single" ? idx===q.correct : q.correct.includes(idx);
+      if(should) el.classList.add("correct");
+      else if(isSel(q,idx)) el.classList.add("wrong");
+      el.querySelector(".exp").classList.add("show");
+    });
+  }else if(q.type==="tf"){
+    document.querySelectorAll("[data-tf]").forEach(el=>{
+      const v = el.dataset.tf==="true";
+      if(v===q.answer) el.classList.add("correct");
+      else if(answers[cur]===v) el.classList.add("wrong");
+    });
+    $("tf-exp").classList.add("show");
+  }else if(q.type==="drag"){
+    document.querySelectorAll(".blank").forEach(b=>{
+      const bi=+b.dataset.b;
+      b.classList.add(answers[cur][bi]===q.blanks[bi]?"correct":"wrong");
+    });
+    q.blankExp.forEach((_,i)=>$("bexp-"+i).classList.add("show"));
+  }
+  if(q.explain) $("qexp").classList.add("show");
+}
+
+/* ============ 顶部状态 ============ */
+function updateChrome(){
+  const n = allQuestions.length;
+  $("progressText").textContent = `第 ${cur+1} / ${n} 题`;
+  $("scoreText").textContent = `得分 ${score()} / ${n} · 已答 ${answeredCount()}`;
+  $("progressFill").style.width = ((cur+1)/n*100)+"%";
+  $("btnPrev").disabled = cur===0;
+  $("btnNext").disabled = cur===n-1;
+  $("btnResult").style.display = cur===n-1?"":"none";
+}
+
+/* ============ 总览 ============ */
+let filter="all";
+function renderOverview(){
+  const g=$("thumbGrid"); g.innerHTML="";
+  const tname={drag:"拖拽",single:"单选",multi:"多选",tf:"判断"};
+  allQuestions.forEach((q,i)=>{
+    const done = checked[i], ok = done&&isCorrect(i);
+    const st = done?(ok?"ok":"bad"):"todo";
+    if(filter!=="all"&&st!==filter) return;
+    const el=document.createElement("div");
+    el.className=`thumb st-${st}`+(i===cur?" st-cur":"");
+    el.innerHTML=`<div>Q${i+1}</div><div class="t">${tname[q.type]}</div><div>${done?(ok?"✅":"❌"):"⬜"}</div>`;
+    el.onclick=()=>{ cur=i; $("overviewOverlay").classList.remove("show"); $("resultBox").classList.add("hidden"); $("cardBox").classList.remove("hidden"); $("qnav").classList.remove("hidden"); render(); };
+    g.appendChild(el);
+  });
+}
+$("btnOverview").onclick=()=>{ renderOverview(); $("overviewOverlay").classList.add("show"); };
+$("btnCloseOv").onclick=()=>$("overviewOverlay").classList.remove("show");
+$("filters").addEventListener("click",e=>{
+  if(!e.target.dataset.f)return;
+  document.querySelectorAll("#filters .btn").forEach(b=>b.classList.remove("active"));
+  e.target.classList.add("active"); filter=e.target.dataset.f; renderOverview();
+});
+
+/* ============ 结果页（不隐藏进度条父容器） ============ */
+$("btnResult").onclick=()=>{
+  const n=allQuestions.length, s=score();
+  $("resultScore").textContent=`${s} / ${n}`;
+  const byType={drag:"拖拽",single:"单选",multi:"多选",tf:"判断"};
+  let det="";
+  for(const t in byType){
+    const idxs=allQuestions.map((q,i)=>q.type===t?i:-1).filter(i=>i>=0);
+    const got=idxs.filter(i=>checked[i]&&isCorrect(i)).length;
+    det+=`${byType[t]}：${got}/${idxs.length}　`;
+  }
+  $("resultDetail").textContent=det;
+  $("cardBox").classList.add("hidden");
+  $("qnav").classList.add("hidden");
+  $("resultBox").classList.remove("hidden");
+};
+$("btnReview").onclick=()=>{ renderOverview(); $("overviewOverlay").classList.add("show"); };
+$("btnContinue").onclick=()=>{
+  $("resultBox").classList.add("hidden");
+  $("cardBox").classList.remove("hidden");
+  $("qnav").classList.remove("hidden");
+  cur=allQuestions.length-1; render();
+};
+
+/* ============ 导航 / 重置 / 洗牌 ============ */
+$("btnPrev").onclick=()=>{ if(cur>0){cur--;render();} };
+$("btnNext").onclick=()=>{ if(cur<allQuestions.length-1){cur++;render();} };
+$("btnResetAll").onclick=()=>{
+  answers=allQuestions.map(()=>null); checked=allQuestions.map(()=>false); cur=0;
+  $("resultBox").classList.add("hidden");
+  $("cardBox").classList.remove("hidden");
+  $("qnav").classList.remove("hidden");
+  $("progressShell").classList.remove("hidden");
+  $("overviewOverlay").classList.remove("show");
+  render();
+};
+function fy(arr){ const a=arr.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+$("btnShuffle").onclick=()=>{
+  allQuestions.forEach(q=>{
+    if(q.type==="single"){
+      const order=fy(q.options.map((_,i)=>i));
+      q.options=order.map(i=>q.options[i]);
+      q.optExp=order.map(i=>q.optExp[i]);
+      q.correct=order.indexOf(q.correct);
+    }else if(q.type==="multi"){
+      const order=fy(q.options.map((_,i)=>i));
+      q.options=order.map(i=>q.options[i]);
+      q.optExp=order.map(i=>q.optExp[i]);
+      q.correct=q.correct.map(c=>order.indexOf(c));
+    }else if(q.type==="drag"){
+      q.pool=fy(q.pool);
+    }
+  });
+  answers=allQuestions.map(()=>null); checked=allQuestions.map(()=>false); cur=0;
+  render();
+};
+
+render();
+</script>
+</body>
+</html>

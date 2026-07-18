@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CH01 · The MCP Ecosystem — QA 面试卡牌</title>
+<style>
+:root{
+  --bg:#faf6f0; --card:#fffdf9; --ink:#3d3833; --ink2:#6b625a;
+  --line:#e6ddd2; --accent:#b0714f; --accent-soft:#f3e4da;
+  --ok:#5e7d5a; --ok-soft:#e8f0e5; --bad:#a4553f; --bad-soft:#f6e6e0;
+  --chip:#efe7dc;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;line-height:1.65;padding:20px 14px 60px}
+.wrap{max-width:860px;margin:0 auto}
+header.top{margin-bottom:18px}
+h1{font-size:1.35rem;font-weight:700}
+.sub{color:var(--ink2);font-size:.85rem;margin-top:4px}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+button{cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;padding:8px 14px;font-size:.85rem;transition:background .15s}
+button:hover{background:var(--chip)}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button.primary:hover{background:#9c6142}
+button:disabled{opacity:.45;cursor:default}
+.scorebar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:10px 0 16px;font-size:.85rem;color:var(--ink2)}
+.progress{flex:1;min-width:160px;height:8px;background:var(--chip);border-radius:99px;overflow:hidden}
+.progress>i{display:block;height:100%;background:var(--accent);width:0%;transition:width .3s}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:24px 22px;box-shadow:0 1px 4px rgba(90,70,50,.06)}
+.qtype{display:inline-block;font-size:.72rem;letter-spacing:.05em;background:var(--chip);color:var(--ink2);border-radius:99px;padding:3px 10px;margin-bottom:12px}
+.qtext{font-size:1.05rem;font-weight:600;margin-bottom:18px;white-space:pre-wrap}
+.opt{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:12px;padding:11px 14px;margin-bottom:10px;cursor:pointer;background:#fff}
+.opt:hover{border-color:var(--accent)}
+.opt.sel{border-color:var(--accent);background:var(--accent-soft)}
+.opt.correct{border-color:var(--ok);background:var(--ok-soft)}
+.opt.wrong{border-color:var(--bad);background:var(--bad-soft)}
+.opt .mark{font-weight:700;min-width:20px;color:var(--ink2)}
+.opt .body{flex:1}
+.opt .why{display:block;margin-top:6px;font-size:.82rem;color:var(--ink2);border-top:1px dashed var(--line);padding-top:6px}
+.tfrow{display:flex;gap:10px}
+.tfrow button{flex:1;padding:14px;font-size:1rem}
+.tfrow button.sel{background:var(--accent-soft);border-color:var(--accent)}
+.tfrow button.correct{background:var(--ok-soft);border-color:var(--ok)}
+.tfrow button.wrong{background:var(--bad-soft);border-color:var(--bad)}
+.verdict{margin:14px 0;padding:12px 14px;border-radius:12px;font-size:.9rem}
+.verdict.ok{background:var(--ok-soft);color:var(--ok)}
+.verdict.no{background:var(--bad-soft);color:var(--bad)}
+.explain{font-size:.88rem;color:var(--ink2);background:#fbf8f3;border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-top:12px;white-space:pre-wrap}
+/* drag */
+.pool{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px}
+.chip{border:1px dashed var(--accent);background:var(--accent-soft);color:var(--ink);border-radius:99px;padding:6px 14px;font-size:.85rem;cursor:grab;user-select:none}
+.chip.used{opacity:.3;cursor:default}
+.blank{display:inline-block;min-width:120px;border:2px dashed var(--accent);border-radius:8px;padding:4px 12px;margin:2px 4px;background:#fff;vertical-align:middle;font-size:.9rem;cursor:pointer}
+.blank.filled{border-style:solid;background:var(--accent-soft)}
+.blank.correct{border-color:var(--ok);background:var(--ok-soft)}
+.blank.wrong{border-color:var(--bad);background:var(--bad-soft)}
+.blank .hint{font-size:.72rem;color:var(--ink2);display:block}
+.dragline{margin-bottom:12px;font-size:.95rem}
+.blankwhy{font-size:.8rem;color:var(--ink2);margin:-6px 0 12px 6px}
+.nav{display:flex;justify-content:space-between;gap:10px;margin-top:20px;flex-wrap:wrap}
+/* overview */
+.overlay{position:fixed;inset:0;background:rgba(60,50,40,.35);display:none;align-items:flex-start;justify-content:center;padding:40px 14px;z-index:50;overflow:auto}
+.overlay.open{display:flex}
+.panel{background:var(--card);border-radius:16px;max-width:760px;width:100%;padding:22px}
+.filters{display:flex;gap:8px;margin:12px 0;flex-wrap:wrap}
+.filters button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:8px}
+.cell{border:1px solid var(--line);border-radius:10px;padding:8px 4px;text-align:center;font-size:.78rem;cursor:pointer;background:#fff}
+.cell .t{display:block;font-size:.68rem;color:var(--ink2)}
+.cell.st-ok{background:var(--ok-soft);border-color:var(--ok)}
+.cell.st-bad{background:var(--bad-soft);border-color:var(--bad)}
+.cell.st-none{opacity:.75}
+/* result */
+.result{text-align:center;padding:30px 10px}
+.result .big{font-size:2.6rem;font-weight:800;color:var(--accent)}
+.result p{color:var(--ink2);margin:10px 0 20px}
+@media(max-width:560px){
+  .card{padding:18px 14px}
+  h1{font-size:1.15rem}
+  .tfrow{flex-direction:column}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>CH01 · The MCP Ecosystem</h1>
+    <div class="sub">来源：Tool_Use_MCP_Agent_Infra_2025_2026_Research_Brief.md §1（Primitives / Spec Evolution / Registry / Adoption / Headwinds / Security / vs Function Calling）</div>
+  </header>
+
+  <div id="mainView">
+    <div class="toolbar">
+      <button id="btnOverview">📋 总览面板</button>
+      <button id="btnShuffle">🎲 重新洗牌选项</button>
+      <button id="btnResetAll">🔄 重置所有分数</button>
+    </div>
+    <div class="scorebar" id="scoreBar">
+      <span id="scoreText">得分 0 / 0</span>
+      <div class="progress"><i id="progFill"></i></div>
+      <span id="progText">第 1 / 13 题</span>
+    </div>
+    <div class="card" id="qcard"></div>
+    <div class="nav" id="navRow">
+      <button id="btnPrev">← 上一题</button>
+      <button id="btnCheck" class="primary">检查答案</button>
+      <button id="btnReset">重置本题</button>
+      <button id="btnNext">下一题 →</button>
+    </div>
+  </div>
+
+  <div class="card result" id="resultView" style="display:none">
+    <div class="big" id="resultScore"></div>
+    <p id="resultDetail"></p>
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+      <button id="btnResultOverview" class="primary">返回查看（总览）</button>
+      <button id="btnResultContinue">继续做题</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="panel">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <strong>总览面板</strong>
+      <button id="btnCloseOv">关闭 ✕</button>
+    </div>
+    <div class="filters">
+      <button data-f="all" class="on">全部</button>
+      <button data-f="ok">✅ 正确</button>
+      <button data-f="bad">❌ 错误</button>
+      <button data-f="none">⬜ 未答</button>
+    </div>
+    <div class="grid" id="ovGrid"></div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ============ 题目数据（全部出自源文件 §1，数据点保真） ============ */
+const allQuestions = [
+{
+  id:"d1", type:"drag",
+  q:"六原语的「控制权」归属 —— 将术语拖入对应空格（§1.1）：",
+  lines:[
+    {pre:"", blanks:[{ans:"Tools", why:"Tools 是 model-controlled：server 声明 name/description/JSON Schema，由模型决定何时调用（类似 function calling，但由 server 端提供）。"}], post:" — model-controlled executable functions，由模型决定何时调用。"},
+    {pre:"", blanks:[{ans:"Resources", why:"Resources 是 application-controlled 的只读数据（files / DB rows / API responses），由 URI 寻址；是 application/user 而非模型决定什么进入上下文。"}], post:" — application-controlled 的只读数据，由 application/user 决定什么进入上下文。"},
+    {pre:"", blanks:[{ans:"Prompts", why:"Prompts 是 user-controlled 的可复用 prompt 模板，带 typed arguments，以类似 slash-command 的一等对象形式暴露。"}], post:" — user-controlled 的可复用 prompt 模板，带 typed arguments。"}
+  ],
+  pool:["Tools","Resources","Prompts","Sampling","Elicitation","Roots"],
+  explain:"干扰项：Sampling 是反向原语（server 向 client 请求 LLM completion）；Elicitation 是 server 发起的结构化用户输入请求；Roots 是 client 声明的文件系统边界。三者均不属于「model/application/user 控制权」这一组定义。"
+},
+{
+  id:"d2", type:"drag",
+  q:"安全攻击面关键条目 —— 将名称拖入空格（§1.6，注意数据保真）：",
+  lines:[
+    {pre:"", blanks:[{ans:"MCPTox", why:"MCPTox（AAAI 2026）是 poisoned MCP servers 的 benchmark；o1-mini attack success rate 72.8%，说明 frontier reasoning does not confer robustness。"}], post:"（AAAI 2026）：poisoned MCP servers 的 benchmark，o1-mini 攻击成功率 72.8%。"},
+    {pre:"", blanks:[{ans:"ETDI", why:"ETDI（arXiv:2506.01333）是提出的缓解方案：Enhanced Tool Definition Interface，带签名、不可变的 tool definitions 与部署时完整性检查。"}], post:"（arXiv:2506.01333）：提出的缓解方案 —— Enhanced Tool Definition Interface，签名 + 不可变 tool definitions + 部署时完整性检查。"},
+    {pre:"mcp-remote ", blanks:[{ans:"CVE-2025-6514", why:"CVE-2025-6514 是 mcp-remote（流行的 OAuth bridge）中的 remote code execution 漏洞。"}], post:"：流行的 OAuth bridge 中的 remote code execution 漏洞。"}
+  ],
+  pool:["MCPTox","ETDI","CVE-2025-6514","TPA","OWASP MCP Top 10","postmark-mcp"],
+  explain:"干扰项：TPA 是把恶意指令藏进 tool description 的攻击（注册时注入模型上下文）；postmark-mcp 是 npm 供应链后门事件（外泄邮件数据）；OWASP MCP Top 10 是社区漏洞分类法，三者都不匹配题面描述。"
+},
+{
+  id:"s1", type:"single",
+  q:"MCP 规范 2025-03-26 版本的核心变更是什么？（§1.2）",
+  options:[
+    {t:"引入 Structured tool output（outputSchema）与 elicitation", why:"❌ 这是 2025-06-18 版本的内容，不是 2025-03-26。"},
+    {t:"引入 Tasks（SEP-1686）异步长任务抽象与 CIMD", why:"❌ 这是 2025-11-25 版本的内容。"},
+    {t:"Streamable HTTP transport（取代 HTTP+SSE）、OAuth 2.1 授权框架、JSON-RPC batching", why:"✅ 原文：2025-03-26 — Streamable HTTP transport (replacing HTTP+SSE), OAuth 2.1 authorization framework, JSON-RPC batching。"},
+    {t:"发布官方 Registry 并将其 API 冻结在 v0.1", why:"❌ Registry 进入 public preview 是 2025-09，且属于 §1.3，不是 2025-03-26 规范版本的内容。"}
+  ],
+  correct:2,
+  explain:"三版本时间线：2025-03-26（Streamable HTTP / OAuth 2.1 / batching）→ 2025-06-18（outputSchema / elicitation / resource links / RFC 8707）→ 2025-11-25（Tasks SEP-1686 / CIMD / XAA）。"
+},
+{
+  id:"s2", type:"single",
+  q:"关于官方 MCP Registry（「metaregistry」），下列哪项描述准确？（§1.3）",
+  options:[
+    {t:"2025-09 进入 public preview，API 冻结在 v0.1，作为 federated index 供下游市场（Docker、GitHub、vendor catalogs）镜像", why:"✅ 原文：entered public preview in 2025-09 as a federated index of MCP servers, with its API frozen at v0.1；下游 marketplaces 从它镜像。"},
+    {t:"2025-03 随 OpenAI 采用同步上线，API 冻结在 v1.0", why:"❌ 时间（2025-03）与版本（v1.0）均错：是 2025-09 public preview、API frozen at v0.1。"},
+    {t:"是一个集中式应用商店，直接托管所有 MCP server 的代码与二进制", why:"❌ 它是 upstream metadata aggregation（元数据聚合 / federated index），不是集中托管代码的商店。"},
+    {t:"由各下游市场独立维护各自的元数据，Registry 只做展示页面", why:"❌ 因果倒置：下游市场是从 Registry 镜像（mirror from it），不是各自独立维护。"}
+  ],
+  correct:0,
+  explain:"Registry 的角色是 upstream metadata aggregation；Docker、GitHub、vendor catalogs 等下游市场从它镜像。"
+},
+{
+  id:"s3", type:"single",
+  q:"Tasks（SEP-1686）—— 带状态轮询的异步长任务抽象 —— 属于哪个规范版本？（§1.2）",
+  options:[
+    {t:"2025-03-26", why:"❌ 2025-03-26 是 Streamable HTTP / OAuth 2.1 / JSON-RPC batching。"},
+    {t:"2025-06-18", why:"❌ 2025-06-18 是 outputSchema / elicitation / resource links / Resource Indicators (RFC 8707)。"},
+    {t:"2024-11 初版协议发布时即包含", why:"❌ 源文件未提及 2024 年初版包含 Tasks；Tasks 明确列在 2025-11-25 版本。"},
+    {t:"2025-11-25", why:"✅ 原文：2025-11-25 — Tasks (SEP-1686) async long-running task abstraction with status polling；同版还有 CIMD 与 XAA。"}
+  ],
+  correct:3,
+  explain:"2025-11-25 版本三件套：Tasks (SEP-1686)、CIMD（Client ID Metadata Documents，修复大规模 OAuth dynamic client registration）、XAA（cross-app access / enterprise delegation extensions）。"
+},
+{
+  id:"s4", type:"single",
+  q:"Sampling 原语的方向与作用是什么？（§1.1）",
+  options:[
+    {t:"client 向 server 请求 LLM completion，API key 放在 server 侧", why:"❌ 方向与密钥位置都反了：是 server 向 client 请求，且 keys 留在 host 侧。"},
+    {t:"server 向 client 请求 LLM completion，把 API keys 与模型选择留在 host 侧", why:"✅ 原文：the inverse direction: a server may request an LLM completion from the client, keeping API keys and model choice on the host side。"},
+    {t:"server 在交互中途向用户请求结构化输入", why:"❌ 那是 Elicitation（schema-constrained form），不是 Sampling。"},
+    {t:"client 声明文件系统边界，告诉 server 可以合法操作的范围", why:"❌ 那是 Roots（client-declared filesystem/workspace boundaries）。"}
+  ],
+  correct:1,
+  explain:"Sampling 被称为「the inverse direction」—— 与通常 client→server 的调用方向相反；设计动机是让 API keys 与模型选择留在 host 侧。"
+},
+{
+  id:"s5", type:"single",
+  q:"MCP 与 function calling 的关系，哪项最准确？（§1.7）",
+  options:[
+    {t:"MCP 是标准化供给层：标准化工具的 discovery / description / hosting，而非模型如何发起调用；二者是组合关系", why:"✅ 原文：MCP is a standardized supply layer: it standardizes how tools are discovered, described, and hosted, not how the model emits calls. They compose。"},
+    {t:"MCP 旨在取代 function calling，二者是竞争关系", why:"❌ 原文明确说 they compose —— host 通常把 MCP tools 桥接进自己的 native function-calling 接口，这正是采用 converge 而非 compete 的原因。"},
+    {t:"MCP 标准化模型如何生成 tool call 参数，function calling 负责工具托管", why:"❌ 层级弄反：MCP 不管模型如何 emit calls；function calling 是 per-vendor 的 in-API 机制（schema → arguments → result）。"},
+    {t:"function calling 已被 MCP 废弃，2025-03 后各厂商停止支持", why:"❌ 无稽：原文说 function calling remains the per-vendor in-API mechanism，且二者组合共存。"}
+  ],
+  correct:0,
+  explain:"function calling = 每家厂商 API 内的机制；MCP = 标准化供给层（发现 / 描述 / 托管）。hosts 桥接二者，因此采用是 converge 而非 compete。"
+},
+{
+  id:"m1", type:"multi",
+  q:"下列哪些属于 MCP 规范 2025-06-18 版本的内容？（多选，§1.2）",
+  options:[
+    {t:"Structured tool output（outputSchema）", c:true, why:"✅ 属于 2025-06-18。"},
+    {t:"Elicitation", c:true, why:"✅ 属于 2025-06-18（同版引入 elicitation 原语）。"},
+    {t:"Resource Indicators（RFC 8707）", c:true, why:"✅ 属于 2025-06-18（同版还有 resource links in tool results）。"},
+    {t:"Streamable HTTP transport（取代 HTTP+SSE）", c:false, why:"❌ 这是 2025-03-26 版本的内容。"},
+    {t:"Tasks（SEP-1686）异步长任务抽象", c:false, why:"❌ 这是 2025-11-25 版本的内容。"}
+  ],
+  explain:"2025-06-18 完整清单：Structured tool output (outputSchema)、elicitation、resource links in tool results、Resource Indicators (RFC 8707)。"
+},
+{
+  id:"m2", type:"multi",
+  q:"下列哪些属于 §1.6 列出的 MCP 安全攻击面 / 真实安全事件？（多选）",
+  options:[
+    {t:"Tool Poisoning Attack (TPA) —— 恶意指令藏在 tool description 中，注册时注入模型上下文", c:true, why:"✅ §1.6 明确列出的攻击类别。"},
+    {t:"Rug pull / tool shadowing —— server 在批准后篡改 tool 定义，或同名工具拦截调用", c:true, why:"✅ §1.6 明确列出：a server mutates tool definitions post-approval, or a second server registers a same-named tool to intercept calls。"},
+    {t:"postmark-mcp backdoor —— npm 供应链事件，被植入后门的 MCP server 包外泄邮件数据", c:true, why:"✅ §1.6 明确列出的真实供应链事件。"},
+    {t:"ETDI —— 利用 Enhanced Tool Definition Interface 实施的签名伪造攻击", c:false, why:"❌ 因果倒置：ETDI（arXiv:2506.01333）是提出的【缓解方案】（签名 + 不可变定义 + 部署时完整性检查），不是攻击。"},
+    {t:"Elicitation —— server 借此窃取用户结构化输入的内置漏洞", c:false, why:"❌ Elicitation 是 §1.1 的合法原语（server 发起的 schema 约束表单输入请求），§1.6 未将其列为攻击面。"}
+  ],
+  explain:"§1.6 攻击面清单：TPA、MCPTox benchmark（o1-mini ASR 72.8%）、rug pull / tool shadowing、postmark-mcp backdoor、mcp-remote CVE-2025-6514；ETDI 是缓解方案，OWASP MCP Top 10 是分类法。"
+},
+{
+  id:"t1", type:"tf",
+  q:"判断：Resources 与 Tools 一样，由模型（model）决定哪些数据进入上下文。",
+  answer:false,
+  explain:"✅ 正确理解：Resources 是 application-controlled 的只读数据（files / DB rows / API responses，URI 寻址），由 application/user —— 而非模型 —— 决定什么进入上下文。\n❌ 常见误解：把 Resources 的控制权与 Tools 混为一谈。Tools 才是 model-controlled（模型决定何时调用）；六原语的精确定义差异正在于「谁拥有控制权」：Tools=model、Resources=application/user、Prompts=user。"
+},
+{
+  id:"t2", type:"tf",
+  q:"判断：MCPTox 中 o1-mini 的攻击成功率 72.8%，说明具备前沿推理（frontier reasoning）能力的模型天然更能抵御工具投毒。",
+  answer:false,
+  explain:"✅ 正确理解：原文结论恰恰相反 ——「frontier reasoning does not confer robustness」。72.8% 的高攻击成功率恰恰出现在推理模型 o1-mini 上，说明推理能力不构成对 poisoned MCP servers 的鲁棒性。\n❌ 常见误解：因果倒置 —— 把「在推理模型上测得高 ASR」误读为「推理能力带来防御」。数据点本身（o1-mini、72.8%）支持的是防御缺失的结论。"
+},
+{
+  id:"t3", type:"tf",
+  q:"判断：MCP 与 function calling 是互相替代的竞争关系，MCP 标准化了模型生成 tool call 的方式。",
+  answer:false,
+  explain:"✅ 正确理解：二者是组合（compose）关系。function calling 是 per-vendor 的 in-API 机制（schema → arguments → result）；MCP 是标准化供给层，标准化工具的 discovered / described / hosted，而非模型如何 emit calls。hosts 通常把 MCP tools 桥接进 native function-calling 接口，这正是采用 converge 而非 compete 的原因。\n❌ 常见误解：层级混淆 + 竞争误判 —— 把「供给层标准化」误认为「调用机制标准化」，进而推出替代关系。"
+},
+{
+  id:"t4", type:"tf",
+  q:"判断：Streamable HTTP transport 在 2025-03-26 规范版本中取代了此前的 HTTP+SSE transport。",
+  answer:true,
+  explain:"✅ 正确理解：原文 §1.2 —— 2025-03-26: Streamable HTTP transport (replacing HTTP+SSE)，同版还有 OAuth 2.1 authorization framework 与 JSON-RPC batching。\n❌ 常见误解：版本误判 —— 把 transport 变更记到 2025-06-18（该版本实为 outputSchema / elicitation / resource links / RFC 8707）或 2025-11-25（Tasks / CIMD / XAA）。"
+}
+];
+
+/* ============ 引擎 ============ */
+const TYPE_LABEL={drag:"拖拽填空",single:"单选题",multi:"多选题",tf:"判断题"};
+let order=allQuestions.map((_,i)=>i);
+let cur=0;
+let state=allQuestions.map(()=>({answered:false,correct:false,sel:null,fills:null}));
+
+const $=id=>document.getElementById(id);
+
+function shuffleArr(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+function reshuffle(){
+  allQuestions.forEach(q=>{
+    if(q.type==="single"){
+      const idx=q.options.map((_,i)=>i);shuffleArr(idx);
+      q.options=idx.map(i=>q.options[i]);
+      q.correct=idx.indexOf(q.correct);
+    }else if(q.type==="multi"){
+      const idx=q.options.map((_,i)=>i);shuffleArr(idx);
+      q.options=idx.map(i=>q.options[i]);
+    }else if(q.type==="drag"){
+      shuffleArr(q.pool);
+    }
+  });
+  state=allQuestions.map(()=>({answered:false,correct:false,sel:null,fills:null}));
+  cur=0;
+  $("resultView").style.display="none";
+  setQuizVisible(true);
+  render();
+}
+
+function resetAll(){
+  state=allQuestions.map(()=>({answered:false,correct:false,sel:null,fills:null}));
+  cur=0;
+  $("resultView").style.display="none";
+  setQuizVisible(true);
+  render();
+}
+
+/* 只切换题卡与导航行，绝不隐藏进度条/分数栏父容器 */
+function setQuizVisible(v){
+  $("qcard").style.display=v?"":"none";
+  $("navRow").style.display=v?"":"none";
+  $("mainView").style.display="";
+  $("scoreBar").style.display="";
+}
+
+function qNow(){return allQuestions[order[cur]];}
+
+function render(){
+  const q=qNow();const st=state[order[cur]];
+  const c=$("qcard");c.innerHTML="";
+  const tag=document.createElement("span");tag.className="qtype";tag.textContent=TYPE_LABEL[q.type];c.appendChild(tag);
+  const qt=document.createElement("div");qt.className="qtext";qt.textContent=q.q;c.appendChild(qt);
+  if(q.type==="single")renderSingle(c,q,st);
+  else if(q.type==="multi")renderMulti(c,q,st);
+  else if(q.type==="tf")renderTF(c,q,st);
+  else renderDrag(c,q,st);
+  updateBar();
+}
+
+function updateBar(){
+  const total=allQuestions.length;
+  let score=0,done=0;
+  state.forEach(s=>{if(s.answered){done++;if(s.correct)score++;}});
+  $("scoreText").textContent=`得分 ${score} / ${done}（共 ${total} 题）`;
+  $("progText").textContent=`第 ${cur+1} / ${total} 题`;
+  $("progFill").style.width=((cur+1)/total*100)+"%";
+  $("btnPrev").disabled=cur===0;
+}
+
+function verdictEl(ok){
+  const v=document.createElement("div");
+  v.className="verdict "+(ok?"ok":"no");
+  v.textContent=ok?"✅ 回答正确":"❌ 回答错误";
+  return v;
+}
+function explainEl(text){
+  const e=document.createElement("div");e.className="explain";e.textContent=text;return e;
+}
+
+/* ---- single ---- */
+function renderSingle(c,q,st){
+  if(st.sel===null)st.sel=-1;
+  q.options.forEach((o,i)=>{
+    const d=document.createElement("div");d.className="opt";
+    if(!st.answered&&st.sel===i)d.classList.add("sel");
+    if(st.answered){if(i===q.correct)d.classList.add("correct");else if(st.sel===i)d.classList.add("wrong");}
+    const m=document.createElement("span");m.className="mark";m.textContent=String.fromCharCode(65+i);
+    const b=document.createElement("div");b.className="body";b.textContent=o.t;
+    if(st.answered){const w=document.createElement("span");w.className="why";w.textContent=o.why;b.appendChild(w);}
+    d.appendChild(m);d.appendChild(b);
+    if(!st.answered)d.onclick=()=>{st.sel=i;render();};
+    c.appendChild(d);
+  });
+  if(st.answered){c.appendChild(verdictEl(st.correct));c.appendChild(explainEl(q.explain));}
+}
+/* ---- multi ---- */
+function renderMulti(c,q,st){
+  if(st.sel===null)st.sel=new Set();
+  q.options.forEach((o,i)=>{
+    const d=document.createElement("div");d.className="opt";
+    if(!st.answered&&st.sel.has(i))d.classList.add("sel");
+    if(st.answered){
+      if(o.c)d.classList.add("correct");
+      else if(st.sel.has(i))d.classList.add("wrong");
+    }
+    const m=document.createElement("span");m.className="mark";m.textContent=st.answered?(o.c?"✓":"✗"):(st.sel.has(i)?"☑":"☐");
+    const b=document.createElement("div");b.className="body";b.textContent=o.t;
+    if(st.answered){const w=document.createElement("span");w.className="why";w.textContent=o.why;b.appendChild(w);}
+    d.appendChild(m);d.appendChild(b);
+    if(!st.answered)d.onclick=()=>{st.sel.has(i)?st.sel.delete(i):st.sel.add(i);render();};
+    c.appendChild(d);
+  });
+  if(st.answered){c.appendChild(verdictEl(st.correct));c.appendChild(explainEl(q.explain));}
+}
+/* ---- tf ---- */
+function renderTF(c,q,st){
+  const row=document.createElement("div");row.className="tfrow";
+  [["正确 ✅",true],["错误 ❌",false]].forEach(([label,val])=>{
+    const b=document.createElement("button");b.textContent=label;
+    if(!st.answered&&st.sel===val)b.classList.add("sel");
+    if(st.answered){
+      if(q.answer===val)b.classList.add("correct");
+      else if(st.sel===val)b.classList.add("wrong");
+    }
+    if(!st.answered)b.onclick=()=>{st.sel=val;render();};
+    row.appendChild(b);
+  });
+  c.appendChild(row);
+  if(st.answered){c.appendChild(verdictEl(st.correct));c.appendChild(explainEl(q.explain));}
+}
+/* ---- drag ---- */
+function renderDrag(c,q,st){
+  if(st.fills===null)st.fills=q.lines.map(l=>l.blanks.map(()=>null));
+  // pool
+  const pool=document.createElement("div");pool.className="pool";
+  const used=new Set();
+  st.fills.forEach(r=>r.forEach(v=>{if(v!==null)used.add(v);}));
+  q.pool.forEach(term=>{
+    const ch=document.createElement("span");ch.className="chip"+(used.has(term)?" used":"");
+    ch.textContent=term;ch.draggable=!st.answered&&!used.has(term);
+    ch.addEventListener("dragstart",e=>{e.dataTransfer.setData("text/plain",term);});
+    pool.appendChild(ch);
+  });
+  c.appendChild(pool);
+  const tip=document.createElement("div");tip.style.cssText="font-size:.78rem;color:var(--ink2);margin-bottom:12px";
+  tip.textContent=st.answered?"":"拖动术语到空格，或点击空格后点击术语填入；点击已填空格可移除。";
+  c.appendChild(tip);
+  let pending=null;
+  q.lines.forEach((line,li)=>{
+    const d=document.createElement("div");d.className="dragline";
+    d.appendChild(document.createTextNode(line.pre));
+    line.blanks.forEach((b,bi)=>{
+      const sp=document.createElement("span");sp.className="blank";
+      const val=st.fills[li][bi];
+      if(val!==null)sp.classList.add("filled");
+      if(st.answered)sp.classList.add(val===b.ans?"correct":"wrong");
+      sp.textContent=val!==null?val:"＿＿＿＿";
+      if(st.answered&&val!==b.ans){const h=document.createElement("span");h.className="hint";h.textContent="正确："+b.ans;sp.appendChild(h);}
+      sp.addEventListener("dragover",e=>e.preventDefault());
+      sp.addEventListener("drop",e=>{
+        e.preventDefault();if(st.answered)return;
+        const t=e.dataTransfer.getData("text/plain");
+        if(t&&!used.has(t)){st.fills[li][bi]=t;render();}
+      });
+      if(!st.answered)sp.onclick=()=>{
+        if(val!==null){st.fills[li][bi]=null;pending=null;render();}
+        else pending={li,bi};
+      };
+      d.appendChild(sp);
+    });
+    d.appendChild(document.createTextNode(line.post));
+    c.appendChild(d);
+    if(st.answered)line.blanks.forEach(b=>{
+      const w=document.createElement("div");w.className="blankwhy";w.textContent="💡 "+b.why;c.appendChild(w);
+    });
+  });
+  // click-to-fill: pool chips clickable when a blank pending
+  if(!st.answered){
+    pool.querySelectorAll(".chip:not(.used)").forEach(ch=>{
+      ch.onclick=()=>{
+        // find first empty blank
+        for(let li=0;li<st.fills.length;li++)for(let bi=0;bi<st.fills[li].length;bi++){
+          if(st.fills[li][bi]===null){st.fills[li][bi]=ch.textContent;render();return;}
+        }
+      };
+    });
+  }
+  if(st.answered){c.appendChild(verdictEl(st.correct));c.appendChild(explainEl(q.explain));}
+}
+
+/* ---- check / nav ---- */
+function check(){
+  const q=qNow();const st=state[order[cur]];
+  if(q.type==="single"){
+    if(st.sel===null||st.sel<0){alert("请先选择一个选项");return;}
+    st.correct=st.sel===q.correct;
+  }else if(q.type==="multi"){
+    if(!st.sel||st.sel.size===0){alert("请至少选择一个选项");return;}
+    const want=new Set();q.options.forEach((o,i)=>{if(o.c)want.add(i);});
+    st.correct=want.size===st.sel.size&&[...want].every(i=>st.sel.has(i));
+  }else if(q.type==="tf"){
+    if(st.sel===null){alert("请先选择 正确/错误");return;}
+    st.correct=st.sel===q.answer;
+  }else{
+    const flat=st.fills.flat();
+    if(flat.some(v=>v===null)){alert("请填满所有空格");return;}
+    st.correct=q.lines.every((l,li)=>l.blanks.every((b,bi)=>st.fills[li][bi]===b.ans));
+  }
+  st.answered=true;render();
+}
+
+function goNext(){
+  if(cur<allQuestions.length-1){cur++;render();}
+  else showResult();
+}
+function showResult(){
+  let score=0,done=0;
+  state.forEach(s=>{if(s.answered){done++;if(s.correct)score++;}});
+  setQuizVisible(false);  // 只隐藏题卡与导航行，进度条/分数栏保持可见
+  $("resultView").style.display="";
+  $("resultScore").textContent=`${score} / ${allQuestions.length}`;
+  $("resultDetail").textContent=`已作答 ${done} 题，答对 ${score} 题。点击「返回查看」打开总览面板逐题回顾，或「继续做题」回到最后一题。`;
+}
+
+/* ---- overview ---- */
+let ovFilter="all";
+function renderOv(){
+  const g=$("ovGrid");g.innerHTML="";
+  allQuestions.forEach((q,i)=>{
+    const st=state[i];
+    const stCls=!st.answered?"st-none":(st.correct?"st-ok":"st-bad");
+    if(ovFilter==="ok"&&stCls!=="st-ok")return;
+    if(ovFilter==="bad"&&stCls!=="st-bad")return;
+    if(ovFilter==="none"&&stCls!=="st-none")return;
+    const d=document.createElement("div");d.className="cell "+stCls;
+    d.innerHTML=`<span class="t">${TYPE_LABEL[q.type]}</span>第 ${i+1} 题`;
+    d.onclick=()=>{cur=i;$("overlay").classList.remove("open");$("resultView").style.display="none";setQuizVisible(true);render();};
+    g.appendChild(d);
+  });
+}
+
+/* ---- events ---- */
+$("btnCheck").onclick=check;
+$("btnNext").onclick=goNext;
+$("btnPrev").onclick=()=>{if(cur>0){cur--;render();}};
+$("btnReset").onclick=()=>{state[order[cur]]={answered:false,correct:false,sel:null,fills:null};render();};
+$("btnResetAll").onclick=resetAll;
+$("btnShuffle").onclick=()=>{if(confirm("洗牌将清空所有答题记录并回到第一题，继续？"))reshuffle();};
+$("btnOverview").onclick=()=>{renderOv();$("overlay").classList.add("open");};
+$("btnCloseOv").onclick=()=>$("overlay").classList.remove("open");
+$("overlay").onclick=e=>{if(e.target===$("overlay"))$("overlay").classList.remove("open");};
+document.querySelectorAll(".filters button").forEach(b=>{
+  b.onclick=()=>{document.querySelectorAll(".filters button").forEach(x=>x.classList.remove("on"));b.classList.add("on");ovFilter=b.dataset.f;renderOv();};
+});
+$("btnResultOverview").onclick=()=>{renderOv();$("overlay").classList.add("open");};
+$("btnResultContinue").onclick=()=>{$("resultView").style.display="none";setQuizVisible(true);cur=allQuestions.length-1;render();};
+
+render();
+</script>
+</body>
+</html>

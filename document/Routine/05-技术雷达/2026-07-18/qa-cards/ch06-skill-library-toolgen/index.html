@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ch06 · Skill Libraries & Tool Generation — QA 卡牌</title>
+<style>
+  :root{
+    --bg:#faf7f2; --card:#fffdf9; --ink:#3d3833; --ink-soft:#7a7268;
+    --accent:#b07d4f; --accent-soft:#f0e4d6; --line:#e7dfd4;
+    --ok:#5f8a5f; --ok-bg:#eef4ec; --bad:#b0563e; --bad-bg:#f8ece7;
+    --chip:#f5efe6;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;line-height:1.65;padding:16px}
+  .wrap{max-width:860px;margin:0 auto}
+  header{margin-bottom:14px}
+  h1{font-size:1.25rem;font-weight:600}
+  .sub{color:var(--ink-soft);font-size:.85rem;margin-top:2px}
+  #topbar{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin-bottom:14px}
+  #progressRow{display:flex;justify-content:space-between;align-items:center;font-size:.85rem;color:var(--ink-soft);margin-bottom:8px;flex-wrap:wrap;gap:6px}
+  #scoreLive{font-weight:600;color:var(--accent)}
+  .bar{height:8px;background:var(--chip);border-radius:99px;overflow:hidden}
+  .bar>div{height:100%;background:var(--accent);width:0%;transition:width .3s;border-radius:99px}
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:9px;padding:8px 14px;font-size:.88rem;transition:background .15s}
+  button:hover{background:var(--accent-soft)}
+  button.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+  button.primary:hover{filter:brightness(1.05)}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  #stage{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:22px}
+  .qtype{display:inline-block;font-size:.72rem;letter-spacing:.05em;background:var(--accent-soft);color:var(--accent);border-radius:6px;padding:2px 8px;margin-bottom:10px;font-weight:600}
+  .qtext{font-size:1.02rem;font-weight:600;margin-bottom:16px;white-space:pre-wrap}
+  .opt{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:10px;padding:11px 13px;margin-bottom:9px;cursor:pointer;background:#fff;transition:border-color .15s,background .15s}
+  .opt:hover{border-color:var(--accent)}
+  .opt.sel{border-color:var(--accent);background:var(--accent-soft)}
+  .opt.correct{border-color:var(--ok);background:var(--ok-bg)}
+  .opt.wrong{border-color:var(--bad);background:var(--bad-bg)}
+  .opt .mark{font-weight:700;min-width:20px;color:var(--ink-soft)}
+  .opt-body{flex:1}
+  .explain{font-size:.82rem;color:var(--ink-soft);margin-top:6px;display:none;border-top:1px dashed var(--line);padding-top:6px}
+  .opt.show-ex .explain{display:block}
+  .tf-btns{display:flex;gap:12px;margin-bottom:6px}
+  .tf-btns button{flex:1;padding:14px;font-size:1rem;font-weight:600}
+  .tf-btns button.sel{background:var(--accent-soft);border-color:var(--accent)}
+  .tf-btns button.correct{background:var(--ok-bg);border-color:var(--ok)}
+  .tf-btns button.wrong{background:var(--bad-bg);border-color:var(--bad)}
+  .verdict{display:none;margin:12px 0;padding:10px 14px;border-radius:9px;font-weight:600;font-size:.92rem}
+  .verdict.ok{display:block;background:var(--ok-bg);color:var(--ok)}
+  .verdict.no{display:block;background:var(--bad-bg);color:var(--bad)}
+  .tf-explain{display:none;font-size:.86rem;background:var(--chip);border-radius:9px;padding:12px 14px;margin-top:10px;white-space:pre-wrap}
+  .tf-explain.show{display:block}
+  /* drag */
+  .drag-sentence{font-size:.98rem;background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:14px;line-height:2.4}
+  .blank{display:inline-block;min-width:110px;border:2px dashed var(--accent);border-radius:8px;padding:2px 10px;margin:0 4px;text-align:center;color:var(--ink-soft);background:var(--bg);vertical-align:middle;min-height:1.6em}
+  .blank.filled{color:var(--ink);border-style:solid;background:var(--accent-soft)}
+  .blank.correct{border-color:var(--ok);background:var(--ok-bg)}
+  .blank.wrong{border-color:var(--bad);background:var(--bad-bg)}
+  .pool{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
+  .chip{border:1px solid var(--accent);color:var(--accent);background:#fff;border-radius:99px;padding:6px 16px;cursor:grab;font-size:.88rem;user-select:none}
+  .chip.used{opacity:.35;pointer-events:none}
+  .drag-ex{display:none;font-size:.84rem;color:var(--ink-soft);background:var(--chip);border-radius:9px;padding:11px 14px;margin-top:10px;white-space:pre-wrap}
+  .drag-ex.show{display:block}
+  .actions{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+  #navRow{display:flex;justify-content:space-between;margin-top:16px;gap:8px}
+  /* overview */
+  #overview{display:none;position:fixed;inset:0;background:rgba(61,56,51,.35);z-index:20;align-items:center;justify-content:center;padding:16px}
+  #overview.open{display:flex}
+  .ov-card{background:var(--card);border-radius:14px;max-width:720px;width:100%;max-height:85vh;overflow:auto;padding:22px}
+  .ov-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(52px,1fr));gap:8px;margin:14px 0}
+  .ov-cell{aspect-ratio:1;border-radius:9px;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-weight:600;cursor:pointer;background:#fff;font-size:.85rem}
+  .ov-cell.st-ok{background:var(--ok-bg);border-color:var(--ok);color:var(--ok)}
+  .ov-cell.st-bad{background:var(--bad-bg);border-color:var(--bad);color:var(--bad)}
+  .ov-cell.st-cur{outline:2px solid var(--accent)}
+  .ov-filters{display:flex;gap:8px;flex-wrap:wrap}
+  .ov-filters button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+  /* result */
+  #result{display:none;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:34px 22px;text-align:center}
+  #result h2{font-size:1.6rem;margin-bottom:8px}
+  #result .pct{font-size:2.6rem;font-weight:700;color:var(--accent);margin:10px 0}
+  code{background:var(--chip);border-radius:5px;padding:1px 6px;font-size:.9em}
+  @media (max-width:560px){
+    body{padding:10px}
+    #stage{padding:16px}
+    .tf-btns{flex-direction:column}
+    #navRow{flex-wrap:wrap}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>ch06 · Skill Libraries &amp; Automatic Tool Generation</h1>
+    <div class="sub">技术雷达 k3 · Tool Use / MCP / Agent Infra(2026-07-18)· 互动面试自测卡牌</div>
+  </header>
+
+  <div id="topbar">
+    <div id="progressRow">
+      <span id="progressText">第 1 / 13 题</span>
+      <span id="scoreLive">得分 0 / 13</span>
+    </div>
+    <div class="bar"><div id="barFill"></div></div>
+  </div>
+
+  <div class="toolbar">
+    <button id="btnOverview">🗂 总览面板</button>
+    <button id="btnShuffle">🎲 重新洗牌选项</button>
+    <button id="btnResetAll">🔄 重置所有分数</button>
+  </div>
+
+  <div id="stage"></div>
+
+  <div id="navRow">
+    <button id="btnPrev">← 上一题</button>
+    <button id="btnNext">下一题 →</button>
+  </div>
+
+  <div id="result">
+    <h2>🎉 全部完成!</h2>
+    <div class="pct" id="resPct"></div>
+    <p id="resDetail" style="color:var(--ink-soft)"></p>
+    <div class="actions" style="justify-content:center;margin-top:20px">
+      <button class="primary" id="btnResOverview">🗂 返回查看(开总览)</button>
+      <button id="btnResContinue">✏️ 继续做题(回最后一题)</button>
+    </div>
+  </div>
+</div>
+
+<div id="overview">
+  <div class="ov-card">
+    <h3 style="margin-bottom:10px">题目总览</h3>
+    <div class="ov-filters">
+      <button data-f="all" class="on">全部</button>
+      <button data-f="ok">✅ 正确</button>
+      <button data-f="bad">❌ 错误</button>
+      <button data-f="todo">⬜ 未答</button>
+    </div>
+    <div class="ov-grid" id="ovGrid"></div>
+    <button id="btnOvClose" style="width:100%">关闭</button>
+  </div>
+</div>
+
+<script>
+/* ============ 数据(全部出自源简报 §6) ============ */
+const allQuestions = [
+{
+  type:'drag',
+  title:'Voyager 的 skill library 机制',
+  segments:['在 Voyager(arXiv:2305.16291)中,一个 skill 是可执行的 ',' 代码;skill 以生成的描述的 ',' 为键入库,即存储键值对 (e(d(p)), p);检索采用 cosine top-k,其中 k = ','。'],
+  blanks:['JavaScript','embedding','5'],
+  pool:['JavaScript','embedding','5','Python','自然语言文本','3'],
+  blankExplains:[
+    '空 1:源文 §6.1 —— "a skill = executable JavaScript code"(Minecraft agent,技能是可执行 JavaScript,不是 Python 或自然语言)。',
+    '空 2:源文 §6.1 —— "keyed by embedding of the generated description",库以描述的 embedding 为键。',
+    '空 3:源文 §6.1 —— "Retrieval: cosine top-k with k = 5"。'
+  ]
+},
+{
+  type:'sc',
+  title:'Voyager 相对基线的实测提升是?',
+  options:[
+    '15.3× more unique items,3.3× faster tech-tree progression',
+    '5× more unique items,10× faster tech-tree progression',
+    '3.3× more unique items,15.3× faster tech-tree progression',
+    '2× more unique items,4.7× faster tech-tree progression'
+  ],
+  correct:2,
+  explains:[
+    '❌ 数字被对调:unique items 是 3.3×,tech-tree 是 15.3×,记反是常见错误。',
+    '❌ 5 是检索的 top-k 值(k=5),不是提升倍数;10× 无出处。',
+    '✅ 源文 §6.1 原文:"3.3× more unique items, 15.3× faster tech-tree progression vs. baselines"。',
+    '❌ 4.7× 是 §5 中 RTP-LLM 的 TTFT 提升区间(4.7–5.3×),属于跨章节混淆。'
+  ]
+},
+{
+  type:'tf',
+  title:'top-k 检索的偏差是否会随采样次数增加而消失?',
+  statement:'只要对 skill library 做更多次 top-k 采样,检索偏差(bias)就会逐渐消失。',
+  answer:false,
+  tfExplain:'✅ 正确理解:top-k 是对 Gibbs 分布 p_T(s|q) 的 mode-truncated 近似——库中落在检索支撑集(support)之外的 skill 概率质量恒为 0,无论其真实相关性如何;该偏差源于 truncation 本身,"does not vanish with more sampling"(§6.2)。\n❌ 常见误解:把它当成普通的蒙特卡洛误差,以为"多采样几次就无偏"。但这不是采样噪声,而是 proposal 支撑集缺失导致的系统性偏差——没有 importance-weight 修正,增加采样次数无法恢复被截掉的概率质量。'
+},
+{
+  type:'sc',
+  title:'CREATOR(arXiv:2305.14318)的核心设计是?',
+  options:[
+    '用强模型写工具、便宜模型调用工具的 maker–user 分工',
+    '将 abstract reasoning(工具创建)与 concrete execution(工具使用)分离',
+    '把原始 API 文档直接转成带单元测试的工具',
+    '按需生成 MCP server,最小化预定义工具'
+  ],
+  correct:1,
+  explains:[
+    '❌ 这是 LATM(arXiv:2305.17126)的 maker–user division,张冠李戴。',
+    '✅ 源文 §6.3:CREATOR "separates abstract reasoning (tool creation) from concrete execution (tool use)",使模型推理摆脱现成工具的偏见;MATH 59.7%。',
+    '❌ 这是 ToolMaker(arXiv:2502.11797)的功能($0.94/tool,80% 测试通过率)。',
+    '❌ 这是 Alita(arXiv:2505.20286)的定位——generates MCP servers on demand。'
+  ]
+},
+{
+  type:'mc',
+  title:'Voyager 的 iterative prompting 循环消费哪几类反馈?(多选)',
+  options:[
+    'execution errors(执行错误)',
+    'environment state(环境状态)',
+    'self-verification critique(自我验证批判)',
+    'human reward annotation(人工奖励标注)'
+  ],
+  correct:[0,1,2],
+  explains:[
+    '✅ 源文 §6.1 列出的三类反馈之一:execution errors。',
+    '✅ 三类反馈之二:environment state。',
+    '✅ 三类反馈之三:self-verification critique。',
+    '❌ 源文只列出三类反馈(execution errors / environment state / self-verification critique),不包含人工标注;Voyager 的循环是自动化的。'
+  ]
+},
+{
+  type:'drag',
+  title:'Skill 检索的数学刻画(§6.2)',
+  segments:['理想选择分布是 Gibbs/softmax 分布 p_T(s|q),其低温极限集中于 ',';top-k 检索是该分布的 ',' 近似——等价于不带 importance-weight 修正的廉价 importance-sampling proposal,因此是 ','(有偏/无偏)的。'],
+  blanks:['argmax','mode-truncated','有偏'],
+  pool:['argmax','mode-truncated','有偏','中位数','full posterior','无偏'],
+  blankExplains:[
+    '空 1:源文 §6.2 —— "whose low-temperature limit concentrates on the argmax"。',
+    '空 2:源文 §6.2 —— "Top-k retrieval is a mode-truncated approximation of this distribution"。',
+    '空 3:源文 §6.2 —— "applied without importance-weight correction, hence biased":支撑集外的 skill 概率质量为 0。'
+  ]
+},
+{
+  type:'tf',
+  title:'Agent Skills 与 retrieval blind spot 的关系',
+  statement:'Anthropic Agent Skills 用 LLM-as-retriever 取代 embedding top-k 检索,从而解决了 §6.2 的 retrieval blind-spot 问题。',
+  answer:false,
+  tfExplain:'✅ 正确理解:Agent Skills 让模型读 skill 的 metadata 自行决定加载什么(LLM-as-retriever),源文明确说这是 "sidestepping (but not solving) the retrieval blind spot"——绕开,而非解决(§6.4)。\n❌ 常见误解:把"换掉检索器"当成"消除召回上限"。无论检索器是 embedding top-k 还是 LLM,选择仍然发生在有限可见的候选集合上,库召回天花板对 agent 能力的限制依旧存在。'
+},
+{
+  type:'sc',
+  title:'ToolMaker(arXiv:2502.11797)报告的成本与质量数据是?',
+  options:[
+    '$9.40 per tool,80% test pass rate',
+    '$0.94 per tool,59.7% test pass rate',
+    '$0.94 per tool,100% test pass rate(全部通过)',
+    '$0.94 per tool,80% test pass rate'
+  ],
+  correct:3,
+  explains:[
+    '❌ 成本小数点错位:是 $0.94,不是 $9.40。',
+    '❌ 59.7% 是 CREATOR 在 MATH 上的分数,与 ToolMaker 的测试通过率无关。',
+    '❌ 源文明确是 80%,并非全部通过;过度美化为 100% 属于数据不保真。',
+    '✅ 源文 §6.3 原文:"$0.94 per tool, 80% test pass rate"。'
+  ]
+},
+{
+  type:'mc',
+  title:'关于 Anthropic Agent Skills,下列哪些说法符合源文?(多选)',
+  options:[
+    '2025-10 发布,2025-12 作为标准开源',
+    'progressive disclosure 三层:metadata 常驻 → 触发时加载完整 SKILL.md → 按需加载引用文件/脚本',
+    '兼容 OpenAI、Google、Cursor,是跨厂商事实标准',
+    '仅支持 Claude 生态,不兼容其他厂商'
+  ],
+  correct:[0,1,2],
+  explains:[
+    '✅ 源文 §6.4:"Released 2025-10, open-sourced as a standard 2025-12"。',
+    '✅ 三层 progressive disclosure 与源文一致:metadata always in context → full SKILL.md on trigger → referenced files/scripts on demand。',
+    '✅ 源文 §6.4:"Compatible with OpenAI, Google, Cursor — the de-facto cross-vendor skill packaging format"。',
+    '❌ 与源文相反:它恰恰是跨厂商(cross-vendor)格式,兼容 OpenAI / Google / Cursor。'
+  ]
+},
+{
+  type:'sc',
+  title:'哪个系统"按需生成 MCP server",把 skill-library 思路移植到 MCP 基底上?',
+  options:[
+    'LATM(arXiv:2305.17126)',
+    'CREATOR(arXiv:2305.14318)',
+    'Alita(arXiv:2505.20286)',
+    'Voyager(arXiv:2305.16291)'
+  ],
+  correct:2,
+  explains:[
+    '❌ LATM 是 maker–user 分工 + functional cache,不涉及 MCP server 生成。',
+    '❌ CREATOR 是创建/执行分离的推理框架,不生成 MCP server。',
+    '✅ 源文 §6.3:Alita "generates MCP servers on demand — minimal predefinitions, maximal self-evolution; the skill-library thesis ported onto the MCP substrate"。',
+    '❌ Voyager 是 Minecraft 中的 JavaScript skill library,早于 MCP 生态。'
+  ]
+},
+{
+  type:'tf',
+  title:'LATM 的 maker–user 分工中谁强谁便宜?',
+  statement:'在 LATM(arXiv:2305.17126)中,maker 是便宜模型,负责调用工具;user 是强模型,负责编写可复用 Python 工具。',
+  answer:false,
+  tfExplain:'✅ 正确理解:LATM 是 maker–user division——强模型(maker)一次性编写可复用 Python 工具,便宜模型(user)调用它们;functional cache 存验证过的工具,摊销创建成本(§6.3)。\n❌ 常见误解:把 maker/user 的角色与成本层级记反。分工的动机恰恰是"贵的模型只付一次创建费,便宜模型反复复用",角色对调后整个 amortization 论证就不成立。'
+},
+{
+  type:'tf',
+  title:'Agent Skills 的供应链安全风险',
+  statement:'arXiv:2601.10338 指出:未签名的第三方 skill 文件是指令注入(instruction-injection)向量,与 MCP tool-poisoning 属于同类风险。',
+  answer:true,
+  tfExplain:'✅ 正确理解:源文 §6.4 原文 —— "Security risk documented in arXiv:2601.10338: skill files are an instruction-injection vector; unsigned third-party skills are MCP tool-poisoning\'s sibling"。SKILL.md 本质是会被模型当作指令读取的文本,供应链投毒是直接威胁。\n❌ 常见误解:认为 skill 只是"被动文档/资源",不像可执行工具那样有攻击面。实际上 progressive disclosure 会把 skill 内容注入上下文,未签名的第三方 skill 就是投毒入口——这正是 §6.5 强调"verified skill signing"的原因。'
+},
+{
+  type:'sc',
+  title:'§6.5 趋势结论:当库规模达到数千工具/skill 时,瓶颈是什么?',
+  options:[
+    '"agents 能否造工具"——tool creation 本身仍未解决',
+    'embedding 模型的训练成本',
+    'retrieval precision(有偏 top-k 问题)与 security governance(投毒 skill/工具)',
+    'JavaScript 运行时的沙箱性能'
+  ],
+  correct:2,
+  explains:[
+    '❌ 因果时序误判:源文明确说 "can agents make tools" 已 solved(CREATOR/LATM/ToolMaker/Alita),前沿已转向 "what breaks at scale"。',
+    '❌ 源文未将 embedding 训练成本列为瓶颈;且 Agent Skills 已用 LLM-as-retriever 绕开 embedding 检索。',
+    '✅ 源文 §6.5:"the bottleneck is retrieval precision (the biased top-k problem) and security governance (poisoned skills/tools)"。',
+    '❌ 沙箱性能不在本章讨论范围内,属于无出处的干扰项。'
+  ]
+}
+];
+
+/* ============ 状态 ============ */
+let cur = 0;
+let answers = {};       // idx -> {sel:[]|number|bool, checked:bool, ok:bool}
+let ovFilter = 'all';
+
+const $ = id => document.getElementById(id);
+const stage = $('stage');
+
+function shuffleArr(a){
+  for(let i=a.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+
+/* ============ 渲染 ============ */
+function render(){
+  const q = allQuestions[cur];
+  const ans = answers[cur];
+  let h = '';
+  const typeName = {drag:'拖拽填空题',sc:'单选题',mc:'多选题',tf:'判断题'}[q.type];
+  h += `<span class="qtype">${typeName} · 第 ${cur+1} 题</span>`;
+  h += `<div class="qtext">${q.title||''}</div>`;
+
+  if(q.type==='sc'||q.type==='mc'){
+    const multi = q.type==='mc';
+    if(multi) h += `<div style="font-size:.82rem;color:var(--ink-soft);margin-bottom:8px">(多选:选出所有正确项)</div>`;
+    const sel = ans? ans.sel : [];
+    q.options.forEach((op,i)=>{
+      let cls='opt';
+      if(ans && ans.checked){
+        const isC = multi? q.correct.includes(i) : q.correct===i;
+        const isS = sel.includes(i);
+        if(isC) cls+=' correct';
+        if(isS && !isC) cls+=' wrong';
+        cls+=' show-ex';
+      } else if(sel.includes(i)) cls+=' sel';
+      const mark = multi? (sel.includes(i)?'☑':'☐') : String.fromCharCode(65+i);
+      h += `<div class="${cls}" data-i="${i}" onclick="pickOpt(${i})">
+        <span class="mark">${mark}</span>
+        <div class="opt-body"><div>${op}</div><div class="explain">${q.explains[i]}</div></div>
+      </div>`;
+    });
+  }
+  else if(q.type==='tf'){
+    h += `<div class="qtext" style="font-weight:500">${q.statement}</div>`;
+    const sel = ans? ans.sel : null;
+    const checked = ans && ans.checked;
+    h += `<div class="tf-btns">`;
+    [['true','✅ 正确'],['false','❌ 错误']].forEach(([v,label])=>{
+      let cls='';
+      const vb = v==='true';
+      if(checked){
+        if(q.answer===vb) cls='correct';
+        else if(sel===vb) cls='wrong';
+      } else if(sel===vb) cls='sel';
+      h += `<button class="${cls}" onclick="pickTf(${v})">${label}</button>`;
+    });
+    h += `</div>`;
+    if(checked){
+      h += `<div class="verdict ${ans.ok?'ok':'no'}">${ans.ok?'✅ 回答正确':'❌ 回答错误'}</div>`;
+      h += `<div class="tf-explain show">${q.tfExplain}</div>`;
+    }
+  }
+  else if(q.type==='drag'){
+    const placed = ans? ans.sel : q.blanks.map(()=>null);
+    const checked = ans && ans.checked;
+    let sent='';
+    q.segments.forEach((seg,i)=>{
+      sent += seg;
+      if(i < q.blanks.length){
+        let cls='blank', txt='拖入术语';
+        if(placed[i]!=null){ cls+=' filled'; txt=q.pool[placed[i]]; }
+        if(checked){ cls += (q.pool[placed[i]]===q.blanks[i])?' correct':' wrong'; }
+        sent += `<span class="${cls}" data-b="${i}" id="blank${i}">${txt}</span>`;
+      }
+    });
+    h += `<div class="drag-sentence">${sent}</div>`;
+    h += `<div class="pool" id="pool">`;
+    q.pool.forEach((t,i)=>{
+      const used = placed.includes(i);
+      h += `<span class="chip${used?' used':''}" draggable="${!used&&!checked}" data-p="${i}">${t}</span>`;
+    });
+    h += `</div><div style="font-size:.8rem;color:var(--ink-soft)">拖动术语到空格;点击已填空格可退回。</div>`;
+    if(checked){
+      h += `<div class="verdict ${ans.ok?'ok':'no'}">${ans.ok?'✅ 全部填对':'❌ 存在错误,见逐空解析'}</div>`;
+      h += `<div class="drag-ex show">${q.blankExplains.join('\n')}</div>`;
+    }
+  }
+
+  h += `<div class="actions">
+    <button class="primary" onclick="checkAns()">✔ 检查答案</button>
+    <button onclick="resetQ()">↺ 重置本题</button>
+  </div>`;
+  stage.innerHTML = h;
+  if(q.type==='drag') bindDrag();
+  updateTop();
+}
+
+function bindDrag(){
+  const q = allQuestions[cur];
+  const ans = answers[cur];
+  const checked = ans && ans.checked;
+  document.querySelectorAll('.chip').forEach(ch=>{
+    ch.addEventListener('dragstart',e=>{
+      e.dataTransfer.setData('text/plain', ch.dataset.p);
+    });
+  });
+  document.querySelectorAll('.blank').forEach(bl=>{
+    bl.addEventListener('dragover',e=>{ if(!checked) e.preventDefault(); });
+    bl.addEventListener('drop',e=>{
+      e.preventDefault();
+      if(checked) return;
+      const p = parseInt(e.dataTransfer.getData('text/plain'));
+      placeChip(parseInt(bl.dataset.b), p);
+    });
+    bl.addEventListener('click',()=>{
+      if(checked) return;
+      const a = answers[cur];
+      if(a && a.sel[parseInt(bl.dataset.b)]!=null){
+        a.sel[parseInt(bl.dataset.b)] = null;
+        render();
+      }
+    });
+  });
+}
+function placeChip(b,p){
+  const q = allQuestions[cur];
+  if(!answers[cur]) answers[cur] = {sel:q.blanks.map(()=>null),checked:false,ok:false};
+  answers[cur].sel = answers[cur].sel.map(v=> v===p? null:v); // detach from other blank
+  answers[cur].sel[b]=p;
+  render();
+}
+
+/* ============ 作答逻辑 ============ */
+function pickOpt(i){
+  const q = allQuestions[cur];
+  const ans = answers[cur];
+  if(ans && ans.checked) return;
+  if(q.type==='sc') answers[cur] = {sel:[i],checked:false,ok:false};
+  else{
+    let sel = ans? [...ans.sel]:[];
+    const k = sel.indexOf(i);
+    if(k>=0) sel.splice(k,1); else sel.push(i);
+    answers[cur] = {sel,checked:false,ok:false};
+  }
+  render();
+}
+function pickTf(v){
+  const ans = answers[cur];
+  if(ans && ans.checked) return;
+  answers[cur] = {sel:v,checked:false,ok:false};
+  render();
+}
+function checkAns(){
+  const q = allQuestions[cur];
+  const ans = answers[cur];
+  if(!ans){ alert('请先作答再检查。'); return; }
+  let ok=false;
+  if(q.type==='sc') ok = ans.sel.length===1 && ans.sel[0]===q.correct;
+  else if(q.type==='mc') ok = ans.sel.length===q.correct.length && q.correct.every(c=>ans.sel.includes(c));
+  else if(q.type==='tf') ok = ans.sel===q.answer;
+  else if(q.type==='drag'){
+    if(ans.sel.some(v=>v==null)){ alert('还有空格未填。'); return; }
+    ok = q.blanks.every((b,i)=> q.pool[ans.sel[i]]===b);
+  }
+  if(q.type!=='drag' && q.type!=='tf' && ans.sel.length===0){ alert('请先选择。'); return; }
+  if(q.type==='tf' && ans.sel===null){ alert('请先选择。'); return; }
+  ans.checked=true; ans.ok=ok;
+  render();
+  if(allQuestions.every((_,i)=> answers[i] && answers[i].checked)) showResult();
+}
+function resetQ(){
+  delete answers[cur];
+  render();
+}
+
+/* ============ 顶栏/总览/结果 ============ */
+function score(){
+  let s=0;
+  allQuestions.forEach((_,i)=>{ if(answers[i]&&answers[i].checked&&answers[i].ok) s++; });
+  return s;
+}
+function updateTop(){
+  $('progressText').textContent = `第 ${cur+1} / ${allQuestions.length} 题`;
+  $('scoreLive').textContent = `得分 ${score()} / ${allQuestions.length}`;
+  $('barFill').style.width = ((cur+1)/allQuestions.length*100)+'%';
+}
+function renderOv(){
+  const g = $('ovGrid');
+  g.innerHTML='';
+  allQuestions.forEach((q,i)=>{
+    const a = answers[i];
+    let st='todo';
+    if(a&&a.checked) st = a.ok? 'ok':'bad';
+    if(ovFilter!=='all' && st!==ovFilter) return;
+    const c=document.createElement('div');
+    c.className='ov-cell st-'+st+(i===cur?' st-cur':'');
+    c.textContent=i+1;
+    c.title=q.title||q.statement||'';
+    c.onclick=()=>{ cur=i; $('overview').classList.remove('open'); $('result').style.display='none'; stage.style.display=''; render(); };
+    g.appendChild(c);
+  });
+}
+function showResult(){
+  const s=score(), n=allQuestions.length;
+  stage.style.display='none';                 // 只隐藏答题区,不动 topbar 进度条容器
+  $('result').style.display='block';
+  $('resPct').textContent = Math.round(s/n*100)+'%';
+  $('resDetail').textContent = `答对 ${s} / ${n} 题 · 拖拽填空 ${allQuestions.filter(q=>q.type==='drag').length} · 单选 ${allQuestions.filter(q=>q.type==='sc').length} · 多选 ${allQuestions.filter(q=>q.type==='mc').length} · 判断 ${allQuestions.filter(q=>q.type==='tf').length}`;
+}
+function resetAll(){
+  answers={};
+  cur=0;
+  stage.style.display='';
+  $('result').style.display='none';
+  $('overview').classList.remove('open');
+  render();
+}
+
+/* ============ 洗牌 ============ */
+function reshuffle(){
+  allQuestions.forEach(q=>{
+    if(q.type==='sc'){
+      const idx = q.options.map((_,i)=>i);
+      shuffleArr(idx);
+      q.options = idx.map(i=>q.options[i]);
+      q.explains = idx.map(i=>q.explains[i]);
+      q.correct = idx.indexOf(q.correct);
+    } else if(q.type==='mc'){
+      const idx = q.options.map((_,i)=>i);
+      shuffleArr(idx);
+      q.options = idx.map(i=>q.options[i]);
+      q.explains = idx.map(i=>q.explains[i]);
+      q.correct = q.correct.map(c=> idx.indexOf(c)).sort((a,b)=>a-b);
+    }
+  });
+  answers={};
+  cur=0;
+  stage.style.display='';
+  $('result').style.display='none';
+  render();
+}
+
+/* ============ 事件 ============ */
+$('btnPrev').onclick=()=>{ if(cur>0){cur--; stage.style.display=''; $('result').style.display='none'; render();} };
+$('btnNext').onclick=()=>{ if(cur<allQuestions.length-1){cur++; stage.style.display=''; $('result').style.display='none'; render();} };
+$('btnOverview').onclick=()=>{ renderOv(); $('overview').classList.add('open'); };
+$('btnOvClose').onclick=()=> $('overview').classList.remove('open');
+$('overview').addEventListener('click',e=>{ if(e.target.id==='overview') $('overview').classList.remove('open'); });
+document.querySelectorAll('.ov-filters button').forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll('.ov-filters button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on'); ovFilter=b.dataset.f; renderOv();
+  };
+});
+$('btnShuffle').onclick=reshuffle;
+$('btnResetAll').onclick=resetAll;
+$('btnResOverview').onclick=()=>{ renderOv(); $('overview').classList.add('open'); };
+$('btnResContinue').onclick=()=>{ cur=allQuestions.length-1; $('result').style.display='none'; stage.style.display=''; render(); };
+
+render();
+</script>
+</body>
+</html>

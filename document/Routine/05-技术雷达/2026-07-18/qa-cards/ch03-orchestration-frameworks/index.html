@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ch03 · Orchestration Frameworks — QA 面试卡牌</title>
+<style>
+  :root{
+    --bg:#faf6ef; --card:#fffdf8; --ink:#3d352c; --ink-soft:#7a6f61;
+    --accent:#b06a45; --accent-soft:#f3e4d8; --line:#e8ddcd;
+    --ok:#5c7a52; --ok-bg:#eef3e8; --bad:#a8543e; --bad-bg:#f8ece6;
+    --chip:#efe6d8; --focus:#8a5a3b;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--ink);font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;line-height:1.65;padding:16px;}
+  .wrap{max-width:880px;margin:0 auto;}
+  header.top{margin-bottom:14px;}
+  header.top h1{font-size:1.25rem;font-weight:700;letter-spacing:.02em;}
+  header.top .sub{color:var(--ink-soft);font-size:.85rem;margin-top:2px;}
+  /* progress */
+  .progress-box{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin-bottom:14px;}
+  .progress-row{display:flex;justify-content:space-between;align-items:center;font-size:.85rem;color:var(--ink-soft);margin-bottom:8px;flex-wrap:wrap;gap:6px;}
+  #scoreLive{font-weight:700;color:var(--focus);}
+  .bar{height:8px;background:var(--chip);border-radius:99px;overflow:hidden;}
+  .bar>i{display:block;height:100%;width:0;background:var(--accent);border-radius:99px;transition:width .3s;}
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+  button{font-family:inherit;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:9px;padding:7px 14px;font-size:.85rem;transition:background .15s;}
+  button:hover{background:var(--accent-soft);}
+  button.primary{background:var(--accent);color:#fff;border-color:var(--accent);}
+  button.primary:hover{background:#9c5c3a;}
+  button:disabled{opacity:.45;cursor:not-allowed;}
+  /* quiz card */
+  #quiz-area{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:14px;}
+  .q-tag{display:inline-block;font-size:.72rem;font-weight:700;letter-spacing:.06em;background:var(--accent-soft);color:var(--focus);border-radius:6px;padding:2px 9px;margin-bottom:10px;}
+  .q-title{font-size:1.02rem;font-weight:600;margin-bottom:16px;white-space:pre-line;}
+  .opt{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:10px;padding:11px 13px;margin-bottom:9px;cursor:pointer;background:#fff;transition:border-color .15s,background .15s;}
+  .opt:hover{border-color:var(--accent);}
+  .opt.sel{border-color:var(--accent);background:var(--accent-soft);}
+  .opt.right{border-color:var(--ok);background:var(--ok-bg);}
+  .opt.wrong{border-color:var(--bad);background:var(--bad-bg);}
+  .opt .mark{font-weight:700;min-width:20px;color:var(--ink-soft);}
+  .opt.locked{cursor:default;}
+  .explain{font-size:.82rem;color:var(--ink-soft);margin:-4px 0 12px 30px;padding:8px 10px;background:#f7f1e6;border-radius:8px;display:none;}
+  .explain.show{display:block;}
+  .tf-row{display:flex;gap:12px;margin-bottom:8px;}
+  .tf-row button{flex:1;padding:14px;font-size:1rem;font-weight:700;}
+  .tf-row button.sel{border-color:var(--accent);background:var(--accent-soft);}
+  .tf-row button.right{border-color:var(--ok);background:var(--ok-bg);color:var(--ok);}
+  .tf-row button.wrong{border-color:var(--bad);background:var(--bad-bg);color:var(--bad);}
+  /* drag */
+  .pool{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0;padding:12px;background:#f7f1e6;border-radius:10px;border:1px dashed var(--line);}
+  .pool .chip{background:var(--card);border:1px solid var(--accent);color:var(--focus);border-radius:8px;padding:6px 12px;font-size:.85rem;cursor:grab;user-select:none;font-family:Consolas,monospace;}
+  .pool .chip.used{opacity:.3;pointer-events:none;}
+  .blank{display:inline-flex;align-items:center;justify-content:center;min-width:120px;min-height:30px;border:2px dashed var(--accent);border-radius:8px;padding:2px 10px;margin:0 4px;font-size:.85rem;color:var(--ink-soft);vertical-align:middle;background:#fff;cursor:pointer;font-family:Consolas,monospace;}
+  .blank.filled{border-style:solid;color:var(--ink);}
+  .blank.right{border-color:var(--ok);background:var(--ok-bg);}
+  .blank.wrong{border-color:var(--bad);background:var(--bad-bg);}
+  .drag-text{font-size:.98rem;line-height:2.4;}
+  .blank-explain{font-size:.82rem;color:var(--ink-soft);padding:8px 10px;background:#f7f1e6;border-radius:8px;margin-bottom:8px;display:none;}
+  .blank-explain.show{display:block;}
+  .q-actions{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;}
+  .verdict{margin-top:12px;font-weight:700;font-size:.95rem;display:none;}
+  .verdict.ok{color:var(--ok);display:block;}
+  .verdict.no{color:var(--bad);display:block;}
+  /* nav */
+  .nav{display:flex;justify-content:space-between;gap:10px;margin-bottom:14px;}
+  /* overview */
+  #overview{display:none;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px;}
+  .filter-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
+  .filter-row button.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:10px;}
+  .thumb{border:1px solid var(--line);border-radius:10px;padding:8px 4px;text-align:center;cursor:pointer;background:#fff;}
+  .thumb .n{font-weight:700;font-size:.9rem;}
+  .thumb .t{font-size:.68rem;color:var(--ink-soft);}
+  .thumb.st-ok{background:var(--ok-bg);border-color:var(--ok);}
+  .thumb.st-bad{background:var(--bad-bg);border-color:var(--bad);}
+  .thumb.st-cur{outline:2px solid var(--accent);}
+  /* result */
+  #result{display:none;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:34px 22px;text-align:center;margin-bottom:14px;}
+  #result .big{font-size:2.4rem;font-weight:800;color:var(--focus);}
+  #result p{color:var(--ink-soft);margin:10px 0 20px;}
+  #result .q-actions{justify-content:center;}
+  @media (max-width:560px){
+    #quiz-area{padding:16px;}
+    .blank{min-width:90px;}
+    .q-title{font-size:.95rem;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>🃏 ch03 · Orchestration Frameworks</h1>
+    <div class="sub">技术雷达 k3 · 2026-07-18 · 源：Tool_Use_MCP_Agent_Infra_2025_2026_Research_Brief.md §3</div>
+  </header>
+
+  <div class="progress-box" id="progressBox">
+    <div class="progress-row">
+      <span id="progressText">第 1 / 12 题</span>
+      <span id="scoreLive">得分 0 / 0</span>
+    </div>
+    <div class="bar"><i id="barFill"></i></div>
+    <div class="toolbar">
+      <button id="btnOverview">📋 总览面板</button>
+      <button id="btnShuffle">🎲 重新洗牌选项</button>
+      <button id="btnResetAll">🔄 重置所有分数</button>
+    </div>
+  </div>
+
+  <div id="quiz-area"></div>
+
+  <div class="nav" id="navRow">
+    <button id="btnPrev">← 上一题</button>
+    <button id="btnNext">下一题 →</button>
+  </div>
+
+  <div id="overview">
+    <div class="filter-row" id="filterRow">
+      <button data-f="all" class="active">全部</button>
+      <button data-f="ok">✅ 正确</button>
+      <button data-f="bad">❌ 错误</button>
+      <button data-f="todo">⬜ 未答</button>
+    </div>
+    <div class="grid" id="thumbGrid"></div>
+  </div>
+
+  <div id="result">
+    <div class="big" id="resultScore"></div>
+    <p id="resultMsg"></p>
+    <div class="q-actions">
+      <button class="primary" id="btnBackReview">📋 返回查看（总览）</button>
+      <button id="btnContinue">▶ 继续做题</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ================= 数据（唯一声明） ================= */
+const allQuestions = [
+  { type:'drag', tag:'拖拽填空',
+    title:'LangGraph 1.0 的执行与持久化模型（§3.1）',
+    parts:['LangGraph 1.0 的执行模型是 super-step / ',0,' -inspired BSP：节点在一个 super-step 内并行运行，状态更新在 barrier 处应用。每个 super-step 通过 ',1,' 持久化状态，从而支持 crash recovery、time travel 与 long-running agents；HITL 则由一等公民 ',2,' 实现——暂停 graph、持久化状态、带人工输入从同一点恢复。'],
+    blanks:['Pregel','Checkpointer','interrupt()'],
+    pool:['Pregel','Checkpointer','interrupt()','ctx.collect_events','transfer_to_X','backstory'],
+    blankExplain:[
+      '空1 = Pregel：§3.1 明确 execution model 为 super-step / Pregel-inspired BSP。',
+      '空2 = Checkpointer：checkpointer-based durable execution 在每个 super-step 持久化状态。',
+      '空3 = interrupt()：first-class human-in-the-loop，暂停 graph 并从同一点恢复。ctx.collect_events 是 LlamaIndex 的 fan-in 原语，transfer_to_X 是 OpenAI Agents SDK 的 handoff，backstory 属于 CrewAI 三元组。'
+    ]},
+  { type:'drag', tag:'拖拽填空',
+    title:'OpenAI Agents SDK 与 Google ADK 的结构特征（§3.5 / §3.6）',
+    parts:['OpenAI Agents SDK 把 handoff 实现为一次 ',0,'（routing model 发出 transfer_to_X 调用），并且刻意 ',1,' 内置持久化——checkpointer 需要自带，这是 deliberate minimal-core stance。Google ADK 则采用 ',2,'（parent orchestrates sub-agents），并原生支持 A2A protocol 用于跨厂商 agent 互操作。'],
+    blanks:['tool call','不内置','hierarchical agent tree'],
+    pool:['tool call','不内置','hierarchical agent tree','message queue','默认附带','flat graph'],
+    blankExplain:[
+      '空1 = tool call：§3.5 — handoff implemented as a tool call，routing model 发出 transfer_to_X。',
+      '空2 = 不内置：§3.5 — No built-in persistence，bring your own checkpointer，这是刻意的最小内核立场，不是遗漏。',
+      '空3 = hierarchical agent tree：§3.6 — parent orchestrates sub-agents 的层级 agent 树；SDK 覆盖 Python / Java / Go / TypeScript 四种语言。'
+    ]},
+  { type:'single', tag:'单选题',
+    title:'LangGraph 1.0 的 Middleware 提供哪三个 hook，用于在不改动 node 逻辑的前提下处理 PII redaction、summarization、guardrails 等横切关注点？',
+    options:[
+      'ctx.collect_events、Context[State]、@step',
+      'before_model、modify_model_request、after_model',
+      'transfer_to_X、guardrail_in、guardrail_out',
+      'on_start、on_barrier、on_interrupt'
+    ],
+    correct:1,
+    explain:[
+      '❌ ctx.collect_events 与 Context[State] 是 LlamaIndex Workflows 的事件同步/共享状态机制（§3.2），不是 LangGraph middleware。',
+      '✅ §3.1 明确列出三个 hook：before_model、modify_model_request、after_model，用于 cross-cutting concerns 而不触碰 node 逻辑。',
+      '❌ transfer_to_X 是 OpenAI Agents SDK 的 handoff tool call 命名（§3.5），与 middleware 无关。',
+      '❌ 这是编造的 hook 名；LangGraph 的 barrier 属于 super-step 执行语义，不是 middleware hook。'
+    ]},
+  { type:'single', tag:'单选题',
+    title:'§3.1 中对 LangGraph 的 counter-signal 是什么？',
+    options:[
+      'Klarna 因 token 成本过高弃用 LangGraph',
+      'LinkedIn 将 LangGraph 降级为仅用于原型',
+      'Uber 公开报告 LangGraph 的 checkpointer 存在数据丢失',
+      'Grid Dynamics 迁出 LangGraph，转向两层 Temporal 架构，理由是其 leaky abstraction 难以支撑真正 durable 的 long-horizon workflows'
+    ],
+    correct:3,
+    explain:[
+      '❌ Klarna 在原文中是 production adoption 的正例（Klarna、Uber、LinkedIn），不是反信号。',
+      '❌ LinkedIn 同样是 adoption 正例，原文无降级说法。',
+      '❌ Uber 也是 adoption 正例，原文未提数据丢失。',
+      '✅ 原文：Grid Dynamics migrated off LangGraph to a two-layer Temporal architecture，citing the framework\'s leaky abstraction for truly durable long-horizon workflows。'
+    ]},
+  { type:'single', tag:'单选题',
+    title:'Microsoft Agent Framework（统一 AutoGen + Semantic Kernel 的后继框架）何时达到 GA？',
+    options:[
+      '2025-06-30',
+      '2025-10-17',
+      '2026-04',
+      '2025-04'
+    ],
+    correct:2,
+    explain:[
+      '❌ 2025-06-30 是 LlamaIndex Workflows 1.0 的日期（§3.2）。',
+      '❌ 2025-10-17 是 LangGraph 1.0 的日期（§3.1）。',
+      '✅ §3.3：Microsoft Agent Framework reached GA 2026-04 —— Microsoft consolidated rather than maintained two stacks。',
+      '❌ 原文无此日期；注意别和 AG2 的 Beta rewrite 时间线混淆。'
+    ]},
+  { type:'single', tag:'单选题',
+    title:'LlamaIndex Workflows 1.0 中用于 fan-out/fan-in 同步的原语是？',
+    options:[
+      'ctx.collect_events',
+      'interrupt()',
+      'super-step barrier',
+      'modify_model_request'
+    ],
+    correct:0,
+    explain:[
+      '✅ §3.2：ctx.collect_events 用于 fan-out/fan-in 同步；Context[State] 负责跨 step 的 typed shared state。',
+      '❌ interrupt() 是 LangGraph 的 HITL 原语（§3.1）。',
+      '❌ super-step barrier 是 LangGraph Pregel-inspired 执行模型的状态应用点，不是 LlamaIndex 原语。',
+      '❌ modify_model_request 是 LangGraph middleware 三 hook 之一。'
+    ]},
+  { type:'multi', tag:'多选题',
+    title:'LangGraph 的 checkpointer-based durable execution（每个 super-step 持久化状态）直接使能了下列哪些能力？（多选）',
+    options:[
+      'crash recovery',
+      'time travel',
+      'long-running agents',
+      '消除 persona scaffolding 的 token 开销',
+      'A2A 跨厂商 agent 互操作'
+    ],
+    correct:[0,1,2],
+    explain:[
+      '✅ §3.1 原文列出：enabling crash recovery。',
+      '✅ 原文列出：time travel。',
+      '✅ 原文列出：long-running agents。',
+      '❌ token 开销是 §3.4 CrewAI 的议题（1432 vs 1288 tokens），与 checkpointer 无关。',
+      '❌ A2A protocol 是 Google ADK 的原生互操作能力（§3.6），与 LangGraph 持久化无关。'
+    ]},
+  { type:'multi', tag:'多选题',
+    title:'关于 Google ADK（§3.6），下列哪些陈述与原文一致？（多选）',
+    options:[
+      '采用 hierarchical agent tree，parent orchestrates sub-agents',
+      '仅提供 Python SDK',
+      'A2A protocol native，支持跨厂商 agent 互操作',
+      'handoff 通过 routing model 发出 transfer_to_X tool call 实现',
+      'SDK 覆盖四种语言（Python、Java、Go、TypeScript）'
+    ],
+    correct:[0,2,4],
+    explain:[
+      '✅ 原文：Hierarchical agent tree（parent orchestrates sub-agents）。',
+      '❌ 恰好相反：SDKs in four languages（Python, Java, Go, TypeScript），不是仅 Python。',
+      '✅ 原文：A2A protocol native for cross-vendor agent interop。',
+      '❌ transfer_to_X 是 OpenAI Agents SDK 的 handoff 实现（§3.5），张冠李戴。',
+      '✅ 原文：SDKs in four languages（Python, Java, Go, TypeScript）；best fit 为 GCP-anchored multi-agent systems。'
+    ]},
+  { type:'tf', tag:'判断题',
+    title:'AutoGen 已进入 maintenance mode；社区 fork 出 AG2，AG2 目前正在进行一次 ground-up 的 Beta rewrite。',
+    answer:true,
+    tfExplain:{
+      ok:'✅ 正确理解：§3.3 原文三点齐全——AutoGen entered maintenance mode；community forked AG2；AG2 now pursuing a ground-up Beta rewrite。注意后继主线是 Microsoft Agent Framework（GA 2026-04），AG2 是社区分支而非微软官方继任者。',
+      bad:'❌ 常见误解：把「AutoGen 进入维护模式」误读为「AutoGen 项目死亡/停止一切开发」，或把 AG2 当成微软官方的继任框架。原文的层级是：官方后继 = MS Agent Framework（统一 AutoGen + Semantic Kernel）；社区分支 = AG2（Beta rewrite 中）。'
+    }},
+  { type:'tf', tag:'判断题',
+    title:'LangGraph 1.0 发布于 2025-06-30，LlamaIndex Workflows 1.0 发布于 2025-10-17。',
+    answer:false,
+    tfExplain:{
+      ok:'✅ 正确理解：日期恰好对调了——LangGraph 1.0 是 2025-10-17（§3.1），LlamaIndex Workflows 1.0 是 2025-06-30（§3.2）。这是典型的版本-日期错配陷阱。',
+      bad:'❌ 常见误解：凭「LlamaIndex 更早做 workflow 实验」的直觉给 LlamaIndex 分配更晚的 1.0 日期，或反之。雷达文档的日期必须逐条核对，不能靠发布先后直觉推断。'
+    }},
+  { type:'tf', tag:'判断题',
+    title:'正因为 OpenAI Agents SDK 走轻量极简路线，它内置了 checkpointer 持久化，以减少用户接入成本。',
+    answer:false,
+    tfExplain:{
+      ok:'✅ 正确理解：§3.5 明确说 No built-in persistence —— you bring your own checkpointer。轻量极简恰恰意味着把持久化排除在内核之外，这是 deliberate minimal-core stance（刻意的最小内核立场），因果关系与题干相反。',
+      bad:'❌ 常见误解：因果倒置——以为「轻量框架为了易用会顺手内置持久化」。恰恰相反：极简内核的定义就是把 checkpointer 这类有状态组件留给用户自带来换取内核小。需要内置持久化时应对照 §3.7 矩阵选 LangGraph（Checkpointer built-in）。'
+    }},
+  { type:'tf', tag:'判断题',
+    title:'CrewAI 的 (role, goal, backstory) persona scaffolding 存在可实测的 token 开销：同一任务 CrewAI 消耗 1432 tokens，而 LangGraph 为 1288 tokens。',
+    answer:true,
+    tfExplain:{
+      ok:'✅ 正确理解：§3.4 原文数据——identical task burned 1432 tokens (CrewAI) vs 1288 (LangGraph)，结论是 the persona scaffolding is not free。CrewAI 的优势是 role-based 快速原型（§3.7 矩阵 Best fit = Rapid prototyping），代价就是这部分开销。',
+      bad:'❌ 常见误解：两个方向都可能错——一是把 1432/1288 记反（以为 LangGraph 更贵）；二是过度泛化为「CrewAI 在所有场景都比 LangGraph 贵很多」，原文只是 identical task 的单点实测（+144 tokens），不是系统性 benchmark 结论。'
+    }}
+];
+
+/* ================= 状态 ================= */
+let cur = 0;
+let filter = 'all';
+let lastIdx = 0;
+let state = allQuestions.map(() => ({ answered:false, checked:false, correct:false,
+  sel:null, selMulti:[], drag:{} }));
+
+const $ = id => document.getElementById(id);
+const typeName = t => ({drag:'拖拽填空',single:'单选题',multi:'多选题',tf:'判断题'}[t]);
+
+/* ================= 洗牌 (Fisher-Yates) ================= */
+function fy(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } }
+function shuffleOptions(){
+  allQuestions.forEach(q=>{
+    if(q.type==='single'){
+      const idx=q.options.map((_,i)=>i); fy(idx);
+      q.options=idx.map(i=>q.options[i]);
+      q.explain=idx.map(i=>q.explain[i]);
+      q.correct=idx.indexOf(q.correct);
+    } else if(q.type==='multi'){
+      const idx=q.options.map((_,i)=>i); fy(idx);
+      q.options=idx.map(i=>q.options[i]);
+      q.explain=idx.map(i=>q.explain[i]);
+      q.correct=q.correct.map(c=>idx.indexOf(c));
+    } else if(q.type==='drag'){
+      fy(q.pool);
+    }
+  });
+  state = allQuestions.map(() => ({ answered:false, checked:false, correct:false,
+    sel:null, selMulti:[], drag:{} }));
+  cur = 0;
+  hide($('result')); show($('quiz-area')); show($('navRow'));
+  render();
+}
+
+/* ================= 渲染 ================= */
+function render(){
+  hide($('result')); show($('quiz-area')); show($('navRow'));
+  const q = allQuestions[cur], st = state[cur];
+  let h = `<span class="q-tag">${typeName(q.type)} · 第 ${cur+1} 题</span><div class="q-title">${esc(q.title)}</div>`;
+  if(q.type==='single') h += renderSingle(q,st);
+  else if(q.type==='multi') h += renderMulti(q,st);
+  else if(q.type==='tf') h += renderTF(q,st);
+  else h += renderDrag(q,st);
+  h += `<div class="q-actions">
+      <button class="primary" id="btnCheck">✔ 检查答案</button>
+      <button id="btnResetQ">↺ 重置本题</button>
+    </div>
+    <div class="verdict ${st.checked?(st.correct?'ok':'no'):''}" id="verdict">
+      ${st.checked?(st.correct?'✅ 回答正确':'❌ 回答错误'):''}</div>`;
+  $('quiz-area').innerHTML = h;
+  bind(q,st);
+  updateChrome();
+  if($('overview').style.display==='block') renderGrid();
+}
+
+function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+
+function renderSingle(q,st){
+  let h='';
+  q.options.forEach((o,i)=>{
+    let cls='opt';
+    if(st.checked){ cls+=' locked '+(i===q.correct?'right':(st.sel===i?'wrong':'')); }
+    else if(st.sel===i) cls+=' sel';
+    h+=`<div class="${cls}" data-i="${i}"><span class="mark">${'ABCD'[i]}</span><span>${esc(o)}</span></div>
+        <div class="explain ${st.checked?'show':''}" id="ex-${i}">${st.checked?esc(q.explain[i]):''}</div>`;
+  });
+  return h;
+}
+function renderMulti(q,st){
+  let h='';
+  q.options.forEach((o,i)=>{
+    let cls='opt';
+    if(st.checked){
+      const good=q.correct.includes(i), picked=st.selMulti.includes(i);
+      cls+=' locked '+((good&&picked)||good?'right':(picked?'wrong':''));
+      if(good&&!picked) cls+=' right';
+    } else if(st.selMulti.includes(i)) cls+=' sel';
+    h+=`<div class="${cls}" data-i="${i}"><span class="mark">${'ABCDE'[i]}</span><span>${esc(o)}</span></div>
+        <div class="explain ${st.checked?'show':''}">${st.checked?esc(q.explain[i]):''}</div>`;
+  });
+  return h;
+}
+function renderTF(q,st){
+  const btn=(val,label)=>{
+    let cls='';
+    if(st.checked){
+      if(val===q.answer) cls='right';
+      else if(st.sel===val) cls='wrong';
+    } else if(st.sel===val) cls='sel';
+    return `<button class="${cls}" data-v="${val}">${label}</button>`;
+  };
+  let h=`<div class="tf-row">${btn(true,'⭕ 正确')}${btn(false,'❌ 错误')}</div>`;
+  if(st.checked){
+    const good = st.correct;
+    h+=`<div class="explain show">${esc(good?q.tfExplain.ok:q.tfExplain.bad)}</div>`;
+  }
+  return h;
+}
+function renderDrag(q,st){
+  let h='<div class="drag-text">';
+  let bi=0;
+  q.parts.forEach(p=>{
+    if(typeof p==='string') h+=esc(p);
+    else{
+      const filled = st.drag[p]!==undefined ? q.pool[st.drag[p]] : null;
+      let cls='blank'+(filled?' filled':'');
+      if(st.checked) cls += filled===q.blanks[p]?' right':' wrong';
+      h+=`<span class="${cls}" data-b="${p}">${filled?esc(filled):'＿＿拖入术语＿＿'}</span>`;
+      bi++;
+    }
+  });
+  h+='</div><div class="pool" id="pool">';
+  q.pool.forEach((t,pi)=>{
+    const used=Object.values(st.drag).includes(pi);
+    h+=`<span class="chip ${used?'used':''}" draggable="${!st.checked&&!used}" data-p="${pi}">${esc(t)}</span>`;
+  });
+  h+='</div>';
+  if(st.checked){
+    q.blankExplain.forEach((e,i)=>{ h+=`<div class="blank-explain show"><b>空${i+1}（答案：${esc(q.blanks[i])}）</b> — ${esc(e)}</div>`; });
+  }
+  return h;
+}
+
+/* ================= 交互绑定 ================= */
+function bind(q,st){
+  $('btnCheck').onclick = ()=>checkAnswer(q,st);
+  $('btnResetQ').onclick = ()=>{
+    state[cur]={answered:false,checked:false,correct:false,sel:null,selMulti:[],drag:{}};
+    render();
+  };
+  if(st.checked) return;
+  if(q.type==='single'){
+    document.querySelectorAll('.opt').forEach(el=>el.onclick=()=>{ st.sel=+el.dataset.i; st.answered=true; render(); });
+  } else if(q.type==='multi'){
+    document.querySelectorAll('.opt').forEach(el=>el.onclick=()=>{
+      const i=+el.dataset.i, k=st.selMulti.indexOf(i);
+      if(k>=0) st.selMulti.splice(k,1); else st.selMulti.push(i);
+      st.answered=st.selMulti.length>0; render();
+    });
+  } else if(q.type==='tf'){
+    document.querySelectorAll('.tf-row button').forEach(el=>el.onclick=()=>{
+      st.sel = el.dataset.v==='true'; st.answered=true; render();
+    });
+  } else {
+    let pending=null;
+    document.querySelectorAll('.chip').forEach(c=>{
+      c.addEventListener('dragstart',e=>{ e.dataTransfer.setData('text/plain',c.dataset.p); pending=+c.dataset.p; });
+      c.onclick=()=>{ pending=+c.dataset.p; document.querySelectorAll('.blank').forEach(b=>b.style.outline='2px solid var(--accent)'); };
+    });
+    document.querySelectorAll('.blank').forEach(b=>{
+      b.addEventListener('dragover',e=>e.preventDefault());
+      b.addEventListener('drop',e=>{
+        e.preventDefault();
+        const pi=+(e.dataTransfer.getData('text/plain')||pending);
+        assignBlank(q,st,+b.dataset.b,pi);
+      });
+      b.onclick=()=>{
+        const bi=+b.dataset.b;
+        if(st.drag[bi]!==undefined){ delete st.drag[bi]; st.answered=Object.keys(st.drag).length>0; pending=null; render(); }
+        else if(pending!==null){ assignBlank(q,st,bi,pending); }
+      };
+    });
+  }
+}
+function assignBlank(q,st,bi,pi){
+  if(Object.values(st.drag).includes(pi)) return;
+  st.drag[bi]=pi; pending=null;
+  st.answered = Object.keys(st.drag).length===q.blanks.length;
+  render();
+}
+
+/* ================= 判分 ================= */
+function checkAnswer(q,st){
+  if(!st.answered){ alert('请先作答再检查。'); return; }
+  let ok=false;
+  if(q.type==='single') ok = st.sel===q.correct;
+  else if(q.type==='multi') ok = st.selMulti.length===q.correct.length && q.correct.every(c=>st.selMulti.includes(c));
+  else if(q.type==='tf') ok = st.sel===q.answer;
+  else ok = q.blanks.every((b,i)=>st.drag[i]!==undefined && q.pool[st.drag[i]]===b);
+  st.checked=true; st.correct=ok;
+  render();
+}
+
+/* ================= 计分 / 进度 / 导航 ================= */
+function totals(){
+  const scored=state.filter(s=>s.checked);
+  return { done:scored.length, right:scored.filter(s=>s.correct).length,
+    answered:state.filter(s=>s.answered||s.checked).length };
+}
+function updateChrome(){
+  const t=totals(), n=allQuestions.length;
+  $('progressText').textContent=`第 ${cur+1} / ${n} 题`;
+  $('scoreLive').textContent=`得分 ${t.right} / ${t.done}（已答 ${t.answered}/${n}）`;
+  $('barFill').style.width=(t.answered/n*100)+'%';
+  $('btnPrev').disabled = cur===0;
+  $('btnNext').textContent = cur===n-1 ? '查看结果 🏁' : '下一题 →';
+}
+$('btnPrev').onclick=()=>{ if(cur>0){cur--; lastIdx=cur; render();} };
+$('btnNext').onclick=()=>{
+  if(cur<allQuestions.length-1){ cur++; lastIdx=cur; render(); }
+  else showResult();
+};
+
+/* ================= 总览面板 ================= */
+$('btnOverview').onclick=()=>{
+  const ov=$('overview');
+  if(ov.style.display==='block'){ ov.style.display='none'; return; }
+  ov.style.display='block'; renderGrid();
+};
+$('filterRow').addEventListener('click',e=>{
+  if(e.target.dataset.f){ filter=e.target.dataset.f;
+    document.querySelectorAll('#filterRow button').forEach(b=>b.classList.toggle('active',b===e.target));
+    renderGrid(); }
+});
+function statusOf(i){
+  const s=state[i];
+  if(!s.checked) return (s.answered)?'todo':'todo';
+  return s.correct?'ok':'bad';
+}
+function renderGrid(){
+  const g=$('thumbGrid'); let h='';
+  allQuestions.forEach((q,i)=>{
+    const st=statusOf(i);
+    if(filter!=='all'&&st!==filter) return;
+    const cls='thumb'+(st==='ok'?' st-ok':st==='bad'?' st-bad':'')+(i===cur?' st-cur':'');
+    const icon=st==='ok'?'✅':st==='bad'?'❌':'⬜';
+    h+=`<div class="${cls}" data-i="${i}"><div class="n">${icon} ${i+1}</div><div class="t">${typeName(q.type)}</div></div>`;
+  });
+  g.innerHTML=h||'<div style="color:var(--ink-soft)">该筛选下暂无题目</div>';
+  g.querySelectorAll('.thumb').forEach(t=>t.onclick=()=>{
+    cur=+t.dataset.i; lastIdx=cur;
+    $('overview').style.display='none'; render();
+  });
+}
+
+/* ================= 结果页 ================= */
+function showResult(){
+  const t=totals(), n=allQuestions.length;
+  hide($('quiz-area')); hide($('navRow')); hide($('overview'));
+  $('resultScore').textContent=`${t.right} / ${n}`;
+  $('resultMsg').textContent=`共 ${n} 题，已检查 ${t.done} 题，答对 ${t.right} 题。`;
+  show($('result'));
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+$('btnBackReview').onclick=()=>{
+  hide($('result')); show($('quiz-area')); show($('navRow'));
+  $('overview').style.display='block'; renderGrid();
+};
+$('btnContinue').onclick=()=>{ cur=lastIdx; hide($('result')); render(); };
+
+/* ================= 重置全部 ================= */
+$('btnResetAll').onclick=()=>{
+  if(!confirm('确定清空所有答题记录与得分？')) return;
+  state = allQuestions.map(()=>({answered:false,checked:false,correct:false,sel:null,selMulti:[],drag:{}}));
+  cur=0; lastIdx=0; filter='all';
+  document.querySelectorAll('#filterRow button').forEach(b=>b.classList.toggle('active',b.dataset.f==='all'));
+  show($('progressBox')); show($('quiz-area')); show($('navRow'));
+  hide($('result')); hide($('overview'));
+  render();
+};
+$('btnShuffle').onclick=()=>{
+  if(!confirm('洗牌将清空当前所有答题记录并跳回第一题，继续？')) return;
+  show($('progressBox')); show($('quiz-area')); show($('navRow')); hide($('overview'));
+  shuffleOptions();
+};
+
+function show(el){ el.style.display='block'; }
+function hide(el){ el.style.display='none'; }
+
+render();
+</script>
+</body>
+</html>

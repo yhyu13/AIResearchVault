@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>技术雷达 2026-07 更新 · 综合面试卡牌</title>
+<style>
+:root{
+  --bg:#faf6f0; --card:#fffdf9; --ink:#3d3833; --ink2:#7a7066;
+  --accent:#b3814f; --accent-soft:#f0e4d4; --line:#e8dfd3;
+  --ok:#5d8a66; --ok-bg:#e7f0e8; --bad:#b05c4f; --bad-bg:#f5e6e2;
+  --radius:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--ink);line-height:1.65;padding:20px 14px}
+.wrap{max-width:860px;margin:0 auto}
+header{text-align:center;margin-bottom:18px}
+header h1{font-size:1.5rem;letter-spacing:.5px}
+header p{color:var(--ink2);font-size:.85rem;margin-top:4px}
+.topbar{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:14px 0}
+.btn{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 16px;font-size:.85rem;cursor:pointer;color:var(--ink);transition:all .15s}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn.primary:hover{background:#a06f3f}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.progress-wrap{margin:12px 0 18px}
+.progress-meta{display:flex;justify-content:space-between;font-size:.8rem;color:var(--ink2);margin-bottom:5px}
+.progress-track{height:8px;background:var(--line);border-radius:99px;overflow:hidden}
+.progress-fill{height:100%;background:var(--accent);border-radius:99px;transition:width .3s}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:26px 24px;box-shadow:0 2px 10px rgba(120,100,70,.06)}
+.q-type{display:inline-block;font-size:.72rem;background:var(--accent-soft);color:var(--accent);padding:3px 10px;border-radius:99px;margin-bottom:10px;font-weight:600}
+.q-text{font-size:1.08rem;font-weight:600;margin-bottom:18px}
+.opt{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:10px;cursor:pointer;transition:all .15s;background:#fff}
+.opt:hover{border-color:var(--accent)}
+.opt.selected{border-color:var(--accent);background:var(--accent-soft)}
+.opt.correct{border-color:var(--ok);background:var(--ok-bg)}
+.opt.wrong{border-color:var(--bad);background:var(--bad-bg)}
+.opt.disabled{cursor:default}
+.opt .mark{width:22px;height:22px;flex-shrink:0;border:2px solid var(--line);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;margin-top:2px}
+.opt.tf .mark{border-radius:50%}
+.opt.selected .mark{border-color:var(--accent);color:var(--accent)}
+.opt.correct .mark{border-color:var(--ok);color:var(--ok)}
+.opt.wrong .mark{border-color:var(--bad);color:var(--bad)}
+.explain{font-size:.85rem;color:var(--ink2);margin-top:6px;padding-top:6px;border-top:1px dashed var(--line);display:none}
+.opt.revealed .explain{display:block}
+.verdict{margin:14px 0;padding:12px 16px;border-radius:10px;font-weight:600;display:none}
+.verdict.show{display:block}
+.verdict.right{background:var(--ok-bg);color:var(--ok)}
+.verdict.wrong{background:var(--bad-bg);color:var(--bad)}
+.followups{margin-top:16px;border-top:2px solid var(--line);padding-top:14px;display:none}
+.followups.show{display:block}
+.followups h4{font-size:.9rem;color:var(--accent);margin-bottom:10px}
+.fu{margin-bottom:10px;background:#fbf7f0;border-radius:10px;padding:10px 14px}
+.fu summary{cursor:pointer;font-size:.88rem;font-weight:600;color:var(--ink)}
+.fu .fu-a{font-size:.85rem;color:var(--ink2);margin-top:6px}
+.tf-pair{margin-top:8px}
+.tf-pair .ok-note{font-size:.85rem;background:var(--ok-bg);border-radius:8px;padding:8px 12px;margin-bottom:6px;display:none}
+.tf-pair .bad-note{font-size:.85rem;background:var(--bad-bg);border-radius:8px;padding:8px 12px;display:none}
+.tf-pair.show .ok-note,.tf-pair.show .bad-note{display:block}
+.nav{display:flex;justify-content:space-between;margin-top:18px;gap:10px}
+/* overview */
+.overlay{position:fixed;inset:0;background:rgba(60,50,40,.35);display:none;z-index:50;align-items:flex-start;justify-content:center;padding:40px 14px;overflow:auto}
+.overlay.show{display:flex}
+.panel{background:var(--card);border-radius:var(--radius);max-width:760px;width:100%;padding:24px}
+.panel h3{margin-bottom:12px}
+.filter-row{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.filter-row .btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.thumb-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:8px}
+.thumb{border:1px solid var(--line);border-radius:8px;padding:8px 4px;text-align:center;font-size:.75rem;cursor:pointer;background:#fff}
+.thumb:hover{border-color:var(--accent)}
+.thumb .t-type{display:block;font-size:.62rem;color:var(--ink2)}
+.thumb.s-ok{background:var(--ok-bg);border-color:var(--ok)}
+.thumb.s-bad{background:var(--bad-bg);border-color:var(--bad)}
+.thumb.s-cur{outline:2px solid var(--accent)}
+/* result */
+.result{display:none;text-align:center;padding:40px 20px}
+.result.show{display:block}
+.result .score{font-size:3rem;font-weight:700;color:var(--accent)}
+.result .sub{color:var(--ink2);margin:10px 0 24px}
+.result .btn{margin:0 6px}
+footer{text-align:center;color:var(--ink2);font-size:.75rem;margin-top:22px}
+@media(max-width:560px){
+  .card{padding:18px 14px}
+  header h1{font-size:1.2rem}
+  .nav{flex-wrap:wrap}
+  .nav .btn{flex:1;min-width:100px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>技术雷达 2026-07 · 四象限变更面试卡牌</h1>
+  <p>考察范围：2026-07-18 更新日志（Adopt / Trial / Assess / Hold 四象限新增与边界判断）</p>
+</header>
+
+<div class="topbar">
+  <button class="btn" id="btnOverview">📋 总览面板</button>
+  <button class="btn" id="btnShuffle">🎲 重新洗牌选项</button>
+  <button class="btn" id="btnResetAll">🔄 重置所有分数</button>
+  <button class="btn" id="btnResult">🏁 查看结果</button>
+</div>
+
+<div class="progress-wrap" id="progressWrap">
+  <div class="progress-meta">
+    <span id="progressText">第 1 / 16 题</span>
+    <span id="scoreText">得分 0 / 16</span>
+  </div>
+  <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:6.25%"></div></div>
+</div>
+
+<div class="card" id="quizCard">
+  <div id="qArea"></div>
+  <div class="nav">
+    <button class="btn" id="btnPrev">← 上一题</button>
+    <button class="btn primary" id="btnCheck">检查答案</button>
+    <button class="btn" id="btnResetQ">重置本题</button>
+    <button class="btn" id="btnNext">下一题 →</button>
+  </div>
+</div>
+
+<div class="card result" id="resultCard">
+  <div class="score" id="finalScore">0</div>
+  <div class="sub" id="finalSub"></div>
+  <button class="btn" id="btnBackView">📋 返回查看</button>
+  <button class="btn primary" id="btnContinue">✏️ 继续做题</button>
+</div>
+
+<footer>数据来源：2026-07 技术雷达（2026-07-03 版，含 2026-07-18 更新日志）· 类型B 综合卡牌</footer>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="panel">
+    <h3>题目总览</h3>
+    <div class="filter-row">
+      <button class="btn active" data-f="all">全部</button>
+      <button class="btn" data-f="ok">✓ 正确</button>
+      <button class="btn" data-f="bad">✗ 错误</button>
+      <button class="btn" data-f="todo">○ 未答</button>
+      <button class="btn" id="btnCloseOv" style="margin-left:auto">关闭</button>
+    </div>
+    <div class="thumb-grid" id="thumbGrid"></div>
+  </div>
+</div>
+
+<script>
+/* ================= 题库（唯一声明） ================= */
+const allQuestions = [
+{
+  type:'single',
+  q:'本次更新将 SGLang 列入 Adopt（vLLM / SGLang / TensorRT-LLM 条目）的核心依据是什么？',
+  options:[
+    'SGLang 在高并发吞吐上全面碾压 vLLM 与 TensorRT-LLM',
+    'SGLang 的 PagedAttention 是生产级推理的基础，故全场景优于 vLLM',
+    'SGLang 的 RadixAttention 前缀复用在 agentic / tool-calling 负载下 TTFT 最优',
+    'SGLang 是首个支持 continuous batching 的推理引擎'
+  ],
+  correct:2,
+  explains:[
+    '❌ 源文件没有给出任何高并发吞吐对比结论，属于过度泛化。',
+    '❌ PagedAttention 是 vLLM 的特性，且源文件明确说「两者按负载画像选型」，不存在全场景优于。',
+    '✅ 正确。源文件：SGLang 的 RadixAttention 前缀复用在 agentic / tool-calling 负载下 TTFT 最优，这是其进 Adopt 的关键卖点。',
+    '❌ 张冠李戴：continuous batching 与 PagedAttention 都归于 vLLM 一侧的描述。'
+  ],
+  followups:[
+    {q:'追问：vLLM 凭什么也留在 Adopt？',a:'vLLM 的 PagedAttention 和 continuous batching 是生产级推理的基础，与 SGLang 按负载画像选型，而非互相替代。'},
+    {q:'追问：面试要求给出验证方案怎么办？',a:'源文件投入计划：本地部署 Qwen3-32B 或 Llama-4-Scout，在论文问答与 tool-calling 负载上分别对比 vLLM 与 SGLang 的 TTFT / 吞吐。'}
+  ]
+},
+{
+  type:'single',
+  q:'MCP 条目为什么带着「安全警示」进 Adopt？下列哪一组事实组合与源文件一致？',
+  options:[
+    '2025-11-25 规范引入 Tasks 异步原语（SEP-1686）与 CIMD 认证，已移交 Linux Foundation 托管；但存在 tool poisoning 攻击面（MCPTox, AAAI 2026）与 ~55k token 全量工具描述注入成本',
+    '2025-11-25 规范引入 MCP gateway 强制认证，tool poisoning 已被官方修复',
+    'SDK 月下载量 9700 万证明其无任何安全风险，可直接全量加载工具描述',
+    'MCP 由 OpenAI 主导，Anthropic / Google / Microsoft 跟随支持'
+  ],
+  correct:0,
+  explains:[
+    '✅ 正确。三个数据点全部保真：SEP-1686 / CIMD / Linux Foundation 托管；MCPTox (AAAI 2026)；~55k token 上下文成本。',
+    '❌ CIMD 是「认证」机制而非强制 gateway；tool poisoning 是现存攻击面，并未被修复。',
+    '❌ 9700 万月下载量属实，但因果倒置：普及度恰恰放大了 tool poisoning 攻击面，源文件要求按 curated allowlist 使用。',
+    '❌ 主导方写反了：MCP 是 Anthropic 主导的开放标准，获 OpenAI、Google、Microsoft 支持。'
+  ],
+  followups:[
+    {q:'追问：~55k token 成本是哪来的？',a:'全量工具描述注入上下文的成本，源文件据此要求按 curated allowlist 使用 MCP 工具。'},
+    {q:'追问：tool poisoning 的防护动作是什么？',a:'建立 allowlist 并评估 tool poisoning 防护；阅读 MCP 规范 2025-11-25 版；实现自定义 MCP server（如连接笔记检索）。'},
+    {q:'追问：裸 stdio MCP 为什么进 Hold？',a:'审计实证约 7000 个 MCP server 直接暴露在公网、无认证无网关，构成严重攻击面；替代方案是网关 + 认证（CIMD）+ curated allowlist。'}
+  ]
+},
+{
+  type:'single',
+  q:'Speculative Decoding / MTP 为什么放在 Trial 而不是 Adopt？',
+  options:[
+    '草稿模型质量尚不成熟，任何场景下都没有延迟收益',
+    '只在高并发、吞吐敏感场景收益明确，低并发下无效',
+    '低并发、延迟敏感场景收益明确，但高并发下收益坍缩（arXiv:2510.22876 实测证据），限定适用场景、不作通用加速手段',
+    '与 PagedAttention 冲突，无法在 vLLM 上部署'
+  ],
+  correct:2,
+  explains:[
+    '❌ 因果倒置：低并发延迟敏感场景收益是「明确」的，这正是它值得 Trial 的原因。',
+    '❌ 恰好说反：高并发下收益坍缩，不是收益明确。',
+    '✅ 正确。源文件原文：低并发、延迟敏感场景收益明确；高并发下收益坍缩（arXiv:2510.22876），限定适用场景，不作为通用加速手段——这是 Trial 而非 Adopt 的边界条件。',
+    '❌ 源文件未提任何与 PagedAttention 的冲突，属于编造。'
+  ],
+  followups:[
+    {q:'追问：Trial 象限的实验计划是什么？',a:'在低并发单请求场景实测 speculative decoding 的延迟收益；验证高并发下的坍缩点。'},
+    {q:'追问：为什么边界条件决定象限归属？',a:'Adopt 要求「成熟、可直接投入」；spec decoding 的收益有明确的并发数边界，不能作为通用手段，所以降级为「有潜力、跑通 Demo」的 Trial。'}
+  ]
+},
+{
+  type:'single',
+  q:'源文件给出的 RAG「及格线」配置及其相对裸 dense 的提升是？',
+  options:[
+    'hybrid（BM25 + dense + RRF k=60）+ cross-encoder reranker，较裸 dense +17pp 精度',
+    'hybrid（BM25 + dense + RRF k=60）+ cross-encoder reranker，较裸 dense +10.6% 精度',
+    'GraphRAG + 知识图谱检索，较裸 dense +17pp 精度',
+    '自托管 Qwen3-Embedding 单路 dense，较 API 版本 +17pp 精度'
+  ],
+  correct:0,
+  explains:[
+    '✅ 正确。三个要素保真：RRF k=60、cross-encoder reranker、+17pp。',
+    '❌ 数字混淆：+10.6% 是 ACE（Agentic Context Engineering）的 agent 基准提升，不是 RAG 精度。',
+    '❌ GraphRAG 在 Trial 象限，是跨文档推理式检索路线，不是源文件定义的及格线。',
+    '❌ Embedding 自托管解决的是 MTEB 分数与成本问题，不替代 hybrid + reranker 的检索结构。'
+  ],
+  followups:[
+    {q:'追问：裸 dense 单路 RAG 为什么进 Hold？',a:'缺 BM25 词法信号与重排序，精度显著低于 hybrid + reranker（+17pp），是已知反模式。'},
+    {q:'追问：RRF 里的 k=60 是什么角色？',a:'源文件给定 hybrid 融合的标准常数配置：BM25 + dense 两路结果用 RRF（k=60）融合，再接 cross-encoder reranker。'}
+  ]
+},
+{
+  type:'single',
+  q:'ToolRL 进 Trial 的核心贡献与编号是？',
+  options:[
+    'arXiv:2505.20286；运行时自动生成并注册 MCP server',
+    'arXiv:2510.22876；证明高并发下 speculative decoding 收益坍缩',
+    'GRPO 的四项改进，将 GRPO 推向生产级稳定训练',
+    'arXiv:2504.13958；提出细粒度 reward 分解（格式 / 参数名 / 参数值分项奖励），比 outcome-only 提供更稳定的 tool-use RL 训练信号'
+  ],
+  correct:3,
+  explains:[
+    '❌ arXiv:2505.20286 是 Alita（Assess 象限，自动生成 MCP server），编号张冠李戴。',
+    '❌ arXiv:2510.22876 是 speculative decoding 高并发坍缩的实测证据，与 ToolRL 无关。',
+    '❌ 「四项改进推向生产级」描述的是 DAPO（Adopt 象限 DeepSeek-R1 / DAPO 条目），不是 ToolRL。',
+    '✅ 正确。arXiv:2504.13958，reward 分解为格式 / 参数名 / 参数值三项，属于 Trial 的 GRPO-based Tool-Use RL 条目。'
+  ],
+  followups:[
+    {q:'追问：为什么 reward 分解比 outcome-only 稳定？',a:'把奖励拆成格式 / 参数名 / 参数值分项，提供细粒度过程信号，避免只靠最终结果导致的稀疏、高方差训练信号。'},
+    {q:'追问：ToolRL 为什么在 Trial 而非 Adopt？',a:'源文件实验计划仍是「精读 reward 分解设计 + 在小型 tool-calling 任务上复现 GRPO 训练」——值得实验但未到「投入精力做到行业前 20%」的成熟度。'}
+  ]
+},
+{
+  type:'single',
+  q:'Voyager 技能库被定位 Assess 的「单点打穿」目标具体是？（按 W28 复盘要求）',
+  options:[
+    '复现 Voyager 在 Minecraft 中的完整自动课程，达到论文报告的技能数量',
+    '技能检索的低温 mode-truncated importance sampling 近似推导 + <200 行简化实现',
+    '用 Voyager 技能库替换现有 RAG 管道，MTEB 提升 17pp',
+    '阅读 ACE 论文，实现 Generator→Reflector→Curator 完整闭环'
+  ],
+  correct:1,
+  explains:[
+    '❌ 过度泛化：源文件只要求「单点打穿」，不要求完整复现 Minecraft 自动课程。',
+    '✅ 正确。源文件 Assess 条目原文：技能检索的低温 mode-truncated importance sampling 近似推导 + <200 行简化实现。',
+    '❌ 因果混淆：技能库与 RAG 及格线是两个条目，17pp 是 hybrid+reranker 的数据。',
+    '❌ Generator→Reflector→Curator 是 ACE（Trial 象限）的模块流程，不是 Voyager 的目标。'
+  ],
+  followups:[
+    {q:'追问：为什么是 Assess 而不是 Trial？',a:'Assess 的目标是「知道是什么、能解决什么问题」；Voyager 条目按 W28 复盘要求收敛为单点推导 + 最小实现，不铺开做系统实验。'},
+    {q:'追问：Voyager 的通用定位是什么？',a:'自动课程 + 技能库 + 自验证（2023 NeurIPS，LLM 驱动的 Minecraft agent），同时出现在 Assess 条目与 World Models 里程碑表中。'}
+  ]
+},
+{
+  type:'multi',
+  q:'本次 2026-07-18 更新中，下列哪些属于 Adopt 象限的新增 / 更新内容？（多选）',
+  options:[
+    'MCP（含 tool poisoning 安全警示与 curated allowlist 要求）',
+    'SGLang（RadixAttention，agentic 负载 TTFT 最优）',
+    'Agent Skills（progressive disclosure 封装开放标准）',
+    'pgvector + Qdrant 双首选与 Qwen3-Embedding / BGE-M3 自托管',
+    'Alita 运行时自动生成 MCP server',
+    'ToolLibGen 工具库规模化检索'
+  ],
+  correct:[0,1,2,3],
+  explains:[
+    '✅ 属于。MCP 是本次 Adopt 重点，附 MCPTox 安全警示。',
+    '✅ 属于。vLLM / SGLang / TensorRT-LLM 条目，SGLang 的 RadixAttention 是本次亮点。',
+    '✅ 属于。Agent Skills：2025-12 起 OpenAI / Google / Cursor 相继兼容，基础设施级技术。',
+    '✅ 属于。Vector DB 双首选 + Embedding 自托管转向均在 Adopt。',
+    '❌ Alita（arXiv:2505.20286）在 Assess 象限——仅为研究原型，稳定性与安全性未验证。',
+    '❌ ToolLibGen 类工具库检索重构在 Assess 象限——技术路线未收敛。'
+  ],
+  followups:[
+    {q:'追问：pgvector 与 Qdrant 的「双首选」依据数据是？',a:'pgvector (+pgvectorscale) 在 50M 向量规模 99% recall 下达 471 QPS（对比 Qdrant 41 QPS）；Qdrant 强在 filtered ANN 与多租户场景——按场景双首选，而非一家通吃。'},
+    {q:'追问：Embedding 自托管的数字依据？',a:'Qwen3-Embedding MTEB 70.58，超越 OpenAI text-embedding-3-large 的 64.52，自托管成本约 1/25。'},
+    {q:'追问：Agent Skills 为什么算「基础设施级」？',a:'progressive disclosure 的 skill 封装成为开放标准，2025-12 起 OpenAI / Google / Cursor 相继兼容，skill library 模式完成工业化。'}
+  ]
+},
+{
+  type:'multi',
+  q:'AutoGen / AG2 进 Hold（新项目）的理由，下列哪些与源文件一致？（多选）',
+  options:[
+    'AutoGen 已进入维护模式',
+    'Microsoft Agent Framework 于 2026-04 GA，合并 AutoGen + Semantic Kernel',
+    'AG2 处于 Beta 重写阶段',
+    'AutoGen 存在 +11% 的 token 开销',
+    '新项目替代方案是 LangGraph 1.0 / OpenAI Agents SDK / Google ADK'
+  ],
+  correct:[0,1,2,4],
+  explains:[
+    '✅ 属于。源文件 Hold 条目原文：AutoGen 已进入维护模式。',
+    '✅ 属于。2026-04 GA，合并 AutoGen + Semantic Kernel，即「被 Microsoft Agent Framework 吸收」。',
+    '✅ 属于。AG2 处于 Beta 重写阶段，新项目无采用理由。',
+    '❌ +11% token 开销是 CrewAI 的数据（Trial 条目），张冠李戴到 AutoGen 上是常见误解。',
+    '✅ 属于。源文件替代方案原文：LangGraph 1.0 / OpenAI Agents SDK / Google ADK。'
+  ],
+  followups:[
+    {q:'追问：AutoGen 在 Hold 而 LangGraph 在 Adopt，边界在哪？',a:'LangGraph 1.0（2025-10 发布）提供 durable execution，且 LangGraph / LlamaIndex Workflows 已是复杂 agent 编排事实标准；AutoGen 主线进入维护模式、被新框架吸收，新项目没有采用理由——是「生态迁移」而非「技术本身有罪」。'},
+    {q:'追问：存量 AutoGen 项目怎么办？',a:'Trial 条目明确：存量项目维持运行；新项目改用 LangGraph 1.0 或 OpenAI Agents SDK 搭建原型。'}
+  ]
+},
+{
+  type:'multi',
+  q:'本次更新 Hold 象限新增的「评估 / 部署反模式」包括哪些？（多选）',
+  options:[
+    '无网关直接暴露 stdio MCP Server',
+    'pass@1 单点分数作为选型依据',
+    'OpenAI text-embedding-3 / Cohere Rerank 3.5 等闭源 API',
+    '裸 dense 单路检索 RAG',
+    'Prefill-Decode Disaggregation',
+    'Speculative Decoding / MTP'
+  ],
+  correct:[0,1,2,3],
+  explains:[
+    '✅ 属于。约 7000 个 MCP server 无认证无网关暴露公网，严重攻击面。',
+    '✅ 属于。pass@1 方差大：pass^8 衰减显著，multi-turn 还有 5–10 点落差。',
+    '✅ 属于。闭源 embedding / rerank API 已被开源全面超越（70.58 vs 64.52，成本约 1/25）。',
+    '✅ 属于。缺 BM25 词法信号与重排序，较 hybrid + reranker 低 +17pp。',
+    '❌ PD 分离在 Trial：拆分 prefill / decode 匹配 compute-bound / memory-bound 硬件画像，是本次 Trial 新增而非 Hold。',
+    '❌ Spec decoding 在 Trial：低并发收益明确、高并发坍缩，是「限定场景」而非「反模式」。'
+  ],
+  followups:[
+    {q:'追问：pass@1 单点选型为什么不可靠？',a:'单次 pass@1 方差大，pass^8 衰减显著，multi-turn 场景还有 5–10 点落差；替代方案是 pass^k / 多次采样均值 + multi-turn 基准。'},
+    {q:'追问：闭源 embedding API 被超越的证据链？',a:'Qwen3-Embedding MTEB 70.58 vs text-embedding-3-large 64.52，自托管成本约 1/25；开源 cross-encoder reranker 同样领先。'},
+    {q:'追问：Trial 与 Hold 的本质区别？',a:'Trial = 有潜力、有边界条件，值得跑通 Demo（如 spec decoding、PD 分离）；Hold = 不成熟或已过时、有明确替代方案（如裸 stdio MCP、裸 dense RAG）。'}
+  ]
+},
+{
+  type:'tf',
+  q:'判断：SGLang 进入 Adopt，说明它在所有负载画像下都优于 vLLM，可以无脑替换。',
+  correct:false,
+  ok:'✅ 正确理解：源文件明确「两者按负载画像选型」——SGLang 的 RadixAttention 在 agentic / tool-calling 负载下 TTFT 最优，vLLM 的 PagedAttention + continuous batching 是生产级基础。进 Adopt 的是整个「vLLM / SGLang / TensorRT-LLM」条目，不存在全场景碾压。',
+  bad:'❌ 常见误解：把「某负载下最优」过度泛化为「全场景最优」，忽略了源文件的边界条件（负载画像选型）。Adopt 的含义是「值得投入」，不是「无条件替换」。',
+  followups:[
+    {q:'追问：怎么验证该用哪个？',a:'本地部署 Qwen3-32B 或 Llama-4-Scout，在论文问答与 tool-calling 负载上分别对比两者的 TTFT / 吞吐。'},
+    {q:'追问：本地部署的最低软件要求是什么？',a:'源文件备注：vLLM 的 PagedAttention 是本地部署的最低软件要求；硬件基线为 RTX 50 系列或 RX 9000 系列。'}
+  ]
+},
+{
+  type:'tf',
+  q:'判断：Speculative decoding 的加速收益随并发数上升而放大，因此高并发生产环境是它最典型的受益场景。',
+  correct:false,
+  ok:'✅ 正确理解：收益在低并发、延迟敏感场景明确；高并发下收益坍缩（arXiv:2510.22876 实测证据）。因果方向恰好相反：并发越高，收益越坍缩。',
+  bad:'❌ 常见误解：因果倒置——把「低并发受益」记成「高并发受益」。这正是它只能进 Trial（限定适用场景、不作通用加速手段）而不能进 Adopt 的原因。',
+  followups:[
+    {q:'追问：Trial 的验证动作？',a:'低并发单请求场景实测延迟收益；验证高并发下的坍缩点。'},
+    {q:'追问：MTP 是什么？',a:'Multi-Token Prediction，与草稿模型并列的 speculative decoding 路线，同属「Speculative Decoding / MTP」Trial 条目，受同样的并发边界约束。'}
+  ]
+},
+{
+  type:'tf',
+  q:'判断：Qwen3-Embedding 的 MTEB 分数为 70.58，超过 OpenAI text-embedding-3-large 的 64.52，且自托管成本约为后者的 1/25。',
+  correct:true,
+  ok:'✅ 正确理解：三个数据点均与源文件一致——MTEB 70.58 vs 64.52，成本约 1/25。这是 Embedding 推荐转向自托管 Qwen3-Embedding / BGE-M3 的定量依据，也是闭源 embedding API 进 Hold 的原因。',
+  bad:'❌ 常见误解：记反两个分数（把 64.52 当成开源模型的分数），或把「1/25」误记为「1/10」「1/100」。数据点必须保真。',
+  followups:[
+    {q:'追问：只有分数就够了吗？',a:'不够。源文件同时要求构建 hybrid + reranker 管道（较裸 dense +17pp）——Embedding 选型与检索结构是两层决策。'},
+    {q:'追问：BGE-M3 的角色？',a:'与 Qwen3-Embedding 并列的自托管推荐，同属于 Vector DB + Embedding 模型 Adopt 条目。'}
+  ]
+},
+{
+  type:'tf',
+  q:'判断：AutoGen 进 Hold，说明微软已经彻底弃用 AutoGen，其代码仓库停止一切维护，存量项目必须立即迁移。',
+  correct:false,
+  ok:'✅ 正确理解：AutoGen 进入的是「维护模式」——被 Microsoft Agent Framework（2026-04 GA，合并 AutoGen + Semantic Kernel）吸收；Hold 的限定词是「（新项目）」无采用理由，Trial 条目明确「存量项目维持运行」。',
+  bad:'❌ 常见误解：把「维护模式 + 新项目不采用」过度泛化为「彻底弃用、停止一切维护、存量必须立即迁移」。三个限定词——维护模式、新项目、存量维持——全部丢失。',
+  followups:[
+    {q:'追问：新项目应该选什么？',a:'LangGraph 1.0（2025-10 发布，durable execution）/ OpenAI Agents SDK / Google ADK / LlamaIndex Workflows。'},
+    {q:'追问：CrewAI 为什么不在 Hold？',a:'CrewAI 的问题仅是 +11% token 开销，选型建议「转向」而非判死刑，故留在 Trial。'}
+  ]
+},
+{
+  type:'tf',
+  q:'判断：pgvector 在 50M 向量规模 99% recall 下达到 471 QPS（Qdrant 41 QPS），说明 pgvector 在所有检索场景下都优于 Qdrant，应作为唯一首选。',
+  correct:false,
+  ok:'✅ 正确理解：471 vs 41 QPS 的数字保真，但源文件的结论是「双首选」——Qdrant 强在 filtered ANN 与多租户场景。吞吐量基准之外的维度（过滤检索、多租户）Qdrant 更优。',
+  bad:'❌ 常见误解：用单一吞吐基准做全场景推断，忽略边界条件（filtered ANN、多租户）。与「SGLang 全场景碾压 vLLM」是同构的过度泛化错误。',
+  followups:[
+    {q:'追问：落地动作是什么？',a:'评估 pgvectorscale 与 Qdrant 在数学公式文本上的检索准确率——按实际数据画像选型，而非按单一 benchmark。'},
+    {q:'追问：471 QPS 的完整测试条件是什么？',a:'pgvector (+pgvectorscale) 在 50M 向量规模、99% recall 条件下测得；漏掉任何一个限定条件（pgvectorscale / 50M / 99% recall）都属于数据点失真。'}
+  ]
+},
+{
+  type:'tf',
+  q:'判断：Alita（arXiv:2505.20286）已可让 agent 在运行时自动生成并注册 MCP server，因其减少预置工具库依赖的效果明确，可直接用于生产环境。',
+  correct:false,
+  ok:'✅ 正确理解：Alita 的机制描述正确（运行时自动生成并注册 MCP server，arXiv:2505.20286），但源文件明确「目前仅为研究原型，稳定性与安全性未验证」——这正是它定位 Assess 而非更高象限的原因。',
+  bad:'❌ 常见误解：把「机制可行」当作「生产就绪」，丢掉「研究原型 / 稳定性与安全性未验证」的限定。注意它与 tool poisoning 攻击面的叠加风险：自动生成的 MCP server 更需要安全评估。',
+  followups:[
+    {q:'追问：Assess 象限对该条目要求做什么？',a:'跟踪 Alita 及后续工作的代码开源与安全评估——「知道是什么、能解决什么问题」即可，不要求实验。'},
+    {q:'追问：相关的另一条 Assess 线是什么？',a:'工具库规模化检索 / 重构（ToolLibGen 等）：工具数量到成百上千时，工具描述检索、去重与自动重构成为瓶颈，技术路线未收敛。'}
+  ]
+},
+{
+  type:'tf',
+  q:'判断：Prefill-Decode 分离（PD 分离）进 Trial 的理由是：将 prefill 与 decode 拆分部署，分别匹配 compute-bound / memory-bound 的硬件画像，提升 agentic 长上下文负载的整体吞吐与 SLO 达成率。',
+  correct:true,
+  ok:'✅ 正确理解：与源文件 Trial 条目原文一致——compute-bound / memory-bound 硬件画像匹配 + agentic 长上下文负载的吞吐与 SLO 收益。参考方案为 DistServe / Splitwise。',
+  bad:'❌ 常见误解：把 PD 分离与 speculative decoding 混为一谈（前者是服务架构拆分，后者是草稿模型 / MTP 采样加速）；或误判它在 Hold——它是有明确架构收益的 Trial 项。',
+  followups:[
+    {q:'追问：为什么不是 Adopt？',a:'实验计划仍停留在「阅读 DistServe / Splitwise 等方案；评估在本地多卡环境的部署可行性」——架构收益明确但个人落地可行性待验证。'},
+    {q:'追问：PD 分离为什么对 agentic 负载特别相关？',a:'agentic 长上下文负载的 prefill 重（compute-bound）、decode 是 memory-bound，拆分部署后各阶段匹配对应硬件画像，提升整体吞吐与 SLO 达成率。'}
+  ]
+}
+];
+
+/* ================= 状态 ================= */
+const TYPE_LABEL={single:'单选题',multi:'多选题',tf:'判断题'};
+let cur=0;
+let answers=allQuestions.map(()=>({picked:null,checked:false,right:false}));
+/* picked: single->index, multi->Set/array, tf->true/false */
+
+const qArea=document.getElementById('qArea');
+const progressText=document.getElementById('progressText');
+const scoreText=document.getElementById('scoreText');
+const progressFill=document.getElementById('progressFill');
+
+function score(){return answers.filter(a=>a.checked&&a.right).length;}
+
+function renderQ(){
+  const q=allQuestions[cur];
+  const a=answers[cur];
+  let h=`<span class="q-type">${TYPE_LABEL[q.type]} · 第 ${cur+1} 题</span>
+  <div class="q-text">${q.q}</div>`;
+  if(q.type==='tf'){
+    h+=`<div class="opt tf ${a.picked===true?'selected':''} ${a.checked?(q.correct===true?'correct':'wrong'):''} ${a.checked?'disabled revealed':''}" data-v="true">
+      <span class="mark">✓</span><div><strong>正确</strong></div></div>
+    <div class="opt tf ${a.picked===false?'selected':''} ${a.checked?(q.correct===false?'correct':'wrong'):''} ${a.checked?'disabled revealed':''}" data-v="false">
+      <span class="mark">✗</span><div><strong>错误</strong></div></div>
+    <div class="tf-pair ${a.checked?'show':''}">
+      <div class="ok-note">${q.ok}</div>
+      <div class="bad-note">${q.bad}</div>
+    </div>`;
+  }else{
+    const isMulti=q.type==='multi';
+    q.options.forEach((opt,i)=>{
+      let cls='opt';
+      const pickedArr=isMulti?(a.picked||[]):null;
+      const sel=isMulti?pickedArr.includes(i):a.picked===i;
+      if(a.checked){
+        const corArr=isMulti?q.correct:[q.correct];
+        if(corArr.includes(i))cls+=' correct';
+        else if(sel)cls+=' wrong';
+        cls+=' disabled revealed';
+      }else if(sel)cls+=' selected';
+      h+=`<div class="${cls}" data-v="${i}">
+        <span class="mark">${isMulti?(sel?'☑':'☐'):String.fromCharCode(65+i)}</span>
+        <div>${opt}<div class="explain">${q.explains[i]}</div></div></div>`;
+    });
+  }
+  h+=`<div class="verdict ${a.checked?'show '+(a.right?'right':'wrong'):''}">${a.checked?(a.right?'✅ 回答正确':'❌ 回答错误，请查看逐条解析'):''}</div>`;
+  h+=`<div class="followups ${a.checked?'show':''}"><h4>🎯 面试官可能的追问</h4>${
+    q.followups.map(f=>`<details class="fu"><summary>${f.q}</summary><div class="fu-a">${f.a}</div></details>`).join('')
+  }</div>`;
+  qArea.innerHTML=h;
+
+  qArea.querySelectorAll('.opt').forEach(el=>{
+    el.addEventListener('click',()=>{
+      if(answers[cur].checked)return;
+      const v=el.dataset.v;
+      if(q.type==='tf'){answers[cur].picked=(v==='true');}
+      else if(q.type==='single'){answers[cur].picked=parseInt(v);}
+      else{
+        if(!Array.isArray(answers[cur].picked))answers[cur].picked=[];
+        const i=parseInt(v),arr=answers[cur].picked;
+        const idx=arr.indexOf(i);
+        if(idx>=0)arr.splice(idx,1);else arr.push(i);
+      }
+      renderQ();
+    });
+  });
+  updateBar();
+}
+
+function updateBar(){
+  progressText.textContent=`第 ${cur+1} / ${allQuestions.length} 题`;
+  scoreText.textContent=`得分 ${score()} / ${allQuestions.length}`;
+  progressFill.style.width=((cur+1)/allQuestions.length*100)+'%';
+  document.getElementById('btnPrev').disabled=(cur===0);
+  document.getElementById('btnNext').disabled=(cur===allQuestions.length-1);
+}
+
+function check(){
+  const q=allQuestions[cur],a=answers[cur];
+  if(a.picked===null||(Array.isArray(a.picked)&&a.picked.length===0)){alert('请先作答再检查答案');return;}
+  let right=false;
+  if(q.type==='tf')right=(a.picked===q.correct);
+  else if(q.type==='single')right=(a.picked===q.correct);
+  else{
+    const s=[...a.picked].sort().join(','),c=[...q.correct].sort().join(',');
+    right=(s===c);
+  }
+  a.checked=true;a.right=right;
+  renderQ();
+}
+
+function resetQ(){answers[cur]={picked:null,checked:false,right:false};renderQ();}
+
+function resetAll(){
+  answers=allQuestions.map(()=>({picked:null,checked:false,right:false}));
+  cur=0;
+  document.getElementById('resultCard').classList.remove('show');
+  document.getElementById('quizCard').style.display='';
+  document.getElementById('progressWrap').style.display='';
+  renderQ();
+}
+
+function showResult(){
+  document.getElementById('quizCard').style.display='none';
+  /* 不隐藏 progressWrap 父容器，仅更新其内容 */
+  const r=document.getElementById('resultCard');
+  r.classList.add('show');
+  document.getElementById('finalScore').textContent=`${score()} / ${allQuestions.length}`;
+  document.getElementById('finalSub').textContent=`已作答 ${answers.filter(a=>a.checked).length} 题 · 正确 ${score()} 题`;
+}
+
+/* shuffle */
+function fisherYates(arr){for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}return arr;}
+function shuffleOptions(){
+  allQuestions.forEach(q=>{
+    if(q.type==='tf')return;
+    const order=fisherYates(q.options.map((_,i)=>i));
+    q.options=order.map(i=>q.options[i]);
+    q.explains=order.map(i=>q.explains[i]);
+    if(q.type==='single')q.correct=order.indexOf(q.correct);
+    else q.correct=q.correct.map(c=>order.indexOf(c)).sort((x,y)=>x-y);
+  });
+  resetAll();
+}
+
+/* overview */
+let filter='all';
+function renderThumbs(){
+  const g=document.getElementById('thumbGrid');g.innerHTML='';
+  allQuestions.forEach((q,i)=>{
+    const a=answers[i];
+    const st=a.checked?(a.right?'ok':'bad'):'todo';
+    if(filter!=='all'&&st!==filter)return;
+    const t=document.createElement('div');
+    t.className=`thumb s-${st}${i===cur?' s-cur':''}`;
+    t.innerHTML=`${i+1}<span class="t-type">${q.type==='tf'?'判断':(q.type==='multi'?'多选':'单选')}</span>`;
+    t.onclick=()=>{cur=i;closeOv();document.getElementById('resultCard').classList.remove('show');document.getElementById('quizCard').style.display='';renderQ();};
+    g.appendChild(t);
+  });
+}
+function openOv(){renderThumbs();document.getElementById('overlay').classList.add('show');}
+function closeOv(){document.getElementById('overlay').classList.remove('show');}
+
+/* events */
+document.getElementById('btnCheck').onclick=check;
+document.getElementById('btnResetQ').onclick=resetQ;
+document.getElementById('btnPrev').onclick=()=>{if(cur>0){cur--;renderQ();}};
+document.getElementById('btnNext').onclick=()=>{if(cur<allQuestions.length-1){cur++;renderQ();}};
+document.getElementById('btnShuffle').onclick=()=>{if(confirm('洗牌将清空所有答题记录，确定继续？'))shuffleOptions();};
+document.getElementById('btnResetAll').onclick=resetAll;
+document.getElementById('btnResult').onclick=showResult;
+document.getElementById('btnOverview').onclick=openOv;
+document.getElementById('btnCloseOv').onclick=closeOv;
+document.getElementById('btnBackView').onclick=()=>{openOv();};
+document.getElementById('btnContinue').onclick=()=>{
+  const last=answers.map((a,i)=>a.checked?i:-1).filter(i=>i>=0);
+  cur=last.length?last[last.length-1]:0;
+  document.getElementById('resultCard').classList.remove('show');
+  document.getElementById('quizCard').style.display='';
+  renderQ();
+};
+document.querySelectorAll('.filter-row .btn[data-f]').forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll('.filter-row .btn[data-f]').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');filter=b.dataset.f;renderThumbs();
+  };
+});
+document.getElementById('overlay').addEventListener('click',e=>{if(e.target.id==='overlay')closeOv();});
+
+renderQ();
+</script>
+</body>
+</html>

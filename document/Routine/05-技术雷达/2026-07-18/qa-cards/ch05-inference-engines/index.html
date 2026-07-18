@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ch05 · Inference Engines — QA 面试卡牌</title>
+<style>
+  :root{
+    --bg:#faf7f2; --card:#fffdf9; --ink:#3d3833; --ink-soft:#6f665c;
+    --accent:#b07d4f; --accent-soft:#f0e4d6; --line:#e6ddd0;
+    --ok:#5f8a6a; --ok-bg:#e9f1ea; --bad:#b0604f; --bad-bg:#f6e9e5;
+    --chip:#f4ede3; --shadow:0 2px 10px rgba(90,70,50,.08);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;line-height:1.65;padding:16px}
+  .wrap{max-width:860px;margin:0 auto}
+  header.top{margin-bottom:14px}
+  h1{font-size:1.25rem;font-weight:700}
+  .sub{color:var(--ink-soft);font-size:.85rem;margin-top:2px}
+  .toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+  button{font-family:inherit;font-size:.85rem;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:7px 14px;cursor:pointer;transition:background .15s}
+  button:hover{background:var(--accent-soft)}
+  button.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+  button.primary:hover{background:#9a6b42}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  .progress-zone{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 16px;box-shadow:var(--shadow);margin-bottom:14px}
+  .progress-meta{display:flex;justify-content:space-between;font-size:.85rem;color:var(--ink-soft);margin-bottom:8px;flex-wrap:wrap;gap:6px}
+  .bar{height:8px;background:var(--chip);border-radius:6px;overflow:hidden}
+  .bar>div{height:100%;background:var(--accent);width:0%;transition:width .25s}
+  .score-line{margin-top:8px;font-size:.85rem}
+  .score-line b{color:var(--accent)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px;box-shadow:var(--shadow);margin-bottom:14px}
+  .qtag{display:inline-block;font-size:.72rem;background:var(--accent-soft);color:var(--accent);border-radius:6px;padding:2px 10px;margin-bottom:10px;font-weight:600;letter-spacing:.5px}
+  .qtext{font-size:1.02rem;font-weight:600;margin-bottom:16px;line-height:1.7}
+  .qtext code,.expl code{background:var(--chip);border-radius:4px;padding:1px 6px;font-size:.88em}
+  .opt{display:block;width:100%;text-align:left;border:1px solid var(--line);background:#fff;border-radius:10px;padding:11px 14px;margin-bottom:9px;font-size:.92rem;cursor:pointer;transition:border-color .15s,background .15s}
+  .opt:hover{border-color:var(--accent)}
+  .opt.sel{border-color:var(--accent);background:var(--accent-soft)}
+  .opt.correct{border-color:var(--ok);background:var(--ok-bg)}
+  .opt.wrong{border-color:var(--bad);background:var(--bad-bg)}
+  .opt:disabled{cursor:default}
+  .expl{font-size:.82rem;color:var(--ink-soft);margin:-3px 0 10px;padding:8px 12px;background:#fbf8f3;border-left:3px solid var(--line);border-radius:0 8px 8px 0;display:none}
+  .expl.show{display:block}
+  .tf-row{display:flex;gap:10px}
+  .tf-row .opt{flex:1;text-align:center;font-weight:600}
+  .pool{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0;padding:12px;background:var(--chip);border-radius:10px;min-height:52px}
+  .chip{background:#fff;border:1px solid var(--accent);color:var(--ink);border-radius:8px;padding:6px 12px;font-size:.85rem;cursor:grab;user-select:none}
+  .chip.used{opacity:.3;pointer-events:none}
+  .blank{display:inline-flex;align-items:center;justify-content:center;min-width:110px;min-height:34px;border:2px dashed var(--accent);border-radius:8px;padding:3px 10px;margin:2px 4px;background:#fff;font-size:.85rem;vertical-align:middle;cursor:pointer}
+  .blank.filled{border-style:solid;background:var(--accent-soft)}
+  .blank.correct{border-color:var(--ok);background:var(--ok-bg)}
+  .blank.wrong{border-color:var(--bad);background:var(--bad-bg)}
+  .blank .rm{margin-left:8px;color:var(--bad);font-weight:700;cursor:pointer}
+  .drag-sentence{line-height:2.4;font-size:.95rem}
+  .verdict{margin:14px 0 4px;font-weight:700;font-size:.95rem;display:none}
+  .verdict.ok{color:var(--ok)} .verdict.no{color:var(--bad)}
+  .tf-expl{display:none;margin-top:10px;font-size:.85rem;background:#fbf8f3;border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+  .tf-expl.show{display:block}
+  .tf-expl p{margin-bottom:8px}
+  .tf-expl .g{color:var(--ok)} .tf-expl .b{color:var(--bad)}
+  .card-actions{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+  .nav{display:flex;justify-content:space-between;gap:10px;margin-bottom:14px}
+  /* overview */
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--shadow);margin-bottom:14px;display:none}
+  .panel.show{display:block}
+  .filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+  .filters button.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:8px}
+  .thumb{border:1px solid var(--line);border-radius:8px;padding:8px 4px;text-align:center;font-size:.78rem;cursor:pointer;background:#fff}
+  .thumb .t{font-size:.68rem;color:var(--ink-soft)}
+  .thumb.st-ok{border-color:var(--ok);background:var(--ok-bg)}
+  .thumb.st-bad{border-color:var(--bad);background:var(--bad-bg)}
+  .thumb.st-cur{outline:2px solid var(--accent)}
+  /* result */
+  .result{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:30px 22px;box-shadow:var(--shadow);text-align:center;display:none;margin-bottom:14px}
+  .result.show{display:block}
+  .result .big{font-size:2.2rem;font-weight:800;color:var(--accent);margin:8px 0}
+  .result .actions{display:flex;gap:10px;justify-content:center;margin-top:18px;flex-wrap:wrap}
+  @media (max-width:560px){
+    body{padding:10px}
+    .card{padding:16px}
+    .blank{min-width:86px}
+    .nav button{flex:1}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>🃏 ch05 · Inference Engines</h1>
+    <div class="sub">vLLM V1 · Speculative Decoding · PD Disaggregation · SGLang / TRT-LLM / llama.cpp · Memory Math</div>
+  </header>
+
+  <div class="toolbar">
+    <button id="btnOverview">📋 总览面板</button>
+    <button id="btnShuffle">🎲 重新洗牌选项</button>
+    <button id="btnResetAll">🔄 重置所有分数</button>
+  </div>
+
+  <div class="progress-zone" id="progressZone">
+    <div class="progress-meta">
+      <span id="progText">第 1 / 12 题</span>
+      <span id="progStat">已答 0 · 已判 0</span>
+    </div>
+    <div class="bar"><div id="barFill"></div></div>
+    <div class="score-line">实时得分：<b id="scoreNow">0</b> / <span id="scoreTotal">12</span>（按已判定题计分）</div>
+  </div>
+
+  <div class="panel" id="overviewPanel">
+    <div class="filters" id="filters">
+      <button data-f="all" class="active">全部</button>
+      <button data-f="ok">✅ 正确</button>
+      <button data-f="bad">❌ 错误</button>
+      <button data-f="todo">⬜ 未答</button>
+    </div>
+    <div class="grid" id="thumbGrid"></div>
+  </div>
+
+  <div class="card" id="quizCard"></div>
+
+  <div class="nav" id="navRow">
+    <button id="btnPrev">← 上一题</button>
+    <button id="btnFinish" class="primary">查看结果</button>
+    <button id="btnNext">下一题 →</button>
+  </div>
+
+  <div class="result" id="resultPage">
+    <div>🎉 本次作答结果</div>
+    <div class="big" id="resultScore">0 / 12</div>
+    <div id="resultDetail" style="color:var(--ink-soft);font-size:.9rem"></div>
+    <div class="actions">
+      <button id="btnBackOverview">📋 返回查看（总览）</button>
+      <button id="btnContinue" class="primary">✏️ 继续做题</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============ 数据：全部出自源文件 §5 ============ */
+const allQuestions = [
+  {
+    type:'drag', tag:'拖拽填空',
+    stem:'vLLM V1 架构要点（§5.1）：把术语从选项池拖入空格。',
+    sentence:[
+      'vLLM V1 采用 ', {blank:0}, ' 架构（API / scheduler / executor 分离），',
+      {blank:1}, ' 默认开启；PagedAttention 的 block size 为 ', {blank:2},
+      '，相对 V0 吞吐提升约 ', {blank:3}, '。'
+    ],
+    pool:['multi-process','chunked prefill','16','~1.7×','32','~2.5×','continuous batching','prefix caching'],
+    answers:['multi-process','chunked prefill','16','~1.7×'],
+    blankExplanations:[
+      '源文明确为 multi-process architecture，API / scheduler / executor 三个进程分离。',
+      'chunked prefill on by default —— 默认开启，无需手动打开。',
+      'PagedAttention block size 为 16（不是 32）。',
+      '相对 V0 约 ~1.7× throughput；~2.5× 是干扰项。'
+    ]
+  },
+  {
+    type:'drag', tag:'拖拽填空',
+    stem:'Memory Math（§5.5）：补全显存与 KV cache 公式及结论。',
+    sentence:[
+      'BF16 权重约占 ', {blank:0}, ' 字节（N 为参数量）；每 token 的 KV cache ≈ ',
+      {blank:1}, '（L = layers，n_kv = KV heads）；以 ', {blank:2},
+      ' 为例约 1 MB/token，因此长上下文 agentic 会话在 weight-bound 之前先 ', {blank:3}, '。'
+    ],
+    pool:['2N','2·L·n_kv·d_head·2B','Qwen3-32B','KV-capacity-bound','4N','L·n_kv·d_head·2B','Qwen3-Coder-480B','memory-bandwidth-bound'],
+    answers:['2N','2·L·n_kv·d_head·2B','Qwen3-32B','KV-capacity-bound'],
+    blankExplanations:[
+      'BF16 每参数 2 字节，故 ≈ 2N bytes。',
+      'KV cache per token ≈ 2·L·n_kv·d_head·2B（K 和 V 两份 × 层数 × KV 头数 × head 维度 × 2 字节）。',
+      'Worked example 用的是 Qwen3-32B ≈ 1 MB/token；480B 是 PD disaggregation 一节的 RTP-LLM 案例。',
+      '结论：long-context agentic sessions are KV-capacity-bound before they are weight-bound。'
+    ]
+  },
+  {
+    type:'single', tag:'单选题',
+    stem:'指出「speculative decoding 在高并发下加速比坍缩」这一研究对应的 arXiv 编号（§5.2）。',
+    options:['arXiv:2305.16291','arXiv:2510.22786','arXiv:2510.22876','arXiv:2501.12593'],
+    correct:2,
+    explanations:[
+      '❌ 2305.16291 是 Voyager（§6.1 skill library），与本节无关。',
+      '❌ 数字相近但不对——注意后几位是 22876 而非 22786。',
+      '✅ arXiv:2510.22876：speedup collapses at high concurrency。',
+      '❌ 干扰编号，源文中不存在。'
+    ]
+  },
+  {
+    type:'single', tag:'单选题',
+    stem:'根据 §5.2，EAGLE 的加速比在 batch 128 时从 1.73× 退化到多少？',
+    options:['1.21×','1.42×','1.05×','0.98×'],
+    correct:0,
+    explanations:[
+      '✅ 1.73× → 1.21× at batch 128。',
+      '❌ 1.42× 是干扰值；退化终点是 1.21×。',
+      '❌ 并未退化到接近 1；仍有 1.21× 加速，只是大幅缩水。',
+      '❌ 低于 1× 意味着变慢，源文未报告变慢，只是 speedup degrades。'
+    ]
+  },
+  {
+    type:'single', tag:'单选题',
+    stem:'§5.4 中 SGLang RadixAttention 的基准数据是？',
+    options:['52.3K output tok/s on 32 GPUs','4.7–5.3× TTFT on 96 GPUs','85k req/s on 96 GPUs','52.3K input tok/s on 96 GPUs'],
+    correct:3,
+    explanations:[
+      '❌ 两处错误：是 input 而非 output tok/s，GPU 数是 96 而非 32。',
+      '❌ 4.7–5.3× TTFT 是 RTP-LLM PD disaggregation 的数字，张冠李戴。',
+      '❌ 85k 是 vLLM 的 GitHub stars 数量级，不是吞吐基准。',
+      '✅ benchmarked 52.3K input tok/s on 96 GPUs。'
+    ]
+  },
+  {
+    type:'single', tag:'单选题',
+    stem:'关于 TensorRT-LLM 1.0 的定位（§5.4），哪项正确？',
+    options:['GGUF 量化 + CPU/Metal/Vulkan 后端，面向边缘端','PyTorch-native 重构，spec decoding 支持矩阵最广，但 NVIDIA 绑定','radix-tree 前缀复用，agentic workload 最佳','多进程架构 + PagedAttention block size 16'],
+    correct:1,
+    explanations:[
+      '❌ 这是 llama.cpp 的定位（edge/consumer）。',
+      '✅ PyTorch-native refactor + broadest speculative-decoding support matrix（Medusa, EAGLE, lookahead, draft-target），代价是 NVIDIA lock-in。',
+      '❌ 这是 SGLang 的 RadixAttention。',
+      '❌ 这是 vLLM V1 的特征。'
+    ]
+  },
+  {
+    type:'multi', tag:'多选题',
+    stem:'§5.1 vLLM V1 的特征包括哪些？（多选）',
+    options:['multi-process 架构（API / scheduler / executor 分离）','chunked prefill 默认开启','PagedAttention block size 32','相对 V0 约 ~1.7× throughput','radix-tree 前缀复用（RadixAttention）'],
+    correct:[0,1,3],
+    explanations:[
+      '✅ multi-process architecture，三进程分离。',
+      '✅ chunked prefill on by default。',
+      '❌ block size 是 16，不是 32。',
+      '✅ ~1.7× throughput vs. V0。',
+      '❌ RadixAttention 属于 SGLang，不是 vLLM。'
+    ]
+  },
+  {
+    type:'multi', tag:'多选题',
+    stem:'关于 §5.2 speculative decoding under load，哪些说法与源文一致？（多选）',
+    options:['高并发下加速比坍缩（EAGLE 1.73× → 1.21× at batch 128）','GPU 饱和后 verification 消耗 42–95% 的算力','spec decoding 是低 batch 场景的 latency 工具','spec decoding 是稳定的 throughput 工具，适合高并发扩容'],
+    correct:[0,1,2],
+    explanations:[
+      '✅ 源文原始数据。',
+      '✅ verification consumes 42–95% of compute once the GPU is saturated。',
+      '✅ 结论原文：a latency tool for low-batch regimes。',
+      '❌ 恰相反——not a throughput tool，高并发正是它坍缩的场景。'
+    ]
+  },
+  {
+    type:'tf', tag:'判断题', answer:false,
+    stem:'Speculative decoding 在高并发 serving 中仍是有效的 throughput 工具，可以放心用于扩容场景。',
+    right:'✅ 正确理解：spec decoding 是低 batch 场景的 latency 工具；高并发下加速比坍缩（EAGLE 1.73× → 1.21× at batch 128），因为 GPU 饱和后 verification 消耗 42–95% 算力。它不是 throughput 工具。',
+    wrong:'❌ 常见误解：把「单请求延迟降低」误当成「系统吞吐提升」。高并发下 GPU 已被 continuous batching 喂饱，verification 的额外算力挤占吞吐，加速比随之坍缩。'
+  },
+  {
+    type:'tf', tag:'判断题', answer:true,
+    stem:'GPU 饱和之后，speculative decoding 的 verification 阶段会消耗 42–95% 的算力。',
+    right:'✅ 正确理解：源文原文 —— verification consumes 42–95% of compute once the GPU is saturated，这正是高并发下加速比坍缩的机制原因。',
+    wrong:'❌ 常见误解：以为 verification 的开销是固定小比例。实际上其占比随 GPU 饱和度上升而急剧扩大（42–95%），不是常数开销。'
+  },
+  {
+    type:'tf', tag:'判断题', answer:true,
+    stem:'RTP-LLM 在 Qwen3-Coder-480B 上做 PD disaggregation，报告 TTFT 改善 4.7–5.3×，是长 prompt agentic workload 当前最强的杠杆。',
+    right:'✅ 正确理解：§5.3 原文 —— RTP-LLM on Qwen3-Coder-480B reports TTFT improvement of 4.7–5.3×，the strongest current lever for long-prompt agentic workloads。',
+    wrong:'❌ 常见误解：把 4.7–5.3× 记成端到端吞吐或 TPOT 改善。该数字针对的是 TTFT（首 token 延迟），来自 prefill/decode 拆分到独立 GPU 池。'
+  },
+  {
+    type:'tf', tag:'判断题', answer:false,
+    stem:'对长上下文 agentic 会话而言，显存瓶颈的顺序是先 weight-bound，达到权重上限后才轮到 KV-capacity-bound。',
+    right:'✅ 正确理解：§5.5 结论相反 —— long-context agentic sessions are KV-capacity-bound before they are weight-bound。以 Qwen3-32B 为例每 token 约 1 MB KV cache，长会话下 KV 增长先撞墙。',
+    wrong:'❌ 常见误解：因果顺序倒置。权重是固定开销（BF16 ≈ 2N bytes），KV cache 随上下文线性增长，因此 KV 容量约束先于权重约束出现。'
+  }
+];
+
+/* ============ 状态 ============ */
+let cur = 0;
+let answers = allQuestions.map(q => q.type==='multi' ? [] : q.type==='drag' ? q.answers.map(()=>null) : null);
+let judged = allQuestions.map(()=>false);
+let results = allQuestions.map(()=>null); // true/false after judge
+let overviewFilter = 'all';
+
+const $ = id => document.getElementById(id);
+
+/* ============ 工具 ============ */
+function fisherYates(arr){ for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; } return arr; }
+
+function isAnswered(i){
+  const q=allQuestions[i], a=answers[i];
+  if(q.type==='single') return a!==null;
+  if(q.type==='tf') return a!==null;
+  if(q.type==='multi') return a.length>0;
+  if(q.type==='drag') return a.every(x=>x!==null);
+}
+function grade(i){
+  const q=allQuestions[i], a=answers[i];
+  if(q.type==='single') return a===q.correct;
+  if(q.type==='tf') return a===q.answer;
+  if(q.type==='multi'){
+    const s=new Set(a);
+    return s.size===q.correct.length && q.correct.every(c=>s.has(c));
+  }
+  if(q.type==='drag') return q.answers.every((v,k)=>a[k]===v);
+}
+
+/* ============ 渲染主卡片 ============ */
+function render(){
+  const q=allQuestions[cur];
+  const card=$('quizCard');
+  let h = `<span class="qtag">${q.tag} · 第 ${cur+1} 题</span><div class="qtext">${q.stem}</div>`;
+  if(q.type==='single'||q.type==='multi') h += renderOptions(q);
+  else if(q.type==='tf') h += renderTF(q);
+  else if(q.type==='drag') h += renderDrag(q);
+  h += `<div class="verdict" id="verdict"></div>
+        <div class="card-actions">
+          <button class="primary" id="btnCheck">检查答案</button>
+          <button id="btnResetQ">重置本题</button>
+        </div>`;
+  card.innerHTML = h;
+  bind(q);
+  if(judged[cur]) showJudgement(false);
+  updateChrome();
+}
+
+function renderOptions(q){
+  let h='';
+  q.options.forEach((o,i)=>{
+    const sel = q.type==='single' ? answers[cur]===i : answers[cur].includes(i);
+    h += `<button class="opt${sel?' sel':''}" data-i="${i}">${q.type==='multi'?'☐':'◯'} ${o}</button>
+          <div class="expl" id="expl-${i}">${q.explanations[i]}</div>`;
+  });
+  return h;
+}
+function renderTF(q){
+  return `<div class="tf-row">
+      <button class="opt${answers[cur]===true?' sel':''}" data-v="true">✅ 正确</button>
+      <button class="opt${answers[cur]===false?' sel':''}" data-v="false">❌ 错误</button>
+    </div>
+    <div class="tf-expl" id="tfExpl"><p class="g">${q.right}</p><p class="b">${q.wrong}</p></div>`;
+}
+function renderDrag(q){
+  let s='';
+  q.sentence.forEach(part=>{
+    if(typeof part==='string') s+=part;
+    else{
+      const v=answers[cur][part.blank];
+      s+=`<span class="blank${v?' filled':''}" data-b="${part.blank}">${v? v+'<span class="rm" data-b="'+part.blank+'">×</span>':'拖入 / 点击'}</span>`;
+    }
+  });
+  let h=`<div class="drag-sentence">${s}</div><div class="pool">`;
+  q.pool.forEach(p=>{
+    const used=answers[cur].includes(p);
+    h+=`<span class="chip${used?' used':''}" draggable="${!used}" data-v="${p}">${p}</span>`;
+  });
+  h+='</div>';
+  q.blankExplanations.forEach((e,k)=>{ h+=`<div class="expl" id="bexpl-${k}">空${k+1}：${e}</div>`; });
+  return h;
+}
+
+/* ============ 交互绑定 ============ */
+let pickedChip = null;
+function bind(q){
+  if(q.type==='single'){
+    document.querySelectorAll('.opt[data-i]').forEach(b=>b.onclick=()=>{
+      if(judged[cur])return;
+      answers[cur]=parseInt(b.dataset.i); render();
+    });
+  }else if(q.type==='multi'){
+    document.querySelectorAll('.opt[data-i]').forEach(b=>b.onclick=()=>{
+      if(judged[cur])return;
+      const i=parseInt(b.dataset.i), a=answers[cur];
+      const k=a.indexOf(i); k>=0?a.splice(k,1):a.push(i); render();
+    });
+  }else if(q.type==='tf'){
+    document.querySelectorAll('.opt[data-v]').forEach(b=>b.onclick=()=>{
+      if(judged[cur])return;
+      answers[cur]= b.dataset.v==='true'; render();
+    });
+  }else if(q.type==='drag'){
+    document.querySelectorAll('.chip').forEach(c=>{
+      c.addEventListener('dragstart',e=>{ e.dataTransfer.setData('text/plain',c.dataset.v); });
+      c.onclick=()=>{ if(judged[cur]||c.classList.contains('used'))return; pickedChip=c.dataset.v;
+        document.querySelectorAll('.chip').forEach(x=>x.style.outline='');
+        c.style.outline='2px solid var(--accent)'; };
+    });
+    document.querySelectorAll('.blank').forEach(bl=>{
+      bl.addEventListener('dragover',e=>e.preventDefault());
+      bl.addEventListener('drop',e=>{ e.preventDefault(); if(judged[cur])return;
+        place(parseInt(bl.dataset.b), e.dataTransfer.getData('text/plain')); });
+      bl.onclick=e=>{ if(judged[cur])return;
+        if(e.target.classList.contains('rm'))return;
+        if(pickedChip){ place(parseInt(bl.dataset.b), pickedChip); pickedChip=null; } };
+    });
+    document.querySelectorAll('.rm').forEach(r=>r.onclick=e=>{
+      e.stopPropagation(); if(judged[cur])return;
+      answers[cur][parseInt(r.dataset.b)]=null; render();
+    });
+  }
+  $('btnCheck').onclick=checkCurrent;
+  $('btnResetQ').onclick=()=>{
+    const q=allQuestions[cur];
+    answers[cur]= q.type==='multi'?[]:q.type==='drag'?q.answers.map(()=>null):null;
+    judged[cur]=false; results[cur]=null; pickedChip=null; render();
+  };
+}
+function place(blankIdx,val){
+  const q=allQuestions[cur];
+  if(!q.pool.includes(val))return;
+  const exist=answers[cur].indexOf(val);
+  if(exist>=0) answers[cur][exist]=null;
+  answers[cur][blankIdx]=val; render();
+}
+
+/* ============ 判定 ============ */
+function checkCurrent(){
+  if(!isAnswered(cur)){ alert('请先作答再检查。'); return; }
+  judged[cur]=true; results[cur]=grade(cur);
+  showJudgement(true); updateChrome();
+}
+function showJudgement(scroll){
+  const q=allQuestions[cur], ok=results[cur];
+  const v=$('verdict');
+  v.style.display='block';
+  v.className='verdict '+(ok?'ok':'no');
+  v.textContent= ok?'✅ 回答正确':'❌ 回答错误';
+  if(q.type==='single'||q.type==='multi'){
+    document.querySelectorAll('.opt[data-i]').forEach(b=>{
+      const i=parseInt(b.dataset.i); b.disabled=true;
+      const isC = q.type==='single' ? i===q.correct : q.correct.includes(i);
+      const isS = q.type==='single' ? answers[cur]===i : answers[cur].includes(i);
+      if(isC)b.classList.add('correct'); else if(isS)b.classList.add('wrong');
+      $('expl-'+i).classList.add('show');
+      b.innerHTML=b.innerHTML.replace(/^◯|^☐/, isC?'✔':(isS?'✘':(q.type==='multi'?'☐':'◯')));
+    });
+  }else if(q.type==='tf'){
+    document.querySelectorAll('.opt[data-v]').forEach(b=>{
+      b.disabled=true;
+      const val=b.dataset.v==='true';
+      if(val===q.answer)b.classList.add('correct');
+      else if(answers[cur]===val)b.classList.add('wrong');
+    });
+    $('tfExpl').classList.add('show');
+  }else if(q.type==='drag'){
+    document.querySelectorAll('.blank').forEach(bl=>{
+      const k=parseInt(bl.dataset.b);
+      bl.classList.add(answers[cur][k]===q.answers[k]?'correct':'wrong');
+    });
+    q.blankExplanations.forEach((_,k)=>$('bexpl-'+k).classList.add('show'));
+  }
+  if(scroll) v.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+/* ============ 顶部状态 & 导航 ============ */
+function updateChrome(){
+  const n=allQuestions.length;
+  $('progText').textContent=`第 ${cur+1} / ${n} 题`;
+  const ans=answers.filter((_,i)=>isAnswered(i)).length;
+  const jg=judged.filter(Boolean).length;
+  $('progStat').textContent=`已答 ${ans} · 已判 ${jg}`;
+  $('barFill').style.width=(ans/n*100)+'%';
+  const sc=results.filter(r=>r===true).length;
+  $('scoreNow').textContent=sc;
+  $('scoreTotal').textContent=n;
+  $('btnPrev').disabled = cur===0;
+  $('btnNext').disabled = cur===n-1;
+  renderThumbs();
+}
+$('btnPrev').onclick=()=>{ if(cur>0){cur--; render();} };
+$('btnNext').onclick=()=>{ if(cur<allQuestions.length-1){cur++; render();} };
+
+/* ============ 总览面板 ============ */
+$('btnOverview').onclick=()=>{ $('overviewPanel').classList.toggle('show'); renderThumbs(); };
+document.querySelectorAll('#filters button').forEach(b=>b.onclick=()=>{
+  overviewFilter=b.dataset.f;
+  document.querySelectorAll('#filters button').forEach(x=>x.classList.toggle('active',x===b));
+  renderThumbs();
+});
+function statusOf(i){
+  if(judged[i]) return results[i]?'ok':'bad';
+  if(isAnswered(i)) return 'ans';
+  return 'todo';
+}
+function renderThumbs(){
+  const g=$('thumbGrid'); if(!$('overviewPanel').classList.contains('show'))return;
+  let h='';
+  allQuestions.forEach((q,i)=>{
+    const st=statusOf(i);
+    if(overviewFilter!=='all'){
+      if(overviewFilter==='ok'&&st!=='ok')return;
+      if(overviewFilter==='bad'&&st!=='bad')return;
+      if(overviewFilter==='todo'&&st!=='todo'&&st!=='ans')return;
+    }
+    const icon = st==='ok'?'✅':st==='bad'?'❌':st==='ans'?'📝':'⬜';
+    const tname = q.type==='drag'?'拖拽':q.type==='single'?'单选':q.type==='multi'?'多选':q.type==='tf'?'判断':'?';
+    h+=`<div class="thumb st-${st}${i===cur?' st-cur':''}" data-i="${i}">${icon} ${i+1}<div class="t">${tname}</div></div>`;
+  });
+  g.innerHTML=h||'<div style="color:var(--ink-soft);font-size:.85rem">该筛选下暂无题目</div>';
+  g.querySelectorAll('.thumb').forEach(t=>t.onclick=()=>{ cur=parseInt(t.dataset.i); render(); });
+}
+
+/* ============ 洗牌 ============ */
+$('btnShuffle').onclick=()=>{
+  allQuestions.forEach(q=>{
+    if(q.type==='single'){
+      const order=fisherYates(q.options.map((_,i)=>i));
+      q.options=order.map(i=>q.options[i]);
+      q.explanations=order.map(i=>q.explanations[i]);
+      q.correct=order.indexOf(q.correct);
+    }else if(q.type==='multi'){
+      const order=fisherYates(q.options.map((_,i)=>i));
+      q.options=order.map(i=>q.options[i]);
+      q.explanations=order.map(i=>q.explanations[i]);
+      q.correct=q.correct.map(c=>order.indexOf(c));
+    }else if(q.type==='drag'){
+      q.pool=fisherYates(q.pool.slice());
+    }
+  });
+  answers=allQuestions.map(q=>q.type==='multi'?[]:q.type==='drag'?q.answers.map(()=>null):null);
+  judged=allQuestions.map(()=>false);
+  results=allQuestions.map(()=>null);
+  cur=0; pickedChip=null;
+  $('resultPage').classList.remove('show');
+  $('quizCard').style.display=''; $('navRow').style.display='';
+  render();
+};
+
+/* ============ 重置所有 ============ */
+$('btnResetAll').onclick=()=>{
+  answers=allQuestions.map(q=>q.type==='multi'?[]:q.type==='drag'?q.answers.map(()=>null):null);
+  judged=allQuestions.map(()=>false);
+  results=allQuestions.map(()=>null);
+  cur=0; pickedChip=null;
+  $('resultPage').classList.remove('show');
+  $('quizCard').style.display=''; $('navRow').style.display='';
+  $('progressZone').style.display='';
+  $('overviewPanel').classList.remove('show');
+  render();
+};
+
+/* ============ 结果页 ============ */
+$('btnFinish').onclick=()=>{
+  const un=answers.filter((_,i)=>!isAnswered(i)).length;
+  if(un>0 && !confirm(`还有 ${un} 题未作答，确定查看结果？（未答题计 0 分）`)) return;
+  results=allQuestions.map((q,i)=> isAnswered(i)?grade(i):false);
+  judged=allQuestions.map((q,i)=> isAnswered(i)?true:judged[i]);
+  const sc=results.filter(r=>r===true).length;
+  $('resultScore').textContent=`${sc} / ${allQuestions.length}`;
+  const cnt={drag:0,single:0,multi:0,tf:0};
+  results.forEach((r,i)=>{ if(r)cnt[allQuestions[i].type]++; });
+  $('resultDetail').innerHTML=
+    `拖拽填空 ${cnt.drag}/2 · 单选 ${cnt.single}/4 · 多选 ${cnt.multi}/2 · 判断 ${cnt.tf}/4<br>未作答题目已按 0 分计入`;
+  $('quizCard').style.display='none';
+  $('navRow').style.display='none';
+  $('resultPage').classList.add('show');
+  updateChrome();
+};
+$('btnBackOverview').onclick=()=>{
+  $('resultPage').classList.remove('show');
+  $('quizCard').style.display=''; $('navRow').style.display='';
+  $('overviewPanel').classList.add('show');
+  render();
+};
+$('btnContinue').onclick=()=>{
+  $('resultPage').classList.remove('show');
+  $('quizCard').style.display=''; $('navRow').style.display='';
+  render();
+};
+
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QA 卡牌 · Ch02 Evaluation & Training</title>
+<style>
+  :root{
+    --bg:#faf6f0; --card:#fffdf9; --ink:#3d3833; --muted:#8a8177;
+    --accent:#b0784f; --accent-soft:#f3e6da; --line:#e8e0d5;
+    --ok:#5f8a5f; --ok-bg:#eef4ee; --bad:#b05c4e; --bad-bg:#f7ece9;
+    --chip:#efe9e0;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--ink);line-height:1.7;padding:20px 14px}
+  .wrap{max-width:860px;margin:0 auto}
+  header{text-align:center;margin-bottom:18px}
+  header h1{font-size:1.35rem;font-weight:600}
+  header p{color:var(--muted);font-size:.85rem;margin-top:4px}
+  .topbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin-bottom:14px}
+  .score{font-size:.9rem}
+  .score b{color:var(--accent)}
+  .btn{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:9px;padding:7px 13px;font-size:.83rem;cursor:pointer;transition:.15s}
+  .btn:hover{border-color:var(--accent);color:var(--accent)}
+  .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .btn.primary:hover{filter:brightness(1.05);color:#fff}
+  .progress-outer{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin-bottom:16px}
+  .progress-label{font-size:.82rem;color:var(--muted);margin-bottom:6px;display:flex;justify-content:space-between}
+  .progress-track{height:8px;background:var(--chip);border-radius:99px;overflow:hidden}
+  .progress-fill{height:100%;background:var(--accent);border-radius:99px;width:0%;transition:width .3s}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:14px}
+  .qtag{display:inline-block;font-size:.72rem;background:var(--accent-soft);color:var(--accent);border-radius:6px;padding:2px 9px;margin-bottom:10px;letter-spacing:.05em}
+  .qtext{font-size:1.02rem;font-weight:600;margin-bottom:16px}
+  .opt{display:block;width:100%;text-align:left;background:#fff;border:1px solid var(--line);border-radius:10px;padding:11px 14px;margin-bottom:9px;font-size:.92rem;cursor:pointer;transition:.15s;color:var(--ink)}
+  .opt:hover{border-color:var(--accent)}
+  .opt.sel{border-color:var(--accent);background:var(--accent-soft)}
+  .opt.correct{border-color:var(--ok);background:var(--ok-bg)}
+  .opt.wrong{border-color:var(--bad);background:var(--bad-bg)}
+  .opt:disabled{cursor:default}
+  .exp{font-size:.84rem;color:var(--muted);background:#fbf8f3;border-left:3px solid var(--line);border-radius:0 8px 8px 0;padding:8px 12px;margin:-4px 0 10px;display:none}
+  .exp.show{display:block}
+  .exp.ok{border-left-color:var(--ok)}
+  .exp.no{border-left-color:var(--bad)}
+  /* drag */
+  .pool{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0;padding:12px;background:#fbf8f3;border:1px dashed var(--line);border-radius:10px;min-height:52px}
+  .pool-label{font-size:.78rem;color:var(--muted);width:100%}
+  .drag-item{background:#fff;border:1px solid var(--accent);color:var(--accent);border-radius:8px;padding:6px 12px;font-size:.85rem;cursor:grab;user-select:none}
+  .drag-item.used{opacity:.35;pointer-events:none}
+  .blank{display:inline-block;min-width:120px;border-bottom:2px dashed var(--accent);border-radius:6px;padding:2px 10px;margin:0 4px;background:var(--accent-soft);cursor:pointer;font-size:.9rem;text-align:center;vertical-align:baseline;color:var(--accent)}
+  .blank.filled{background:#fff;border:1px solid var(--accent);border-bottom:1px solid var(--accent)}
+  .blank.ok{background:var(--ok-bg);border-color:var(--ok);color:var(--ok)}
+  .blank.no{background:var(--bad-bg);border-color:var(--bad);color:var(--bad)}
+  .blank-hint{font-size:.78rem;color:var(--muted);margin-top:6px}
+  .q-actions{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+  .verdict{font-size:.9rem;font-weight:600;margin-top:12px;display:none}
+  .verdict.ok{color:var(--ok)} .verdict.no{color:var(--bad)}
+  .nav{display:flex;justify-content:space-between;gap:10px;margin-top:6px}
+  /* overview */
+  .overlay{position:fixed;inset:0;background:rgba(61,56,51,.35);display:none;z-index:50;padding:20px;overflow:auto}
+  .overlay.show{display:block}
+  .ov-panel{max-width:760px;margin:30px auto;background:var(--card);border-radius:14px;padding:22px}
+  .ov-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px}
+  .ov-filters{display:flex;gap:6px;flex-wrap:wrap}
+  .ov-filters .btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .thumb-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:8px;margin-top:14px}
+  .thumb{border:1px solid var(--line);border-radius:10px;padding:8px 4px;text-align:center;cursor:pointer;background:#fff;font-size:.78rem}
+  .thumb .t{font-size:.68rem;color:var(--muted)}
+  .thumb.st-ok{border-color:var(--ok);background:var(--ok-bg)}
+  .thumb.st-no{border-color:var(--bad);background:var(--bad-bg)}
+  .thumb.cur{outline:2px solid var(--accent)}
+  /* result */
+  .result{display:none;text-align:center;padding:36px 20px}
+  .result h2{font-size:1.5rem;margin-bottom:8px}
+  .result .big{font-size:2.6rem;color:var(--accent);font-weight:700;margin:10px 0}
+  .result p{color:var(--muted);margin-bottom:20px}
+  .hidden{display:none!important}
+  @media (max-width:560px){
+    .card{padding:16px}
+    header h1{font-size:1.1rem}
+    .topbar{gap:6px}
+    .btn{padding:6px 10px;font-size:.78rem}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🃏 QA 面试卡牌 · Ch02</h1>
+    <p>Evaluation &amp; Training — BFCL v3/v4 · τ/τ²-bench · ToolACE · ToolRL · SFT→GRPO（源：2026-07-18 技术雷达 §2）</p>
+  </header>
+
+  <div class="topbar" id="topbar">
+    <div class="score">得分：<b id="scoreNow">0</b> / <span id="scoreTotal">0</span>　已答：<span id="answeredNow">0</span></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn" id="btnOverview">📋 总览</button>
+      <button class="btn" id="btnShuffle">🎲 重新洗牌选项</button>
+      <button class="btn" id="btnResetAll">🔄 重置所有分数</button>
+    </div>
+  </div>
+
+  <div class="progress-outer" id="progressOuter">
+    <div class="progress-label"><span id="progressText">第 1 / 1 题</span><span id="progressPct">0%</span></div>
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+  </div>
+
+  <div class="card" id="questionCard"></div>
+
+  <div class="nav" id="navBar">
+    <button class="btn" id="btnPrev">← 上一题</button>
+    <button class="btn" id="btnFinish">🏁 查看结果</button>
+    <button class="btn" id="btnNext">下一题 →</button>
+  </div>
+
+  <div class="card result" id="resultPanel">
+    <h2>🎉 完成！</h2>
+    <div class="big" id="resultScore">0 / 0</div>
+    <p id="resultDetail"></p>
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+      <button class="btn" id="btnResultOverview">📋 返回查看（总览）</button>
+      <button class="btn primary" id="btnResultContinue">▶ 继续做题</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="ov-panel">
+    <div class="ov-head">
+      <b>题目总览</b>
+      <div class="ov-filters">
+        <button class="btn active" data-f="all">全部</button>
+        <button class="btn" data-f="ok">✅ 正确</button>
+        <button class="btn" data-f="no">❌ 错误</button>
+        <button class="btn" data-f="todo">⬜ 未答</button>
+        <button class="btn" id="btnCloseOv">✕ 关闭</button>
+      </div>
+    </div>
+    <div class="thumb-grid" id="thumbGrid"></div>
+  </div>
+</div>
+
+<script>
+/* ============ 数据 ============ */
+const allQuestions = [
+  /* ---- 拖拽填空 ×2 ---- */
+  {
+    type:"drag", tag:"拖拽填空 · ToolRL",
+    text:"ToolRL（arXiv:2504.13958, NeurIPS 2025）将 reward 分解为 {{0}} + {{1}} 两部分，其中 {{1}} 通过预测调用与 ground-truth 调用之间的 {{2}} 来打分。",
+    blanks:["format","correctness","optimal matching"],
+    pool:["format","correctness","optimal matching","LLM-judge 打分","pass^k 一致性","人工标注偏好","执行时延惩罚"],
+    exp:"原文 §2.4：Reward decomposed into format + correctness，correctness scored by optimal matching of predicted vs. ground-truth calls，公式 R_correct = 6·R_max/S_max − 3。其余选项均非 ToolRL reward 的组成部分。"
+  },
+  {
+    type:"drag", tag:"拖拽填空 · 收敛范式",
+    text:"ARTIST / ToRL / ReTool / OTC 这一谱系已收敛于统一范式：{{0}} → 以 outcome + format rewards 做 {{1}}。",
+    blanks:["SFT cold-start","GRPO/PPO"],
+    pool:["SFT cold-start","GRPO/PPO","纯 prompt engineering","k 次独立运行投票","AST 静态匹配","人类反馈排序"],
+    exp:"原文 §2.4：converged on the paradigm: SFT cold-start → GRPO/PPO with outcome + format rewards。"
+  },
+  /* ---- 单选 ×5 ---- */
+  {
+    type:"mc", tag:"单选 · BFCL v4 权重",
+    text:"BFCL v4 的权重分配中，agentic 类别与 multi-turn 类别各占多少？",
+    options:["agentic 30% + multi-turn 40%","agentic 40% + multi-turn 30%","agentic 50% + multi-turn 50%","agentic 20% + multi-turn 20%"],
+    correct:1,
+    exp:["❌ 比例颠倒。v4 是 agentic 40%、multi-turn 30%。",
+         "✅ 正确。原文 §2.1：v4 weighting — agentic categories 40% + multi-turn 30%，刻意降低静态 single-call 准确度的权重。",
+         "❌ 并非对半分；榜单特意向 agentic 倾斜。",
+         "❌ 数值与原文不符。"]
+  },
+  {
+    type:"mc", tag:"单选 · τ-bench pass^k",
+    text:"τ-bench（arXiv:2406.12045）中 pass^k 指标的准确定义是？",
+    options:["k 次独立运行中至少一次成功的概率","k 次运行的平均成功率","k 次独立运行全部成功的概率","第 k 次运行成功的条件概率"],
+    correct:2,
+    exp:["❌ 那是 pass@k 的语义，不是 pass^k。",
+         "❌ 平均值无法刻画可靠性坍缩；pass^k 是联合概率。",
+         "✅ 正确。原文 §2.2：pass^k = probability all of k independent runs succeed。GPT-4o retail：pass^1 ≈ 50% 但 pass^8 < 25%。",
+         "❌ pass^k 不是条件概率定义。"]
+  },
+  {
+    type:"mc", tag:"单选 · ToolACE",
+    text:"ToolACE（arXiv:2409.00920）的 TSS pipeline 生成了多少个 API？",
+    options:["26,507 个","10,000 个","52.98 万个","2,506 个"],
+    correct:0,
+    exp:["✅ 正确。原文 §2.3：TSS（Tool Self-evolution Synthesis）pipeline generating 26,507 APIs。",
+         "❌ 原文未出现该数字。",
+         "❌ 52.98 是 ToolRL 在 BFCL-v3 上的 RL 模型得分（%），张冠李戴。",
+         "❌ 数字被改写，原文为 26,507。"]
+  },
+  {
+    type:"mc", tag:"单选 · ToolRL on BFCL-v3",
+    text:"ToolRL 论文中，RL 模型与 SFT baseline 在 BFCL-v3 上的得分分别是？",
+    options:["45.71% vs. 52.98%","52.98% vs. 45.71%","77.5% vs. 75.0%","50% vs. 25%"],
+    correct:1,
+    exp:["❌ 顺序颠倒：52.98% 是 RL 模型，45.71% 才是 SFT baseline。",
+         "✅ 正确。原文 §2.4：on BFCL-v3 the RL model reaches 52.98% vs. 45.71% for the SFT baseline（GRPO beats SFT by ~+15%）。",
+         "❌ 77.5%/75.0 是 BFCL 榜单快照中 Claude Opus 4.5 / Qwen3.7 Max 的数字，与本题无关。",
+         "❌ 50%/25% 是 τ-bench 的 pass^1/pass^8，混淆指标。"]
+  },
+  {
+    type:"mc", tag:"单选 · τ²-bench",
+    text:"关于 τ²-bench（arXiv:2506.07982），下列哪项描述正确？",
+    options:["移除了 retail 域，只保留 telecom","新增 telecom 域，引入 agent-controlled shared state 与 user-side actions","用 LLM-judge 取代数据库状态比对","将 pass^k 改为 pass@k 指标"],
+    correct:1,
+    exp:["❌ retail 域并未移除——telecom 饱和后区分度反而回到 retail。",
+         "✅ 正确。原文 §2.2：τ²-bench adds a telecom domain with agent-controlled shared state and user-side actions。",
+         "❌ τ 系列的成功判定一直是 final database state 精确匹配，无 LLM-judge。",
+         "❌ 原文未提及指标改名。"]
+  },
+  /* ---- 多选 ×2 ---- */
+  {
+    type:"ms", tag:"多选 · BFCL 双判定",
+    text:"BFCL v3/v4 的 dual judging 包含哪些组件？（多选）",
+    options:["AST eval：函数名 + 参数与 ground truth 的结构化匹配","executable eval：对沙箱 API 实际执行调用","LLM-judge 对回答风格打分","人工众包偏好排序"],
+    correct:[0,1],
+    exp:["✅ 正确组件之一。原文 §2.1：AST eval — structural match of function name + parameters against ground truth。",
+         "✅ 正确组件之二。executable eval — actually running calls against sandboxed APIs。",
+         "❌ dual judging 不含 LLM-judge 风格打分。",
+         "❌ 原文未提及人工众包。"]
+  },
+  {
+    type:"ms", tag:"多选 · τ²-bench 现状",
+    text:"根据源文档，关于 τ²-bench 现状的正确说法有？（多选）",
+    options:["telecom 域对前沿模型已饱和至 99%+","区分度（discriminative power）已重新回到 retail 域","telecom 域引入了用户侧动作（user-side actions）","τ²-bench 已完全取代 τ-bench 的 retail 评测"],
+    correct:[0,1,2],
+    exp:["✅ 原文 §2.2：Telecom has since saturated at 99%+ for frontier models。",
+         "✅ 原文：discriminative power has shifted back to retail。",
+         "✅ 原文：adds a telecom domain with agent-controlled shared state and user-side actions。",
+         "❌ 过度泛化。retail 不但没被取代，反而重新成为主要区分维度。"]
+  },
+  /* ---- 判断 ×4 ---- */
+  {
+    type:"tf", tag:"判断 · 榜单数字矛盾？",
+    text:"BFCL 2026-07 快照显示 Qwen3.7 Max 75.0，而 Stanford AI Index 2026 报告 Claude Opus 4.5 为 77.5%——两处数字不一致，说明其中一方数据有误。",
+    correct:false,
+    exp:"✅ 正确理解：原文 §2.1 明确说明，该差异源于 snapshot timing 与 evaluation mode 的不同（不同 BFCL 版本 / agentic-vs-AST 模式组合），not a contradiction。\n❌ 常见误解：版本误判型错误——把跨快照、跨评测模式的数值差异当成数据错误。比较榜单数字前必须先核对版本与评测模式。"
+  },
+  {
+    type:"tf", tag:"判断 · ToolACE-R",
+    text:"ToolACE-R（arXiv:2504.01400）是 retrieval-aware 变体，训练模型从大规模候选工具池中选取工具，而非从固定短列表中选。",
+    correct:true,
+    exp:"✅ 正确理解：原文 §2.3：ToolACE-R — retrieval-aware variant, trains models to select tools from large candidate pools rather than fixed shortlists。\n❌ 常见误解：把它误认为只是 ToolACE 的数据量扩充版，或把「iterative self-critique 减少 32% LLM 调用」（那是 ToolACE-MT, arXiv:2508.12685）安到 ToolACE-R 头上——三部曲各自定位不要混淆。"
+  },
+  {
+    type:"tf", tag:"判断 · multi-turn vs single-turn",
+    text:"系统性发现表明：同一模型在 BFCL 上的 multi-turn 得分通常比 single-turn 高 5–10 分，因为多轮上下文提供了更多信息。",
+    correct:false,
+    exp:"✅ 正确理解：原文 §2.1：multi-turn scores run 5–10 points BELOW single-turn for the same model——瓶颈在 state tracking 与 error recovery。\n❌ 常见误解：因果倒置——「更多上下文 = 更高分」的直觉恰好相反；多轮引入的状态追踪与错误恢复负担使分数更低，方向不能记反。"
+  },
+  {
+    type:"tf", tag:"判断 · τ-bench 判定方式",
+    text:"τ-bench 的成功判定依赖 LLM-judge 对 agent 最终回答质量的评分。",
+    correct:false,
+    exp:"✅ 正确理解：原文 §2.2：success = exact match of final database state, NO LLM-judge。判定是数据库终态的精确匹配，完全确定性的。\n❌ 常见误解：边界条件忽略——把其他 agent  benchmark 常见的 LLM-as-judge 范式套到 τ-bench 上；τ-bench 恰恰以「无 LLM-judge」为设计要点。"
+  }
+];
+
+/* ============ 状态 ============ */
+const state = {
+  cur: 0,
+  answers: allQuestions.map(()=>null), // mc: idx; ms: [idx]; tf: bool; drag: [str...]
+  checked: allQuestions.map(()=>false),
+  correctFlag: allQuestions.map(()=>null),
+  lastIdx: 0
+};
+document.getElementById("scoreTotal").textContent = allQuestions.length;
+
+const $ = id => document.getElementById(id);
+const escapeNL = s => s.replace(/\n/g,"<br>");
+
+/* ============ 渲染 ============ */
+function render(){
+  const q = allQuestions[state.cur];
+  const c = $("questionCard");
+  c.classList.remove("hidden");
+  $("resultPanel").style.display = "none";
+  let html = `<span class="qtag">${q.tag}</span><div class="qtext">${state.cur+1}. ${renderQText(q)}</div>`;
+  if(q.type==="drag") html += renderDrag(q);
+  else if(q.type==="mc"||q.type==="ms") html += renderOpts(q);
+  else if(q.type==="tf") html += renderTF(q);
+  html += `<div class="q-actions">
+      <button class="btn primary" id="btnCheck">✔ 检查答案</button>
+      <button class="btn" id="btnResetQ">↺ 重置本题</button>
+    </div>
+    <div class="verdict" id="verdict"></div>`;
+  c.innerHTML = html;
+  bindQ(q);
+  updateProgress();
+  if(state.checked[state.cur]) showCheck(q, false);
+}
+
+function renderQText(q){
+  if(q.type!=="drag") return q.text;
+  return q.text.replace(/\{\{(\d)\}\}/g,(m,i)=>`<span class="blank" data-blank="${i}">${(state.answers[state.cur]||[])[i]||"＿＿＿"}</span>`);
+}
+
+function renderDrag(q){
+  const ans = state.answers[state.cur] || [];
+  let pool = `<div class="pool"><span class="pool-label">选项池（拖拽或点击术语，再点击空格填入；点击已填空格可退回）</span>`;
+  q.pool.forEach(p=>{
+    const used = ans.includes(p);
+    pool += `<span class="drag-item${used?' used':''}" draggable="${!used}" data-item="${p}">${p}</span>`;
+  });
+  pool += `</div><div class="blank-hint">共 ${q.blanks.length} 个空</div>`;
+  pool += `<div class="exp" id="dragExp"></div>`;
+  return pool;
+}
+
+function renderOpts(q){
+  const ans = state.answers[state.cur];
+  let h = "";
+  q.options.forEach((o,i)=>{
+    let cls = "opt";
+    if(q.type==="mc" && ans===i) cls += " sel";
+    if(q.type==="ms" && Array.isArray(ans) && ans.includes(i)) cls += " sel";
+    h += `<button class="${cls}" data-opt="${i}">${String.fromCharCode(65+i)}. ${o}</button>
+          <div class="exp" id="exp-${i}">${q.exp[i]}</div>`;
+  });
+  if(q.type==="ms") h += `<div class="blank-hint">多选题：点击切换选择，选完后点「检查答案」</div>`;
+  return h;
+}
+
+function renderTF(q){
+  const ans = state.answers[state.cur];
+  return `
+    <button class="opt${ans===true?' sel':''}" data-tf="true">✅ 正确</button>
+    <button class="opt${ans===false?' sel':''}" data-tf="false">❌ 错误</button>
+    <div class="exp" id="tfExp">${escapeNL(q.exp)}</div>`;
+}
+
+/* ============ 交互绑定 ============ */
+function bindQ(q){
+  const idx = state.cur;
+  if(q.type==="drag"){
+    bindDrag(q, idx);
+  } else if(q.type==="mc"||q.type==="ms"){
+    document.querySelectorAll("[data-opt]").forEach(b=>{
+      b.addEventListener("click", ()=>{
+        if(state.checked[idx]) return;
+        const i = +b.dataset.opt;
+        if(q.type==="mc"){ state.answers[idx]=i; }
+        else{
+          let a = Array.isArray(state.answers[idx])? [...state.answers[idx]] : [];
+          a = a.includes(i)? a.filter(x=>x!==i) : [...a,i];
+          state.answers[idx]=a;
+        }
+        render();
+      });
+    });
+  } else if(q.type==="tf"){
+    document.querySelectorAll("[data-tf]").forEach(b=>{
+      b.addEventListener("click", ()=>{
+        if(state.checked[idx]) return;
+        state.answers[idx] = (b.dataset.tf==="true");
+        render();
+      });
+    });
+  }
+  $("btnCheck").addEventListener("click", ()=>{ if(state.answers[idx]!==null){ state.checked[idx]=true; showCheck(q,true); updateScore(); } });
+  $("btnResetQ").addEventListener("click", ()=>{ state.answers[idx]=null; state.checked[idx]=false; state.correctFlag[idx]=null; render(); updateScore(); });
+}
+
+function bindDrag(q, idx){
+  let picked = null;
+  document.querySelectorAll(".drag-item").forEach(it=>{
+    it.addEventListener("dragstart", e=>{ picked = it.dataset.item; e.dataTransfer.setData("text/plain", picked); });
+    it.addEventListener("click", ()=>{ picked = it.dataset.item; document.querySelectorAll(".blank").forEach(b=>b.style.outline="2px solid var(--accent)"); });
+  });
+  document.querySelectorAll(".blank").forEach(bl=>{
+    bl.addEventListener("dragover", e=>e.preventDefault());
+    bl.addEventListener("drop", e=>{
+      e.preventDefault();
+      if(state.checked[idx]) return;
+      const item = e.dataTransfer.getData("text/plain");
+      fillBlank(q, idx, +bl.dataset.blank, item);
+    });
+    bl.addEventListener("click", ()=>{
+      if(state.checked[idx]) return;
+      const bi = +bl.dataset.blank;
+      let ans = state.answers[idx] ? [...state.answers[idx]] : new Array(q.blanks.length).fill(null);
+      if(ans[bi]){ ans[bi]=null; state.answers[idx]=ans.some(x=>x)?ans:null; render(); return; }
+      if(picked){ fillBlank(q, idx, bi, picked); }
+    });
+  });
+  document.querySelectorAll(".blank").forEach(b=>b.style.outline="");
+}
+
+function fillBlank(q, idx, bi, item){
+  if(!item) return;
+  let ans = state.answers[idx] ? [...state.answers[idx]] : new Array(q.blanks.length).fill(null);
+  while(ans.length<q.blanks.length) ans.push(null);
+  const prev = ans.indexOf(item);
+  if(prev>=0) ans[prev]=null;
+  ans[bi]=item;
+  state.answers[idx]=ans;
+  render();
+}
+
+/* ============ 判分 ============ */
+function isCorrect(q, ans){
+  if(ans===null||ans===undefined) return false;
+  if(q.type==="mc") return ans===q.correct;
+  if(q.type==="tf") return ans===q.correct;
+  if(q.type==="ms"){
+    if(!Array.isArray(ans)||ans.length!==q.correct.length) return false;
+    return q.correct.every(c=>ans.includes(c));
+  }
+  if(q.type==="drag"){
+    if(!Array.isArray(ans)) return false;
+    return q.blanks.every((b,i)=>ans[i]===b);
+  }
+  return false;
+}
+
+function showCheck(q, fresh){
+  const idx = state.cur;
+  const ans = state.answers[idx];
+  const ok = isCorrect(q, ans);
+  state.correctFlag[idx] = ok;
+  const v = $("verdict");
+  v.style.display="block";
+  v.className = "verdict " + (ok?"ok":"no");
+  v.textContent = ok ? "✅ 回答正确！" : "❌ 回答错误，查看解析：";
+  if(q.type==="mc"||q.type==="ms"){
+    document.querySelectorAll("[data-opt]").forEach(b=>{
+      const i = +b.dataset.opt;
+      b.disabled = true;
+      const isC = q.type==="mc" ? i===q.correct : q.correct.includes(i);
+      const isS = q.type==="mc" ? ans===i : (Array.isArray(ans)&&ans.includes(i));
+      if(isC) b.classList.add("correct");
+      else if(isS) b.classList.add("wrong");
+      const e = $("exp-"+i);
+      if(e){ e.classList.add("show"); e.classList.add(isC?"ok":"no"); }
+    });
+  } else if(q.type==="tf"){
+    document.querySelectorAll("[data-tf]").forEach(b=>{
+      b.disabled = true;
+      const val = b.dataset.tf==="true";
+      if(val===q.correct) b.classList.add("correct");
+      else if(val===ans) b.classList.add("wrong");
+    });
+    const e = $("tfExp"); if(e){ e.classList.add("show"); e.classList.add(ok?"ok":"no"); }
+  } else if(q.type==="drag"){
+    document.querySelectorAll(".blank").forEach(bl=>{
+      const bi = +bl.dataset.blank;
+      bl.classList.add((ans||[])[bi]===q.blanks[bi] ? "ok" : "no");
+    });
+    const e = $("dragExp");
+    if(e){ e.innerHTML = "<b>解析：</b>"+q.exp+"<br><b>正确答案：</b>"+q.blanks.join(" → "); e.classList.add("show"); e.classList.add(ok?"ok":"no"); }
+  }
+}
+
+/* ============ 进度/得分 ============ */
+function updateProgress(){
+  const n = allQuestions.length;
+  $("progressText").textContent = `第 ${state.cur+1} / ${n} 题`;
+  const done = state.checked.filter(Boolean).length;
+  $("progressPct").textContent = Math.round(done/n*100)+"%";
+  $("progressFill").style.width = (done/n*100)+"%";
+  $("answeredNow").textContent = done;
+}
+function updateScore(){
+  let s = 0;
+  allQuestions.forEach((q,i)=>{ if(state.checked[i] && state.correctFlag[i]) s++; });
+  $("scoreNow").textContent = s;
+  updateProgress();
+}
+
+/* ============ 导航 ============ */
+function goto(i){
+  state.cur = Math.max(0, Math.min(allQuestions.length-1, i));
+  state.lastIdx = state.cur;
+  render();
+}
+$("btnPrev").addEventListener("click", ()=>goto(state.cur-1));
+$("btnNext").addEventListener("click", ()=>goto(state.cur+1));
+
+/* ============ 总览 ============ */
+let ovFilter = "all";
+function renderThumbs(){
+  const g = $("thumbGrid");
+  g.innerHTML = "";
+  allQuestions.forEach((q,i)=>{
+    let st = "todo", mark = "⬜";
+    if(state.checked[i]){
+      if(state.correctFlag[i]){ st="ok"; mark="✅"; } else { st="no"; mark="❌"; }
+    }
+    if(ovFilter!=="all" && st!==ovFilter) return;
+    const d = document.createElement("div");
+    d.className = "thumb st-"+st + (i===state.cur?" cur":"");
+    d.innerHTML = `<div>${mark} ${i+1}</div><div class="t">${q.type==="tf"?"判断":q.type==="drag"?"填空":q.type==="ms"?"多选":"单选"}</div>`;
+    d.addEventListener("click", ()=>{ $("overlay").classList.remove("show"); goto(i); });
+    g.appendChild(d);
+  });
+  if(!g.children.length) g.innerHTML = `<p style="color:var(--muted);font-size:.85rem">该筛选条件下暂无题目</p>`;
+}
+$("btnOverview").addEventListener("click", ()=>{ renderThumbs(); $("overlay").classList.add("show"); });
+$("btnCloseOv").addEventListener("click", ()=>$("overlay").classList.remove("show"));
+$("overlay").addEventListener("click", e=>{ if(e.target===$("overlay")) $("overlay").classList.remove("show"); });
+document.querySelectorAll(".ov-filters [data-f]").forEach(b=>{
+  b.addEventListener("click", ()=>{
+    document.querySelectorAll(".ov-filters [data-f]").forEach(x=>x.classList.remove("active"));
+    b.classList.add("active");
+    ovFilter = b.dataset.f;
+    renderThumbs();
+  });
+});
+
+/* ============ 结果页 ============ */
+$("btnFinish").addEventListener("click", showResult);
+function showResult(){
+  let s = 0, done = 0;
+  allQuestions.forEach((q,i)=>{ if(state.checked[i]){ done++; if(state.correctFlag[i]) s++; } });
+  $("questionCard").classList.add("hidden");
+  const r = $("resultPanel");
+  r.style.display = "block";
+  $("resultScore").textContent = `${s} / ${allQuestions.length}`;
+  $("resultDetail").textContent = `已作答 ${done} 题，未答 ${allQuestions.length-done} 题。正确率 ${done?Math.round(s/done*100):0}%（按已答计）。`;
+}
+$("btnResultOverview").addEventListener("click", ()=>{ renderThumbs(); $("overlay").classList.add("show"); });
+$("btnResultContinue").addEventListener("click", ()=>{ goto(state.lastIdx); });
+
+/* ============ 洗牌（Fisher-Yates） ============ */
+function fisherYates(arr){
+  for(let i=arr.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]] = [arr[j],arr[i]];
+  }
+  return arr;
+}
+$("btnShuffle").addEventListener("click", ()=>{
+  allQuestions.forEach(q=>{
+    if(q.type==="mc"||q.type==="ms"){
+      const order = fisherYates(q.options.map((_,i)=>i));
+      const newOpts = order.map(i=>q.options[i]);
+      const newExp  = order.map(i=>q.exp[i]);
+      if(q.type==="mc"){
+        q.correct = order.indexOf(q.correct);
+      } else {
+        q.correct = q.correct.map(c=>order.indexOf(c)).sort((a,b)=>a-b);
+      }
+      q.options = newOpts; q.exp = newExp;
+    } else if(q.type==="drag"){
+      q.pool = fisherYates([...q.pool]);
+    }
+  });
+  for(let i=0;i<allQuestions.length;i++){
+    state.answers[i]=null; state.checked[i]=false; state.correctFlag[i]=null;
+  }
+  updateScore();
+  goto(0);
+});
+
+/* ============ 重置所有 ============ */
+$("btnResetAll").addEventListener("click", resetAll);
+function resetAll(){
+  for(let i=0;i<allQuestions.length;i++){
+    state.answers[i]=null; state.checked[i]=false; state.correctFlag[i]=null;
+  }
+  $("topbar").classList.remove("hidden");
+  $("progressOuter").classList.remove("hidden");
+  $("navBar").classList.remove("hidden");
+  $("questionCard").classList.remove("hidden");
+  $("resultPanel").style.display = "none";
+  $("overlay").classList.remove("show");
+  updateScore();
+  goto(0);
+}
+
+/* ============ 初始化 ============ */
+render();
+updateScore();
+</script>
+</body>
+</html>

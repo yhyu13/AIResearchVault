@@ -47,8 +47,12 @@ created: YYYY-MM-DD
 
 | 主题 | 论文数 | 最近更新 |
 |------|--------|----------|
-| Game-AI | 1 | 2026-07-02 |
-| Agent Harness | 1 | 2026-06-29 |
+| Game-AI | 22 | 2026-07-20 |
+| Agent Harness | 8 | 2026-07-20 |
+| World Models | 7 | 2026-07-20 |
+| Human-AI Interaction | 8 | 2026-07-20 |
+| Game Benchmarks | 6 | 2026-07-20 |
+| RL-in-Games / Synthetic Envs | 8 | 2026-07-20 |
 | Sandbox | 6 | 2026-07-15 |
 | Tool Calling | 6 | 2026-07-15 |
 | Memory | 8 | 2026-07-15 |
@@ -98,6 +102,21 @@ created: YYYY-MM-DD
 | [[01d-memory-latest]] | [🎯 自测](01d-memory-latest.html) | Mem0, Zep/Graphiti, A-MEM, Memory-R1, HiMem, MemP, LEGOMem, MemAgent | 记忆系统 |
 | [[01d-tool_calling-latest]] | [🎯 自测](01d-tool_calling-latest.html) | When2Tool, Atomix, PASTE/SPORK, ReTool, ToolACE-R, Tool Use Survey | 工具调用 |
 | [[01d-sandbox-latest]] | [🎯 自测](01d-sandbox-latest.html) | LLM-in-Sandbox, Crab, SafeArena, ceLLMate, EnvSimBench, Agent-World | 沙箱安全 |
+
+---
+
+## Game-AI × Harness 最新论文库（2026-07-20 新建）
+
+覆盖 **游戏 Agent 执行**、**世界模型**、**人机交互**、**Harness 工程**、**游戏基准**、**合成环境 RL** 六大方向，共 45 篇 2025–2026 最新论文。
+
+| Markdown | QA HTML | 内容 | 方向 |
+|----------|---------|------|------|
+| [[01e-game-agent-execution-latest]] | [🎯 自测](01e-game-agent-execution-latest.html) | MindForge, Optimus-3, ODYSSEY, NitroGen, FlashAdventure, Orak, GameWorld, OmniGameArena | 游戏 Agent 执行 |
+| [[01e-world-models-latest]] | [🎯 自测](01e-world-models-latest.html) | Genie 3, MineWorld, Matrix-Game 2.0, Hunyuan-GameCraft, Vid2World, IGV Survey, WorldPlay | 世界模型 |
+| [[01e-human-ai-interaction-latest]] | [🎯 自测](01e-human-ai-interaction-latest.html) | When Agents Lie, C2C, Among Us, Beyond Survival, Scheming, Game-Theory Survey, R3D2, Bounded Autonomy | 人机交互 |
+| [[01e-agent-harness-latest]] | [🎯 自测](01e-agent-harness-latest.html) | Context Engineering Survey, ACE, MAST, AFlow, Confucius, GCC, RepoST | Harness 工程 |
+| [[01e-game-benchmarks-latest]] | [🎯 自测](01e-game-benchmarks-latest.html) | VideoGameBench, Orak, TextQuests, GVGAI-LLM, FlashAdventure, VisEscape | 游戏基准 |
+| [[01e-rl-games-envs-latest]] | [🎯 自测](01e-rl-games-envs-latest.html) | SPIRAL, Absolute Zero, R-Zero, Vision-Zero, RLVE, GEM, AutoForge, GIFT | 合成环境 RL |
 
 ---
 

@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>游戏 Agent 执行方向 · 面试 QA 卡牌</title>
+<style>
+  :root{--bg:#faf7f2;--card:#ffffff;--ink:#33302b;--muted:#8a8478;--accent:#b0703a;--accent2:#5b7a5e;--bad:#b0483e;--line:#e6dfd4;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--ink);line-height:1.7;padding:20px;}
+  .container{max-width:860px;margin:0 auto;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:28px 32px;box-shadow:0 2px 12px rgba(0,0,0,.05);}
+  header h1{font-size:1.5rem;color:var(--accent);margin-bottom:4px;}
+  header p{color:var(--muted);font-size:.9rem;}
+  .toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0;}
+  button{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:.88rem;cursor:pointer;transition:.15s;}
+  button:hover{opacity:.85}
+  button.ghost{background:#efe9de;color:var(--ink);}
+  button:disabled{opacity:.4;cursor:not-allowed;}
+  .score-bar{display:flex;justify-content:space-between;align-items:center;font-size:.9rem;color:var(--muted);margin-bottom:6px;}
+  .progress-bar{height:8px;background:#eee6d8;border-radius:99px;overflow:hidden;margin-bottom:18px;}
+  .progress-bar>div{height:100%;background:var(--accent);width:0;transition:.3s;}
+  .tabs{display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap;}
+  .tabs button{background:#efe9de;color:var(--ink);}
+  .tabs button.active{background:var(--accent);color:#fff;}
+  .qcard{border:1px solid var(--line);border-radius:10px;padding:20px;margin-bottom:16px;}
+  .qtag{display:inline-block;font-size:.72rem;background:#f0e8db;color:var(--accent);border-radius:6px;padding:2px 8px;margin-bottom:8px;}
+  .qtext{font-weight:600;margin-bottom:14px;}
+  .opt{display:block;width:100%;text-align:left;background:#faf6ee;border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin-bottom:8px;color:var(--ink);font-size:.92rem;cursor:pointer;}
+  .opt.selected{background:#f3e2cd;border-color:var(--accent);}
+  .opt.correct{background:#e3efe4;border-color:var(--accent2);}
+  .opt.wrong{background:#f5e0de;border-color:var(--bad);}
+  .expl{font-size:.85rem;background:#f6f2ea;border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:8px 12px;margin:4px 0 10px;display:none;}
+  .expl.show{display:block;}
+  .blank{display:inline-block;min-width:110px;border-bottom:2px dashed var(--accent);text-align:center;padding:0 8px;margin:0 4px;border-radius:4px;background:#fdfaf5;cursor:pointer;}
+  .blank.filled{background:#f3e2cd;}
+  .pool{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0;}
+  .chip{background:#fff;border:1px solid var(--accent);color:var(--accent);border-radius:99px;padding:5px 14px;font-size:.85rem;cursor:grab;user-select:none;}
+  .chip.used{opacity:.35;pointer-events:none;}
+  .tf-row{display:flex;gap:10px;}
+  .tf-row .opt{width:auto;flex:1;text-align:center;}
+  .result-ok{color:var(--accent2);font-weight:700;}
+  .result-bad{color:var(--bad);font-weight:700;}
+  #dashboard-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;z-index:10;}
+  #dashboard-overlay.open{display:block;}
+  #dashboard{position:absolute;top:6%;left:50%;transform:translateX(-50%);width:min(680px,92vw);max-height:84vh;overflow:auto;background:#fff;border-radius:14px;padding:24px;}
+  .dash-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:8px;margin-top:14px;}
+  .thumb{border:1px solid var(--line);border-radius:8px;padding:6px 4px;text-align:center;font-size:.72rem;cursor:pointer;background:#faf6ee;}
+  .thumb.ok{background:#e3efe4;border-color:var(--accent2);}
+  .thumb.bad{background:#f5e0de;border-color:var(--bad);}
+  .filters{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;}
+  #result-page{display:none;text-align:center;padding:40px 0;}
+  #result-page h2{color:var(--accent);font-size:2rem;}
+  .hidden{display:none!important;}
+  .nav{display:flex;justify-content:space-between;margin-top:8px;}
+  @media(max-width:600px){.container{padding:18px;}}
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>🎮 游戏 Agent 执行方向 · 面试 QA 卡牌</h1>
+    <p>覆盖 8 篇论文：MindForge / Optimus-3 / ODYSSEY / NitroGen / FlashAdventure / Orak / GameWorld / OmniGameArena ｜ 配套笔记：<a href="./01e-game-agent-execution-latest.md">01e-game-agent-execution-latest.md</a></p>
+  </header>
+  <div class="toolbar">
+    <button onclick="openDashboard()">📊 题目总览</button>
+    <button class="ghost" onclick="shuffleAll()">🎲 重新洗牌选项</button>
+    <button class="ghost" onclick="resetAll()">🔄 重置所有分数</button>
+  </div>
+  <div class="score-bar"><span id="score-text">得分 0 / 0</span><span id="progress-text"></span></div>
+  <div class="progress-bar"><div id="pbar"></div></div>
+  <div class="tabs" id="tabs"></div>
+  <div id="quiz"></div>
+  <div class="nav">
+    <button class="ghost" onclick="prevQ()">← 上一题</button>
+    <button class="ghost" onclick="nextQ()">下一题 →</button>
+    <button onclick="showResult()">查看结果</button>
+  </div>
+  <div id="result-page">
+    <h2 id="final-score"></h2>
+    <p id="final-detail" style="color:var(--muted);margin:10px 0 20px;"></p>
+    <button onclick="openDashboard()">返回查看（总览）</button>
+    <button class="ghost" onclick="continueQuiz()">继续做题</button>
+    <button class="ghost" onclick="resetAll()">重新开始</button>
+  </div>
+</div>
+
+<div id="dashboard-overlay">
+  <div id="dashboard">
+    <h3>📊 题目总览</h3>
+    <div class="filters">
+      <button class="ghost" onclick="renderDash('all')">全部</button>
+      <button class="ghost" onclick="renderDash('ok')">✅ 正确</button>
+      <button class="ghost" onclick="renderDash('bad')">❌ 错误</button>
+      <button class="ghost" onclick="renderDash('todo')">⬜ 未答</button>
+      <button class="ghost" style="margin-left:auto" onclick="closeDashboard()">关闭 ✕</button>
+    </div>
+    <div class="dash-grid" id="dash-grid"></div>
+  </div>
+</div>
+
+<script>
+/* ============ 题目数据 ============ */
+const dragQuestions = [
+ {tag:"ODYSSEY", text:"Odyssey 的技能库包含 {0} 个 primitive skills 与 {1} 个 compositional skills，agent 采用 {2} 三角色架构。",
+  answers:["40","183","planner-actor-critic"], pool:["40","183","planner-actor-critic","60","ReAct","teacher-student"],
+  expl:["primitive skills 为 40 个（60 是 Optimus-3 开放式成功率，干扰项）。","compositional skills 为 183 个。","架构是 planner-actor-critic 三 LLM 分工；ReAct 是 prompting 策略，teacher-student 是蒸馏范式。"]},
+ {tag:"Optimus-3", text:"Optimus-3 的 Dual-Router MoE 中，{0} 负责任务级参数解耦防止任务干扰，{1} 动态调节推理深度形成 Fast Path / Deep Path。",
+  answers:["Task Router","Layer Router"], pool:["Task Router","Layer Router","Skill Router","Token Router"],
+  expl:["Task Router 按任务类型路由到不同 expert 参数块。","Layer Router 决定走浅层（System 1）还是深层（System 2）。"]},
+ {tag:"MindForge", text:"MindForge 的结构化 Theory of Mind 表示把 {0}、belief、{1}、action 串联成链条。",
+  answers:["percept","desire"], pool:["percept","desire","reward","embedding"],
+  expl:["链条为 percept→belief→desire→action。","desire 表示目标/意图；reward 是环境信号，不属于 ToM 内部状态链。"]},
+ {tag:"NitroGen", text:"NitroGen 在 {0} 小时、{1} 款游戏的实玩视频上训练，采用 {2} 训练范式。",
+  answers:["40000","1000+","behavior cloning"], pool:["40000","1000+","behavior cloning","4000","100","PPO"],
+  expl:["4 万小时实玩视频。","覆盖 1000+ 款游戏。","统一 vision-action 模型用大规模行为克隆；PPO 是在线 RL，NitroGen 无在线交互。"]},
+ {tag:"GameWorld", text:"GameWorld 的评分基于序列化 {0} 状态计算 0/1 Success Rate 与 [0,1] normalized {1}，不依赖截图推断或 LLM judge。",
+  answers:["gameAPI","Progress"], pool:["gameAPI","Progress","screenshot","Reward"],
+  expl:["直接读 gameAPI 状态（分数、坐标、生命、金币、检查点）。","Progress 是部分分指标，比二元成功率细粒度。"]},
+ {tag:"OmniGameArena", text:"OmniGameArena 的 Improvement Dynamics Curve 由 {0} LLM 在多轮中精炼有界的 {1}，并在 held-out 任务变体上验证泛化。",
+  answers:["reflector","skill prompt"], pool:["reflector","skill prompt","actor","system prompt"],
+  expl:["tool-using reflector LLM 读取表现并修改 prompt。","精炼对象是有界（大小/结构受限）的 skill prompt，防止无限堆 prompt。"]},
+];
+
+const singleQuestions = [
+ {tag:"MindForge", q:"MindForge 在 instructive 设定下，open-weight LLM 驱动的 agent 相比 Voyager 基线的表现是？",
+  options:["持平，仅通信更流畅","科技树 milestone 达 1.5×","仅在协作设定下超越","科技树 milestone 达 3×、unique items 达 2.3×"],
+  correct:3,
+  expl:["❌ 是显著超越而非持平。","❌ 数字为 3×。","❌ instructive 设定下已显著超越。","✅ 正确：3× tech-tree milestones、2.3× unique items。"]},
+ {tag:"Optimus-3", q:"DGRPO 相对 GRPO 的核心改进是？",
+  options:["把 batch size 扩大一倍","过程-结果双粒度稠密奖励，保证 thinking trace 与 final answer 一致","去掉 KL 惩罚项","只训练 Layer Router"],
+  correct:1,
+  expl:["❌ 与 batch size 无关。","✅ 正确：对 thinking 与 answer 分别给稠密监督（process-outcome co-supervision），含 Dependency-Aware Synthesis Reward 与 Hallucination-Aware Consistency Reward。","❌ 并非去掉 KL。","❌ DGRPO 是 RL 算法而非结构修改。"]},
+ {tag:"Optimus-3", q:"Optimus-3 开放式任务的成功率约为？",
+  options:["90%","75%","60%","40%"],
+  correct:2,
+  expl:["❌ 过高。","❌ 过高。","✅ 正确：60%，论文同时强调复杂任务仍远未解决。","❌ 过低。"]},
+ {tag:"ODYSSEY", q:"Odyssey 技能库路线的本质是？",
+  options:["技能库即 API 层：收缩动作空间以换取低幻觉率与稳定性","让 LLM 直接生成 Mineflayer 原始代码以最大化自由度","用 RL 自动发现所有技能","完全不用 LLM 执行动作"],
+  correct:0,
+  expl:["✅ 正确：LLM 在技能库中选择/组合技能，动作空间从'任意程序'收缩为'有限 API 调用'。","❌ 恰恰相反，直接生成原始代码是 Voyager 式做法。","❌ 技能库为人工构建，与 Voyager 自动发现相对。","❌ 动作仍由 LLM 规划调用。"]},
+ {tag:"NitroGen", q:"NitroGen 迁移到未见游戏时，任务成功率相对从零训练最高提升约？",
+  options:["+5%","+20%","+52%","+100%"],
+  correct:2,
+  expl:["❌ 低估。","❌ 低估。","✅ 正确：最高 +52%。","❌ 夸大。"]},
+ {tag:"FlashAdventure", q:"FlashAdventure 提出的 observation-behavior gap 指的是？",
+  options:["观察分辨率与动作精度的差距","训练环境与评测环境的差距","人类与 agent 的反应速度差距","早前观察到的信息要在很久之后才能用上的时间错配"],
+  correct:3,
+  expl:["❌ 与分辨率无关。","❌ 那是 domain gap。","❌ 与反应速度无关。","✅ 正确：如'先审问嫌疑人、后发现其无罪'——信息的时间性管理是长程 agent 真瓶颈。"]},
+ {tag:"Orak", q:"Orak 的统一接入层基于什么协议？",
+  options:["gRPC","OpenAI Function Calling","Model Context Protocol (MCP)","WebSocket 自定义协议"],
+  correct:2,
+  expl:["❌ 非 gRPC。","❌ 非 Function Calling。","✅ 正确：游戏即 MCP server、agent 即 MCP client，plug-and-play。","❌ 非自定义。"]},
+ {tag:"GameWorld", q:"GameWorld 实验中两类接口的对比结论是？",
+  options:["computer-use（原始键鼠）整体显著优于 semantic action","semantic action 接口整体显著优于 raw computer-use，低层控制是瓶颈","两者完全持平","只有 LLM judge 能区分两者"],
+  correct:1,
+  expl:["❌ 方向相反。","✅ 正确：抽象动作空间用人写的状态机换模型可靠性。","❌ 并非持平。","❌ GameWorld 恰恰拒绝 LLM judge。"]},
+ {tag:"OmniGameArena", q:"OmniGameArena 的 held-out 变体验证揭示了什么现象？",
+  options:["skill prompt 学到的技能完美泛化","反思学到的 skill 在 held-out 变体上普遍衰减，暴露记忆式改进的脆弱性","商业 VLM 全面输给开源 VLM","PvP 模式下 IDC 曲线必然上升"],
+  correct:1,
+  expl:["❌ 恰恰相反。","✅ 正确：区分'记住答案'与'学会技能'，prompt 式改进泛化脆弱。","❌ 无此结论。","❌ 无必然性。"]},
+ {tag:"综合", q:"把游戏当作 embodied AI 规模化数据源、走'数据规模化 + 开源基座'路线的论文是？",
+  options:["MindForge","FlashAdventure","NitroGen","GameWorld"],
+  correct:2,
+  expl:["❌ MindForge 是 ToM 架构工作。","❌ FlashAdventure 是基准。","✅ 正确：NitroGen 用 4 万小时/1000+ 游戏视频训练 vision-action 基础模型并全开源。","❌ GameWorld 是评测基准。"]},
+];
+
+const multiQuestions = [
+ {tag:"MindForge", q:"MindForge 的三大组件包括哪些？（多选）",
+  options:["结构化 Theory of Mind 表示","自然语言 inter-agent communication","多组件 memory 系统","Dual-Router MoE","DGRPO 强化学习","behavior cloning 数据集"],
+  correct:[0,1,2],
+  expl:["✅ ToM 表示：percept→belief→desire→action。","✅ Mineflayer + 自建 communication server。","✅ 情景/语义等多组件记忆。","❌ 那是 Optimus-3 的架构。","❌ 那是 Optimus-3 的 RL 算法。","❌ 那是 NitroGen 的路线。"]},
+ {tag:"Optimus-3", q:"Optimus-3 在哪些 System 2 任务上超越 SOTA？（多选）",
+  options:["Planning (+21%)","Captioning (+66%)","Embodied QA (+76%)","Grounding (3.4×)","Reflection (+18%)","System 1 长程动作 (+50%)"],
+  correct:[0,1,2,3,4],
+  expl:["✅ Planning +21%。","✅ Captioning +66%。","✅ Embodied QA +76%。","✅ Grounding 3.4×。","✅ Reflection +18%。","❌ System 1 长程动作仅 +3%。"]},
+ {tag:"Orak", q:"Orak 的评测体系包含哪些维度？（多选）",
+  options:["game leaderboards","LLM battle arenas（Elo 式对战）","agentic 模块消融","LLM-as-judge 主观打分","人类玩家众包评分","Improvement Dynamics Curve"],
+  correct:[0,1,2],
+  expl:["✅ 排行榜。","✅ 两两对战处理无绝对分数的对弈类游戏。","✅ 模态 × 策略 × 微调的系统消融。","❌ 无此设计。","❌ 无众包评分。","❌ IDC 是 OmniGameArena 的协议。"]},
+ {tag:"GameWorld", q:"GameWorld 指出 MLLM 游戏 agent 面临的三大挑战是？（多选）",
+  options:["低延迟要求","稀疏反馈","不可逆错误","显存不足","多语言支持","反作弊系统"],
+  correct:[0,1,2],
+  expl:["✅ 低延迟。","✅ 稀疏反馈。","✅ 不可逆错误。","❌ 非论文所列挑战。","❌ 无关。","❌ 无关。"]},
+ {tag:"OmniGameArena", q:"OmniGameArena 的 UE5 游戏覆盖了哪些模式？（多选）",
+  options:["Solo（7 款）","PvP（3 款）","Coop（2 款）","MMO 百人团战","回合制战棋","文字冒险"],
+  correct:[0,1,2],
+  expl:["✅ Solo 7 款。","✅ PvP 3 款。","✅ Coop 2 款。","❌ 无 MMO。","❌ 未覆盖。","❌ 未覆盖。"]},
+ {tag:"综合", q:"2025–2026 游戏 agent 评测的三大新范式（按本方向横向观察）包括？（多选）",
+  options:["GameWorld 的状态断言可验证评分","OmniGameArena 的 IDC 改进动态曲线","Orak 的 MCP 统一标准化接口","纯 LLM-as-judge 打分","单游戏单次 cold-start 分数","人类试玩录像对比"],
+  correct:[0,1,2],
+  expl:["✅ 可验证。","✅ 动态。","✅ 标准化。","❌ 正是被反对的旧范式。","❌ 正是被超越的旧范式。","❌ 非新范式。"]},
+];
+
+const trueFalseQuestions = [
+ {tag:"MindForge", q:"MindForge 依赖 GPT-4 等闭源大模型才能超过 Voyager 基线。", correct:false,
+  expl:"✅ 正确理解：MindForge 的卖点恰恰是 open-weight LLM 即可显著超越 Voyager——架构设计（ToM + 通信 + memory）补偿模型能力差距。\n❌ 常见误解：把 Voyager 谱系默认为'必须 GPT-4'。",
+  follow:"追问：open-weight 模型为什么原本在 Voyager 框架下崩溃？→ 答：Voyager 的 prompt 工程与代码生成深度依赖 GPT-4 能力，换小模型后基础任务即崩溃；MindForge 用显式 ToM 结构降低对模型裸能力的要求。"},
+ {tag:"Optimus-3", q:"Optimus-3 的 Layer Router 决定推理深度，Fast Path 对应 System 1 反射式动作。", correct:true,
+  expl:"✅ 正确理解：Layer Router 动态调节推理深度——浅层 Fast Path 走 System 1，深层 Deep Path 走 System 2，本质是 compute allocation。\n❌ 常见误解：认为双系统是两个独立模型——实际是单一模型内的路由。",
+  follow:"追问：Task Router 与 Layer Router 的分工？→ 答：Task Router 任务级参数解耦防干扰；Layer Router 层级决策推理深度。"},
+ {tag:"ODYSSEY", q:"Odyssey 的技能库是 agent 在环境中自动发现的。", correct:false,
+  expl:"✅ 正确理解：Odyssey 的技能库（40 primitive + 183 compositional）为人工构建，代表'手工技能 API'路线。\n❌ 常见误解：与 Voyager 的自动技能发现混淆——两者是相对的取舍：手工换稳定性，自动换开放性。",
+  follow:"追问：手工路线的天花板？→ 答：扩展成本高；可能存在'手工 primitive + 自动发现 compositional'的混合路线。"},
+ {tag:"NitroGen", q:"NitroGen 通过在线 RL 与游戏环境交互来训练策略。", correct:false,
+  expl:"✅ 正确理解：NitroGen 是纯大规模 behavior cloning——从视频反推动作标注后离线训练，无在线交互与探索机制，长程规划与信用分配能力有限。\n❌ 常见误解：看到'游戏 agent 基础模型'就联想到 RL。",
+  follow:"追问：BC 路线的自然下一步？→ 答：与 LLM 高层规划分层融合——基础模型管 motor control，LLM 管 mission planning。"},
+ {tag:"FlashAdventure", q:"FlashAdventure 中 CUA-as-a-Judge 是用 computer-use agent 自动评判游戏进度的评测器。", correct:true,
+  expl:"✅ 正确理解：CUA-as-a-Judge 连接 LLM-as-judge 与 state-based 验证两派，但评判可靠性受 judge 模型自身能力约束。\n❌ 常见误解：认为是人工标注或纯状态断言——它介于两者之间。",
+  follow:"追问：judge 的偏差如何量化？→ 答：需度量假阴性（agent 成功但 judge 未识别）与假阳性，judge 自己也要'会玩'。"},
+ {tag:"Orak", q:"Orak 的专家轨迹微调数据集来自人类玩家。", correct:false,
+  expl:"✅ 正确理解：专家轨迹来自 LLM 而非人类，数据质量上限即生成模型水平，这是论文明确承认的局限。\n❌ 常见误解：'专家'二字让人联想到人类专家——此处指 LLM 生成的专家级轨迹。",
+  follow:"追问：LLM 轨迹 SFT 的风险？→ 答：会把教师模型的失败模式蒸馏进去；与在线 RL 相比样本效率与上限存疑。"},
+ {tag:"GameWorld", q:"GameWorld 的 Progress 指标取值范围是 [0,1]，比二元 Success Rate 更细粒度。", correct:true,
+  expl:"✅ 正确理解：Progress 按状态轨迹归一化，0/1 Success 之外提供部分分；但跨游戏归一化的统计可比性仍是开放问题。\n❌ 常见误解：认为只有成功率一个指标。",
+  follow:"追问：状态断言验证能否推广到开放世界游戏？→ 答：困难——Minecraft 无显式 score，需要'目标即状态谓词'的任务规范语言。"},
+ {tag:"OmniGameArena", q:"OmniGameArena 只报告 VLM agent 的单次 cold-start 分数。", correct:false,
+  expl:"✅ 正确理解：核心创新恰恰是超越 cold-start——IDC 协议测量分数随反思轮数的演化及 skill 在 held-out 变体上的泛化。\n❌ 常见误解：传统基准只报单点分数，OmniGameArena 正是为打破这一点而生。",
+  follow:"追问：bounded skill prompt 为什么'有界'？→ 答：限制大小/结构，防止无限堆 prompt 造成的伪改进。"},
+];
+
+/* ============ 引擎 ============ */
+const types=[["drag","拖拽填空",dragQuestions],["single","单选题",singleQuestions],["multi","多选题",multiQuestions],["tf","判断题",trueFalseQuestions]];
+let cur={type:"drag",idx:0};
+const state={}; // key -> {answered, ok}
+const key=(t,i)=>t+"-"+i;
+function totalMax(){return dragQuestions.length+singleQuestions.length+multiQuestions.length+trueFalseQuestions.length;}
+function scoreNow(){let s=0;for(const k in state)if(state[k].ok)s++;return s;}
+function answeredCount(){return Object.keys(state).length;}
+function updateBar(){
+  document.getElementById("score-text").textContent=`得分 ${scoreNow()} / ${totalMax()}`;
+  document.getElementById("progress-text").textContent=`已答 ${answeredCount()} / ${totalMax()}`;
+  document.getElementById("pbar").style.width=(answeredCount()/totalMax()*100)+"%";
+}
+function renderTabs(){
+  const el=document.getElementById("tabs");el.innerHTML="";
+  types.forEach(([t,name,arr])=>{
+    const b=document.createElement("button");b.textContent=name+" ("+arr.length+")";
+    if(t===cur.type)b.classList.add("active");
+    b.onclick=()=>{cur={type:t,idx:0};render();};
+    el.appendChild(b);
+  });
+}
+function markResult(k,ok){state[k]={answered:true,ok};updateBar();}
+
+function renderDrag(i){
+  const q=dragQuestions[i],k=key("drag",i);
+  const parts=q.text.split(/\{(\d)\}/);
+  let html=`<div class="qcard"><span class="qtag">拖拽填空 · ${q.tag}</span><div class="qtext">`;
+  let blanks=[];
+  parts.forEach((p,j)=>{
+    if(j%2===0)html+=p;
+    else{blanks.push(+p);html+=`<span class="blank" data-b="${p}" onclick="blankClick(this)"></span>`;}
+  });
+  html+=`</div><div class="pool" id="pool"></div>
+    <div id="drag-expls"></div>
+    <button onclick="checkDrag(${i})">检查答案</button>
+    <button class="ghost" onclick="resetDrag(${i})">重置</button></div>`;
+  document.getElementById("quiz").innerHTML=html;
+  const pool=document.getElementById("pool");
+  q.pool.forEach(w=>{
+    const c=document.createElement("span");c.className="chip";c.textContent=w;
+    c.onclick=()=>{window._sel=window._sel===c?null:c;
+      document.querySelectorAll(".chip").forEach(x=>x.style.outline="");
+      if(window._sel)window._sel.style.outline="2px solid var(--accent)";};
+    pool.appendChild(c);
+  });
+  if(state[k])showDragResult(i,state[k].ok);
+}
+function blankClick(el){
+  if(!window._sel)return;
+  if(el.dataset.word){ // return word to pool
+    const old=[...document.querySelectorAll(".chip")].find(c=>c.textContent===el.dataset.word);
+    if(old)old.classList.remove("used");
+  }
+  el.textContent=window._sel.textContent;el.dataset.word=window._sel.textContent;el.classList.add("filled");
+  window._sel.classList.add("used");window._sel.style.outline="";window._sel=null;
+}
+function checkDrag(i){
+  const q=dragQuestions[i];let ok=true;
+  document.querySelectorAll(".blank").forEach(b=>{
+    if(b.dataset.word!==q.answers[+b.dataset.b])ok=false;
+  });
+  markResult(key("drag",i),ok);showDragResult(i,ok);
+}
+function showDragResult(i,ok){
+  const q=dragQuestions[i];
+  const box=document.getElementById("drag-expls");
+  box.innerHTML=`<p class="${ok?'result-ok':'result-bad'}">${ok?'✅ 回答正确！':'❌ 回答错误（正确答案：'+q.answers.join(' / ')+'）'}</p>`+
+    q.expl.map((e,j)=>`<div class="expl show"><b>空${j+1}：</b>${e}</div>`).join("");
+}
+function resetDrag(i){
+  delete state[key("drag",i)];updateBar();renderDrag(i);
+}
+
+function renderChoice(type,i){
+  const arr=type==="single"?singleQuestions:multiQuestions;
+  const q=arr[i],k=key(type,i),multi=type==="multi";
+  let html=`<div class="qcard"><span class="qtag">${multi?'多选题':'单选题'} · ${q.tag}</span>
+    <div class="qtext">${q.q}${multi?'（多选）':''}</div>`;
+  q.options.forEach((o,j)=>{
+    html+=`<button class="opt" data-j="${j}" onclick="optClick(this,${multi})">${o}</button><div class="expl" id="e-${j}">${q.expl[j]}</div>`;
+  });
+  html+=`<button onclick="checkChoice('${type}',${i})">检查答案</button>
+    <button class="ghost" onclick="resetChoice('${type}',${i})">重置</button>
+    <div id="res"></div></div>`;
+  document.getElementById("quiz").innerHTML=html;
+}
+function optClick(el,multi){
+  if(!multi){el.parentElement.querySelectorAll(".opt").forEach(x=>x.classList.remove("selected"));}
+  el.classList.toggle("selected");
+}
+function checkChoice(type,i){
+  const arr=type==="single"?singleQuestions:multiQuestions;
+  const q=arr[i];
+  const sel=[...document.querySelectorAll(".opt")].filter(o=>o.classList.contains("selected")).map(o=>+o.dataset.j);
+  const corr=Array.isArray(q.correct)?q.correct:[q.correct];
+  const ok=sel.length===corr.length&&sel.every(s=>corr.includes(s));
+  document.querySelectorAll(".opt").forEach(o=>{
+    const j=+o.dataset.j;
+    if(corr.includes(j))o.classList.add("correct");
+    else if(o.classList.contains("selected"))o.classList.add("wrong");
+    o.disabled=true;
+  });
+  document.querySelectorAll(".expl").forEach(e=>e.classList.add("show"));
+  markResult(key(type,i),ok);
+  document.getElementById("res").innerHTML=`<p class="${ok?'result-ok':'result-bad'}">${ok?'✅ 回答正确！':'❌ 回答错误'}</p>`;
+}
+function resetChoice(type,i){delete state[key(type,i)];updateBar();renderChoice(type,i);}
+
+function renderTF(i){
+  const q=trueFalseQuestions[i];
+  let html=`<div class="qcard"><span class="qtag">判断题 · ${q.tag}</span>
+    <div class="qtext">${q.q}</div><div class="tf-row">
+    <button class="opt" data-v="true" onclick="tfClick(this)">✔ 正确</button>
+    <button class="opt" data-v="false" onclick="tfClick(this)">✘ 错误</button></div>
+    <div class="expl" id="tf-e">${q.expl.replace(/\n/g,"<br>")}</div>
+    <div class="expl" id="tf-f"><b>追问链：</b>${q.follow}</div>
+    <button onclick="checkTF(${i})">检查答案</button>
+    <button class="ghost" onclick="resetTF(${i})">重置</button>
+    <div id="res"></div></div>`;
+  document.getElementById("quiz").innerHTML=html;
+}
+function tfClick(el){el.parentElement.querySelectorAll(".opt").forEach(x=>x.classList.remove("selected"));el.classList.add("selected");}
+function checkTF(i){
+  const q=trueFalseQuestions[i];
+  const sel=document.querySelector(".opt.selected");
+  if(!sel)return;
+  const ok=(sel.dataset.v==="true")===q.correct;
+  document.querySelectorAll(".opt").forEach(o=>{
+    const v=(o.dataset.v==="true")===q.correct;
+    if(v)o.classList.add("correct");else if(o.classList.contains("selected"))o.classList.add("wrong");
+    o.disabled=true;
+  });
+  document.getElementById("tf-e").classList.add("show");
+  document.getElementById("tf-f").classList.add("show");
+  markResult(key("tf",i),ok);
+  document.getElementById("res").innerHTML=`<p class="${ok?'result-ok':'result-bad'}">${ok?'✅ 回答正确！':'❌ 回答错误'}</p>`;
+}
+function resetTF(i){delete state[key("tf",i)];updateBar();renderTF(i);}
+
+function render(){
+  document.getElementById("result-page").style.display="none";
+  document.getElementById("quiz").style.display="";
+  renderTabs();
+  if(cur.type==="drag")renderDrag(cur.idx);
+  else if(cur.type==="tf")renderTF(cur.idx);
+  else renderChoice(cur.type,cur.idx);
+  updateBar();
+}
+function stepQ(d){
+  const arr=types.find(t=>t[0]===cur.type)[2];
+  cur.idx+=d;
+  if(cur.idx<0)cur.idx=0;
+  if(cur.idx>=arr.length)cur.idx=arr.length-1;
+  render();
+}
+function prevQ(){stepQ(-1);}
+function nextQ(){stepQ(1);}
+
+/* 总览 */
+const allQuestions=[];
+types.forEach(([t,name,arr])=>arr.forEach((q,i)=>allQuestions.push({type:t,typeName:name,idx:i,tag:q.tag})));
+function openDashboard(){document.getElementById("dashboard-overlay").classList.add("open");renderDash('all');}
+function closeDashboard(){document.getElementById("dashboard-overlay").classList.remove("open");}
+function renderDash(filter){
+  const g=document.getElementById("dash-grid");g.innerHTML="";
+  allQuestions.forEach((q,n)=>{
+    const st=state[key(q.type,q.idx)];
+    const status=st?(st.ok?'ok':'bad'):'todo';
+    if(filter!=='all'&&status!==filter)return;
+    const d=document.createElement("div");d.className="thumb "+(st?(st.ok?'ok':'bad'):'');
+    d.innerHTML=`${q.typeName==='判断题'?'判':q.typeName==='单选题'?'单':q.typeName==='多选题'?'多':'拖'}${q.idx+1}<br>${q.tag}`;
+    d.onclick=()=>{cur={type:q.type,idx:q.idx};closeDashboard();render();};
+    g.appendChild(d);
+  });
+}
+
+/* 洗牌 */
+function fy(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}}
+function shuffleSet(arr,multi){
+  arr.forEach(q=>{
+    const pairs=q.options.map((o,i)=>({o,e:q.expl[i],c:multi?q.correct.includes(i):i===q.correct}));
+    fy(pairs);
+    q.options=pairs.map(p=>p.o);q.expl=pairs.map(p=>p.e);
+    q.correct=multi?pairs.map((p,i)=>p.c?i:-1).filter(x=>x>=0):pairs.findIndex(p=>p.c);
+  });
+}
+function shuffleAll(){
+  shuffleSet(singleQuestions,false);shuffleSet(multiQuestions,true);
+  for(const k in state)delete state[k];
+  cur={type:"drag",idx:0};render();
+  alert("已重新洗牌单选/多选选项，并清空答题记录。");
+}
+
+/* 结果页 */
+function showResult(){
+  document.getElementById("quiz").style.display="none";
+  document.getElementById("result-page").style.display="block";
+  const s=scoreNow(),t=totalMax();
+  document.getElementById("final-score").textContent=`${s} / ${t}`;
+  document.getElementById("final-detail").textContent=
+    s===t?"满分！可以自信进入面试。":(s>=t*0.7?"不错，回总览看看错题对应论文章节。":"建议重读笔记中标注的重点章节后再测一次。");
+}
+function continueQuiz(){render();}
+function resetAll(){for(const k in state)delete state[k];cur={type:"drag",idx:0};render();}
+
+render();
+</script>
+</body>
+</html>

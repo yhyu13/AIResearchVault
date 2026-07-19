@@ -117,5 +117,17 @@ Game AI 研究全景
 
 ---
 
+## 最新论文批次（2026-07-20，01e 系列）
+
+45 篇 2025–2026 论文已入库，见 [[00-README]] 索引：
+- [[01e-game-agent-execution-latest]] — MindForge / Optimus-3 / ODYSSEY / NitroGen 等 8 篇（执行层）
+- [[01e-world-models-latest]] — Genie 3 / MineWorld / Matrix-Game 2.0 等 7 篇（设计层）
+- [[01e-human-ai-interaction-latest]] — When Agents Lie / C2C / R3D2 等 8 篇（交互层）
+- [[01e-agent-harness-latest]] — ACE / MAST / AFlow / GCC 等 7 篇（Harness 工程）
+- [[01e-game-benchmarks-latest]] — VideoGameBench / TextQuests / GVGAI-LLM 等 6 篇（基准评估）
+- [[01e-rl-games-envs-latest]] — SPIRAL / Absolute Zero / RLVE / GEM 等 8 篇（合成环境 RL）
+
+---
+
 *创建时间：2026-07-02*
 *维护者：AIResearchVault*

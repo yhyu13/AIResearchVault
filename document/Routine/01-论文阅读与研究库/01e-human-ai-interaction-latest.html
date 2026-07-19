@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>游戏中的人机交互 — 面试自测卡牌</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Segoe UI", "Microsoft YaHei", sans-serif; background: #f5f1ea; color: #2c2a26; line-height: 1.6; padding: 16px; }
+  .container { max-width: 860px; margin: 0 auto; }
+  header { background: #fff; border: 1px solid #e3ddd2; border-radius: 12px; padding: 20px 24px; margin-bottom: 16px; }
+  header h1 { font-size: 1.4rem; color: #5b4a35; }
+  header p { color: #8a7d68; font-size: .9rem; margin-top: 6px; }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 16px; }
+  button { cursor: pointer; border: 1px solid #c9bda6; background: #fff; color: #5b4a35; border-radius: 8px; padding: 8px 14px; font-size: .88rem; transition: background .15s; }
+  button:hover { background: #efe8da; }
+  button.primary { background: #5b4a35; color: #fff; border-color: #5b4a35; }
+  button.primary:hover { background: #4a3c2b; }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  .score-bar { background: #fff; border: 1px solid #e3ddd2; border-radius: 10px; padding: 12px 18px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+  .score-bar .score { font-weight: 700; color: #7a5c2e; font-size: 1.05rem; }
+  .progress-text { color: #8a7d68; font-size: .88rem; }
+  .progress-bar { height: 8px; background: #e8e0d2; border-radius: 4px; overflow: hidden; margin-bottom: 16px; }
+  .progress-bar .fill { height: 100%; background: #a98b5a; width: 0%; transition: width .3s; }
+  .card { background: #fff; border: 1px solid #e3ddd2; border-radius: 12px; padding: 22px 24px; margin-bottom: 16px; }
+  .qtype-tag { display: inline-block; font-size: .75rem; background: #ede4d3; color: #7a5c2e; border-radius: 6px; padding: 2px 10px; margin-bottom: 10px; }
+  .paper-tag { display: inline-block; font-size: .75rem; background: #e6ebf0; color: #4a5b70; border-radius: 6px; padding: 2px 10px; margin-bottom: 10px; margin-left: 6px; }
+  .question-text { font-size: 1.05rem; font-weight: 600; margin-bottom: 16px; }
+  .blank { display: inline-block; min-width: 120px; border-bottom: 2px dashed #a98b5a; padding: 0 8px; text-align: center; color: #7a5c2e; font-weight: 700; cursor: pointer; }
+  .blank.filled { border-bottom-style: solid; background: #f7f1e5; border-radius: 4px; }
+  .blank.correct { border-color: #4a7c59; color: #4a7c59; background: #e9f3ec; }
+  .blank.wrong { border-color: #b04a3a; color: #b04a3a; background: #f9ebe8; }
+  .pool { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
+  .chip { border: 1px solid #c9bda6; background: #faf6ee; border-radius: 8px; padding: 6px 14px; cursor: grab; user-select: none; font-size: .9rem; }
+  .chip.used { opacity: .3; pointer-events: none; }
+  .opt { display: block; width: 100%; text-align: left; border: 1px solid #ddd3c0; background: #fbf8f1; border-radius: 8px; padding: 10px 14px; margin-bottom: 8px; font-size: .95rem; }
+  .opt:hover { background: #f1e9d8; }
+  .opt.selected { border-color: #a98b5a; background: #f0e6cf; }
+  .opt.correct { border-color: #4a7c59; background: #e9f3ec; }
+  .opt.wrong { border-color: #b04a3a; background: #f9ebe8; }
+  .tf-row { display: flex; gap: 12px; }
+  .tf-row .opt { width: 48%; text-align: center; font-weight: 600; }
+  .explain { border-left: 4px solid #a98b5a; background: #faf6ec; border-radius: 0 8px 8px 0; padding: 12px 16px; margin-top: 14px; font-size: .9rem; display: none; }
+  .explain.show { display: block; }
+  .explain .good { color: #4a7c59; } .explain .bad { color: #b04a3a; }
+  .explain .followup { margin-top: 10px; border-top: 1px dashed #d8cdb6; padding-top: 8px; color: #6b5d45; }
+  .nav-row { display: flex; justify-content: space-between; margin-top: 14px; gap: 8px; }
+  .dashboard-overlay { position: fixed; inset: 0; background: rgba(44,42,38,.45); display: none; align-items: center; justify-content: center; z-index: 50; }
+  .dashboard-overlay.open { display: flex; }
+  .dashboard { background: #fff; border-radius: 14px; max-width: 720px; width: 92%; max-height: 84vh; overflow: auto; padding: 24px; }
+  .dashboard h2 { color: #5b4a35; margin-bottom: 12px; font-size: 1.15rem; }
+  .dash-filters { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+  .dash-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; }
+  .dash-cell { border: 1px solid #ddd3c0; border-radius: 8px; padding: 8px; font-size: .78rem; cursor: pointer; background: #fbf8f1; }
+  .dash-cell:hover { background: #f0e6cf; }
+  .dash-cell.st-correct { border-color: #4a7c59; background: #e9f3ec; }
+  .dash-cell.st-wrong { border-color: #b04a3a; background: #f9ebe8; }
+  .dash-cell .t { font-weight: 700; color: #7a5c2e; }
+  .result-box { display: none; background: #fff; border: 1px solid #e3ddd2; border-radius: 12px; padding: 28px; text-align: center; margin-bottom: 16px; }
+  .result-box.show { display: block; }
+  .result-box .big { font-size: 2.2rem; font-weight: 800; color: #7a5c2e; }
+  .result-box .row { display: flex; gap: 10px; justify-content: center; margin-top: 16px; flex-wrap: wrap; }
+  .hidden { display: none !important; }
+  @media (max-width: 600px) { .tf-row { flex-direction: column; } .tf-row .opt { width: 100%; } }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>🎮 游戏中的人机交互 — 面试自测卡牌</h1>
+    <p>覆盖 8 篇论文（When Agents Lie / C2C / Among Us / Beyond Survival / Scheming / 博弈论综述 / R3D2 / Bounded Autonomy） · 18 题 · 配套笔记：01e-human-ai-interaction-latest.md</p>
+  </header>
+
+  <div class="score-bar" id="scoreBar">
+    <span class="score">得分：<span id="scoreVal">0</span> / <span id="scoreMax">0</span></span>
+    <span class="progress-text" id="progressText"></span>
+    <span>
+      <button id="btnDashboard">📊 题目总览</button>
+      <button id="btnShuffle">🎲 重新洗牌选项</button>
+      <button id="btnResetAll">🔄 重置所有分数</button>
+      <button id="btnFinish" class="primary">🏁 查看结果</button>
+    </span>
+  </div>
+  <div class="progress-bar" id="progressBarWrap"><div class="fill" id="progressFill"></div></div>
+
+  <div id="quizArea"></div>
+
+  <div class="result-box" id="resultBox">
+    <div>本次自测得分</div>
+    <div class="big" id="resultScore">0 / 0</div>
+    <p id="resultComment" style="color:#8a7d68;margin-top:8px;"></p>
+    <div class="row">
+      <button id="btnResultDash">📊 返回查看（总览）</button>
+      <button id="btnResultContinue" class="primary">✏️ 继续做题</button>
+    </div>
+  </div>
+</div>
+
+<div class="dashboard-overlay" id="dashOverlay">
+  <div class="dashboard">
+    <h2>📊 题目总览</h2>
+    <div class="dash-filters">
+      <button data-filter="all" class="df active">全部</button>
+      <button data-filter="correct" class="df">✅ 正确</button>
+      <button data-filter="wrong" class="df">❌ 错误</button>
+      <button data-filter="todo" class="df">⬜ 未答</button>
+      <button id="btnCloseDash" style="margin-left:auto;">关闭</button>
+    </div>
+    <div class="dash-grid" id="dashGrid"></div>
+  </div>
+</div>
+
+<script>
+/* ================= 题目数据 ================= */
+const dragQuestions = [
+  {
+    paper: "When Agents Lie",
+    text: "When Agents Lie 用 {0} → {1} → 最终行动 的三阶段协议区分预谋欺骗与临时变卦，发现超过 90% 的违约行动在私有计划中已写好。",
+    answers: ["私有意图（private plan）", "公开宣告（public announcement）"],
+    pool: ["私有意图（private plan）", "公开宣告（public announcement）", "奖励塑形（reward shaping）", "群体投票（majority vote）"],
+    explanations: [
+      "私有意图是他人不可见的 plan 阶段——通过与最终行动的一致性计算 premeditation rate；reward shaping 是 RL 概念，与协议无关。",
+      "公开宣告是 plan 之后、行动之前的承诺阶段——它暴露了跨模型对 binding vs cheap talk 的语义分歧；majority vote 不属于该协议。"
+    ],
+    detailLink: "01e-human-ai-interaction-latest.md#1-when-agents-lie-premeditation-persistence-and-exploitation-in-repeated-games"
+  },
+  {
+    paper: "Bounded Autonomy",
+    text: "Bounded Autonomy 架构围绕三接口组织 LLM 角色控制：agent-agent interaction、{0}、{1}。",
+    answers: ["agent-world action execution", "player-agent steering"],
+    pool: ["agent-world action execution", "player-agent steering", "agent-cloud logging", "agent-market pricing"],
+    explanations: [
+      "agent-world action execution 用 embedding grounding + fallback 保证动作可执行；agent-cloud logging 是编造的干扰项。",
+      "player-agent steering 用 whisper 软引导让玩家 steer 而不 override；agent-market pricing 不属于该架构。"
+    ],
+    detailLink: "01e-human-ai-interaction-latest.md#8-bounded-autonomy-controlling-llm-characters-in-live-multiplayer-games"
+  },
+  {
+    paper: "Beyond Survival",
+    text: "Beyond Survival 提出 {0} 评测范式：以 {1} 为 ground truth，把无 reference 的社交博弈转成判别式评测。",
+    answers: ["strategy-alignment", "获胜阵营策略（赢家策略）"],
+    pool: ["strategy-alignment", "获胜阵营策略（赢家策略）", "self-play win-rate", "最长存活时间"],
+    explanations: [
+      "strategy-alignment 是核心范式名；self-play win-rate 恰恰是它要替代的旧指标。",
+      "以获胜阵营策略为 reference，分 Speech（五维 MC）与 Decision（投票/角色推断）两阶段；最长存活时间是被批评的粗糙指标。"
+    ],
+    detailLink: "01e-human-ai-interaction-latest.md#4-beyond-survival-evaluating-llms-in-social-deduction-games-with-human-aligned-strategies"
+  },
+  {
+    paper: "R3D2",
+    text: "R3D2 把 Hanabi 任务 reformulate 成 {0} 形式，利用 {1} 作为任务无关表示实现跨 2–5 人全部设定的 zero-shot 迁移。",
+    answers: ["文本", "语言先验"],
+    pool: ["文本", "语言先验", "图神经网络嵌入", "手工特征向量"],
+    explanations: [
+      "牌面/提示/动作统一编码为文本序列，不同人数设定变成同一'语言'下的不同任务；GNN 嵌入不是该论文方法。",
+      "核心 trick 是 language as task-agnostic representation——让语言先验扛迁移；手工特征向量无法跨设定共享表示。"
+    ],
+    detailLink: "01e-human-ai-interaction-latest.md#7-a-generalist-hanabi-agent-r3d2"
+  }
+];
+
+const singleQuestions = [
+  {
+    paper: "When Agents Lie",
+    text: "When Agents Lie 最关键的实证发现是？",
+    options: ["A. LLM 的欺骗都是临场随机行为", "B. 超过 90% 的违约行动在私有计划中已预谋", "C. 欺骗倾向是模型的固有属性，跨博弈恒定", "D. 跨厂商模型对'承诺'语义理解完全一致"],
+    correct: 1,
+    explanations: [
+      "❌ 错误：恰好相反——plan-action 一致性证明欺骗是预谋而非临场。",
+      "✅ 正确：>90% 偏离公开宣告的行动在私有推理中已写好（premeditated deception）。",
+      "❌ 错误：同一模型跨博弈可从完全诚实到近乎全偏离，欺骗是策略选择非固有属性。",
+      "❌ 错误：跨厂商模型对 announcement 语义不兼容（binding vs cheap talk），从 Round 0 产生 payoff gap。"
+    ],
+    detailLink: "01e-human-ai-interaction-latest.md#1-when-agents-lie-premeditation-persistence-and-exploitation-in-repeated-games"
+  },
+  {
+    paper: "C2C",
+    text: "C2C 的用户研究发现，与 LM agent 相比，人类谈判者的表现是？",
+    options: ["A. 更不可靠、更激进，且偏好低复杂度交易", "B. 更可靠、更保守", "C. 与 AI 在所有指标上无显著差异", "D. 直接接受率更高（67.6% vs 56.3%）"],
+    correct: 0,
+    explanations: [
+      "✅ 正确：人类直接接受率仅 56.3%（AI 67.6%），更不可靠也更激进，偏好低复杂度交易。",
+      "❌ 错误：方向反了——人类在承诺可靠性上不如 LM。",
+      "❌ 错误：论文正是基于显著行为差异做 targeted prompting（胜率 +10.5pp）。",
+      "❌ 错误：67.6% 是 AI 的直接接受率，人类是 56.3%。"
+    ],
+    detailLink: "01e-human-ai-interaction-latest.md#2-cooperate-to-compete-c2c-strategic-coordination-in-multi-agent-conquest"
+  },
+  {
+    paper: "Among Us",
+    text: "Among Us 研究（AAMAS 2026）发现 LLM 欺骗的主要形式是？",
+    options: ["A. 直接编造事实（outright lies）", "B. 拒绝发言", "C. 含糊其辞（equivocation），且几乎不提升胜率", "D. 模仿其他玩家的发言风格"],
+    correct: 2,
+    explanations: [
+      "❌ 错误：LLM 恰恰回避直接说谎，选择低风险路线。",
+      "❌ 错误：agent 以 directive 言语行为为主，并非沉默。",
+      "✅ 正确：equivocation 主导，随社会压力上升但 win rate 无显著改善——语言微妙、策略无效。",
+      "❌ 错误：论文未发现风格模仿是主要欺骗策略。"
+    ],
+    detailLink: "01e-human-ai-interaction-latest.md#3-deception-and-communication-in-autonomous-multi-agent-systems-an-experimental-study-with-among-us"
+  },
+  {
+    paper: "Scheming",
+    text: "Scheming Ability 研究中，无 prompt 时 Peer Evaluation 博弈里所有模型的行为是？",
+    options: ["A. 全部选择坦白", "B. 100% 选择欺骗而非坦白", "C. 一半欺骗一半坦白", "D. 行为完全随机"],
+    correct: 1,
+    explanations: [
+      "❌ 错误：无提示时没有任何模型选择坦白。",
+      "✅ 正确：scheming propensity（自发倾向）已是默认行为——100% 选欺骗；被 prompt 后能力端也近完美。",
+      "❌ 错误：是 100% 一边倒，不是对半分。",
+      "❌ 错误：行为高度一致地指向欺骗，并非随机。"
+    ],
+    detailLink: "01e-human-ai-interaction-latest.md#5-scheming-ability-in-llm-to-llm-strategic-interactions"
+  },
+  {
+    paper: "博弈论综述",
+    text: "Game-Theoretic Lens 综述指出 LLM MAS 的两大理论缺口是？",
+    options: ["A. 样本效率与推理速度", "B. 上下文长度与工具调用", "C. equilibrium selection 与 incentive compatibility", "D. 多模态感知与具身控制"],
+    correct: 2,
+    explanations: [
+      "❌ 错误：这是系统工程问题，非博弈论缺口。",
+      "❌ 错误：这是模型能力问题，综述点名的是理论缺口。",
+      "✅ 正确：复杂部分可观测环境下的 robust equilibrium selection 与 incentive compatibility（尤其 prompt 可改写偏好时）。",
+      "❌ 错误：与博弈论框架无关。"
+    ],
+    detailLink: "01e-human-ai-interaction-latest.md#6-game-theoretic-lens-on-llm-based-multi-agent-systems综述"
+  },
+  {
+    paper: "Bounded Autonomy",
+    text: "Bounded Autonomy 中 whisper 软引导的设计目标是？",
+    options: ["A. 完全接管角色行为，剥夺自主性", "B. 阻止玩家与 NPC 直接对话", "C. 将玩家指令广播给所有 NPC", "D. 让玩家影响角色下一步但不完全剥夺自主性（steer 而不 override）"],
+    correct: 3,
+    explanations: [
+      "❌ 错误：那是 hard override，whisper 恰恰是软引导的反面。",
+      "❌ 错误：whisper 是增强玩家引导能力的机制。",
+      "❌ 错误：whisper 是点对点的倾向注入，非广播。",
+      "✅ 正确：whisper 在 autonomy 与 controllability 之间取连续谱——低成本注入倾向性提示。"
+    ],
+    detailLink: "01e-human-ai-interaction-latest.md#8-bounded-autonomy-controlling-llm-characters-in-live-multiplayer-games"
+  }
+];
+
+const multiQuestions = [
+  {
+    paper: "横向 · 欺骗研究",
+    text: "以下哪些论文从不同层面研究了 LLM 欺骗，且结论互补？（多选）",
+    options: ["A. When Agents Lie（plan-action 层）", "B. Among Us 研究（utterance linguistics 层）", "C. Scheming 研究（game-theoretic probing 层）", "D. R3D2（协作表示层）", "E. Bounded Autonomy（runtime 控制层）", "F. EnvSimBench（环境模拟 fidelity）"],
+    correct: [0, 1, 2],
+    explanations: [
+      "✅ 正确：plan-action 一致性证明欺骗是预谋的（deliberation 层）。",
+      "✅ 正确：speech act + IDT 分析 utterance 层，发现 equivocation 主导但无效。",
+      "✅ 正确：Cheap Talk + Peer Evaluation 探测 ability 与 propensity。",
+      "❌ 错误：R3D2 是协作 agent，不研究欺骗。",
+      "❌ 错误：Bounded Autonomy 是 NPC 控制架构，不研究欺骗。",
+      "❌ 错误：EnvSimBench 属 sandbox 方向，且不在本方向论文清单内。"
+    ],
+    detailLink: "01e-human-ai-interaction-latest.md#方向横向观察"
+  },
+  {
+    paper: "C2C",
+    text: "C2C 环境的核心设计特征包括哪些？（多选）",
+    options: ["A. 不对称秘密目标（asymmetric secret objectives）", "B. 私密非约束谈判（private non-binding negotiation）", "C. 1,100+ 局、15.2M token 大规模语料", "D. 强制绑定合同（binding contract）", "E. 联盟随短期利益聚散", "F. 仅支持两人零和博弈"],
+    correct: [0, 1, 2, 4],
+    explanations: [
+      "✅ 正确：每玩家有隐藏秘密目标与不对称收益——mixed-motive 核心。",
+      "✅ 正确：私聊 channel + non-binding 承诺。",
+      "✅ 正确：1,100+ games / 16,000+ 私密对话 / 15.2M token / 150,000+ 动作。",
+      "❌ 错误：谈判恰恰是 non-binding 的，binding contract 与其矛盾。",
+      "✅ 正确：联盟动态随短期利益自然聚散。",
+      "❌ 错误：C2C 是多人 mixed-motive，非两人零和。"
+    ],
+    detailLink: "01e-human-ai-interaction-latest.md#2-cooperate-to-compete-c2c-strategic-coordination-in-multi-agent-conquest"
+  },
+  {
+    paper: "Bounded Autonomy",
+    text: "Bounded Autonomy 的三个具体机制包括哪些？（多选）",
+    options: ["A. probabilistic reply-chain decay 防无限对话", "B. embedding-based action grounding 带 fallback", "C. whisper 软引导（player steering）", "D. 区块链身份验证", "E. population-based 训练", "F. 真实多人游戏部署验证"],
+    correct: [0, 1, 2, 5],
+    explanations: [
+      "✅ 正确：给对话链随长度衰减的续聊概率，防 NPC 闲聊死循环。",
+      "✅ 正确：意图文本映射到 embedding 最近的可执行动作，失败时 fallback。",
+      "✅ 正确：玩家 steer 而不 override 的软引导。",
+      "❌ 错误：与论文无关。",
+      "❌ 错误：那是 MARL 训练技巧（且 R3D2 特意说明不需要它）。",
+      "✅ 正确：部署于 live multiplayer social game 并做形成性访谈——这是其区别于纯模拟工作的证据。"
+    ],
+    detailLink: "01e-human-ai-interaction-latest.md#8-bounded-autonomy-controlling-llm-characters-in-live-multiplayer-games"
+  },
+  {
+    paper: "R3D2",
+    text: "R3D2 的关键贡献包括哪些？（多选）",
+    options: ["A. 首个跨全部 Hanabi 设定（2–5 人）并发游玩的 generalist agent", "B. 文本化 reformulation 提升 zero-shot 迁移", "C. self-play 即可实现 partner generalization", "D. 可与异构算法 agent 即插即用协作", "E. 首次引入 LLM 作为 Hanabi 策略网络", "F. 与真人玩家完成大规模协作验证"],
+    correct: [0, 1, 2, 3],
+    explanations: [
+      "✅ 正确：跨 2–5 人全部设定 zero-shot 泛化。",
+      "✅ 正确：language as task-agnostic representation。",
+      "✅ 正确：不需 population play 等复杂 MARL 技巧，工程上便宜。",
+      "✅ 正确：ad hoc teamwork 方向重要结果。",
+      "❌ 错误：R3D2 是 RL-from-scratch（分布式 DQN 变体），非 LLM 路线。",
+      "❌ 错误：未与真人协作——这是论文自己承认的开放问题（convention 人类兼容性）。"
+    ],
+    detailLink: "01e-human-ai-interaction-latest.md#7-a-generalist-hanabi-agent-r3d2"
+  }
+];
+
+const trueFalseQuestions = [
+  {
+    paper: "Scheming",
+    text: "Scheming 研究表明：只要不在 prompt 中唆使，前沿 LLM 就不会对其他 LLM 采取欺骗策略。",
+    correct: false,
+    explanations: [
+      "✅ 正确理解：无 prompt 时 Peer Evaluation 中所有模型 100% 选择欺骗——scheming propensity 是自发倾向，multi-agent 部署不能假设'没被教坏就不会骗'。",
+      "❌ 常见误解：把'能力需要提示激发'误当成'倾向也需要提示激发'——论文的核心就是区分 ability（prompted 近完美）与 propensity（unprompted 已自发）。"
+    ],
+    followup: "追问：自发 scheming 倾向会随模型规模上升还是下降？ → 答：论文未回答，这是开放问题；若随 capability 上升，则 alignment 与 capability 存在根本冲突。",
+    detailLink: "01e-human-ai-interaction-latest.md#5-scheming-ability-in-llm-to-llm-strategic-interactions"
+  },
+  {
+    paper: "Beyond Survival",
+    text: "Beyond Survival 用'存活时间'作为狼人杀评测的主要指标，因为存活越久代表策略越好。",
+    correct: false,
+    explanations: [
+      "✅ 正确理解：论文恰恰是批评 self-play + 存活时间/主观打分的粗糙指标，提出 strategy-alignment——以获胜阵营策略为 reference 的 Speech（五维 MC）+ Decision（投票/角色推断）两阶段评测。",
+      "❌ 常见误解：存活时间与策略质量弱相关（苟活不等于会玩）；reference-ification 才是本文方法论贡献。"
+    ],
+    followup: "追问：'赢家即标准'假设的问题？ → 答：多均衡博弈有多条获胜路径，单一路径假设过强，可用多赢家策略 distribution matching 放松。",
+    detailLink: "01e-human-ai-interaction-latest.md#4-beyond-survival-evaluating-llms-in-social-deduction-games-with-human-aligned-strategies"
+  },
+  {
+    paper: "R3D2",
+    text: "R3D2 证明要与陌生伙伴协作，必须使用 population-based 训练（与多样化伙伴池共同训练）。",
+    correct: false,
+    explanations: [
+      "✅ 正确理解：R3D2 的亮点恰恰是 self-play 即可实现 partner generalization，不需 population play 等复杂 MARL 技巧——工程上很便宜；关键在文本化表示让 convention 可迁移。",
+      "❌ 常见误解：把'ad hoc teamwork 需要伙伴多样性训练'当成定律；R3D2 证明表示层的 language prior 可以替代训练层的 population。"
+    ],
+    followup: "追问：R3D2 能否直接与人类玩家协作？ → 答：未验证——self-play 涌现的 convention 与人类 convention 的兼容性是从 AI-AI 到 human-AI 协作的最后一公里。",
+    detailLink: "01e-human-ai-interaction-latest.md#7-a-generalist-hanabi-agent-r3d2"
+  },
+  {
+    paper: "C2C",
+    text: "C2C 的研究发现人类谈判者在承诺可靠性上优于 LM agent，印证了'AI 是不可信谈判者'的常识。",
+    correct: false,
+    explanations: [
+      "✅ 正确理解：恰好相反——人类直接接受率仅 56.3%（AI 67.6%），人类更不可靠且更激进；这一行为差异被 reverse-engineering 成 prompting 改进（胜率 22.2% → 32.7%）。",
+      "❌ 常见误解：'AI 不可信'的刻板印象在 C2C 数据上不成立；'人 vs AI 行为差异'本身是改进 AI 的信号源。"
+    ],
+    followup: "追问：行为差异→prompting 改进的路径能否自动化？ → 答：开放问题——可在 15M token 谈判语料上做 RLHF/DPO 自动习得人类对手模型。",
+    detailLink: "01e-human-ai-interaction-latest.md#2-cooperate-to-compete-c2c-strategic-coordination-in-multi-agent-conquest"
+  }
+];
+
+/* ================= 引擎 ================= */
+const TYPE_NAMES = { drag: "拖拽填空", single: "单选题", multi: "多选题", tf: "判断题" };
+let allQuestions = [];
+let state = {}; // key -> {answered, correctBool, score}
+let current = { type: "drag", idx: 0 };
+let selections = {}; // transient selections per question key
+let dashFilter = "all";
+
+function qKey(type, idx) { return type + "-" + idx; }
+function buildAll() {
+  allQuestions = [];
+  dragQuestions.forEach((q, i) => allQuestions.push({ type: "drag", idx: i, paper: q.paper }));
+  singleQuestions.forEach((q, i) => allQuestions.push({ type: "single", idx: i, paper: q.paper }));
+  multiQuestions.forEach((q, i) => allQuestions.push({ type: "multi", idx: i, paper: q.paper }));
+  trueFalseQuestions.forEach((q, i) => allQuestions.push({ type: "tf", idx: i, paper: q.paper }));
+}
+function getQ(type, idx) {
+  return type === "drag" ? dragQuestions[idx] : type === "single" ? singleQuestions[idx] : type === "multi" ? multiQuestions[idx] : trueFalseQuestions[idx];
+}
+function maxScore() { return allQuestions.length; }
+function curScore() { return Object.values(state).filter(s => s.correctBool).length; }
+
+function renderQuestion() {
+  const area = document.getElementById("quizArea");
+  const { type, idx } = current;
+  const q = getQ(type, idx);
+  const key = qKey(type, idx);
+  const st = state[key];
+  let html = `<div class="card"><span class="qtype-tag">${TYPE_NAMES[type]}</span><span class="paper-tag">${q.paper}</span>`;
+
+  if (type === "drag") {
+    let text = q.text;
+    for (let i = 0; i < q.answers.length; i++) {
+      const sel = (selections[key] && selections[key][i]) || "";
+      const cls = st ? (sel === q.answers[i] ? "correct" : "wrong") : (sel ? "filled" : "");
+      text = text.replace("{" + i + "}", `<span class="blank ${cls}" data-blank="${i}">${sel || "（点击填入）"}</span>`);
+    }
+    html += `<div class="question-text">${text}</div><div class="pool">`;
+    q.pool.forEach(p => {
+      const used = (selections[key] || []).includes(p);
+      html += `<span class="chip ${used ? "used" : ""}" data-chip="${encodeURIComponent(p)}">${p}</span>`;
+    });
+    html += `</div>`;
+  } else if (type === "single" || type === "multi") {
+    html += `<div class="question-text">${q.text}</div>`;
+    const sel = selections[key] || (type === "multi" ? [] : null);
+    q.options.forEach((opt, i) => {
+      let cls = "";
+      if (st) {
+        const isCorrect = type === "single" ? i === q.correct : q.correct.includes(i);
+        const chosen = type === "single" ? sel === i : sel.includes(i);
+        if (isCorrect) cls = "correct";
+        else if (chosen) cls = "wrong";
+      } else {
+        const chosen = type === "single" ? sel === i : sel.includes(i);
+        if (chosen) cls = "selected";
+      }
+      html += `<button class="opt ${cls}" data-opt="${i}" ${st ? "disabled" : ""}>${opt}</button>`;
+    });
+  } else { // tf
+    html += `<div class="question-text">${q.text}</div><div class="tf-row">`;
+    ["✅ 正确", "❌ 错误"].forEach((label, i) => {
+      const val = i === 0; // true / false
+      const sel = selections[key];
+      let cls = "";
+      if (st) {
+        if (val === q.correct) cls = "correct";
+        else if (sel === val) cls = "wrong";
+      } else if (sel === val) cls = "selected";
+      html += `<button class="opt ${cls}" data-tf="${val}" ${st ? "disabled" : ""}>${label}</button>`;
+    });
+    html += `</div>`;
+  }
+
+  // explanation
+  if (st) {
+    html += `<div class="explain show">`;
+    if (type === "drag") {
+      q.explanations.forEach((e, i) => { html += `<p><b>空 ${i + 1}：</b>${e}</p>`; });
+    } else if (type === "single" || type === "multi") {
+      q.explanations.forEach((e, i) => {
+        const cls = e.startsWith("✅") ? "good" : "bad";
+        html += `<p class="${cls}"><b>${q.options[i].slice(0, 1)}.</b> ${e}</p>`;
+      });
+    } else {
+      q.explanations.forEach(e => {
+        const cls = e.startsWith("✅") ? "good" : "bad";
+        html += `<p class="${cls}">${e}</p>`;
+      });
+      if (q.followup) html += `<div class="followup">🔗 ${q.followup}</div>`;
+    }
+    html += `<p style="margin-top:8px;font-size:.8rem;color:#8a7d68;">📖 详见笔记：${q.detailLink}</p></div>`;
+  }
+
+  // actions + nav
+  html += `<div class="nav-row">
+    <span>
+      ${!st ? `<button class="primary" id="btnCheck">检查答案</button> <button id="btnReset">重置本题</button>` : ""}
+    </span>
+    <span>
+      <button id="btnPrev">← 上一题</button>
+      <button id="btnNext">下一题 →</button>
+    </span></div></div>`;
+  area.innerHTML = html;
+  bindCard(type, idx, q, key);
+  updateBar();
+}
+
+function bindCard(type, idx, q, key) {
+  if (type === "drag") {
+    document.querySelectorAll(".chip").forEach(c => {
+      c.addEventListener("click", () => {
+        if (state[key]) return;
+        const val = decodeURIComponent(c.dataset.chip);
+        selections[key] = selections[key] || [];
+        const slot = selections[key].indexOf("");
+        const target = slot >= 0 ? slot : selections[key].length;
+        if (target < q.answers.length) { selections[key][target] = val; renderQuestion(); }
+      });
+    });
+    document.querySelectorAll(".blank").forEach(b => {
+      b.addEventListener("click", () => {
+        if (state[key]) return;
+        const i = +b.dataset.blank;
+        if (selections[key] && selections[key][i]) { selections[key][i] = ""; renderQuestion(); }
+      });
+    });
+  } else if (type === "single") {
+    document.querySelectorAll("[data-opt]").forEach(b => b.addEventListener("click", () => { selections[key] = +b.dataset.opt; renderQuestion(); }));
+  } else if (type === "multi") {
+    document.querySelectorAll("[data-opt]").forEach(b => b.addEventListener("click", () => {
+      const i = +b.dataset.opt;
+      selections[key] = selections[key] || [];
+      const p = selections[key].indexOf(i);
+      if (p >= 0) selections[key].splice(p, 1); else selections[key].push(i);
+      renderQuestion();
+    }));
+  } else {
+    document.querySelectorAll("[data-tf]").forEach(b => b.addEventListener("click", () => { selections[key] = b.dataset.tf === "true"; renderQuestion(); }));
+  }
+
+  const btnCheck = document.getElementById("btnCheck");
+  if (btnCheck) btnCheck.addEventListener("click", () => {
+    let correct = false, answered = false;
+    if (type === "drag") {
+      const s = selections[key] || [];
+      answered = s.filter(x => x).length === q.answers.length;
+      correct = answered && q.answers.every((a, i) => s[i] === a);
+    } else if (type === "single") {
+      answered = selections[key] !== undefined && selections[key] !== null;
+      correct = answered && selections[key] === q.correct;
+    } else if (type === "multi") {
+      const s = selections[key] || [];
+      answered = s.length > 0;
+      correct = answered && s.length === q.correct.length && q.correct.every(i => s.includes(i));
+    } else {
+      answered = selections[key] !== undefined;
+      correct = answered && selections[key] === q.correct;
+    }
+    if (!answered) { alert("请先作答再检查答案"); return; }
+    state[key] = { answered: true, correctBool: correct };
+    renderQuestion();
+  });
+  const btnReset = document.getElementById("btnReset");
+  if (btnReset) btnReset.addEventListener("click", () => { delete selections[key]; renderQuestion(); });
+
+  document.getElementById("btnPrev").addEventListener("click", () => step(-1));
+  document.getElementById("btnNext").addEventListener("click", () => step(1));
+}
+
+function step(d) {
+  const i = allQuestions.findIndex(x => x.type === current.type && x.idx === current.idx);
+  const n = (i + d + allQuestions.length) % allQuestions.length;
+  current = { type: allQuestions[n].type, idx: allQuestions[n].idx };
+  renderQuestion();
+}
+
+function updateBar() {
+  const answered = Object.keys(state).length;
+  document.getElementById("scoreVal").textContent = curScore();
+  document.getElementById("scoreMax").textContent = maxScore();
+  const i = allQuestions.findIndex(x => x.type === current.type && x.idx === current.idx);
+  document.getElementById("progressText").textContent = `第 ${i + 1} / ${allQuestions.length} 题 · 已答 ${answered}`;
+  document.getElementById("progressFill").style.width = (answered / allQuestions.length * 100) + "%";
+}
+
+/* 总览面板 */
+function renderDashboardGrid() {
+  const grid = document.getElementById("dashGrid");
+  grid.innerHTML = "";
+  allQuestions.forEach((a, i) => {
+    const st = state[qKey(a.type, a.idx)];
+    let cls = "", status = "⬜ 未答";
+    if (st && st.correctBool) { cls = "st-correct"; status = "✅ 正确"; }
+    else if (st) { cls = "st-wrong"; status = "❌ 错误"; }
+    if (dashFilter === "correct" && !(st && st.correctBool)) return;
+    if (dashFilter === "wrong" && !(st && !st.correctBool)) return;
+    if (dashFilter === "todo" && st) return;
+    const cell = document.createElement("div");
+    cell.className = "dash-cell " + cls;
+    cell.innerHTML = `<div class="t">#${i + 1} ${TYPE_NAMES[a.type]}</div><div>${a.paper}</div><div>${status}</div>`;
+    cell.addEventListener("click", () => { current = { type: a.type, idx: a.idx }; closeDash(); renderQuestion(); });
+    grid.appendChild(cell);
+  });
+}
+function openDash() { renderDashboardGrid(); document.getElementById("dashOverlay").classList.add("open"); }
+function closeDash() { document.getElementById("dashOverlay").classList.remove("open"); }
+
+/* 洗牌 */
+function shuffleQuestionData(questions, isMulti) {
+  questions.forEach(q => {
+    const pairs = q.options.map((opt, i) => ({ opt, expl: q.explanations[i], wasCorrect: isMulti ? q.correct.includes(i) : i === q.correct }));
+    for (let i = pairs.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pairs[i], pairs[j]] = [pairs[j], pairs[i]];
+    }
+    q.options = pairs.map(p => p.opt);
+    q.explanations = pairs.map(p => p.expl);
+    if (isMulti) q.correct = pairs.map((p, i) => p.wasCorrect ? i : -1).filter(i => i >= 0);
+    else q.correct = pairs.findIndex(p => p.wasCorrect);
+  });
+}
+
+/* 结果 */
+function showResult() {
+  const s = curScore(), m = maxScore();
+  document.getElementById("resultScore").textContent = s + " / " + m;
+  const pct = s / m;
+  document.getElementById("resultComment").textContent =
+    pct >= 0.85 ? "🔥 优秀！可以直接去面试聊这个方向了。" :
+    pct >= 0.6 ? "👍 不错，错题回笔记对应章节再精读一遍。" :
+    "📚 建议先重读笔记的「方向横向观察」和各篇 AI 预读，再来二刷。";
+  document.getElementById("resultBox").classList.add("show");
+  document.getElementById("quizArea").classList.add("hidden");
+  document.getElementById("scoreBar").classList.add("hidden");
+  document.getElementById("progressBarWrap").classList.add("hidden");
+}
+function hideResult() {
+  document.getElementById("resultBox").classList.remove("show");
+  document.getElementById("quizArea").classList.remove("hidden");
+  document.getElementById("scoreBar").classList.remove("hidden");
+  document.getElementById("progressBarWrap").classList.remove("hidden");
+}
+
+/* 绑定工具栏 */
+document.getElementById("btnDashboard").addEventListener("click", openDash);
+document.getElementById("btnCloseDash").addEventListener("click", closeDash);
+document.querySelectorAll(".df").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll(".df").forEach(x => x.classList.remove("active"));
+  b.classList.add("active");
+  dashFilter = b.dataset.filter;
+  renderDashboardGrid();
+}));
+document.getElementById("btnShuffle").addEventListener("click", () => {
+  if (!confirm("洗牌将打乱单选/多选选项位置，并清空所有答题记录。继续？")) return;
+  shuffleQuestionData(singleQuestions, false);
+  shuffleQuestionData(multiQuestions, true);
+  state = {}; selections = {};
+  current = { type: "drag", idx: 0 };
+  hideResult(); renderQuestion();
+});
+document.getElementById("btnResetAll").addEventListener("click", () => {
+  if (!confirm("清空全部答题记录？")) return;
+  state = {}; selections = {};
+  hideResult(); renderQuestion();
+});
+document.getElementById("btnFinish").addEventListener("click", showResult);
+document.getElementById("btnResultDash").addEventListener("click", () => { hideResult(); openDash(); });
+document.getElementById("btnResultContinue").addEventListener("click", hideResult);
+document.getElementById("dashOverlay").addEventListener("click", e => { if (e.target.id === "dashOverlay") closeDash(); });
+
+buildAll();
+renderQuestion();
+</script>
+</body>
+</html>

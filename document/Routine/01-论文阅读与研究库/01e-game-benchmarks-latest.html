@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>游戏 Agent 基准与评估 · 面试自测卡牌</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif; background:#f5f1ea; color:#3a3532; min-height:100vh; }
+  header { background:#6b5d4f; color:#fdfbf7; padding:20px 16px; text-align:center; }
+  header h1 { font-size:1.3rem; font-weight:600; }
+  header p { font-size:.85rem; opacity:.85; margin-top:6px; }
+  .toolbar { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; padding:12px; }
+  .toolbar button { background:#fdfbf7; border:1px solid #d8cfc2; border-radius:8px; padding:8px 14px; font-size:.85rem; cursor:pointer; color:#5a5044; }
+  .toolbar button:hover { background:#efe8dc; }
+  .score-bar { text-align:center; padding:8px; font-size:.95rem; color:#6b5d4f; font-weight:600; }
+  .progress-text { text-align:center; font-size:.85rem; color:#8a7d6d; }
+  .progress-bar { height:6px; background:#e5ddd0; margin:8px 16px; border-radius:3px; overflow:hidden; }
+  .progress-bar > div { height:100%; background:#a3937c; width:0%; transition:width .3s; }
+  .container { max-width:760px; margin:0 auto; padding:16px; }
+  .qcard { background:#fdfbf7; border:1px solid #e0d6c6; border-radius:12px; padding:22px; box-shadow:0 2px 8px rgba(90,80,68,.06); }
+  .qtype { display:inline-block; font-size:.75rem; background:#a3937c; color:#fff; border-radius:4px; padding:2px 8px; margin-bottom:10px; }
+  .qtitle { font-size:1.05rem; line-height:1.7; margin-bottom:16px; font-weight:600; }
+  .blank { display:inline-block; min-width:90px; border-bottom:2px dashed #a3937c; text-align:center; color:#8a6d3b; font-weight:600; padding:0 6px; cursor:pointer; }
+  .blank.filled { border-bottom:2px solid #6b5d4f; }
+  .pool { display:flex; flex-wrap:wrap; gap:8px; margin:14px 0; }
+  .chip { background:#efe8dc; border:1px solid #d8cfc2; border-radius:16px; padding:6px 14px; font-size:.88rem; cursor:pointer; user-select:none; }
+  .chip.used { opacity:.3; pointer-events:none; }
+  .opt { display:block; width:100%; text-align:left; background:#f8f4ec; border:1px solid #e0d6c6; border-radius:8px; padding:12px 14px; margin:8px 0; font-size:.92rem; cursor:pointer; line-height:1.6; }
+  .opt:hover { background:#f1eade; }
+  .opt.sel { border-color:#a3937c; background:#efe6d6; }
+  .opt.correct { border-color:#5f8a5f; background:#e6efe2; }
+  .opt.wrong { border-color:#b06a5a; background:#f5e4e0; }
+  .expl { margin:6px 0 0 4px; font-size:.85rem; line-height:1.6; color:#6b6155; }
+  .result-box { margin-top:14px; padding:12px; border-radius:8px; font-size:.9rem; line-height:1.7; display:none; }
+  .result-box.show { display:block; }
+  .result-box.ok { background:#e6efe2; border:1px solid #9fbe9a; }
+  .result-box.bad { background:#f5e4e0; border:1px solid #d0a295; }
+  .btn-row { display:flex; gap:10px; margin-top:18px; flex-wrap:wrap; }
+  .btn { flex:1; min-width:120px; background:#6b5d4f; color:#fdfbf7; border:none; border-radius:8px; padding:11px; font-size:.9rem; cursor:pointer; }
+  .btn.ghost { background:#fdfbf7; color:#6b5d4f; border:1px solid #d8cfc2; }
+  .btn:disabled { opacity:.4; cursor:not-allowed; }
+  .nav-row { display:flex; justify-content:space-between; margin-top:14px; gap:10px; }
+  .nav-row button { background:#e9e1d4; border:none; border-radius:8px; padding:9px 18px; font-size:.85rem; cursor:pointer; color:#5a5044; }
+  .hidden { display:none !important; }
+  #result-page { text-align:center; padding:40px 20px; }
+  #result-page h2 { color:#6b5d4f; margin-bottom:12px; }
+  #result-page .big { font-size:2.4rem; font-weight:700; color:#8a6d3b; }
+  .dashboard-overlay { position:fixed; inset:0; background:rgba(58,53,50,.5); display:none; align-items:center; justify-content:center; z-index:50; }
+  .dashboard-overlay.open { display:flex; }
+  .dashboard { background:#fdfbf7; border-radius:12px; max-width:640px; width:92%; max-height:80vh; overflow:auto; padding:20px; }
+  .dashboard h3 { margin-bottom:12px; color:#6b5d4f; }
+  .dgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(52px,1fr)); gap:8px; }
+  .dcell { aspect-ratio:1; display:flex; flex-direction:column; align-items:center; justify-content:center; border-radius:8px; font-size:.72rem; cursor:pointer; border:1px solid #e0d6c6; background:#f8f4ec; }
+  .dcell.ok { background:#e6efe2; border-color:#9fbe9a; }
+  .dcell.bad { background:#f5e4e0; border-color:#d0a295; }
+  .legend { display:flex; gap:14px; margin:12px 0; font-size:.8rem; color:#8a7d6d; flex-wrap:wrap; }
+  .dot { display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:4px; vertical-align:middle; }
+  footer { text-align:center; padding:18px; font-size:.78rem; color:#a39a8b; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🎮 游戏 Agent 基准与评估 · 面试自测卡牌</h1>
+  <p>覆盖 VideoGameBench / Orak / TextQuests / GVGAI-LLM / FlashAdventure / VisEscape ｜ 2026-07-20</p>
+</header>
+<div class="toolbar">
+  <button onclick="openDashboard()">📊 题目总览</button>
+  <button onclick="shuffleAll()">🎲 重新洗牌选项</button>
+  <button onclick="resetAll()">🔄 重置所有分数</button>
+</div>
+<div class="score-bar" id="scoreBar">得分：0 / 20</div>
+<div class="progress-text" id="progressText">第 1 / 20 题</div>
+<div class="progress-bar"><div id="pbar"></div></div>
+<div class="container">
+  <div class="qcard" id="qcard"></div>
+  <div class="nav-row">
+    <button onclick="prevQ()">← 上一题</button>
+    <button onclick="nextQ()">下一题 →</button>
+  </div>
+  <div id="result-page" class="hidden">
+    <h2>🎉 完成全部题目</h2>
+    <div class="big" id="finalScore"></div>
+    <p id="finalComment" style="margin:14px 0; color:#6b6155;"></p>
+    <div class="btn-row" style="max-width:400px; margin:18px auto 0;">
+      <button class="btn ghost" onclick="openDashboard()">返回查看</button>
+      <button class="btn" onclick="continueQuiz()">继续做题</button>
+    </div>
+  </div>
+</div>
+<div class="dashboard-overlay" id="dashOverlay">
+  <div class="dashboard">
+    <h3>📊 题目总览</h3>
+    <div class="legend">
+      <span><span class="dot" style="background:#e6efe2;"></span>已答对</span>
+      <span><span class="dot" style="background:#f5e4e0;"></span>已答错</span>
+      <span><span class="dot" style="background:#f8f4ec;"></span>未答</span>
+    </div>
+    <div class="dgrid" id="dgrid"></div>
+    <div class="btn-row"><button class="btn" onclick="closeDashboard()">关闭</button></div>
+  </div>
+</div>
+<footer>源笔记：01e-game-benchmarks-latest.md ｜ AIResearchVault</footer>
+<script>
+// ===================== 题目数据 =====================
+const dragQuestions = [
+  { title:"VideoGameBench 中，{0} 设置在等待模型输出时暂停游戏时钟，用于隔离 {1} 这一瓶颈因素。",
+    answers:["Lite","inference latency"], pool:["Lite","inference latency","autosave","Mean Harm","checkpoint","Elo"],
+    explains:[
+      "✅ Lite 设置：游戏时钟在模型推理时暂停，把延迟因素从智能评估中剥离。autosave 是 TextQuests 的机制，与本题无关。",
+      "✅ inference latency 是论文指出的实时游戏主要瓶颈（实时版 0.48% vs Lite 版 1.6%）。Mean Harm 是 TextQuests 的伤害指标。"],
+    link:"01e-game-benchmarks-latest.md#1-videogamebench" },
+  { title:"Orak 基于 {0} 协议构建 plug-and-play 接口，使 {1} 等 agentic 策略模块可以即插即用地替换与消融。",
+    answers:["MCP","记忆 / 规划 / 反思"], pool:["MCP","记忆 / 规划 / 反思","VGDL","canary GUID","CRIU","checkpoint"],
+    explains:[
+      "✅ MCP（Model Context Protocol）把每款游戏封装为标准 server，统一 tool 接口。VGDL 是 GVGAI-LLM 的游戏描述语言，不是接口协议。",
+      "✅ 记忆/规划/反思（memory / planner / self-reflection）是可消融的 agentic 模块。canary GUID 是 TextQuests 的防污染标记。"],
+    link:"01e-game-benchmarks-latest.md#2-orak" },
+  { title:"TextQuests 用专家标注 checkpoint 的 {0} 度量游戏进度，并用 {1} 度量 agent 的危险/破坏性行为。",
+    answers:["Game Progress","Mean Harm"], pool:["Game Progress","Mean Harm","step efficiency","Elo","blast radius","fidelity"],
+    explains:[
+      "✅ Game Progress 是基于专家标注 checkpoint 的进度指标。step efficiency 是 GVGAI-LLM 的指标。",
+      "✅ Mean Harm 把安全维度纳入游戏评估。Elo 是 Orak battle arena 的排名方式，不是伤害指标。"],
+    link:"01e-game-benchmarks-latest.md#3-textquests" },
+  { title:"GVGAI-LLM 利用 {0} 语言程序化生成新游戏规则与关卡，并用 {1} 紧凑字符表征场景以便 LLM 处理。",
+    answers:["VGDL","ASCII"], pool:["VGDL","ASCII","MCP","像素","YAML","sprite"],
+    explains:[
+      "✅ VGDL（Video Game Description Language）支持无限生成新游戏，天然抗过拟合。MCP 是 Orak 的接口协议。",
+      "✅ ASCII 表征把 spatial reasoning 从视觉感知中解耦出来单测。像素观测属于 VideoGameBench 的设定。"],
+    link:"01e-game-benchmarks-latest.md#4-gvgai-llm" }
+];
+
+const singleQuestions = [
+  { q:"VideoGameBench 中，最强模型（Gemini 2.5 Pro / Claude 3.7 Sonnet）在实时设置下完成的游戏进度约为多少？",
+    options:["0.48%","4.8%","16%","48%"], correct:0,
+    expl:["✅ 正确：实时版最高仅 0.48%，Lite 版也仅 1.6%，而人类可轻松通关。",
+          "❌ 错误：夸大了 10 倍。实际数字是 0.48%。",
+          "❌ 错误：16% 远超实际水平。所有模型都无法越过大多数游戏的开局阶段。",
+          "❌ 错误：48% 意味着接近一半游戏进度，与实际（<1%）相差两个数量级。"],
+    link:"01e-game-benchmarks-latest.md#1-videogamebench" },
+  { q:"VideoGameBench 的 Lite 设置（等待模型输出时暂停游戏时钟）的主要目的是什么？",
+    options:["降低评估成本","隔离 inference latency 因素，测纯智能上限","防止训练数据泄漏","让弱模型也能通关"],
+    correct:1,
+    expl:["❌ 错误：暂停时钟反而可能增加总耗时，与成本无关。",
+          "✅ 正确：实时版 0.48% vs Lite 版 1.6% 的落差说明延迟是主要瓶颈；Lite 把 latency 从智能评估中剥离。",
+          "❌ 错误：防泄漏靠的是 dev/test split 与保密游戏，不是暂停时钟。",
+          "❌ 错误：Lite 只改变时钟行为，不降低游戏本身的难度。"],
+    link:"01e-game-benchmarks-latest.md#1-videogamebench" },
+  { q:"Orak 相对其前作 BALROG 最核心的扩展是什么？",
+    options:["首次引入视觉观测模态","用人类玩家轨迹做 fine-tuning","基于 MCP 的统一接口支持 agentic 模块的系统消融","把评估目标改为完整故事线通关"],
+    correct:2,
+    expl:["❌ 错误：视觉模态并非 Orak 首创。",
+          "❌ 错误：Orak 的 fine-tuning 数据由专家 LLM 轨迹构成，而非人类玩家——这正是其质量上限的约束。",
+          "✅ 正确：MCP plug-and-play 接口使记忆/规划/反思模块可即插即用消融，把游戏 agent 研究从'刷分'转向'模块化科学'。",
+          "❌ 错误：full story arc 是 FlashAdventure 的评估目标。"],
+    link:"01e-game-benchmarks-latest.md#2-orak" },
+  { q:"TextQuests 中'提供结构化 clue 与 autosave 后性能显著提升'，这一实验说明模型瓶颈主要在什么？",
+    options:["缺乏 80 年代游戏的知识","文本理解能力不足","动作空间太大","动态长上下文状态管理与推理"],
+    correct:3,
+    expl:["❌ 错误：80 年代游戏知识早已在训练语料中，瓶颈不在知识。",
+          "❌ 错误：纯文本理解并非短板，clue 提示主要帮助的是状态组织而非语言理解。",
+          "❌ 错误：文字冒险的动作空间（文本命令）并非论文诊断出的瓶颈。",
+          "✅ 正确：clue 一给就好转，说明模型缺的是长上下文状态管理——记住试过什么、inventory 有什么、谜题间依赖。"],
+    link:"01e-game-benchmarks-latest.md#3-textquests" },
+  { q:"GVGAI-LLM 抵抗 benchmark 污染（overfitting）的机制是什么？",
+    options:["VGDL 程序化生成新游戏，评测集可无限刷新","使用 3 款保密游戏","在数据集中嵌入 canary GUID","禁止模型访问攻略"],
+    correct:0,
+    expl:["✅ 正确：VGDL 程序化生成是唯一可持续的防污染方案（'造'），与保密游戏（'藏'）、canary GUID（'标记'）是三条不同路线。",
+          "❌ 错误：保密游戏是 VideoGameBench 的机制。",
+          "❌ 错误：canary GUID 是 TextQuests 的机制。",
+          "❌ 错误：禁攻略是 VideoGameBench 的 scaffolding 规则，与生成新游戏无关。"],
+    link:"01e-game-benchmarks-latest.md#4-gvgai-llm" },
+  { q:"FlashAdventure 提出的 observation-behavior gap 指的是什么？",
+    options:["模型看到的画面与真实游戏画面的差距","观测到信息 ≠ 在行为上利用信息","agent 的观测频率低于游戏帧率","训练分布与测试分布的 gap"],
+    correct:1,
+    expl:["❌ 错误：这是渲染/感知保真度问题，不是论文定义的概念。",
+          "✅ 正确：信息进了 context 不等于进了决策——第 5 步看到密码，第 50 步需要时却用不上。这解释了 context window 收益递减。",
+          "❌ 错误：这是采样率问题，与 observation-behavior gap 无关。",
+          "❌ 错误：这是 domain gap 的定义，概念混淆。"],
+    link:"01e-game-benchmarks-latest.md#5-flashadventure" },
+  { q:"VisEscape 给 agent 的唯一指令是什么？",
+    options:["收集房间内所有道具","解开所有谜题","逃出房间","按任务清单逐步执行"],
+    correct:2,
+    expl:["❌ 错误：收集道具是 agent 需要自己发现的子目标，不是给定指令。",
+          "❌ 错误：谜题清单不会事先告知——目标发现本身就是挑战。",
+          "✅ 正确：唯一指令就是'逃出房间'，考察 exploration-driven planning：主动搜索、试错、迭代修正 spatial-temporal 知识。",
+          "❌ 错误：VisEscape 恰恰不提供任务清单，这是它区别于其他 benchmark 的最小化目标设定。"],
+    link:"01e-game-benchmarks-latest.md#6-visescape" }
+];
+
+const multiQuestions = [
+  { q:"TextQuests 的设计机制包括以下哪些？（多选）",
+    options:["禁止使用外部工具，测 intrinsic reasoning","autosave 机制研究 trial-and-error 学习","数据集带 canary GUID 防污染","Mean Harm 伤害指标","原始像素观测 + 按键操作","MCP plug-and-play 接口"],
+    correct:[0,1,2,3],
+    expl:["✅ 禁工具是核心隔离设定，专测内在长上下文推理。",
+          "✅ autosave 是可控研究试错学习的机制。",
+          "✅ canary GUID 是防训练污染设计。",
+          "✅ Mean Harm 把安全纳入游戏指标。",
+          "❌ 像素+按键是 VideoGameBench 的设定；TextQuests 是纯文本。",
+          "❌ MCP 接口是 Orak 的架构，TextQuests 不用。"],
+    link:"01e-game-benchmarks-latest.md#3-textquests" },
+  { q:"以下哪些属于对抗 benchmark 数据污染的技术路线？（多选）",
+    options:["保密游戏 split（VideoGameBench）","canary GUID（TextQuests）","VGDL 程序化生成新游戏（GVGAI-LLM）","增大模型参数量","增加 few-shot prompt 示例","专家人工标注 checkpoint"],
+    correct:[0,1,2],
+    expl:["✅ '藏'：保密游戏不公开，无法被刷。",
+          "✅ '标记'：canary GUID 可检测数据是否进训练语料。",
+          "✅ '造'：程序化生成使评测集无限刷新，是唯一可持续方案。",
+          "❌ 增大模型与防污染无关，反而可能加剧记忆。",
+          "❌ few-shot 是提升表现的手段，不防泄漏。",
+          "❌ 人工标注是评估方法，不能防止训练数据污染。"],
+    link:"01e-game-benchmarks-latest.md#方向横向观察" },
+  { q:"FlashAdventure 的主要创新包括哪些？（多选）",
+    options:["首个 full story arc 通关评估目标","CUA-as-a-Judge 自动评估器","COAST 长期 clue memory 规划框架","observation-behavior gap 概念形式化","实时按键操作 + 物理模拟","LLM battle arena Elo 排名"],
+    correct:[0,1,2,3],
+    expl:["✅ 首个以完整故事线通关为目标的游戏 GUI 基准。",
+          "✅ 用 computer-use agent 自动评估进度，免人工标注（但有误差传递风险）。",
+          "✅ COAST 用 clue memory 弥合 observation-behavior gap。",
+          "✅ 形式化'看到 ≠ 用上'这一长程 agent 核心瓶颈。",
+          "❌ 实时物理操作不是 FlashAdventure 的特征；它是 GUI 冒险游戏基准。",
+          "❌ battle arena 是 Orak 的评估组件。"],
+    link:"01e-game-benchmarks-latest.md#5-flashadventure" },
+  { q:"2025–2026 新一代游戏 Agent 基准的共同趋势包括哪些？（多选）",
+    options:["设计隔离变量的诊断性实验（如 Lite 设置、禁工具、模态解耦）","评估指标向训练信号演化（step ratio、SFT 数据集）","重视防污染机制设计","支持 agentic 模块的系统消融","只报告单一总分，不做归因分析","统一移除所有防泄漏设计以便复现"],
+    correct:[0,1,2,3],
+    expl:["✅ 从'刷分'转向'诊断'：隔离 latency、工具、模态等变量定位失败原因。",
+          "✅ 评估与训练边界消融：Orak SFT 数据、GVGAI-LLM step ratio。",
+          "✅ 保密游戏/canary/程序化生成三条防污染路线并行。",
+          "✅ Orak 的 MCP 接口使模块消融成为标准实践。",
+          "❌ 恰好相反：新基准的共同转向是拒绝只报总分。",
+          "❌ 恰好相反：防泄漏是新基准的核心设计维度。"],
+    link:"01e-game-benchmarks-latest.md#方向横向观察" }
+];
+
+const trueFalseQuestions = [
+  { q:"VideoGameBench 的 Lite 设置下，最强模型能完成超过 10% 的游戏进度。",
+    correct:false,
+    expl:"✅ 正确理解：Lite 版最高仅 1.6%，实时版仅 0.48%。<br>❌ 常见误解：以为'暂停等推理'解决了延迟问题后模型就能玩得不错——实际上即使去掉 latency，纯智能也远不够通关。",
+    link:"01e-game-benchmarks-latest.md#1-videogamebench" },
+  { q:"TextQuests 允许模型使用搜索引擎等外部工具辅助解题。",
+    correct:false,
+    expl:"✅ 正确理解：TextQuests 禁止一切外部工具，专测 intrinsic long-context reasoning。<br>❌ 常见误解：以为现代 agent 评测都默认带工具——TextQuests 恰恰是'自包含'设定，把工具能力从评估中剥离。",
+    link:"01e-game-benchmarks-latest.md#3-textquests" },
+  { q:"Orak 的 fine-tuning 数据集由人类专家玩家的游戏轨迹构成。",
+    correct:false,
+    expl:"✅ 正确理解：数据集由强 LLM 在多 genre 游戏中的专家轨迹构成。<br>❌ 常见误解：'专家轨迹'指专家 LLM 而非人类——这决定了 SFT 的质量上限受教师模型约束（前沿模型自己游戏进度都 <2%）。",
+    link:"01e-game-benchmarks-latest.md#2-orak" },
+  { q:"GVGAI-LLM 用 ASCII 紧凑表征把 spatial reasoning 从视觉感知中解耦出来单独测试。",
+    correct:true,
+    expl:"✅ 正确理解：ASCII 场景表征让纯文本 LLM 也能被测空间推理，无需视觉模态。若 ASCII 下依然犯错，说明问题是推理能力而非感知能力。<br>❌ 常见误解：以为测空间推理必须有像素输入。",
+    link:"01e-game-benchmarks-latest.md#4-gvgai-llm" },
+  { q:"FlashAdventure 的 CUA-as-a-Judge 用 computer-use agent 自动评估游戏进度、免除人工标注，但 judge 自身的评估误差会传递给被测 agent 的排名。",
+    correct:true,
+    expl:"✅ 正确理解：自动裁判大幅降低标注成本，但 judge 误差传递、judge 与 agent 同源的系统性偏置是论文承认的局限。<br>❌ 常见误解：以为 LLM-as-a-Judge 类方案是'免费午餐'，不需要人工抽检校准。",
+    link:"01e-game-benchmarks-latest.md#5-flashadventure" }
+];
+
+// ===================== 引擎 =====================
+const allQuestions = [];
+dragQuestions.forEach((q,i)=>allQuestions.push({type:'drag',idx:i}));
+singleQuestions.forEach((q,i)=>allQuestions.push({type:'single',idx:i}));
+multiQuestions.forEach((q,i)=>allQuestions.push({type:'multi',idx:i}));
+trueFalseQuestions.forEach((q,i)=>allQuestions.push({type:'tf',idx:i}));
+
+const totalMax = allQuestions.length;
+let cur = 0;
+let states = allQuestions.map(()=>({answered:false, ok:false, sel:null, blanks:null}));
+
+function shufflePairs(q){
+  const pairs = q.options.map((opt,i)=>({opt, expl:q.expl[i], wasCorrect:Array.isArray(q.correct)?q.correct.includes(i):i===q.correct}));
+  for(let i=pairs.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [pairs[i],pairs[j]]=[pairs[j],pairs[i]]; }
+  q.options = pairs.map(p=>p.opt); q.expl = pairs.map(p=>p.expl);
+  if(Array.isArray(q.correct)) q.correct = pairs.map((p,i)=>p.wasCorrect?i:-1).filter(i=>i>=0);
+  else q.correct = pairs.findIndex(p=>p.wasCorrect);
+}
+function shuffleAll(){
+  singleQuestions.forEach(shufflePairs);
+  multiQuestions.forEach(shufflePairs);
+  resetAll(false);
+  alert("选项已重新洗牌，答题记录已清空。");
+}
+
+function render(){
+  const meta = allQuestions[cur];
+  const st = states[cur];
+  const card = document.getElementById('qcard');
+  document.getElementById('result-page').classList.add('hidden');
+  document.getElementById('qcard').classList.remove('hidden');
+  document.getElementById('progressText').textContent = `第 ${cur+1} / ${totalMax} 题`;
+  document.getElementById('pbar').style.width = ((cur+1)/totalMax*100)+'%';
+
+  if(meta.type==='drag'){
+    const q = dragQuestions[meta.idx];
+    if(!st.blanks) st.blanks = q.answers.map(()=>null);
+    let html = `<span class="qtype">拖拽/点击填空</span><div class="qtitle">`;
+    let parts = q.title.split(/\{(\d)\}/);
+    parts.forEach((p,i)=>{
+      if(i%2===0) html += p;
+      else html += `<span class="blank ${st.blanks[+p]?'filled':''}" data-b="${p}" onclick="pickBlank(${p})">${st.blanks[+p]||'___'}</span>`;
+    });
+    html += `</div><div class="pool">` + q.pool.map(c=>`<span class="chip ${st.blanks.includes(c)?'used':''}" onclick="pickChip('${c}')">${c}</span>`).join('') + `</div>`;
+    html += `<div class="result-box" id="resbox"></div><div class="btn-row">
+      <button class="btn" onclick="checkDrag(${meta.idx})">检查答案</button>
+      <button class="btn ghost" onclick="resetQ()">重置本题</button>
+      <button class="btn ghost" onclick="window.open('${q.link}')">📖 详情</button></div>`;
+    card.innerHTML = html;
+  } else if(meta.type==='single' || meta.type==='tf'){
+    const q = meta.type==='single' ? singleQuestions[meta.idx] : trueFalseQuestions[meta.idx];
+    const isTF = meta.type==='tf';
+    const opts = isTF ? ["✔ 正确（True）","✘ 错误（False）"] : q.options;
+    html = `<span class="qtype">${isTF?'判断题':'单选题'}</span><div class="qtitle">${q.q}</div>`;
+    opts.forEach((o,i)=>{
+      let cls = 'opt';
+      if(st.sel===i) cls += ' sel';
+      if(st.answered){
+        const isRight = isTF ? ((q.correct===true&&i===0)||(q.correct===false&&i===1)) : i===q.correct;
+        if(isRight) cls += ' correct';
+        else if(st.sel===i) cls += ' wrong';
+      }
+      html += `<button class="${cls}" onclick="selOpt(${i})">${o}</button>`;
+      if(st.answered && !isTF) html += `<div class="expl">${q.expl[i]}</div>`;
+    });
+    if(st.answered && isTF) html += `<div class="result-box ${st.ok?'ok':'bad'} show">${q.expl}</div>`;
+    html += `<div class="btn-row">
+      <button class="btn" onclick="checkChoice('${meta.type}',${meta.idx})">检查答案</button>
+      <button class="btn ghost" onclick="resetQ()">重置本题</button>
+      <button class="btn ghost" onclick="window.open('${q.link}')">📖 详情</button></div>`;
+    card.innerHTML = html;
+  } else { // multi
+    const q = multiQuestions[meta.idx];
+    if(!st.sel) st.sel = [];
+    html = `<span class="qtype">多选题</span><div class="qtitle">${q.q}</div>`;
+    q.options.forEach((o,i)=>{
+      let cls = 'opt';
+      if(st.sel.includes(i)) cls += ' sel';
+      if(st.answered){
+        if(q.correct.includes(i)) cls += ' correct';
+        else if(st.sel.includes(i)) cls += ' wrong';
+      }
+      html += `<button class="${cls}" onclick="toggleMulti(${i})">${o}</button>`;
+      if(st.answered) html += `<div class="expl">${q.expl[i]}</div>`;
+    });
+    html += `<div class="btn-row">
+      <button class="btn" onclick="checkChoice('multi',${meta.idx})">检查答案</button>
+      <button class="btn ghost" onclick="resetQ()">重置本题</button>
+      <button class="btn ghost" onclick="window.open('${q.link}')">📖 详情</button></div>`;
+    card.innerHTML = html;
+  }
+  updateScore();
+}
+
+let activeBlank = 0;
+function pickBlank(b){ activeBlank = b; }
+function pickChip(c){
+  const st = states[cur];
+  if(st.answered) return;
+  if(st.blanks.includes(c)) return;
+  st.blanks[activeBlank] = c;
+  activeBlank = (activeBlank+1) % st.blanks.length;
+  render();
+}
+function selOpt(i){ const st = states[cur]; if(st.answered) return; st.sel = i; render(); }
+function toggleMulti(i){ const st = states[cur]; if(st.answered) return;
+  const k = st.sel.indexOf(i); if(k>=0) st.sel.splice(k,1); else st.sel.push(i); render(); }
+
+function checkDrag(idx){
+  const q = dragQuestions[idx]; const st = states[cur];
+  if(st.blanks.some(b=>!b)) { alert("请先填满所有空。"); return; }
+  st.ok = st.blanks.every((b,i)=>b===q.answers[i]);
+  st.answered = true;
+  const box = document.getElementById('resbox');
+  box.className = 'result-box show ' + (st.ok?'ok':'bad');
+  box.innerHTML = (st.ok?'✅ 回答正确！':'❌ 回答错误。') + '<br>' + q.explains.join('<br>');
+  updateScore();
+}
+function checkChoice(type, idx){
+  const st = states[cur];
+  if(st.sel===null || (type==='multi'&&st.sel.length===0)){ alert("请先选择答案。"); return; }
+  if(type==='single'){ st.ok = st.sel===singleQuestions[idx].correct; }
+  else if(type==='tf'){ st.ok = (st.sel===0)===trueFalseQuestions[idx].correct; }
+  else { const c = multiQuestions[idx].correct; st.ok = st.sel.length===c.length && st.sel.every(i=>c.includes(i)); }
+  st.answered = true; render();
+}
+
+function updateScore(){
+  const s = states.filter(st=>st.answered&&st.ok).length;
+  document.getElementById('scoreBar').textContent = `得分：${s} / ${totalMax}`;
+}
+function resetQ(){ const st = states[cur]; st.answered=false; st.ok=false; st.sel=allQuestions[cur].type==='multi'?[]:null; st.blanks=null; render(); }
+function resetAll(confirmFirst=true){
+  if(confirmFirst && !confirm("确定清空所有答题记录？")) return;
+  states = allQuestions.map(()=>({answered:false,ok:false,sel:null,blanks:null}));
+  cur = 0; render();
+}
+function prevQ(){ if(cur>0){ cur--; render(); } }
+function nextQ(){
+  if(cur<totalMax-1){ cur++; render(); }
+  else showResult();
+}
+function showResult(){
+  const s = states.filter(st=>st.answered&&st.ok).length;
+  document.getElementById('qcard').classList.add('hidden');
+  const rp = document.getElementById('result-page');
+  rp.classList.remove('hidden');
+  document.getElementById('finalScore').textContent = `${s} / ${totalMax}`;
+  const pct = s/totalMax;
+  document.getElementById('finalComment').textContent =
+    pct>=0.9 ? "🏆 优秀！游戏 Agent 基准方向已融会贯通。" :
+    pct>=0.7 ? "👍 不错！个别细节再回笔记巩固。" :
+    pct>=0.5 ? "📖 过半了，建议重读 01e 笔记的横向观察部分。" :
+               "💪 建议重新精读笔记后再来挑战。";
+}
+function continueQuiz(){ document.getElementById('result-page').classList.add('hidden'); render(); }
+
+function openDashboard(){
+  const grid = document.getElementById('dgrid');
+  grid.innerHTML = allQuestions.map((m,i)=>{
+    const st = states[i];
+    const label = m.type==='drag'?'填':m.type==='single'?'单':m.type==='multi'?'多':'判';
+    const cls = st.answered ? (st.ok?'ok':'bad') : '';
+    return `<div class="dcell ${cls}" onclick="jumpQ(${i})">${label}${i+1}</div>`;
+  }).join('');
+  document.getElementById('dashOverlay').classList.add('open');
+}
+function closeDashboard(){ document.getElementById('dashOverlay').classList.remove('open'); }
+function jumpQ(i){ cur = i; closeDashboard(); render(); }
+
+render();
+</script>
+</body>
+</html>

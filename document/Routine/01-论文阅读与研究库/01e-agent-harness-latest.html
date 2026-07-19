@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agent Harness 工程 · 面试自测卡牌</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Segoe UI", "Microsoft YaHei", sans-serif; background: #f6f4f0; color: #2c2a26; line-height: 1.6; }
+  header { background: #3e3a34; color: #f6f4f0; padding: 18px 20px; }
+  header h1 { font-size: 1.25rem; }
+  header p { font-size: .85rem; opacity: .8; margin-top: 4px; }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 20px; background: #ece8e1; border-bottom: 1px solid #d8d2c7; }
+  .toolbar button { border: 1px solid #b9b1a3; background: #fff; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: .85rem; }
+  .toolbar button:hover { background: #3e3a34; color: #fff; }
+  .score-bar { padding: 8px 20px; font-size: .9rem; background: #fff; border-bottom: 1px solid #e2ddd4; }
+  .progress-text { padding: 4px 20px; font-size: .8rem; color: #6b655a; background:#fff; }
+  .progress-bar { height: 5px; background: #e2ddd4; }
+  .progress-bar > div { height: 100%; background: #7d8c6f; width: 0%; transition: width .3s; }
+  .container { max-width: 860px; margin: 20px auto; padding: 0 16px; }
+  .q-card { background: #fff; border: 1px solid #ddd6ca; border-radius: 10px; padding: 20px; margin-bottom: 16px; }
+  .q-tag { display: inline-block; font-size: .72rem; padding: 2px 8px; border-radius: 10px; background: #8a7f6a; color: #fff; margin-bottom: 8px; }
+  .q-paper { font-size: .75rem; color: #8a8274; margin-left: 6px; }
+  .q-text { font-weight: 600; margin-bottom: 14px; }
+  .blank { display: inline-block; min-width: 110px; border-bottom: 2px dashed #8a7f6a; text-align: center; padding: 0 6px; margin: 0 2px; color: #5c6b4f; font-weight: 700; cursor: pointer; }
+  .blank.filled { border-bottom-style: solid; background: #f0ede6; }
+  .pool { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+  .chip { border: 1px solid #b9b1a3; background: #faf8f4; padding: 5px 12px; border-radius: 16px; cursor: grab; font-size: .85rem; user-select: none; }
+  .chip.used { opacity: .35; cursor: not-allowed; }
+  .opt { display: block; width: 100%; text-align: left; border: 1px solid #d8d2c7; background: #fbfaf7; padding: 10px 12px; border-radius: 8px; margin-bottom: 8px; cursor: pointer; font-size: .9rem; }
+  .opt.sel { border-color: #5c6b4f; background: #eef2e8; }
+  .opt.correct { border-color: #4f7a3d; background: #e6f0df; }
+  .opt.wrong { border-color: #a34a3a; background: #f6e3df; }
+  .expl { font-size: .82rem; margin: 3px 0 8px; padding: 6px 10px; border-radius: 6px; background: #f4f1ea; display: none; }
+  .btns { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .btns button { border: none; border-radius: 6px; padding: 8px 16px; cursor: pointer; font-size: .85rem; background: #3e3a34; color: #fff; }
+  .btns button.ghost { background: #e2ddd4; color: #2c2a26; }
+  .nav { display: flex; justify-content: space-between; max-width: 860px; margin: 10px auto 40px; padding: 0 16px; }
+  .nav button { border: 1px solid #b9b1a3; background: #fff; padding: 8px 18px; border-radius: 6px; cursor: pointer; }
+  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: none; z-index: 10; }
+  .overlay.open { display: block; }
+  .panel { position: fixed; top: 0; right: -420px; width: 400px; max-width: 92vw; height: 100%; background: #fff; transition: right .25s; z-index: 11; overflow-y: auto; padding: 20px; }
+  .panel.open { right: 0; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 8px; margin-top: 14px; }
+  .cell { border: 1px solid #ccc; border-radius: 6px; text-align: center; padding: 8px 2px; font-size: .75rem; cursor: pointer; background: #f6f4f0; }
+  .cell.ok { background: #e6f0df; border-color: #4f7a3d; }
+  .cell.bad { background: #f6e3df; border-color: #a34a3a; }
+  .filter { margin-top: 12px; display: flex; gap: 6px; flex-wrap: wrap; }
+  .filter button { font-size: .75rem; border: 1px solid #b9b1a3; background: #fff; border-radius: 12px; padding: 3px 10px; cursor: pointer; }
+  #result { display: none; max-width: 860px; margin: 30px auto; padding: 24px; background: #fff; border-radius: 10px; border: 1px solid #ddd6ca; text-align: center; }
+  .hidden { display: none !important; }
+  a.dlink { font-size: .78rem; color: #5c6b4f; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🧠 Agent Harness 工程与上下文工程 · 面试自测卡牌</h1>
+  <p>配套笔记：01e-agent-harness-latest.md ｜ 覆盖 7 篇论文（Survey / ACE / MAST / AFlow / Confucius / GCC / RepoST）｜ 2026-07-20</p>
+</header>
+<div class="toolbar">
+  <button onclick="openDashboard()">📊 题目总览</button>
+  <button onclick="shuffleAll()">🎲 重新洗牌选项</button>
+  <button onclick="resetAll()">🔄 重置所有分数</button>
+  <button onclick="showResult()">🏁 查看成绩</button>
+</div>
+<div class="score-bar" id="scoreBar">总得分：0 / 0</div>
+<div class="progress-text" id="progressText"></div>
+<div class="progress-bar" id="progressBar"><div id="progressFill"></div></div>
+<div class="container" id="quizArea"></div>
+<div class="nav" id="navBar">
+  <button onclick="prevQ()">← 上一题</button>
+  <button onclick="nextQ()">下一题 →</button>
+</div>
+<div id="result"></div>
+<div class="overlay" id="overlay" onclick="closeDashboard()"></div>
+<div class="panel" id="panel">
+  <h3>📊 题目总览</h3>
+  <div class="filter">
+    <button onclick="renderGrid('all')">全部</button>
+    <button onclick="renderGrid('ok')">✅ 正确</button>
+    <button onclick="renderGrid('bad')">❌ 错误</button>
+    <button onclick="renderGrid('todo')">⬜ 未答</button>
+  </div>
+  <div class="grid" id="grid"></div>
+  <div class="btns"><button class="ghost" onclick="closeDashboard()">关闭</button></div>
+</div>
+
+<script>
+/* ================= 题目数据 ================= */
+const dragQuestions = [
+{ paper:"ACE", text:"ACE 把上下文当作活的 {0}，通过 Generator → {1} → Curator 三段式循环做增量更新。",
+  answers:["playbook","Reflector"], pool:["playbook","Reflector","database","Executor"],
+  expl:["playbook：ACE 把 system prompt/memory 视为可持续演化的 playbook，而非静态字符串；database 是干扰项，ACE 不强调关系型存储。",
+        "Reflector 负责从执行轨迹中提炼策略；Executor 是干扰项，ACE 中执行由 Generator 侧完成。"],
+  link:"01e-agent-harness-latest.md#2-ace-agentic-context-engineering" },
+{ paper:"GCC", text:"Git Context Controller 提供四个显式操作：{0} 做里程碑式 checkpoint，{1} 隔离探索替代推理路径。",
+  answers:["COMMIT","BRANCH"], pool:["COMMIT","BRANCH","PUSH","STASH"],
+  expl:["COMMIT 是里程碑快照；PUSH 不是 GCC 原语（GCC 是本地工作区语义）。",
+        "BRANCH 用于隔离探索避免污染主线；STASH 是干扰项，GCC 四原语为 COMMIT/BRANCH/MERGE/CONTEXT。"],
+  link:"01e-agent-harness-latest.md#6-git-context-controller" },
+{ paper:"AFlow", text:"AFlow 把 workflow 表示为 {0}，用 {1} 结合执行反馈在 workflow 空间上搜索。",
+  answers:["代码","MCTS"], pool:["代码","MCTS","自然语言","随机搜索"],
+  expl:["workflow 以 Python 代码表示（节点=LLM 调用，边=控制流）；自然语言表示是干扰项。",
+        "用 Monte Carlo Tree Search + LLM mutation + execution feedback；随机搜索无法复用树状经验。"],
+  link:"01e-agent-harness-latest.md#4-aflow" },
+{ paper:"RepoST", text:"RepoST 的 sandbox testing 把目标函数及其 {0} 隔离到独立脚本中测试，构建“最小 {1} 闭包”。",
+  answers:["依赖","可执行"], pool:["依赖","可执行","文档","类型"],
+  expl:["静态分析目标函数的依赖链，抽取必要代码；文档是干扰项。",
+        "最小可执行闭包（minimal executable closure）是核心概念；类型闭包是干扰项。"],
+  link:"01e-agent-harness-latest.md#7-repost" }
+];
+
+const singleQuestions = [
+{ paper:"Survey", q:"Context Engineering Survey 的核心主张是什么？",
+  options:["LLM 性能主要由模型权重质量决定","Prompt 工程已死，微调才是出路","LLM 性能主要由 inference-time context 决定，模型固定后性能来自上下文优化","上下文工程只等于 RAG"],
+  correct:2,
+  expl:["❌ 错误：恰恰相反，综述主张权重固定后仍有巨大优化空间。","❌ 错误：综述不涉及微调路线之争。","✅ 正确：c* = argmax E[reward | LLM(query, c)]，所有技术都是该优化问题的求解器。","❌ 错误：RAG 只是四大系统实现之一。"],
+  link:"01e-agent-harness-latest.md#1-a-survey-of-context-engineering" },
+{ paper:"Survey", q:"Survey 指出的核心开放问题“understanding–generation 不对称”指什么？",
+  options:["模型能理解超长上下文，但无法生成等长的连贯输出","模型生成速度远慢于理解速度","理解用 GPU、生成用 CPU","开源模型理解强、闭源模型生成强"],
+  correct:0,
+  expl:["✅ 正确：能读 1M token 却写不出等长连贯输出，这决定了 agent 系统的架构上限。","❌ 错误：不是速度问题。","❌ 错误：与硬件无关。","❌ 错误：与开源闭源无关。"],
+  link:"01e-agent-harness-latest.md#1-a-survey-of-context-engineering" },
+{ paper:"ACE", q:"ACE 解决的两大失败模式是？",
+  options:["reward hacking 与 mode collapse","hallucination 与 jailbreak","overfitting 与 underfitting","brevity bias 与 context collapse"],
+  correct:3,
+  expl:["❌ 错误：这是 RL 领域的失败模式。","❌ 错误：与安全对齐无关。","❌ 错误：这不是统计学习问题。","✅ 正确：brevity bias = 为简洁丢掉领域知识；context collapse = 迭代重写侵蚀细节。"],
+  link:"01e-agent-harness-latest.md#2-ace-agentic-context-engineering" },
+{ paper:"ACE", q:"ACE 的 Curator 采用什么方式更新 playbook？",
+  options:["整体重写整个上下文","以 item 为单位的增量 delta 更新（追加/修订）","随机删除一半条目","每轮清空重新生成"],
+  correct:1,
+  expl:["❌ 错误：整体重写正是 context collapse 的根源。","✅ 正确：类似 versioned patch 而非 rewrite，配去重与组织保持可扩展性。","❌ 错误：无此机制。","❌ 错误：清空会丢失全部积累。"],
+  link:"01e-agent-harness-latest.md#2-ace-agentic-context-engineering" },
+{ paper:"MAST", q:"MAST 论文的核心结论是？",
+  options:["多 agent 失败主要因为底层模型不够聪明","多 agent 系统在所有基准上都优于单 agent","多 agent 失败主要在 harness/编排层，而非模型能力","失败完全随机、无法分类"],
+  correct:2,
+  expl:["❌ 错误：这是论文明确反驳的直觉。","❌ 错误：MAS 收益常常微弱。","✅ 正确：14 种失败模式多属系统设计缺陷、agent 间错位、验证缺失——同样的模型，harness 决定成败。","❌ 错误：论文构建了完整 taxonomy。"],
+  link:"01e-agent-harness-latest.md#3-mast" },
+{ paper:"AFlow", q:"AFlow 的标志性实验结果是？",
+  options:["GPT-4o 配 AFlow 超过所有人类工程师","AFlow 完全不需要执行反馈","AFlow 只在 MATH 上有效","小模型 + AFlow 搜出的 workflow 超过 GPT-4o，推理成本仅为其 4.55%"],
+  correct:3,
+  expl:["❌ 错误：无此实验。","❌ 错误：execution feedback 是搜索的 reward 来源。","❌ 错误：覆盖 GSM8K/MATH/HumanEval/MBPP/HotpotQA/DROP 六基准。","✅ 正确：6 基准平均 +5.7%；脚手架优化可弥补模型规模差距，成本 4.55%。"],
+  link:"01e-agent-harness-latest.md#4-aflow" },
+{ paper:"GCC", q:"GCC 相对传统 agent 上下文的范式转变是？",
+  options:["从 append-only token 流到可版本化、可导航的结构化记忆工作区","把所有上下文塞进更长 prompt","用向量数据库完全替代上下文","每轮丢弃全部历史"],
+  correct:0,
+  expl:["✅ 正确：git 语义（COMMIT/BRANCH/MERGE/CONTEXT）使长 horizon 任务可恢复、可并行探索、可跨 agent 移植。","❌ 错误：塞长 prompt 正是 GCC 要解决的问题。","❌ 错误：不是 RAG 替代论。","❌ 错误：丢弃历史会丢失任务状态。"],
+  link:"01e-agent-harness-latest.md#6-git-context-controller" }
+];
+
+const multiQuestions = [
+{ paper:"MAST", q:"MAST taxonomy 的三大失败类别包括哪些？（多选）",
+  options:["系统设计缺陷（system design issues）","inter-agent misalignment","task verification 缺失","GPU 显存不足","tokenizer 词表过小","coordination breakdown（协调失败占大头）"],
+  correct:[0,1,2],
+  expl:["✅ 属于：角色划分/脚手架类设计问题。","✅ 属于：通信协议与共享上下文错位。","✅ 属于：缺少端到端验证环节。","❌ 不属于：硬件资源不在 taxonomy 中。","❌ 不属于：与 MAS 编排无关。","❌ 注意：coordination breakdown 是高频失败现象（约36.9%），可归入前三大类，但不是与三者并列的第四大类。"],
+  link:"01e-agent-harness-latest.md#3-mast" },
+{ paper:"Confucius", q:"Confucius SDK 的设计视角与组件包括哪些？（多选）",
+  options:["纯无状态设计、禁止任何记忆","Agent Experience (AX)","User Experience (UX)","Developer Experience (DX)","持久 note-taking 实现跨 session 学习","meta-agent 自动 build-test-improve"],
+  correct:[1,2,3,4,5],
+  expl:["❌ 不属于：恰恰相反，CCA 强调持久记忆。","✅ 属于：AX 是一等设计目标。","✅ 属于：三视角之一。","✅ 属于：三视角之一。","✅ 属于：continual learning 的关键组件。","✅ 属于：agents building agents 的落地形态。"],
+  link:"01e-agent-harness-latest.md#5-confucius-code-agent" },
+{ paper:"横向", q:"笔记中“OS 类比工具箱”的对应关系正确的有？（多选）",
+  options:["AFlow ↔ 编译器前端词法分析","MemGPT ↔ 虚拟内存分页","GCC ↔ git 版本控制","MAST ↔ 网络协议栈","ACE ↔ playbook 增量 patch","RepoST ↔ 最小可执行闭包（类似按需加载）"],
+  correct:[1,2,4,5],
+  expl:["❌ 错误：AFlow 是 workflow 空间的 MCTS 搜索，无此类比。","✅ 正确：上下文分页管理类比虚拟内存。","✅ 正确：版本化记忆工作区。","❌ 错误：MAST 是失败分类学，无此类比。","✅ 正确：delta 更新类比 patch。","✅ 正确：最小闭包按需构建执行环境。"],
+  link:"01e-agent-harness-latest.md#方向横向观察" }
+];
+
+const trueFalseQuestions = [
+{ paper:"ACE", q:"ACE 与 GCC 是竞争关系，二者只能选其一使用。", correct:false,
+  expl:{ ok:"✅ 正确理解：二者互补——ACE 管'内容怎么改'（增量演化），GCC 管'版本怎么存'（拓扑结构与版本化）。",
+         bad:"❌ 常见误解：看到都是 context engineering 方法就以为是替代关系；实际可叠加使用。"},
+  follow:"追问：如果面试官问'ACE 的 playbook 能否用 GCC 做版本管理？' → 答：可以，playbook 作为被 COMMIT/BRANCH 的结构化对象，ACE 的 Curator 产生 patch，GCC 负责存取与合并。",
+  link:"01e-agent-harness-latest.md#方向横向观察" },
+{ paper:"MAST", q:"MAST 的失败标注由 LLM 全自动完成，没有专家参与。", correct:false,
+  expl:{ ok:"✅ 正确理解：专家标注（Cohen's kappa = 0.88）+ LLM-as-Judge 规模化管线，grounded theory 式先人工开放编码再回标。",
+         bad:"❌ 常见误解：以为 1600+ 轨迹规模必然全靠 LLM 标注；实际 taxonomy 本身来自 150 条轨迹的专家开放编码。"},
+  follow:"追问：'LLM-as-Judge 会不会继承 judge 偏见？' → 答：存在风险，kappa 一致性只能缓解随机误差，系统性偏见需多 judge 交叉验证。",
+  link:"01e-agent-harness-latest.md#3-mast" },
+{ paper:"AFlow", q:"AFlow 的 workflow 搜索是零成本的，搜出最优 workflow 不需要执行 LLM。", correct:false,
+  expl:{ ok:"✅ 正确理解：每次 MCTS rollout 都要真实执行 workflow 获取 execution score，搜索成本不低；论点是 amortization——搜一次、部署很多次才划算。",
+         bad:"❌ 常见误解：'自动化'≠'免费'；搜索成本 vs 部署收益的摊还是核心 trade-off。"},
+  follow:"追问：'稀疏/延迟 reward 下 MCTS 会怎样？' → 答：搜索退化，需要 reward shaping 或 value 估计辅助。",
+  link:"01e-agent-harness-latest.md#4-aflow" },
+{ paper:"RepoST", q:"RepoST 的函数级隔离能完整保留跨模块交互类 bug 的执行信号。", correct:false,
+  expl:{ ok:"✅ 正确理解：函数级隔离恰恰丢失跨模块交互类 bug 的覆盖——这是'最小可执行闭包'牺牲真实性换规模的代价。",
+         bad:"❌ 常见误解：以为执行反馈=完整真实信号；边界条件是跨模块交互与外部 mock 可能引入虚假反馈。"},
+  follow:"追问：'什么时候整仓环境不可替代？' → 答：目标 bug 本质上是跨模块/构建系统层面时（如 SWE-bench 式集成问题）。",
+  link:"01e-agent-harness-latest.md#7-repost" },
+{ paper:"GCC", q:"GCC 在 SWE-Bench Verified 上成功率超过 80%，超过 26 个开源/商业系统。", correct:true,
+  expl:{ ok:"✅ 正确理解：相对强长上下文基线 +13%，成功率 80%+，且 BrowseComp 达 SOTA。",
+         bad:"❌ 常见误解：以为版本化上下文只是工程花哨、没有实证收益。"},
+  follow:"追问：'MERGE 冲突怎么解决？' → 答：由 LLM 语义执行，质量依赖模型能力，这是已知局限。",
+  link:"01e-agent-harness-latest.md#6-git-context-controller" },
+{ paper:"Confucius", q:"Confucius Code Agent 的 SWE-Bench-Pro Resolve@1 为 59%，是在与基线不同仓库、不同模型的宽松条件下取得的。", correct:false,
+  expl:{ ok:"✅ 正确理解：59% 是在相同仓库、相同模型后端、相同工具访问的严格对照下超过研究基线与商业系统的。",
+         bad:"❌ 常见误解：看到高数字就怀疑对照不公平；论文恰恰强调同条件对照。但注意该数字仍依赖强模型后端。"},
+  follow:"追问：'note-taking 的错误记忆怎么办？' → 答：论文未充分讨论，可引入 ACE Reflector 式定期反思清理。",
+  link:"01e-agent-harness-latest.md#5-confucius-code-agent" }
+];
+
+/* ================= 引擎 ================= */
+const allQuestions = [];
+dragQuestions.forEach((q,i)=>allQuestions.push({type:'drag',data:q,id:'d'+i}));
+singleQuestions.forEach((q,i)=>allQuestions.push({type:'single',data:q,id:'s'+i}));
+multiQuestions.forEach((q,i)=>allQuestions.push({type:'multi',data:q,id:'m'+i}));
+trueFalseQuestions.forEach((q,i)=>allQuestions.push({type:'tf',data:q,id:'t'+i}));
+
+const state = {}; // id -> {answered, correct, sel}
+let cur = 0;
+const typeName = {drag:'拖拽填空', single:'单选', multi:'多选', tf:'判断'};
+const maxScore = () => allQuestions.length;
+
+function render() {
+  const area = document.getElementById('quizArea');
+  area.innerHTML = '';
+  const item = allQuestions[cur];
+  const st = state[item.id] || (state[item.id] = {answered:false, correct:false, sel:null});
+  const card = document.createElement('div');
+  card.className = 'q-card';
+  let html = `<span class="q-tag">${typeName[item.type]}</span><span class="q-paper">${item.data.paper}</span>`;
+  if (item.type === 'drag') {
+    let txt = item.data.text;
+    for (let i=0;i<item.data.answers.length;i++) {
+      const filled = st.sel && st.sel[i] ? st.sel[i] : '';
+      txt = txt.replace('{'+i+'}', `<span class="blank ${filled?'filled':''}" data-bi="${i}" onclick="clearBlank(${i})">${filled||'　点选填入　'}</span>`);
+    }
+    html += `<div class="q-text">${txt}</div><div class="pool">` +
+      item.data.pool.map((p,pi)=>`<span class="chip ${st.sel&&st.sel.includes(p)?'used':''}" onclick="fillBlank(${pi})">${p}</span>`).join('') + `</div>`;
+  } else if (item.type === 'tf') {
+    html += `<div class="q-text">${item.data.q}</div>` +
+      ['正确','错误'].map((o,i)=>`<button class="opt ${st.sel===i?'sel':''}" onclick="pick(${i})">${o==='正确'?'✔ 正确':'✘ 错误'}</button>`).join('');
+  } else {
+    html += `<div class="q-text">${item.data.q}</div>` +
+      item.data.options.map((o,i)=>{
+        const isSel = item.type==='multi' ? (st.sel||[]).includes(i) : st.sel===i;
+        let cls = isSel?'sel':'';
+        if (st.answered) {
+          const good = item.type==='multi' ? item.data.correct.includes(i) : item.data.correct===i;
+          if (good) cls='correct'; else if (isSel) cls='wrong';
+        }
+        return `<button class="opt ${cls}" onclick="pick(${i})">${o}</button>` +
+               (st.answered?`<div class="expl" style="display:block">${item.data.expl[i]}</div>`:'');
+      }).join('');
+  }
+  html += `<div class="btns"><button onclick="check()">检查答案</button><button class="ghost" onclick="resetQ()">重置本题</button>`;
+  if (st.answered) {
+    html += `<a class="dlink" href="${item.data.link}">📖 查看笔记详解</a>`;
+    if (item.type==='tf' && item.data.follow) html += `<div class="expl" style="display:block">${item.data.follow}</div>`;
+  }
+  html += `</div>`;
+  card.innerHTML = html;
+  area.appendChild(card);
+  document.getElementById('progressText').textContent = `第 ${cur+1} / ${allQuestions.length} 题`;
+  document.getElementById('progressFill').style.width = ((cur+1)/allQuestions.length*100)+'%';
+  updateScore();
+}
+
+let blankCursor = 0;
+function fillBlank(pi) {
+  const item = allQuestions[cur]; if (item.type!=='drag') return;
+  const st = state[item.id]; if (st.answered) return;
+  const word = item.data.pool[pi];
+  st.sel = st.sel || [];
+  if (st.sel.includes(word)) return;
+  if (st.sel.length >= item.data.answers.length) return;
+  st.sel[blankCursor] = word;
+  blankCursor = Math.min(blankCursor+1, item.data.answers.length-1);
+  render();
+}
+function clearBlank(bi) {
+  const item = allQuestions[cur]; if (item.type!=='drag') return;
+  const st = state[item.id]; if (st.answered || !st.sel) return;
+  st.sel.splice(bi,1); blankCursor = bi; render();
+}
+function pick(i) {
+  const item = allQuestions[cur]; const st = state[item.id];
+  if (st.answered) return;
+  if (item.type==='multi') {
+    st.sel = st.sel || [];
+    const k = st.sel.indexOf(i);
+    k>=0 ? st.sel.splice(k,1) : st.sel.push(i);
+  } else st.sel = i;
+  render();
+}
+function check() {
+  const item = allQuestions[cur]; const st = state[item.id];
+  if (st.answered) return;
+  if (item.type==='drag') {
+    if (!st.sel || st.sel.length < item.data.answers.length) { alert('请先填满所有空'); return; }
+    st.correct = item.data.answers.every((a,i)=>st.sel[i]===a);
+  } else if (item.type==='single') {
+    if (st.sel===null||st.sel===undefined) { alert('请先选择'); return; }
+    st.correct = st.sel===item.data.correct;
+  } else if (item.type==='multi') {
+    if (!st.sel || !st.sel.length) { alert('请先选择'); return; }
+    st.correct = st.sel.length===item.data.correct.length && st.sel.every(s=>item.data.correct.includes(s));
+  } else {
+    if (st.sel===null||st.sel===undefined) { alert('请先判断'); return; }
+    st.correct = (st.sel===0)===item.data.correct;
+  }
+  st.answered = true;
+  render();
+}
+function resetQ() { const item=allQuestions[cur]; state[item.id]={answered:false,correct:false,sel:null}; blankCursor=0; render(); }
+function prevQ() { if(cur>0){cur--; blankCursor=0; render();} }
+function nextQ() { if(cur<allQuestions.length-1){cur++; blankCursor=0; render();} }
+function score() { return allQuestions.reduce((s,q)=>s+((state[q.id]&&state[q.id].answered&&state[q.id].correct)?1:0),0); }
+function updateScore() { document.getElementById('scoreBar').textContent = `总得分：${score()} / ${maxScore()}`; }
+function resetAll() {
+  if(!confirm('清空所有答题记录？')) return;
+  Object.keys(state).forEach(k=>delete state[k]);
+  document.getElementById('result').style.display='none';
+  document.getElementById('quizArea').classList.remove('hidden');
+  document.getElementById('navBar').classList.remove('hidden');
+  document.getElementById('scoreBar').classList.remove('hidden');
+  document.getElementById('progressText').classList.remove('hidden');
+  document.getElementById('progressBar').classList.remove('hidden');
+  cur=0; blankCursor=0; render();
+}
+function showResult() {
+  const r = document.getElementById('result');
+  const s = score(), m = maxScore();
+  const wrong = allQuestions.filter(q=>state[q.id]&&state[q.id].answered&&!state[q.id].correct).length;
+  const todo = allQuestions.filter(q=>!(state[q.id]&&state[q.id].answered)).length;
+  r.innerHTML = `<h2>🏁 成绩：${s} / ${m}</h2><p>✅ 正确 ${s} ｜ ❌ 错误 ${wrong} ｜ ⬜ 未答 ${todo}</p>
+  <div class="btns" style="justify-content:center"><button onclick="openDashboard()">返回查看（总览）</button>
+  <button class="ghost" onclick="continueQuiz()">继续做题</button></div>`;
+  r.style.display='block';
+  document.getElementById('quizArea').classList.add('hidden');
+  document.getElementById('navBar').classList.add('hidden');
+  document.getElementById('scoreBar').classList.add('hidden');
+  document.getElementById('progressText').classList.add('hidden');
+  document.getElementById('progressBar').classList.add('hidden');
+}
+function continueQuiz() {
+  document.getElementById('result').style.display='none';
+  document.getElementById('quizArea').classList.remove('hidden');
+  document.getElementById('navBar').classList.remove('hidden');
+  document.getElementById('scoreBar').classList.remove('hidden');
+  document.getElementById('progressText').classList.remove('hidden');
+  document.getElementById('progressBar').classList.remove('hidden');
+  render();
+}
+function openDashboard() { document.getElementById('overlay').classList.add('open'); document.getElementById('panel').classList.add('open'); renderGrid('all'); }
+function closeDashboard() { document.getElementById('overlay').classList.remove('open'); document.getElementById('panel').classList.remove('open'); }
+function renderGrid(filter) {
+  const g = document.getElementById('grid'); g.innerHTML='';
+  allQuestions.forEach((q,idx)=>{
+    const st = state[q.id];
+    const status = st&&st.answered ? (st.correct?'ok':'bad') : 'todo';
+    if (filter!=='all' && status!==filter) return;
+    const label = q.type==='drag'?'填':q.type==='single'?'单':q.type==='multi'?'多':'判';
+    const c = document.createElement('div');
+    c.className='cell '+(status==='ok'?'ok':status==='bad'?'bad':'');
+    c.textContent = `${idx+1}·${label}`;
+    c.onclick = ()=>{ cur=idx; blankCursor=0; closeDashboard(); continueQuiz(); };
+    g.appendChild(c);
+  });
+}
+function shuffleQuestionData(questions, isMulti) {
+  questions.forEach(q=>{
+    const pairs = q.options.map((opt,i)=>({opt, expl:q.expl[i], wasCorrect: isMulti ? q.correct.includes(i) : q.correct===i}));
+    for (let i=pairs.length-1;i>0;i--) { const j=Math.floor(Math.random()*(i+1)); [pairs[i],pairs[j]]=[pairs[j],pairs[i]]; }
+    q.options = pairs.map(p=>p.opt); q.expl = pairs.map(p=>p.expl);
+    q.correct = isMulti ? pairs.map((p,i)=>p.wasCorrect?i:-1).filter(i=>i>=0) : pairs.findIndex(p=>p.wasCorrect);
+  });
+}
+function shuffleAll() {
+  if(!confirm('洗牌选项位置将清空当前答题记录，继续？')) return;
+  shuffleQuestionData(singleQuestions,false);
+  shuffleQuestionData(multiQuestions,true);
+  Object.keys(state).forEach(k=>delete state[k]);
+  cur=0; blankCursor=0; continueQuiz(); render();
+}
+render();
+</script>
+</body>
+</html>

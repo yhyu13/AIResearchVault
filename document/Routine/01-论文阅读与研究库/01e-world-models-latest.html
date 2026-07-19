@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>世界模型与 AI 原生游戏 · 面试自测卡牌</title>
+<style>
+  :root{
+    --bg:#faf7f2; --card:#ffffff; --ink:#2d2a26; --muted:#8a8378;
+    --accent:#b0703a; --accent-soft:#f3e7da; --ok:#3d7a52; --ok-soft:#e3f0e8;
+    --bad:#b04a3a; --bad-soft:#f6e4e1; --line:#e6ded2;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;line-height:1.6;padding:16px}
+  .wrap{max-width:860px;margin:0 auto}
+  header{text-align:center;padding:24px 0 12px}
+  header h1{font-size:1.5rem;letter-spacing:.02em}
+  header p{color:var(--muted);font-size:.9rem;margin-top:6px}
+  .toolbar{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:14px 0}
+  button{cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--ink);
+    padding:8px 14px;border-radius:8px;font-size:.88rem;transition:all .15s}
+  button:hover{border-color:var(--accent);color:var(--accent)}
+  .score-bar{display:flex;justify-content:space-between;align-items:center;background:var(--card);
+    border:1px solid var(--line);border-radius:10px;padding:10px 16px;margin-bottom:10px;font-size:.9rem}
+  .score-bar b{color:var(--accent)}
+  .progress-bar{height:6px;background:var(--line);border-radius:3px;margin-bottom:14px;overflow:hidden}
+  .progress-bar>div{height:100%;background:var(--accent);width:0%;transition:width .3s}
+  .q-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:16px}
+  .q-tag{display:inline-block;font-size:.75rem;background:var(--accent-soft);color:var(--accent);
+    padding:2px 10px;border-radius:20px;margin-bottom:10px}
+  .q-paper{font-size:.78rem;color:var(--muted);margin-left:8px}
+  .q-title{font-size:1.05rem;font-weight:600;margin-bottom:16px}
+  .blank{display:inline-block;min-width:110px;border-bottom:2px dashed var(--accent);text-align:center;
+    padding:2px 8px;margin:0 4px;color:var(--accent);font-weight:600;vertical-align:bottom;min-height:1.6em}
+  .blank.filled{background:var(--accent-soft);border-radius:6px;border-bottom-style:solid}
+  .blank.correct{background:var(--ok-soft);color:var(--ok)}
+  .blank.wrong{background:var(--bad-soft);color:var(--bad)}
+  .pool{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0;padding:12px;background:#fdfaf6;border:1px dashed var(--line);border-radius:10px}
+  .chip{padding:6px 14px;background:var(--card);border:1px solid var(--line);border-radius:18px;
+    cursor:grab;user-select:none;font-size:.88rem}
+  .chip:hover{border-color:var(--accent)}
+  .chip.used{opacity:.35;pointer-events:none}
+  .opts{display:flex;flex-direction:column;gap:8px;margin:12px 0}
+  .opt{padding:10px 14px;border:1px solid var(--line);border-radius:10px;cursor:pointer;background:#fdfaf6;font-size:.92rem}
+  .opt:hover{border-color:var(--accent)}
+  .opt.selected{border-color:var(--accent);background:var(--accent-soft)}
+  .opt.correct{border-color:var(--ok);background:var(--ok-soft)}
+  .opt.wrong{border-color:var(--bad);background:var(--bad-soft)}
+  .q-actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+  .btn-main{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .btn-main:hover{background:#9a5f30;color:#fff}
+  .expl{display:none;margin-top:14px;padding:14px;border-radius:10px;font-size:.88rem;background:#fdfaf6;border:1px solid var(--line)}
+  .expl.show{display:block}
+  .expl .row{margin:6px 0}
+  .expl .follow{margin-top:10px;padding-top:8px;border-top:1px dashed var(--line);color:var(--muted)}
+  .nav{display:flex;justify-content:space-between;margin-top:8px}
+  .overlay{position:fixed;inset:0;background:rgba(45,42,38,.45);display:none;align-items:center;justify-content:center;z-index:50}
+  .overlay.open{display:flex}
+  .panel{background:var(--card);border-radius:16px;max-width:760px;width:92%;max-height:84vh;overflow:auto;padding:24px}
+  .panel h2{font-size:1.15rem;margin-bottom:6px}
+  .panel .filters{display:flex;gap:8px;margin:12px 0;flex-wrap:wrap}
+  .panel .filters button.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:8px}
+  .cell{border:1px solid var(--line);border-radius:8px;padding:8px 4px;text-align:center;cursor:pointer;font-size:.78rem}
+  .cell .t{display:block;font-size:.66rem;color:var(--muted)}
+  .cell.ok{background:var(--ok-soft);border-color:var(--ok)}
+  .cell.bad{background:var(--bad-soft);border-color:var(--bad)}
+  .cell:hover{border-color:var(--accent)}
+  .result{text-align:center;padding:30px 10px}
+  .result .big{font-size:2.6rem;font-weight:700;color:var(--accent)}
+  .hidden{display:none!important}
+  @media(max-width:600px){.q-card{padding:16px}.blank{min-width:80px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🌍 世界模型与 AI 原生游戏 · 面试自测卡牌</h1>
+    <p>覆盖 Genie 3 / MineWorld / Matrix-Game 2.0 / Hunyuan-GameCraft / Vid2World / IGV 综述 / WorldPlay（2026-07-20 笔记）</p>
+  </header>
+  <div class="toolbar">
+    <button onclick="openDashboard()">📊 题目总览</button>
+    <button onclick="shuffleAll()">🎲 重新洗牌选项</button>
+    <button onclick="resetAll()">🔄 重置所有分数</button>
+  </div>
+  <div class="score-bar">
+    <span>得分：<b id="scoreNow">0</b> / <span id="scoreMax">0</span></span>
+    <span id="progressText" class="progress-text">第 1 题 / 共 0 题</span>
+  </div>
+  <div class="progress-bar"><div id="progressFill"></div></div>
+  <div id="quizRoot"></div>
+  <div class="nav">
+    <button onclick="prevQ()">← 上一题</button>
+    <button onclick="nextQ()">下一题 →</button>
+  </div>
+</div>
+
+<div class="overlay" id="dashboard">
+  <div class="panel">
+    <h2>📊 题目总览</h2>
+    <div class="filters">
+      <button class="active" data-f="all" onclick="setFilter('all',this)">全部</button>
+      <button data-f="unanswered" onclick="setFilter('unanswered',this)">未答</button>
+      <button data-f="correct" onclick="setFilter('correct',this)">答对</button>
+      <button data-f="wrong" onclick="setFilter('wrong',this)">答错</button>
+      <button style="margin-left:auto" onclick="closeDashboard()">关闭</button>
+    </div>
+    <div class="grid" id="dashGrid"></div>
+  </div>
+</div>
+
+<script>
+/* ================= 题目数据 ================= */
+const dragQuestions = [
+{paper:'Matrix-Game 2.0', title:'Matrix-Game 2.0 用 {0} 蒸馏把双向扩散教师压缩为因果少步学生，配合 {1} 实现流式推理，达到 720p / 25 FPS。',
+ answers:['Self-Forcing','KV cache'], pool:['Self-Forcing','KV cache','promptable events','hybrid history condition'],
+ perBlank:[
+  '✅ Self-Forcing：学生在自己生成的 rollout 上计算分布匹配损失，避免 exposure bias。干扰项 promptable events 是 Genie 3 的在线文本事件接口，与蒸馏无关。',
+  '✅ KV cache：缓存历史帧的 key/value，使流式生成不必重算全部上下文。干扰项 hybrid history condition 是 Hunyuan-GameCraft 的记忆机制。'],
+ detailLink:'01e-world-models-latest.md#3-matrix-game-2-0'},
+{paper:'Hunyuan-GameCraft', title:'Hunyuan-GameCraft 的 {0} 机制将近期帧保留为高分辨率 token、远期帧压缩为低成本 token，使注意力成本随历史长度 {1} 增长。',
+ answers:['hybrid history condition','亚线性'], pool:['hybrid history condition','亚线性','线性','causal action guidance'],
+ perBlank:[
+  '✅ hybrid history condition：两级历史表征是 GameCraft 的核心创新。干扰项 causal action guidance 是 Vid2World 的采样期动作引导。',
+  '✅ 亚线性：远期帧被压缩，历史越长单位成本越低。若选"线性"，则意味着所有历史帧等成本拼接，正是该机制要避免的问题。'],
+ detailLink:'01e-world-models-latest.md#4-hunyuan-gamecraft'},
+{paper:'WorldPlay', title:'WorldPlay 将已观测区域沉淀为持久化的 {0}，生成新帧时按 {1} 检索相关记忆作为条件，解决场景重访漂移。',
+ answers:['3D 几何记忆','相机位姿'], pool:['3D 几何记忆','相机位姿','动作 token','帧率'],
+ perBlank:[
+  '✅ 3D 几何记忆（点云/体素/Gaussian 类结构）是 WorldPlay 的显式长期世界状态。干扰项"动作 token"是 MineWorld 中的动作编码，不存储场景。',
+  '✅ 相机位姿：检索键是"我在哪、朝哪看"。干扰项"帧率"是性能指标，不能作为空间检索键。'],
+ detailLink:'01e-world-models-latest.md#7-worldplay'},
+{paper:'Vid2World', title:'Vid2World 的 causal action guidance 在 {0} 阶段注入动作条件，可视作 {1} 的因果版本。',
+ answers:['采样（反向去噪）','classifier guidance'], pool:['采样（反向去噪）','classifier guidance','训练','VQ tokenization'],
+ perBlank:[
+  '✅ 采样期注入——这是它与 Matrix-Game 训练期 action injection 的本质区别，免训练、可插拔。干扰项"训练"对应的是 action injection 路线。',
+  '✅ classifier guidance：每步用条件修正 score 方向的思想同源。干扰项 VQ tokenization 是图像离散化技术，与条件引导无关。'],
+ detailLink:'01e-world-models-latest.md#5-vid2world'}
+];
+
+const singleQuestions = [
+{paper:'Genie 3', title:'Genie 3 维持分钟级世界一致性依靠的机制是？',
+ options:['A. 显式 NeRF 场景表征','B. 外挂 3D Gaussian 记忆模块','C. 纯自回归上下文中的隐式记忆','D. 持久化点云检索'],
+ correct:2, explanations:[
+  '❌ 错误：Genie 3 明确无显式 3D 表征（non-NeRF）。',
+  '❌ 错误：外挂 Gaussian 记忆是 WorldPlay 式路线，Genie 3 无外部 memory 模块。',
+  '✅ 正确：Genie 3 仅靠自回归上下文涌现出物体恒存性、直觉物理与场景记忆，这也是其局限（数分钟后退化）的根源。',
+  '❌ 错误：持久化点云检索是 WorldPlay 的方案。'],
+ detailLink:'01e-world-models-latest.md#1-genie-3'},
+{paper:'MineWorld', title:'MineWorld 实现 4–7 FPS 实时生成的关键工程手段是？',
+ options:['A. 少步扩散蒸馏','B. parallel decoding——帧内 token 条件独立同时预测','C. 降低分辨率到 256p','D. 使用双向注意力一次生成整段视频'],
+ correct:1, explanations:[
+  '❌ 错误：少步蒸馏是 Matrix-Game 2.0 的路线，MineWorld 是纯自回归。',
+  '✅ 正确：parallel decoding 利用帧内 token 的条件独立假设同时预测多个 token，降低串行步数，使自回归模型达到 4–7 FPS。',
+  '❌ 错误：论文未靠砍分辨率换速度；分辨率有限是其局限而非手段。',
+  '❌ 错误：MineWorld 使用因果 Transformer 做 next-token prediction，双向注意力无法用于实时交互。'],
+ detailLink:'01e-world-models-latest.md#2-mineworld'},
+{paper:'Matrix-Game 2.0', title:'Self-Forcing 蒸馏如何解决 exposure bias？',
+ options:['A. 增加教师模型的采样步数','B. 学生在自己生成的 rollout 上计算分布匹配损失','C. 用更大分辨率训练','D. 引入对抗判别器'],
+ correct:1, explanations:[
+  '❌ 错误：增加教师步数不改变学生推理时的分布失配。',
+  '✅ 正确：训练时学生输入真实历史、推理时输入自己生成的历史，两者分布不同即 exposure bias；Self-Forcing 让学生在自己的 rollout 上计算分布匹配损失（近似 score distillation），使训练分布对齐推理分布。',
+  '❌ 错误：分辨率与 exposure bias 无关。',
+  '❌ 错误：Self-Forcing 是分布匹配/蒸馏框架，非 GAN。'],
+ detailLink:'01e-world-models-latest.md#3-matrix-game-2-0'},
+{paper:'Vid2World', title:'Vid2World 对视频扩散模型做 causalization 的核心改动是？',
+ options:['A. 把双向时间注意力改为因果掩码并重设计逐帧去噪调度','B. 把 U-Net 换成 Transformer','C. 去掉文本条件只保留动作','D. 将 VAE 换成 VQ tokenizer'],
+ correct:0, explanations:[
+  '✅ 正确：causalization = 双向时间注意力 → 因果掩码 + 逐帧去噪调度重设计，使帧 t 只依赖 ≤t 的历史，这是"改装"的第一步。',
+  '❌ 错误：Vid2World 不更换主干网络架构。',
+  '❌ 错误：动作条件是新增（causal action guidance），文本条件并未被去除作为前提。',
+  '❌ 错误：VAE/tokenizer 替换属于 MineWorld 式自回归路线的关注点。'],
+ detailLink:'01e-world-models-latest.md#5-vid2world'},
+{paper:'IGV 综述', title:'IGV 综述（2025-04）指出的三大核心瓶颈不包括下列哪一项？',
+ options:['A. 长时一致性','B. 实时性','C. 物理正确性','D. 语音对话自然度'],
+ correct:3, explanations:[
+  '❌ 错误：长时一致性是综述明确列出的三大瓶颈之一。',
+  '❌ 错误：实时性在三大瓶颈之列。',
+  '❌ 错误：物理正确性（physical grounding）在三大瓶颈之列。',
+  '✅ 正确：语音对话不属于交互视频生成综述的核心瓶颈；三大瓶颈是长时一致性、实时性、物理正确性。'],
+ detailLink:'01e-world-models-latest.md#6-igv-综述'},
+{paper:'WorldPlay', title:'WorldPlay 相对纯上下文基线大幅改善的核心指标是？',
+ options:['A. FVD 视觉质量','B. 首帧生成延迟','C. 场景重访一致性（revisit consistency）','D. 动作空间规模'],
+ correct:2, explanations:[
+  '❌ 错误：FVD 不是 WorldPlay 的主攻指标。',
+  '❌ 错误：它维持实时帧率，但卖点不在首帧延迟。',
+  '✅ 正确：显式 3D 几何记忆让玩家离开后返回同一地点时场景不漂移，revisit consistency 显著优于隐式记忆基线。',
+  '❌ 错误：动作空间仍偏导航类，不是其贡献点。'],
+ detailLink:'01e-world-models-latest.md#7-worldplay'},
+{paper:'Hunyuan-GameCraft', title:'Hunyuan-GameCraft 的动作信号注入方式是？',
+ options:['A. 键鼠经轻量编码器后 cross-attention 注入','B. 动作 token 与画面 token 交错做 NTP','C. 采样期 score 引导','D. promptable world events'],
+ correct:0, explanations:[
+  '✅ 正确：GameCraft 用统一的键盘+鼠标动作编码器，经 cross-attention 注入 MMDiT 扩散基座。',
+  '❌ 错误：交错 token + NTP 是 MineWorld 的架构。',
+  '❌ 错误：采样期 score 引导是 Vid2World 的 causal action guidance。',
+  '❌ 错误：promptable world events 是 Genie 3 的接口。'],
+ detailLink:'01e-world-models-latest.md#4-hunyuan-gamecraft'},
+{paper:'Genie 3 / 横向', title:'下列关于 Genie 3 与 Matrix-Game 2.0 的对比，哪项正确？',
+ options:['A. Genie 3 开源权重，Matrix-Game 2.0 闭源','B. 两者都达到 720p 级 ~24-25 FPS 实时流式，但 Genie 3 闭源、Matrix-Game 2.0 开源','C. Matrix-Game 2.0 使用纯自回归 token 架构','D. Genie 3 的动作空间覆盖键鼠精细操控'],
+ correct:1, explanations:[
+  '❌ 错误：恰好相反——Genie 3 闭源（仅 limited research preview），Matrix-Game 2.0 开源权重。',
+  '✅ 正确：Matrix-Game 2.0 是首个追平 Genie 3 实时性规格（720p/25fps 流式）的开源模型，构成闭源-开源天然对照组。',
+  '❌ 错误：Matrix-Game 2.0 是因果扩散 + Self-Forcing 蒸馏；纯自回归 token 是 MineWorld。',
+  '❌ 错误：Genie 3 动作空间受限，仅导航类交互。'],
+ detailLink:'01e-world-models-latest.md#技术栈对比'}
+];
+
+const multiQuestions = [
+{paper:'横向对比', title:'下列哪些系统是完全开源（含权重）的？（多选）',
+ options:['A. Genie 3','B. MineWorld','C. Matrix-Game 2.0','D. Hunyuan-GameCraft','E. Vid2World（权重状态待确认）','F. WorldPlay（权重状态待确认）'],
+ correct:[1,2,3], explanations:[
+  '❌ Genie 3：闭源，仅 limited research preview，无代码/权重。',
+  '✅ MineWorld：模型与代码完全开源（github.com/microsoft/mineworld）。',
+  '✅ Matrix-Game 2.0：open weights（SkyworkAI/Matrix-Game）。',
+  '✅ Hunyuan-GameCraft：13B 模型完整开源。',
+  '❌ Vid2World：开源状态待确认，不能算作已确认开源。',
+  '❌ WorldPlay：开源状态待确认。'],
+ detailLink:'01e-world-models-latest.md#技术栈对比'},
+{paper:'Matrix-Game 2.0', title:'Matrix-Game 2.0 的三大核心组件包括哪些？（多选）',
+ options:['A. UE + GTA5 约 1200 小时带动作标注数据管线','B. 帧级键鼠 action injection 模块','C. Self-Forcing 少步蒸馏','D. 显式 3D Gaussian 记忆','E. chunk-wise 因果注意力 + KV cache 流式管线','F. 语音控制接口'],
+ correct:[0,1,2,4], explanations:[
+  '✅ 数据管线：约 1200 小时 UE/GTA5 带标注视频，是质量基础。',
+  '✅ action injection：帧级键鼠条件注入，实现精细交互控制。',
+  '✅ Self-Forcing 蒸馏：双向教师 → 因果少步学生，解决 exposure bias。',
+  '❌ 显式 3D 记忆是 WorldPlay 的路线，Matrix-Game 2.0 用 KV cache。',
+  '✅ 因果化 + KV cache 是其实现流式推理的架构改造（可与"三大组件"并列的工程支柱）。',
+  '❌ 论文无语音控制接口。'],
+ detailLink:'01e-world-models-latest.md#3-matrix-game-2-0'},
+{paper:'横向对比', title:'2025 下半年以来"长时记忆"方向的代表性工作/机制包括？（多选）',
+ options:['A. WorldPlay 显式 3D 几何记忆','B. Context-as-Memory','C. Long-term Spatial Memory（2506.05284）','D. Matrix-Game 3.0 的 long-horizon memory','E. VQ tokenization','F. hybrid history condition（GameCraft）'],
+ correct:[0,1,2,3,5], explanations:[
+  '✅ WorldPlay：显式 3D 几何记忆，重访一致性的代表。',
+  '✅ Context-as-Memory：同期显式记忆潮流之一。',
+  '✅ Long-term Spatial Memory：显式空间记忆谱系成员。',
+  '✅ Matrix-Game 3.0：long-horizon memory 是其续作重点。',
+  '❌ VQ tokenization 是图像离散化工具，与长期记忆无直接关系。',
+  '✅ hybrid history condition：属于对历史的有损压缩式记忆，位于隐式-显式光谱中间。'],
+ detailLink:'01e-world-models-latest.md#方向横向观察'},
+{paper:'Vid2World / 横向', title:'Vid2World 验证过的应用领域包括？（多选）',
+ options:['A. 机器人操控','B. 3D 游戏仿真','C. 开放世界导航','D. 影视特效渲染','E. 语音合成','F. 下游 policy 决策收益评估'],
+ correct:[0,1,2,5], explanations:[
+  '✅ 机器人操控是三大验证域之一。',
+  '✅ 3D 游戏仿真是三大验证域之一。',
+  '✅ 开放世界导航是三大验证域之一。',
+  '❌ 影视特效渲染不在其验证范围。',
+  '❌ 语音合成与 Vid2World 无关。',
+  '✅ 论文专门评估了生成 rollout 对下游 planning / policy 的收益——世界模型的 value-aware 评测。'],
+ detailLink:'01e-world-models-latest.md#5-vid2world'},
+{paper:'Genie 3', title:'Genie 3 官方声明的局限包括哪些？（多选）',
+ options:['A. 动作空间受限（仅导航类交互）','B. 长时一致性数分钟后退化','C. promptable events 可控性有限','D. 完全开源可复现','E. 闭源、无评测细节','F. 已解决小时级连贯世界'],
+ correct:[0,1,2,4], explanations:[
+  '✅ 官方明确动作空间仅导航类。',
+  '✅ 一致性维持数分钟，之后退化——官方承认。',
+  '✅ promptable world events 可控性有限。',
+  '❌ Genie 3 完全闭源。',
+  '✅ 闭源且无公开评测细节，学界无法复现。',
+  '❌ 小时级连贯世界仍是开放问题，未解决。'],
+ detailLink:'01e-world-models-latest.md#1-genie-3'}
+];
+
+const trueFalseQuestions = [
+{paper:'MineWorld', title:'判断：MineWorld 采用扩散模型作为生成主干。',
+ correct:false, explanations:{
+  ok:'✅ 正确理解：MineWorld 是纯自回归路线——visual-action token 交错 + 因果 Transformer 做 next-token prediction，与扩散无关。',
+  bad:'❌ 常见误解：看到"世界模型 + Minecraft"就联想到 Oasis（扩散路线）。MineWorld 恰恰以非扩散自回归 + parallel decoding 实现比 Oasis 更快的 4–7 FPS。'},
+ follow:'追问：自回归路线相对扩散的优势？→ 答：架构与 LLM 统一（动作即 token）、并行解码直接降串行步数；代价是 VQ token 化的质量天花板。',
+ detailLink:'01e-world-models-latest.md#2-mineworld'},
+{paper:'Matrix-Game 2.0', title:'判断：双向视频扩散模型可以直接用于实时交互生成，只需提高 GPU 算力。',
+ correct:false, explanations:{
+  ok:'✅ 正确理解：双向扩散需要未来帧参与注意力且采样需几十步，是算法层面的非因果 + 多步问题，不是算力能直接解决的。必须做因果化改造（chunk-wise 因果注意力 + KV cache）+ 少步蒸馏。',
+  bad:'❌ 常见误解：把"慢"归因于算力不足。Matrix-Game 2.0 的贡献正是证明瓶颈在架构与采样算法，而非硬件。'},
+ follow:'追问：Self-Forcing 蒸馏把采样压到几步？→ 答：1–4 步。',
+ detailLink:'01e-world-models-latest.md#3-matrix-game-2-0'},
+{paper:'Genie 3', title:'判断：Genie 3 使用显式 3D 表征（NeRF/Gaussian Splatting）来维持场景一致性。',
+ correct:false, explanations:{
+  ok:'✅ 正确理解：Genie 3 无显式 3D 表征（non-NeRF/non-Gaussian），一致性靠自回归上下文中涌现的隐式记忆。显式 3D 记忆是 WorldPlay 代表的相反路线。',
+  bad:'❌ 常见误解：认为"保持一致性必须有 3D 表征"。Genie 3 证明了大规模自回归可以涌现出隐式 3D 理解——但代价是数分钟后退化。'},
+ follow:'追问：隐式 vs 显式记忆哪种更可能 scale 到开放世界？→ 答：开放问题；隐式有上下文容量上限，显式有构建/更新成本与动态场景冲突。',
+ detailLink:'01e-world-models-latest.md#1-genie-3'},
+{paper:'Vid2World', title:'判断：Vid2World 的 causal action guidance 需要在训练阶段把动作数据注入模型。',
+ correct:false, explanations:{
+  ok:'✅ 正确理解：causal action guidance 是采样期机制——在反向去噪每步以动作条件修正 score 方向，免训练、可插拔，类似 classifier guidance 的因果版本。',
+  bad:'❌ 常见误解：混淆"采样期引导"（Vid2World）与"训练期注入"（Matrix-Game 的 action injection）。前者灵活但需调引导强度、过强损画质；后者可控性更强但要训练数据。'},
+ follow:'追问：两条路线各自适用场景？→ 答：有基座无动作数据时用采样期引导；能自建数据管线时训练期注入上限更高。',
+ detailLink:'01e-world-models-latest.md#5-vid2world'},
+{paper:'IGV 综述', title:'判断：IGV 综述（2025-04）已覆盖 Genie 3 与 Matrix-Game 2.0 的实时流式技术。',
+ correct:false, explanations:{
+  ok:'✅ 正确理解：综述发表于 2025-04，早于 2025 下半年的爆发（Genie 3 2025-08、Matrix-Game 2.0 2025-08、WorldPlay 2025-12），需与最新工作对照阅读。',
+  bad:'❌ 常见误解：把综述当"最终答案"。它的价值在 taxonomy 与文献地图，但 Self-Forcing 蒸馏、显式 3D 记忆、promptable events 等类目都需要增补。'},
+ follow:'追问：综述指出的评测缺失现在解决了吗？→ 答：WBench/WorldMark 部分弥补，但物理正确性、下游决策价值仍无统一标准。',
+ detailLink:'01e-world-models-latest.md#6-igv-综述'},
+{paper:'Hunyuan-GameCraft', title:'判断：Hunyuan-GameCraft 是严格实时的交互世界模型。',
+ correct:false, explanations:{
+  ok:'✅ 正确理解：GameCraft 基于多步采样的视频扩散（HunyuanVideo 微调），仍非严格实时；它选择保留多步扩散的质量、用 hybrid history condition 换长时记忆。',
+  bad:'❌ 常见误解：看到"支持分钟级连续生成"就以为实时。生成时长 ≠ 生成速度；实时性标杆是 Matrix-Game 2.0 的 25 FPS 蒸馏路线。'},
+ follow:'追问：若把 13B GameCraft 蒸馏到实时会牺牲什么？→ 答：可能损失动态范围鲁棒性、风格多样性或动作跟随精度——蒸馏的能力-速度取舍。',
+ detailLink:'01e-world-models-latest.md#4-hunyuan-gamecraft'}
+];
+
+/* ================= 引擎 ================= */
+const allQuestions = [
+  ...dragQuestions.map(q=>({...q,type:'drag'})),
+  ...singleQuestions.map(q=>({...q,type:'single'})),
+  ...multiQuestions.map(q=>({...q,type:'multi'})),
+  ...trueFalseQuestions.map(q=>({...q,type:'tf'}))
+];
+const typeName={drag:'拖拽填空',single:'单选',multi:'多选',tf:'判断'};
+let cur=0, filter='all';
+const state=allQuestions.map(()=>({answered:false,ok:null}));
+
+function renderQ(i){
+  cur=i; const q=allQuestions[i]; const root=document.getElementById('quizRoot');
+  let html=`<div class="q-card"><span class="q-tag">${typeName[q.type]}</span><span class="q-paper">📄 ${q.paper}</span>
+  <div class="q-title">${q.title}</div>`;
+  if(q.type==='drag'){
+    const parts=q.title.split(/\{\d\}/); const marks=q.title.match(/\{\d\}/g)||[];
+    let t=''; parts.forEach((p,idx)=>{t+=p; if(idx<parts.length-1){t+=`<span class="blank" data-b="${idx}" id="blank${idx}" onclick="clearBlank(${idx})">＿</span>`}});
+    html=`<div class="q-card"><span class="q-tag">${typeName[q.type]}</span><span class="q-paper">📄 ${q.paper}</span>
+    <div class="q-title">${t}</div>
+    <div class="pool" id="pool">${q.pool.map(w=>`<span class="chip" draggable="true" data-w="${w}">${w}</span>`).join('')}</div>`;
+  } else if(q.type==='tf'){
+    html+=`<div class="opts">${['✔ 正确（true）','✘ 错误（false）'].map((o,k)=>`<div class="opt" data-k="${k}">${o}</div>`).join('')}</div>`;
+  } else {
+    html+=`<div class="opts">${q.options.map((o,k)=>`<div class="opt" data-k="${k}">${o}</div>`).join('')}</div>`;
+  }
+  html+=`<div class="q-actions">
+    <button class="btn-main" onclick="checkQ()">检查答案</button>
+    <button onclick="resetQ()">重置本题</button>
+    ${q.detailLink?`<button onclick="location.href='${q.detailLink}'">📖 查看笔记</button>`:''}
+  </div><div class="expl" id="expl"></div></div>`;
+  root.innerHTML=html;
+  bindEvents(q);
+  updateBar();
+}
+function bindEvents(q){
+  if(q.type==='drag'){
+    document.querySelectorAll('.chip').forEach(c=>{
+      c.addEventListener('dragstart',e=>e.dataTransfer.setData('text',c.dataset.w));
+      c.addEventListener('click',()=>{ if(c.classList.contains('used'))return;
+        const blanks=[...document.querySelectorAll('.blank')]; const empty=blanks.find(b=>!b.dataset.v);
+        if(empty){empty.dataset.v=c.dataset.w;empty.textContent=c.dataset.w;empty.classList.add('filled');c.classList.add('used');}});
+    });
+    document.querySelectorAll('.blank').forEach(b=>{
+      b.addEventListener('dragover',e=>e.preventDefault());
+      b.addEventListener('drop',e=>{e.preventDefault();const w=e.dataTransfer.getData('text');
+        if(b.dataset.v){const old=document.querySelector(`.chip[data-w="${b.dataset.v}"]`);if(old)old.classList.remove('used');}
+        b.dataset.v=w;b.textContent=w;b.classList.add('filled');
+        const chip=document.querySelector(`.chip[data-w="${w}"]`);if(chip)chip.classList.add('used');});
+    });
+  } else {
+    document.querySelectorAll('.opt').forEach(o=>o.addEventListener('click',()=>{
+      if(q.type==='multi'){o.classList.toggle('selected');}
+      else{document.querySelectorAll('.opt').forEach(x=>x.classList.remove('selected'));o.classList.add('selected');}
+    }));
+  }
+}
+function clearBlank(idx){
+  const b=document.getElementById('blank'+idx);
+  if(b.dataset.v){const c=document.querySelector(`.chip[data-w="${b.dataset.v}"]`);if(c)c.classList.remove('used');
+  delete b.dataset.v;b.textContent='＿';b.classList.remove('filled','correct','wrong');}
+}
+function checkQ(){
+  const q=allQuestions[cur]; let ok=false; const expl=document.getElementById('expl'); let rows='';
+  if(q.type==='drag'){
+    ok=true;
+    q.answers.forEach((a,k)=>{
+      const b=document.getElementById('blank'+k); const good=b.dataset.v===a;
+      b.classList.remove('correct','wrong'); b.classList.add(good?'correct':'wrong');
+      if(!good)ok=false;
+      rows+=`<div class="row">第 ${k+1} 空（正确：${a}）：${q.perBlank[k]}</div>`;
+    });
+  } else if(q.type==='single'){
+    const sel=document.querySelector('.opt.selected'); const k=sel?+sel.dataset.k:-1; ok=k===q.correct;
+    document.querySelectorAll('.opt').forEach((o,j)=>{if(j===q.correct)o.classList.add('correct');else if(j===k)o.classList.add('wrong');});
+    rows=q.explanations.map(e=>`<div class="row">${e}</div>`).join('');
+  } else if(q.type==='multi'){
+    const chosen=[...document.querySelectorAll('.opt.selected')].map(o=>+o.dataset.k).sort();
+    ok=JSON.stringify(chosen)===JSON.stringify([...q.correct].sort());
+    document.querySelectorAll('.opt').forEach((o,j)=>{const inc=q.correct.includes(j),sel=o.classList.contains('selected');
+      if(inc)o.classList.add('correct');else if(sel)o.classList.add('wrong');});
+    rows=q.explanations.map(e=>`<div class="row">${e}</div>`).join('');
+  } else {
+    const sel=document.querySelector('.opt.selected'); const k=sel?+sel.dataset.k:-1;
+    const want=q.correct?0:1; ok=k===want;
+    document.querySelectorAll('.opt').forEach((o,j)=>{if(j===want)o.classList.add('correct');else if(j===k)o.classList.add('wrong');});
+    rows=`<div class="row">${q.explanations.ok}</div><div class="row">${q.explanations.bad}</div>`;
+  }
+  if(q.follow)rows+=`<div class="follow">💬 ${q.follow}</div>`;
+  if(q.detailLink)rows+=`<div class="follow">📖 详见笔记：${q.detailLink}</div>`;
+  expl.innerHTML=`<div class="row" style="font-weight:600;color:${ok?'var(--ok)':'var(--bad)'}">${ok?'✅ 回答正确！':'❌ 回答错误'}</div>`+rows;
+  expl.classList.add('show');
+  state[cur]={answered:true,ok}; updateBar();
+}
+function resetQ(){state[cur]={answered:false,ok:null};renderQ(cur);}
+function prevQ(){if(cur>0)renderQ(cur-1);}
+function nextQ(){if(cur<allQuestions.length-1)renderQ(cur+1);}
+function updateBar(){
+  const max=allQuestions.length;
+  const score=state.filter(s=>s.ok===true).length;
+  document.getElementById('scoreNow').textContent=score;
+  document.getElementById('scoreMax').textContent=max;
+  document.getElementById('progressText').textContent=`第 ${cur+1} 题 / 共 ${max} 题`;
+  document.getElementById('progressFill').style.width=((cur+1)/max*100)+'%';
+}
+function openDashboard(){renderGrid();document.getElementById('dashboard').classList.add('open');}
+function closeDashboard(){document.getElementById('dashboard').classList.remove('open');}
+function setFilter(f,btn){filter=f;document.querySelectorAll('.filters button').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderGrid();}
+function renderGrid(){
+  const g=document.getElementById('dashGrid');
+  g.innerHTML=allQuestions.map((q,i)=>{
+    const s=state[i]; let cls='',st='未答';
+    if(s.answered){cls=s.ok?'ok':'bad';st=s.ok?'✓':'✗';}
+    if(filter==='correct'&&cls!=='ok')return '';
+    if(filter==='wrong'&&cls!=='bad')return '';
+    if(filter==='unanswered'&&s.answered)return '';
+    return `<div class="cell ${cls}" onclick="closeDashboard();renderQ(${i})"><span class="t">${typeName[q.type]}</span>#${i+1} ${st}</div>`;
+  }).join('')||'<p style="color:var(--muted)">无匹配题目</p>';
+}
+function resetAll(){state.forEach((s,i)=>state[i]={answered:false,ok:null});renderQ(0);}
+function shuffleAll(){
+  ['single','multi'].forEach(t=>{
+    allQuestions.filter(q=>q.type===t).forEach(q=>{
+      const pairs=q.options.map((opt,i)=>({opt,expl:q.explanations[i]}));
+      for(let i=pairs.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pairs[i],pairs[j]]=[pairs[j],pairs[i]];}
+      q.options=pairs.map(p=>p.opt); q.explanations=pairs.map(p=>p.expl);
+      if(t==='single')q.correct=pairs.findIndex(p=>p.expl.startsWith('✅'));
+      else q.correct=pairs.map((p,i)=>p.expl.startsWith('✅')?i:-1).filter(i=>i>=0);
+    });
+  });
+  resetAll();
+}
+renderQ(0);
+</script>
+</body>
+</html>

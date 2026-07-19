@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>合成环境与游戏中的 RL · 面试自测卡牌</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Segoe UI", "Microsoft YaHei", sans-serif; background: #f7f5f1; color: #333; min-height: 100vh; }
+  header { background: #4a5240; color: #f5f2ec; padding: 18px 20px; }
+  header h1 { font-size: 20px; }
+  header p { font-size: 13px; opacity: .85; margin-top: 4px; }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 20px; background: #efeadf; border-bottom: 1px solid #ddd5c5; align-items: center; }
+  .toolbar button { background: #6b705c; color: #fff; border: none; padding: 7px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+  .toolbar button:hover { background: #4a5240; }
+  .score-bar { margin-left: auto; font-size: 14px; font-weight: 600; color: #4a5240; }
+  .progress-wrap { padding: 8px 20px; }
+  .progress-text { font-size: 13px; color: #666; margin-bottom: 4px; }
+  .progress-bar { height: 8px; background: #e3ddcf; border-radius: 4px; overflow: hidden; }
+  .progress-bar .fill { height: 100%; background: #8a916c; width: 0%; transition: width .3s; }
+  .container { max-width: 860px; margin: 0 auto; padding: 16px 20px 60px; }
+  .qcard { background: #fff; border: 1px solid #e0d9c8; border-radius: 10px; padding: 22px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.05); }
+  .qtype { display: inline-block; font-size: 12px; background: #ece7d8; color: #5a6148; padding: 2px 10px; border-radius: 10px; margin-bottom: 10px; }
+  .qpaper { display: inline-block; font-size: 12px; background: #dfe5d4; color: #44503a; padding: 2px 10px; border-radius: 10px; margin-bottom: 10px; margin-left: 6px; }
+  .qtext { font-size: 16px; line-height: 1.7; margin-bottom: 14px; }
+  .blank { display: inline-block; min-width: 110px; border-bottom: 2px dashed #8a916c; text-align: center; padding: 0 6px; color: #4a5240; font-weight: 600; cursor: pointer; }
+  .blank.filled { border-bottom-style: solid; background: #f2f0e6; }
+  .pool { margin: 12px 0; display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { background: #ece7d8; border: 1px solid #d5cdb6; border-radius: 16px; padding: 5px 14px; cursor: grab; font-size: 14px; user-select: none; }
+  .chip.used { opacity: .35; pointer-events: none; }
+  .opt { display: block; width: 100%; text-align: left; background: #faf8f2; border: 1px solid #e0d9c8; border-radius: 8px; padding: 10px 14px; margin-bottom: 8px; cursor: pointer; font-size: 14px; line-height: 1.5; }
+  .opt:hover { background: #f2efe4; }
+  .opt.sel { border-color: #6b705c; background: #eef0e3; }
+  .opt.correct { border-color: #5a8f5a; background: #e6f2e6; }
+  .opt.wrong { border-color: #b0563f; background: #f7e8e4; }
+  .qbtns { display: flex; gap: 8px; margin-top: 12px; }
+  .qbtns button { background: #6b705c; color: #fff; border: none; padding: 7px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+  .qbtns button.ghost { background: #b7ae97; }
+  .expl { display: none; margin-top: 14px; background: #f5f2e9; border-left: 4px solid #8a916c; padding: 12px 14px; border-radius: 0 8px 8px 0; font-size: 13.5px; line-height: 1.7; }
+  .expl.show { display: block; }
+  .expl .row { margin-bottom: 6px; }
+  .verdict { font-weight: 700; margin-bottom: 8px; }
+  .verdict.ok { color: #4a7a4a; } .verdict.no { color: #a34a35; }
+  .nav { display: flex; justify-content: space-between; max-width: 860px; margin: 0 auto; padding: 0 20px 40px; }
+  .nav button { background: #6b705c; color: #fff; border: none; padding: 9px 22px; border-radius: 6px; cursor: pointer; }
+  .nav button:disabled { background: #c9c2ac; cursor: default; }
+  .hidden { display: none !important; }
+  .dash-overlay { position: fixed; inset: 0; background: rgba(40,42,34,.55); display: none; align-items: center; justify-content: center; z-index: 50; }
+  .dash-overlay.open { display: flex; }
+  .dash { background: #f7f5f1; border-radius: 12px; padding: 22px; width: min(720px, 92vw); max-height: 84vh; overflow: auto; }
+  .dash h2 { font-size: 17px; margin-bottom: 10px; color: #4a5240; }
+  .dash .filters { margin-bottom: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .dash .filters button { border: 1px solid #b7ae97; background: #fff; border-radius: 14px; padding: 4px 12px; font-size: 12px; cursor: pointer; }
+  .dash .filters button.on { background: #6b705c; color: #fff; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 8px; }
+  .cell { border: 1px solid #d5cdb6; border-radius: 8px; padding: 8px 4px; text-align: center; font-size: 12px; cursor: pointer; background: #fff; }
+  .cell.c-ok { background: #e6f2e6; border-color: #5a8f5a; }
+  .cell.c-no { background: #f7e8e4; border-color: #b0563f; }
+  .dash .close { margin-top: 14px; background: #6b705c; color: #fff; border: none; padding: 8px 18px; border-radius: 6px; cursor: pointer; }
+  .result-box { background: #fff; border: 1px solid #e0d9c8; border-radius: 10px; padding: 30px; text-align: center; max-width: 860px; margin: 20px auto; }
+  .result-box h2 { color: #4a5240; margin-bottom: 10px; }
+  .result-box .big { font-size: 34px; font-weight: 700; color: #6b705c; margin: 12px 0; }
+  .result-box button { background: #6b705c; color: #fff; border: none; padding: 9px 18px; border-radius: 6px; cursor: pointer; margin: 4px; }
+  @media (max-width: 600px) { .qcard { padding: 16px; } .qtext { font-size: 15px; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>🎮 合成环境与游戏中的 RL · 面试自测卡牌</h1>
+  <p>覆盖 8 篇论文：SPIRAL / Absolute Zero / R-Zero / Vision-Zero / RLVE / GEM / AutoForge / GIFT ｜ 源笔记：01e-rl-games-envs-latest.md</p>
+</header>
+<div class="toolbar">
+  <button onclick="openDashboard()">📊 题目总览</button>
+  <button onclick="shuffleAnswers()">🎲 随机化正确答案位置</button>
+  <button onclick="resetAll()">🔄 重置所有分数</button>
+  <button onclick="showResult()">🏁 查看结果</button>
+  <span class="score-bar" id="scoreBar">得分：0 / 0</span>
+</div>
+<div class="progress-wrap">
+  <div class="progress-text" id="progressText">第 1 / 1 题</div>
+  <div class="progress-bar"><div class="fill" id="progressFill"></div></div>
+</div>
+<div class="container" id="quiz"></div>
+<div class="nav">
+  <button id="prevBtn" onclick="nav(-1)">← 上一题</button>
+  <button id="nextBtn" onclick="nav(1)">下一题 →</button>
+</div>
+<div class="result-box hidden" id="resultBox">
+  <h2>自测结果</h2>
+  <div class="big" id="resultScore"></div>
+  <p id="resultMsg"></p>
+  <div style="margin-top:14px">
+    <button onclick="backToQuiz()">继续做题</button>
+    <button onclick="backToQuiz();openDashboard()">返回查看（总览）</button>
+    <button onclick="resetAll();backToQuiz()">重新开始</button>
+  </div>
+</div>
+<div class="dash-overlay" id="dashOverlay">
+  <div class="dash">
+    <h2>题目总览</h2>
+    <div class="filters" id="dashFilters">
+      <button class="on" data-f="all" onclick="setFilter('all',this)">全部</button>
+      <button data-f="ok" onclick="setFilter('ok',this)">已答对</button>
+      <button data-f="no" onclick="setFilter('no',this)">已答错</button>
+      <button data-f="todo" onclick="setFilter('todo',this)">未答</button>
+    </div>
+    <div class="grid" id="dashGrid"></div>
+    <button class="close" onclick="closeDashboard()">关闭</button>
+  </div>
+</div>
+
+<script>
+/* ================= 题目数据 ================= */
+const dragQuestions = [
+  { paper:"SPIRAL", text:"SPIRAL 提出 {0}（RAE），为每个 (game, role) 维护独立 {1}，解决多智能体训练中的先手优势等非平稳偏差。",
+    answers:["Role-conditioned Advantage Estimation","baseline"],
+    pool:["Role-conditioned Advantage Estimation","baseline","group normalization","value network","reward shaping","KL penalty"],
+    perBlank:[
+      "✅ RAE 是 SPIRAL 的核心算法贡献：按 game×role 条件化估计 advantage。干扰项 reward shaping 是另一类技术。",
+      "✅ 维护的是角色条件 baseline（期望回报估计），而非 value network（纯表格/统计量）或 group normalization（那是 GRPO 的思路）。"],
+    expl:"RAE 让 advantage = 实际回报 − 角色条件 baseline，先手优势等结构性偏差被 baseline 吸收，梯度只反映'超出角色期望'的部分。" },
+  { paper:"Absolute Zero", text:"Absolute Zero 用 {0} 作为统一可验证 reward 来源，单一模型同时扮演 {1} 与 solver，零外部数据训练。",
+    answers:["code executor","proposer"],
+    pool:["code executor","proposer","LLM-as-judge","discriminator","human annotator","critic"],
+    perBlank:[
+      "✅ code executor（代码执行器）校验出题合法性与答案对错，比 LLM-as-judge 更抗 reward hacking。",
+      "✅ 单模型双角色：proposer 出题 + solver 解题；R-Zero 才拆成 Challenger/Solver 双模型。"],
+    expl:"核心 insight：用程序可执行性把开放式题目生成锚定到客观世界，避免 self-rewarding 崩溃。覆盖 deduction/abduction/induction 三类任务。" },
+  { paper:"RLVE", text:"RLVE 证明 {0} 是类似 data/model scale 的新扩展轴：{1} 个程序化环境联合训练在 6 个 benchmark 上平均 +3.37%。",
+    answers:["environment scaling","400"],
+    pool:["environment scaling","400","data scaling","40","context scaling","4000"],
+    perBlank:[
+      "✅ RLVE 的核心命题：训练环境数量是新的 scale 轴（environment scaling）。",
+      "✅ RLVE-Gym 含 400 个手工 verifiable environments；对照组 3× 算力继续原训练仅 +0.49%。"],
+    expl:"三个关键词：procedural generation（无限题目）、algorithmic verifier（抗 hacking）、adaptive difficulty（难度跟随策略能力）。" },
+  { paper:"GIFT", text:"GIFT 把游戏作为 {0} 学习环境，提出 {1}（CST）用顺序子任务更新解决多任务 RL 的梯度冲突。",
+    answers:["非正式（informal）","Coordinated Subtask Training"],
+    pool:["非正式（informal）","Coordinated Subtask Training","对抗（adversarial）","Gradient Surgery","监督（supervised）","Curriculum Learning"],
+    perBlank:[
+      "✅ GIFT 的概念框架：正式教育（数学）+ 非正式游戏经验共同塑造智能。",
+      "✅ CST 把一次 update 拆为各子任务顺序小更新，比 PCGrad 类 Gradient Surgery 更简单。"],
+    expl:"直接混合不同 reward scale/方向的任务等价于在冲突梯度上取平均；CST 让每个子任务信号完整作用于参数并隐式协调。" }
+];
+
+const singleQuestions = [
+  { paper:"SPIRAL", q:"SPIRAL 与标准 RLVR 的本质区别是？", correct:0,
+    options:["全在线 multi-turn multi-agent self-play，无需人工题库","用更大的人工题库训练","用 LLM-as-judge 替代规则 reward","只在单轮任务上做 RL"],
+    explanations:["✅ 正确：首个全在线 multi-turn multi-agent RL for LLM，零和博弈自动生成无限 opponent curriculum。","❌ 错误：SPIRAL 恰恰完全去除人工题目依赖。","❌ 错误：reward 是游戏规则终局胜负，非 LLM 判断。","❌ 错误：它是 multi-turn 系统，区别于单轮 RLVR。"] },
+  { paper:"Absolute Zero", q:"AZR 选择 code executor 而非 LLM-as-judge 作为 verifier，主要原因是？", correct:1,
+    options:["执行速度更快","可执行验证 grounded 于客观世界，更抗 reward hacking","代码任务比数学任务简单","LLM-as-judge 成本太高"],
+    explanations:["❌ 错误：速度不是核心动机。","✅ 正确：程序可执行性把题目生成锚定到客观世界，避免 self-rewarding 崩溃。","❌ 错误：与任务难度无关。","❌ 错误：成本非论文强调的核心原因。"] },
+  { paper:"R-Zero", q:"R-Zero 中 Challenger 获得最高 reward 的条件是？", correct:2,
+    options:["Solver 全部答对其出的题","Solver 全部答错其出的题","Solver 通过率在 0/1 中间（能力边缘）","题目长度最长"],
+    explanations:["❌ 错误：全会对 Challenger 无信息量。","❌ 错误：全错说明题太难，同样无学习信号。","✅ 正确：edge of learnability——通过率中间的题信息量最大，课程自动锚定在 learnable frontier。","❌ 错误：长度与难度/信息量无关。"] },
+  { paper:"Vision-Zero", q:"Vision-Zero 的 Iterative-SPO 主要解决什么问题？", correct:3,
+    options:["多模态对齐问题","图像生成质量问题","reward hacking 问题","纯 self-play 训练的性能平台期"],
+    explanations:["❌ 错误：对齐由 base VLM 保证。","❌ 错误：Vision-Zero 不生成图像，是从图像生成游戏。","❌ 错误：抗 hacking 靠游戏规则终局 reward。","✅ 正确：self-play 与 RLVR 交替，缓解 self-play-only 的 plateau。"] },
+  { paper:"RLVE", q:"RLVE 最有说服力的对照实验结果是？", correct:1,
+    options:["400 环境训练比 40 环境便宜","400 环境 +3.37% vs 原训练 3× 算力仅 +0.49%","1.5B 模型超过 7B 模型","静态数据比程序化数据更稳"],
+    explanations:["❌ 错误：成本对比非核心论证。","✅ 正确：换环境比堆算力有效约 7 倍——environment scaling 命题的关键证据。","❌ 错误：论文未以此为主张。","❌ 错误：结论恰好相反。"] },
+  { paper:"GEM", q:"GEM 的 ReBN 相比 GRPO 的关键优势是？", correct:0,
+    options:["兼容 dense per-turn reward，信用分配更好","不需要 baseline","训练速度永远更快","只适用于单回合任务"],
+    explanations:["✅ 正确：ReBN 对 batch 内 return 归一化，支持全 RL 设定；GRPO 的 outcome-level group 归一化处理不了逐回合 dense reward。","❌ 错误：ReBN 本身就是 baseline 归一化。","❌ 错误：速度非论文主张。","❌ 错误：multi-turn 正是 ReBN 的主场。"] },
+  { paper:"AutoForge", q:"AutoForge 的 environment-level advantage estimation 解决什么问题？", correct:2,
+    options:["环境合成速度慢","模拟用户完全不可用","环境异质性污染 per-trajectory baseline + 模拟用户不稳定","LLM 不会使用工具"],
+    explanations:["❌ 错误：合成速度由流水线解决，非 advantage 设计。","❌ 错误：是'不稳定'而非'不可用'。","✅ 正确：同环境内多轨迹聚合去均值，等价于分层建模，对环境偏置去噪。","❌ 错误：与工具使用能力无关。"] },
+  { paper:"GIFT", q:"GIFT 中直接混合游戏与数学任务做 RL 会失败，原因是？", correct:1,
+    options:["游戏任务没有 reward","异质 reward 信号混淆 + 梯度方向冲突","游戏数据量太大","数学任务会过拟合"],
+    explanations:["❌ 错误：游戏有规则化 reward。","✅ 正确：reward scale/方向不同，混合更新等价于在冲突梯度上取平均——CST 的动机。","❌ 错误：数据量不是问题。","❌ 错误：问题在信号冲突而非过拟合。"] }
+];
+
+const multiQuestions = [
+  { paper:"Absolute Zero", q:"Absolute Zero / AZR 覆盖哪三类代码推理任务？（多选）", correct:[0,2,4],
+    options:["deduction（演绎）","translation（翻译）","abduction（溯因）","summarization（摘要）","induction（归纳）","dialogue（对话）"],
+    explanations:["✅ deduction 是三类之一。","❌ 翻译不属于 AZR 任务设计。","✅ abduction 是三类之一。","❌ 摘要不属于。","✅ induction 是三类之一。","❌ 对话不属于。"] },
+  { paper:"SPIRAL / 横向", q:"下列哪些是 SPIRAL 论文报告的关键实验结论？（多选）", correct:[0,1,3,5],
+    options:["三游戏联合训练迁移到 8 个推理 benchmark 最高 +10%","优于 25,000 条专家游戏轨迹 SFT","在 100 个复杂战略游戏上验证","对已做 RLVR 的 DeepSeek-R1-Distill-Qwen-7B 仍有增益","证明 Nash 收敛与推理能力的理论等价性","不同游戏发展出互补认知模式"],
+    explanations:["✅ 论文关键数字。","✅ 优于专家轨迹 SFT 是直接对比结论。","❌ 只有 3 个简单游戏，扩展到复杂游戏是开放问题。","✅ 已 RLVR 模型仍获益是亮点。","❌ 迁移机理只有定性分析，无理论证明。","✅ CoT 分析的核心发现。"] },
+  { paper:"横向（环境工业化）", q:"'环境工业化'主线中各论文的角色对应正确的是？（多选）", correct:[0,2,3,4],
+    options:["RLVE：证明 environment scaling 有效（内容层）","GEM：自动合成环境（生产层）","GEM：标准化训练基础设施（工程层）","AutoForge：全自动环境合成（生产层）","RLVE-Gym：400 个手工 verifiable 环境","AutoForge：提出 ReBN 算法"],
+    explanations:["✅ RLVE = 内容层（环境数量与自适应难度）。","❌ 自动合成是 AutoForge；GEM 是基础设施。","✅ GEM = 工程层（接口、异步向量化、基准）。","✅ AutoForge = 生产层（全自动合成流水线）。","✅ RLVE-Gym 确为 400 个手工环境。","❌ ReBN 是 GEM 的基线算法。"] },
+  { paper:"横向（零数据家族）", q:"零数据自博弈家族（Absolute Zero / R-Zero / SPIRAL / Vision-Zero）的共同特征包括？（多选）", correct:[0,1,4],
+    options:["不依赖人工标注题目","需要 verifiable reward 信号","都用 LLM-as-judge 评分","都只用单模型架构","存在分布坍缩 / reward exploitation 风险","都已在开放域（非可验证任务）上验证"],
+    explanations:["✅ 共同卖点：零外部数据/零人工题库。","✅ 共同地基：executor / 答案检查 / 游戏规则等可验证信号。","❌ 恰恰相反，它们刻意避开 LLM-as-judge。","❌ R-Zero 是双模型；Vision-Zero 多角色。","✅ 共同 Achilles' heel。","❌ 全部锁死在可验证任务域。"] }
+];
+
+const trueFalseQuestions = [
+  { paper:"SPIRAL", q:"SPIRAL 中 RAE 的 baseline 是按整个 batch 的所有轨迹统一估计的。", correct:false,
+    expl:"✅ 正确理解：RAE 按 (game, role) 分别维护 baseline，条件化到游戏与角色。\n❌ 常见误解：统一 batch baseline 无法吸收先手优势、信息不对称等角色结构性偏差，这正是 RAE 要解决的问题。" },
+  { paper:"Absolute Zero", q:"Absolute Zero 完全不依赖任何外部数据，但其任务空间仍被限制在代码可验证域。", correct:true,
+    expl:"✅ 正确理解：零外部数据是范式卖点，但 code executor 作为 verifier 决定了任务必须可代码化——开放式/非代码推理不适用。\n❌ 常见误解：把'零数据'误读为'任意任务通用'。" },
+  { paper:"R-Zero", q:"R-Zero 与 Absolute Zero 一样使用单一模型同时扮演出题与解题角色。", correct:false,
+    expl:"✅ 正确理解：R-Zero 拆成 Challenger 与 Solver 两个独立模型分别优化、共进化。\n❌ 常见误解：单模型双角色是 Absolute Zero 的设计；R-Zero 的双模型解耦让两个目标不打架，代价是成本约翻倍。" },
+  { paper:"Vision-Zero", q:"Vision-Zero 只能从 CLEVR 合成场景生成游戏，不支持真实照片。", correct:false,
+    expl:"✅ 正确理解：'从任意图像生成游戏'是其关键设计，覆盖 CLEVR、图表、真实照片三类域。\n❌ 常见误解：domain-agnostic 入局正是它区别于合成域专用方法的地方。" },
+  { paper:"RLVE", q:"RLVE 的环境难度是静态固定的，训练前一次设定后不再调整。", correct:false,
+    expl:"✅ 正确理解：RLVE 的核心是 adaptive difficulty——题目难度分布随策略当前能力动态调整，避免太易/太难导致学习信号消失。\n❌ 常见误解：静态分布正是 RLVE 批评的传统 RLVR 做法。" },
+  { paper:"GEM", q:"GEM 的基准对比显示 GRPO 能很好地处理 multi-turn 任务的逐回合 dense reward。", correct:false,
+    expl:"✅ 正确理解：GEM 明确指出 GRPO 的 outcome-level group 归一化不兼容 dense per-turn reward，ReBN 才支持。\n❌ 常见误解：multi-turn agentic 任务本质是 POMDP，需要 per-turn 信号做信用分配。" },
+  { paper:"AutoForge", q:"AutoForge 的 environment-level advantage 与 SPIRAL 的 RAE 都可视为'对混淆因子条件化 baseline'的思想。", correct:true,
+    expl:"✅ 正确理解：AutoForge 按环境去均值、RAE 按 (game, role) 去均值——同为分层去偏，条件化轴不同。\n❌ 常见误解：把它们当成完全无关的 trick；统一视角是分层建模/条件化 baseline。" },
+  { paper:"GIFT", q:"GIFT 的 CST 用单一混合更新同时训练所有子任务以保证协调。", correct:false,
+    expl:"✅ 正确理解：CST 恰好相反——用顺序的子任务专属更新替代单一混合更新，分离异质信号并隐式协调。\n❌ 常见误解：单一混合更新正是被 CST 取代的基线做法（会导致信号混淆与梯度冲突）。" }
+];
+
+/* ================= 引擎 ================= */
+const typeNames = { drag:"拖拽填空", single:"单选题", multi:"多选题", tf:"判断题" };
+const allQuestions = [];
+dragQuestions.forEach(q => allQuestions.push({t:'drag', q}));
+singleQuestions.forEach(q => allQuestions.push({t:'single', q}));
+multiQuestions.forEach(q => allQuestions.push({t:'multi', q}));
+trueFalseQuestions.forEach(q => allQuestions.push({t:'tf', q}));
+
+let cur = 0;
+let dashFilter = 'all';
+const state = allQuestions.map(() => ({ answered:false, correct:false, sel:null, dragAns:null }));
+
+function renderQ(i) {
+  cur = i;
+  const item = allQuestions[i], st = state[i];
+  const c = document.getElementById('quiz');
+  let h = `<div class="qcard"><span class="qtype">${typeNames[item.t]}</span><span class="qpaper">${item.q.paper}</span>`;
+  if (item.t === 'drag') {
+    const q = item.q;
+    let txt = q.text;
+    for (let b = 0; b < q.answers.length; b++) {
+      const cur_ = st.dragAns && st.dragAns[b] ? st.dragAns[b] : '';
+      txt = txt.replace('{'+b+'}', `<span class="blank ${cur_?'filled':''}" data-b="${b}" onclick="blankClick(${b})">${cur_ || '（点击选词）'}</span>`);
+    }
+    h += `<div class="qtext">${txt}</div><div class="pool">` +
+      q.pool.map((w,wi)=>`<span class="chip ${st.dragAns && st.dragAns.includes(w)?'used':''}" draggable="true" data-w="${w}" onclick="chipClick('${w.replace(/'/g,"\\'")}')">${w}</span>`).join('') +
+      `</div>`;
+    h += `<div class="qbtns"><button onclick="checkDrag()">检查答案</button><button class="ghost" onclick="resetQ()">重置</button></div>`;
+    h += `<div class="expl" id="expl">${st.answered ? dragExplHTML(i) : ''}</div>`;
+  } else {
+    const q = item.q;
+    const opts = item.t === 'tf' ? ['正确', '错误'] : q.options;
+    h += `<div class="qtext">${q.q || q.text}</div>`;
+    opts.forEach((o, oi) => {
+      let cls = 'opt';
+      if (st.sel !== null) {
+        if (item.t === 'multi') { if (st.sel.includes(oi)) cls += ' sel'; }
+        else if (st.sel === oi) cls += ' sel';
+      }
+      if (st.answered) {
+        const isC = item.t === 'multi' ? q.correct.includes(oi) : (item.t === 'tf' ? (q.correct === (oi===0)) : q.correct === oi);
+        if (isC) cls += ' correct';
+        else if ((item.t==='multi' && st.sel.includes(oi)) || (item.t!=='multi' && st.sel===oi)) cls += ' wrong';
+      }
+      h += `<button class="${cls}" onclick="optClick(${oi})">${o}</button>`;
+    });
+    h += `<div class="qbtns"><button onclick="checkOpt()">检查答案</button><button class="ghost" onclick="resetQ()">重置</button></div>`;
+    h += `<div class="expl" id="expl">${st.answered ? optExplHTML(i) : ''}</div>`;
+  }
+  h += `</div>`;
+  c.innerHTML = h;
+  // drag & drop
+  c.querySelectorAll('.chip').forEach(ch => {
+    ch.addEventListener('dragstart', e => e.dataTransfer.setData('text/plain', ch.dataset.w));
+  });
+  c.querySelectorAll('.blank').forEach(bl => {
+    bl.addEventListener('dragover', e => e.preventDefault());
+    bl.addEventListener('drop', e => { e.preventDefault(); fillBlank(+bl.dataset.b, e.dataTransfer.getData('text/plain')); });
+  });
+  if (st.answered) document.getElementById('expl').classList.add('show');
+  updateChrome();
+}
+
+let pendingChip = null;
+function chipClick(w) { pendingChip = w; }
+function blankClick(b) {
+  if (!pendingChip) return;
+  fillBlank(b, pendingChip); pendingChip = null;
+}
+function fillBlank(b, w) {
+  const st = state[cur];
+  if (st.answered) return;
+  if (!st.dragAns) st.dragAns = {};
+  for (const k in st.dragAns) if (st.dragAns[k] === w) delete st.dragAns[k];
+  st.dragAns[b] = w;
+  renderQ(cur);
+}
+function optClick(oi) {
+  const item = allQuestions[cur], st = state[cur];
+  if (st.answered) return;
+  if (item.t === 'multi') {
+    if (st.sel === null) st.sel = [];
+    const k = st.sel.indexOf(oi);
+    if (k >= 0) st.sel.splice(k,1); else st.sel.push(oi);
+  } else st.sel = oi;
+  renderQ(cur);
+}
+function checkDrag() {
+  const item = allQuestions[cur], st = state[cur];
+  if (!st.dragAns || Object.keys(st.dragAns).length < item.q.answers.length) { alert('请先填满所有空'); return; }
+  st.answered = true;
+  st.correct = item.q.answers.every((a,b) => st.dragAns[b] === a);
+  renderQ(cur);
+}
+function checkOpt() {
+  const item = allQuestions[cur], st = state[cur];
+  if (st.sel === null || (item.t==='multi' && st.sel.length===0)) { alert('请先选择'); return; }
+  st.answered = true;
+  const q = item.q;
+  if (item.t === 'multi') {
+    const s = [...st.sel].sort().join(','), c = [...q.correct].sort().join(',');
+    st.correct = s === c;
+  } else if (item.t === 'tf') st.correct = (st.sel === 0) === q.correct;
+  else st.correct = st.sel === q.correct;
+  renderQ(cur);
+}
+function resetQ() { const st = state[cur]; st.answered=false; st.correct=false; st.sel=null; st.dragAns=null; renderQ(cur); }
+
+function dragExplHTML(i) {
+  const q = allQuestions[i].q, st = state[i];
+  let h = `<div class="verdict ${st.correct?'ok':'no'}">${st.correct?'✅ 回答正确':'❌ 回答错误'}</div>`;
+  q.perBlank.forEach((p,b) => h += `<div class="row"><b>空 ${b+1}（${q.answers[b]}）：</b>${p}</div>`);
+  h += `<div class="row"><b>解析：</b>${q.expl}</div>`;
+  return h;
+}
+function optExplHTML(i) {
+  const item = allQuestions[i], q = item.q, st = state[i];
+  let h = `<div class="verdict ${st.correct?'ok':'no'}">${st.correct?'✅ 回答正确':'❌ 回答错误'}</div>`;
+  if (item.t === 'tf') h += `<div class="row">${q.expl.replace(/\n/g,'<br>')}</div>`;
+  else q.explanations.forEach(e => h += `<div class="row">${e}</div>`);
+  return h;
+}
+
+function nav(d) {
+  const n = Math.min(Math.max(cur + d, 0), allQuestions.length - 1);
+  renderQ(n);
+}
+function updateChrome() {
+  document.getElementById('progressText').textContent = `第 ${cur+1} / ${allQuestions.length} 题`;
+  document.getElementById('progressFill').style.width = ((cur+1)/allQuestions.length*100) + '%';
+  document.getElementById('prevBtn').disabled = cur === 0;
+  document.getElementById('nextBtn').disabled = cur === allQuestions.length - 1;
+  const got = state.filter(s => s.answered && s.correct).length;
+  const done = state.filter(s => s.answered).length;
+  document.getElementById('scoreBar').textContent = `得分：${got} / ${allQuestions.length}（已答 ${done}）`;
+}
+
+function openDashboard() { renderDashGrid(); document.getElementById('dashOverlay').classList.add('open'); }
+function closeDashboard() { document.getElementById('dashOverlay').classList.remove('open'); }
+function setFilter(f, btn) {
+  dashFilter = f;
+  document.querySelectorAll('#dashFilters button').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  renderDashGrid();
+}
+function renderDashGrid() {
+  const g = document.getElementById('dashGrid');
+  g.innerHTML = '';
+  allQuestions.forEach((item, i) => {
+    const st = state[i];
+    const status = !st.answered ? 'todo' : (st.correct ? 'ok' : 'no');
+    if (dashFilter !== 'all' && status !== dashFilter) return;
+    const label = item.t==='drag'?'填':item.t==='single'?'单':item.t==='multi'?'多':'判';
+    const cls = status==='ok'?'c-ok':status==='no'?'c-no':'';
+    g.innerHTML += `<div class="cell ${cls}" onclick="closeDashboard();renderQ(${i})">#${i+1} ${label}</div>`;
+  });
+}
+
+function showResult() {
+  const got = state.filter(s => s.answered && s.correct).length;
+  const done = state.filter(s => s.answered).length;
+  document.getElementById('resultScore').textContent = `${got} / ${allQuestions.length}`;
+  document.getElementById('resultMsg').textContent =
+    done < allQuestions.length ? `还有 ${allQuestions.length - done} 题未作答。` :
+    got === allQuestions.length ? '满分！可以进面试了。' :
+    got >= allQuestions.length * .7 ? '不错，回顾错题对应的论文章节即可。' : '建议重读笔记的 AI 预读与面试谈资部分后再测。';
+  document.getElementById('quiz').classList.add('hidden');
+  document.getElementById('resultBox').classList.remove('hidden');
+}
+function backToQuiz() {
+  document.getElementById('resultBox').classList.add('hidden');
+  document.getElementById('quiz').classList.remove('hidden');
+  renderQ(cur);
+}
+function resetAll() {
+  state.forEach(s => { s.answered=false; s.correct=false; s.sel=null; s.dragAns=null; });
+  document.getElementById('resultBox').classList.add('hidden');
+  document.getElementById('quiz').classList.remove('hidden');
+  renderQ(0);
+}
+
+function shuffleAnswers() {
+  ['single','multi'].forEach(t => {
+    allQuestions.filter(it => it.t === t).forEach(it => {
+      const q = it.q;
+      const pairs = q.options.map((o, i) => ({ o, e: q.explanations[i], c: t==='single' ? q.correct===i : q.correct.includes(i) }));
+      for (let i = pairs.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [pairs[i], pairs[j]] = [pairs[j], pairs[i]];
+      }
+      q.options = pairs.map(p => p.o);
+      q.explanations = pairs.map(p => p.e);
+      if (t === 'single') q.correct = pairs.findIndex(p => p.c);
+      else q.correct = pairs.map((p,i)=>p.c?i:-1).filter(x=>x>=0);
+    });
+  });
+  resetAll();
+  alert('已随机洗牌单选/多选选项位置，答题记录已清空。');
+}
+
+renderQ(0);
+</script>
+</body>
+</html>

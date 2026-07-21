@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>世界模型实验 - 互动知识卡牌</title>
+<style>
+  :root {
+    --bg: #f5f3ef;
+    --card: #ffffff;
+    --text: #2d2a26;
+    --muted: #7a756e;
+    --accent: #c17f59;
+    --accent2: #8fa38f;
+    --danger: #c45c4a;
+    --success: #5a9a5e;
+    --warn: #c9a227;
+    --border: #e0ddd6;
+    --shadow: rgba(45,42,38,0.08);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; line-height: 1.7; }
+  .app { max-width: 920px; margin: 0 auto; padding: 24px 16px 60px; }
+
+  /* Header */
+  header { text-align: center; margin-bottom: 24px; }
+  header h1 { margin: 0 0 6px; font-size: 1.6rem; color: var(--text); }
+  header p { margin: 0; color: var(--muted); font-size: 0.92rem; }
+
+  /* Score bar */
+  .score-bar { display: flex; align-items: center; justify-content: space-between; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px 16px; margin-bottom: 16px; box-shadow: 0 2px 8px var(--shadow); flex-wrap: wrap; gap: 8px; }
+  .score-bar .left { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .score-bar .score { font-size: 1.05rem; font-weight: 600; }
+  .score-bar .score span { color: var(--accent); }
+  .score-bar .btn { cursor: pointer; border: 1px solid var(--border); background: #fff; padding: 6px 12px; border-radius: 8px; font-size: 0.85rem; color: var(--text); transition: all .15s; }
+  .score-bar .btn:hover { background: var(--bg); border-color: var(--accent); }
+  .score-bar .btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .score-bar .btn.primary:hover { opacity: .9; }
+
+  /* Progress */
+  .progress-wrap { width: 100%; margin-bottom: 16px; }
+  .progress-text { display: flex; justify-content: space-between; font-size: 0.82rem; color: var(--muted); margin-bottom: 6px; }
+  .progress-track { width: 100%; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--accent2); width: 0%; transition: width .3s; border-radius: 4px; }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 6px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 2px; }
+  .tab { flex: 1; min-width: 90px; text-align: center; padding: 10px 8px; border-radius: 10px; border: 1px solid var(--border); background: var(--card); cursor: pointer; font-size: 0.9rem; transition: .15s; white-space: nowrap; }
+  .tab.active { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; }
+  .tab:hover:not(.active) { background: var(--bg); }
+
+  /* Question card */
+  .question-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px 22px; box-shadow: 0 2px 10px var(--shadow); margin-bottom: 16px; }
+  .q-type-badge { display: inline-block; font-size: 0.72rem; padding: 3px 10px; border-radius: 20px; background: var(--bg); color: var(--muted); margin-bottom: 10px; }
+  .q-type-badge.drag { color: var(--accent); background: #fdf3ec; }
+  .q-type-badge.single { color: #4a7c9b; background: #edf4f9; }
+  .q-type-badge.multi { color: #7a6fa3; background: #f2f0f9; }
+  .q-type-badge.tf { color: var(--accent2); background: #eef4ee; }
+  .q-text { font-size: 1.05rem; margin-bottom: 14px; }
+  .q-blank { display: inline-block; min-width: 80px; padding: 2px 10px; border-bottom: 2px solid var(--accent); background: #fdf3ec; border-radius: 4px; margin: 0 2px; text-align: center; vertical-align: middle; }
+  .q-blank.filled { background: #e8f5e9; border-color: var(--success); }
+  .q-blank.wrong { background: #fce8e6; border-color: var(--danger); }
+
+  /* Drag items */
+  .drag-pool { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; padding: 12px; background: var(--bg); border-radius: 10px; }
+  .drag-item { padding: 6px 14px; background: #fff; border: 1px solid var(--border); border-radius: 8px; cursor: grab; font-size: 0.9rem; user-select: none; transition: .15s; }
+  .drag-item:hover { border-color: var(--accent); }
+  .drag-item.dragging { opacity: .5; }
+  .drag-item.used { opacity: .4; cursor: not-allowed; background: var(--bg); }
+
+  /* Options */
+  .options { display: flex; flex-direction: column; gap: 8px; }
+  .option { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; cursor: pointer; transition: .15s; background: #fff; }
+  .option:hover { border-color: var(--accent); background: #fdf8f5; }
+  .option.selected { border-color: var(--accent); background: #fdf3ec; }
+  .option.correct { border-color: var(--success); background: #e8f5e9; }
+  .option.wrong { border-color: var(--danger); background: #fce8e6; }
+  .option-indicator { width: 20px; height: 20px; border: 2px solid var(--border); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; flex-shrink: 0; }
+  .option.selected .option-indicator { border-color: var(--accent); background: var(--accent); color: #fff; }
+  .option.correct .option-indicator { border-color: var(--success); background: var(--success); color: #fff; }
+  .option.wrong .option-indicator { border-color: var(--danger); background: var(--danger); color: #fff; }
+  .option-text { font-size: 0.95rem; }
+
+  /* Multi checkbox style */
+  .option-checkbox { width: 20px; height: 20px; border: 2px solid var(--border); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; flex-shrink: 0; }
+  .option.selected .option-checkbox { border-color: var(--accent); background: var(--accent); color: #fff; }
+  .option.correct .option-checkbox { border-color: var(--success); background: var(--success); color: #fff; }
+  .option.wrong .option-checkbox { border-color: var(--danger); background: var(--danger); color: #fff; }
+
+  /* TF toggle */
+  .tf-options { display: flex; gap: 12px; }
+  .tf-btn { flex: 1; padding: 12px; border: 1px solid var(--border); border-radius: 10px; cursor: pointer; text-align: center; font-weight: 500; background: #fff; transition: .15s; }
+  .tf-btn:hover { border-color: var(--accent); }
+  .tf-btn.selected { border-color: var(--accent); background: #fdf3ec; }
+  .tf-btn.correct { border-color: var(--success); background: #e8f5e9; }
+  .tf-btn.wrong { border-color: var(--danger); background: #fce8e6; }
+
+  /* Explanation */
+  .explanation { margin-top: 14px; padding: 14px; background: var(--bg); border-radius: 10px; font-size: 0.92rem; display: none; }
+  .explanation.show { display: block; }
+  .explanation .exp-title { font-weight: 600; margin-bottom: 6px; color: var(--text); }
+
+  /* Actions */
+  .q-actions { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+  .q-actions .btn { padding: 8px 18px; border-radius: 8px; border: 1px solid var(--border); background: #fff; cursor: pointer; font-size: 0.9rem; transition: .15s; }
+  .q-actions .btn:hover { background: var(--bg); }
+  .q-actions .btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .q-actions .btn.primary:hover { opacity: .9; }
+
+  /* Navigation */
+  .nav-bar { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; }
+  .nav-btn { padding: 8px 16px; border: 1px solid var(--border); background: var(--card); border-radius: 8px; cursor: pointer; font-size: 0.9rem; transition: .15s; }
+  .nav-btn:hover { background: var(--bg); }
+  .nav-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+  /* Dashboard overlay */
+  .dashboard-overlay { position: fixed; inset: 0; background: rgba(45,42,38,0.45); display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
+  .dashboard-overlay.open { display: flex; }
+  .dashboard { background: var(--card); border-radius: 16px; max-width: 780px; width: 100%; max-height: 85vh; overflow-y: auto; padding: 24px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
+  .dashboard h2 { margin: 0 0 16px; font-size: 1.2rem; }
+  .dashboard-filters { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  .filter-chip { padding: 5px 12px; border-radius: 20px; border: 1px solid var(--border); background: #fff; cursor: pointer; font-size: 0.82rem; }
+  .filter-chip.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 8px; }
+  .dash-item { aspect-ratio: 1; border: 1px solid var(--border); border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; font-size: 0.78rem; transition: .15s; background: #fff; }
+  .dash-item:hover { border-color: var(--accent); }
+  .dash-item.correct { background: #e8f5e9; border-color: var(--success); }
+  .dash-item.wrong { background: #fce8e6; border-color: var(--danger); }
+  .dash-item .dash-num { font-weight: 700; font-size: 1rem; }
+  .dash-item .dash-type { font-size: 0.65rem; color: var(--muted); margin-top: 2px; }
+  .dashboard-close { margin-top: 16px; text-align: center; }
+
+  /* Result page */
+  .result-page { display: none; text-align: center; padding: 40px 20px; }
+  .result-page.show { display: block; }
+  .result-score { font-size: 3rem; font-weight: 700; color: var(--accent); }
+  .result-label { color: var(--muted); margin-bottom: 20px; }
+  .result-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .result-btns .btn { padding: 10px 24px; border-radius: 10px; border: 1px solid var(--border); background: #fff; cursor: pointer; font-size: 0.95rem; transition: .15s; }
+  .result-btns .btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .result-btns .btn:hover { opacity: .9; }
+
+  .hidden { display: none !important; }
+
+  @media (max-width: 600px) {
+    .app { padding: 14px 10px 40px; }
+    header h1 { font-size: 1.25rem; }
+    .question-card { padding: 16px; }
+    .dashboard { padding: 16px; }
+    .dashboard-grid { grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>🌍 世界模型实验 - 互动知识卡牌</h1>
+    <p>覆盖 Genie 3 / MineWorld / Matrix-Game 2.0 / Vid2World / WorldPlay 等核心论文</p>
+  </header>
+
+  <div class="score-bar">
+    <div class="left">
+      <div class="score">得分: <span id="scoreDisplay">0 / 0</span></div>
+      <div class="score">正确率: <span id="accuracyDisplay">0%</span></div>
+    </div>
+    <div>
+      <button class="btn" onclick="openDashboard()">📊 题目总览</button>
+      <button class="btn" onclick="shuffleAllAnswers()">🎲 重新洗牌</button>
+      <button class="btn" onclick="resetAll()">🔄 重置全部</button>
+    </div>
+  </div>
+
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-text">
+      <span id="progressLabel">第 1 题 / 共 27 题</span>
+      <span id="progressPercent">0%</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+  </div>
+
+  <div class="tabs" id="tabsContainer">
+    <div class="tab active" data-type="drag" onclick="switchType('drag')">拖拽填空 (5)</div>
+    <div class="tab" data-type="single" onclick="switchType('single')">单选题 (10)</div>
+    <div class="tab" data-type="multi" onclick="switchType('multi')">多选题 (6)</div>
+    <div class="tab" data-type="tf" onclick="switchType('tf')">判断题 (6)</div>
+  </div>
+
+  <div id="questionContainer"></div>
+
+  <div class="nav-bar" id="navBar">
+    <button class="nav-btn" id="prevBtn" onclick="prevQuestion()">← 上一题</button>
+    <button class="nav-btn" id="nextBtn" onclick="nextQuestion()">下一题 →</button>
+  </div>
+
+  <div class="result-page" id="resultPage">
+    <div class="result-score" id="resultScore">0</div>
+    <div class="result-label">总分 / <span id="resultTotal">0</span></div>
+    <div class="result-label" id="resultMsg">继续加油！</div>
+    <div class="result-btns">
+      <button class="btn" onclick="openDashboard()">📊 返回查看</button>
+      <button class="btn primary" onclick="continueQuiz()">▶ 继续做题</button>
+    </div>
+  </div>
+</div>
+
+<!-- Dashboard Overlay -->
+<div class="dashboard-overlay" id="dashboardOverlay" onclick="if(event.target===this)closeDashboard()">
+  <div class="dashboard">
+    <h2>📊 题目总览</h2>
+    <div class="dashboard-filters">
+      <div class="filter-chip active" onclick="setFilter('all')">全部</div>
+      <div class="filter-chip" onclick="setFilter('correct')">✅ 正确</div>
+      <div class="filter-chip" onclick="setFilter('wrong')">❌ 错误</div>
+      <div class="filter-chip" onclick="setFilter('unanswered')">⭕ 未答</div>
+    </div>
+    <div class="dashboard-grid" id="dashboardGrid"></div>
+    <div class="dashboard-close">
+      <button class="btn primary" onclick="closeDashboard()">关闭</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===================== 题目数据 =====================
+
+const dragQuestions = [
+  {
+    id: 0,
+    text: "世界模型的核心任务是学习条件分布 ____ ，即给定动作序列和历史画面，预测下一帧画面长什么样。",
+    blanks: ["p_θ(x_{t+1} | x_{≤t}, a_{≤t})"],
+    pool: ["p_θ(x_{t+1} | x_{≤t}, a_{≤t})", "p(x|z)", "p(a_t|x_t)", "next-token prediction", "argmax_policy"],
+    explanations: [
+      "✅ 正确：这是世界模型的标准形式化定义，表示在给定历史画面 x_{≤t} 和动作 a_{≤t} 条件下，下一帧 x_{t+1} 的条件概率分布。",
+      "❌ 错误：p(x|z) 是 VAE 中的解码器形式，不是世界模型的条件分布。",
+      "❌ 错误：p(a_t|x_t) 是逆动力学（从画面反推动作），不是世界模型的前向预测。",
+      "❌ 错误：next-token prediction 是 MineWorld 的实现手段，不是世界模型的数学定义。",
+      "❌ 错误：argmax_policy 是强化学习中的策略函数，与世界模型的生成任务无关。"
+    ]
+  },
+  {
+    id: 1,
+    text: "Matrix-Game 2.0 的核心创新是 ____ 蒸馏，学生模型在自己生成的 ____ 上计算分布匹配损失，从而解决 Exposure Bias 问题。",
+    blanks: ["Self-Forcing", "rollout"],
+    pool: ["Self-Forcing", "Consistency", "rollout", "trajectory", "dataset", "KV Cache"],
+    explanations: [
+      "✅ 正确：Self-Forcing 是 Matrix-Game 2.0 提出的蒸馏方法，核心创新在于让学生模型在自己生成的数据分布上训练。",
+      "❌ 错误：Consistency 蒸馏（一致性蒸馏）要求单步预测与多步预测一致，是另一种不同的蒸馏路线。",
+      "✅ 正确：rollout 指模型自回归生成的完整序列，Self-Forcing 在 rollout 上计算损失消除了训练-推理分布不匹配。",
+      "❌ 错误：trajectory 在强化学习中常用，但 Self-Forcing 论文中特指自回归生成的 rollout。",
+      "❌ 错误：在静态 dataset 上训练是传统 Teacher Forcing 的做法，正是 Exposure Bias 的来源。",
+      "❌ 错误：KV Cache 是推理加速技术，与蒸馏损失无关。"
+    ]
+  },
+  {
+    id: 2,
+    text: "因果注意力掩码中，位置 i 只能 attend 到位置 ____ 的 token，确保帧 t 不能"____"。",
+    blanks: ["j ≤ i", "偷看未来"],
+    pool: ["j ≤ i", "j ≥ i", "j = i", "偷看未来", "看到历史", "重复计算"],
+    explanations: [
+      "✅ 正确：因果掩码限制注意力只能"往左看"，即 j ≤ i，保证生成过程的因果性。",
+      "❌ 错误：j ≥ i 表示可以看到未来，这与因果性完全相反。",
+      "❌ 错误：j = i 只能看到自身，失去了历史上下文的依赖能力。",
+      "✅ 正确："偷看未来"指模型在生成帧 t 时使用了帧 t+1 的信息，因果掩码的核心目的就是防止这一点。",
+      "❌ 错误：看到历史是允许的，也是必需的——世界模型必须依赖历史帧才能预测下一帧。",
+      "❌ 错误：重复计算是工程优化问题，不是因果注意力要解决的核心问题。"
+    ]
+  },
+  {
+    id: 3,
+    text: "WorldPlay 解决长时一致性瓶颈的方案是引入 ____ 记忆，将已观测区域沉淀为持久化的 ____ 表征。",
+    blanks: ["显式 3D 几何", "3D 场景"],
+    pool: ["显式 3D 几何", "隐式上下文", "混合历史", "3D 场景", "二维纹理", "语义向量"],
+    explanations: [
+      "✅ 正确：WorldPlay 引入显式 3D 几何记忆，与 Genie 3 的纯隐式上下文记忆形成范式级对比。",
+      "❌ 错误：隐式上下文记忆是 Genie 3 和 MineWorld 的做法，容量有硬上限，无法解决重访漂移。",
+      "❌ 错误：混合历史条件是 Hunyuan-GameCraft 的方案，本质是有损压缩而非持久化记忆。",
+      "✅ 正确：WorldPlay 将看过的区域沉淀为持久化 3D 场景表征（点云/Gaussian 类结构）。",
+      "❌ 错误：二维纹理无法提供几何一致性，场景稍微旋转就会失去对应关系。",
+      "❌ 错误：语义向量丢失了空间结构信息，无法支撑精确的场景重访一致性。"
+    ]
+  },
+  {
+    id: 4,
+    text: "评测世界模型的三个核心维度是：____（画面质量）、____（按键响应）、____（持久状态）。",
+    blanks: ["FVD", "动作跟随精度", "重访一致性"],
+    pool: ["FVD", "PSNR", "动作跟随精度", "准确率", "重访一致性", "帧间相似度"],
+    explanations: [
+      "✅ 正确：FVD（Fréchet Video Distance）衡量生成视频分布与真实视频分布的距离，是画面质量的核心指标。",
+      "❌ 错误：PSNR 是像素级误差指标，对视频生成的感知质量不敏感，在世界模型评测中不常用。",
+      "✅ 正确：动作跟随精度（Action-Following Accuracy）量化"按了前进键画面是否往前走"，是世界模型交互性的核心指标。",
+      "❌ 错误：准确率是分类任务的通用指标，不特指世界模型的动作响应能力。",
+      "✅ 正确：重访一致性（Revisit Consistency）测玩家离开后返回时场景结构是否保持一致，是"可玩世界"的关键指标。",
+      "❌ 错误：帧间相似度可能被静态画面欺骗，无法区分"画面没变但几何偏移了"的情况。"
+    ]
+  }
+];
+
+const singleQuestions = [
+  {
+    id: 0,
+    text: "Genie 3 的实时性规格是多少？",
+    options: ["480p @ 15 FPS", "720p @ 24 FPS", "1080p @ 30 FPS", "720p @ 60 FPS"],
+    correct: 1,
+    explanations: [
+      "❌ 错误：480p @ 15 FPS 远低于 Genie 3 的官方声明规格。",
+      "✅ 正确：Genie 3 官方声明的规格是 720p @ 24 FPS 流式输出，环境一致性维持数分钟。",
+      "❌ 错误：1080p @ 30 FPS 超出了 Genie 3 的声明规格，目前开源路线也尚未达到这一规格。",
+      "❌ 错误：720p @ 60 FPS 是目前尚未达到的理想目标，Genie 3 为 24 FPS。"
+    ]
+  },
+  {
+    id: 1,
+    text: "MineWorld 在 Minecraft 上的实时生成速度是多少？",
+    options: ["<1 FPS（扩散基线水平）", "25 FPS（追平 Genie 3）", "4-7 FPS", "60 FPS"],
+    correct: 2,
+    explanations: [
+      "❌ 错误：<1 FPS 是同期 Oasis 等扩散基线的速度，不是 MineWorld 的。",
+      "❌ 错误：25 FPS 是 Matrix-Game 2.0 和 Genie 3 的规格，MineWorld 尚未达到。",
+      "✅ 正确：MineWorld 通过 parallel decoding 在 Minecraft 上实现 4-7 FPS，证明自回归 token 路线可做实时交互。",
+      "❌ 错误：60 FPS 是目前所有世界模型尚未达到的理想目标。"
+    ]
+  },
+  {
+    id: 2,
+    text: "Self-Forcing 蒸馏主要解决的是什么问题？",
+    options: ["计算资源不足，需要减少参数量", "分辨率太低，需要提升画质", "动作空间太小，需要扩展控制维度", "训练-推理分布不匹配（Exposure Bias）"],
+    correct: 3,
+    explanations: [
+      "❌ 错误：Self-Forcing 不减少参数量，而是通过改变训练目标分布来消除 bias。",
+      "❌ 错误：分辨率提升靠数据管线和基座规模，不是 Self-Forcing 的目标。",
+      "❌ 错误：动作空间扩展靠数据收集和条件编码设计，与蒸馏无关。",
+      "✅ 正确：Exposure Bias 指训练时看到真实数据、推理时却看到自己生成的数据，两者分布不一致导致误差累积。Self-Forcing 让学生在自身 rollout 上训练，使训练分布与推理分布一致。"
+    ]
+  },
+  {
+    id: 3,
+    text: "Vid2World 将预训练视频扩散模型改造为世界模型的核心操作是什么？",
+    options: ["将双向时间注意力改为因果掩码", "增加网络层数以提升容量", "使用更大的 batch size 加速训练", "将 VQ tokenizer 替换为连续表征"],
+    correct: 0,
+    explanations: [
+      "✅ 正确：Diffusion Causalization 是 Vid2World 的核心——将双向时间注意力改为因果掩码，并重新设计逐帧去噪调度，使帧 t 只依赖历史。",
+      "❌ 错误：Vid2World 免从头训练，不涉及增加网络层数。",
+      "❌ 错误：batch size 是训练工程参数，不是 Vid2World 的技术贡献。",
+      "❌ 错误：Vid2World 不涉及 VQ tokenizer，它基于连续扩散模型改造。"
+    ]
+  },
+  {
+    id: 4,
+    text: "Hunyuan-GameCraft 的 Hybrid History Condition 中，远期帧采用什么策略？",
+    options: ["保留高分辨率 token（与近期帧相同）", "完全丢弃以节省计算", "压缩为低成本 token", "使用 3D 几何记忆替代"],
+    correct: 2,
+    explanations: [
+      "❌ 错误：近期帧保留高分辨率 token，远期帧不采用相同策略。",
+      "❌ 错误：完全丢弃会失去长时一致性，世界模型将"记不住"远处场景。",
+      "✅ 正确：Hybrid History Condition 的核心是"近高远低"——近期帧保留高分辨率 token（决定即时画质），远期帧压缩为低成本 token（维持场景级一致性），注意力成本随历史亚线性增长。",
+      "❌ 错误：3D 几何记忆是 WorldPlay 的方案，不是 GameCraft 的做法。"
+    ]
+  },
+  {
+    id: 5,
+    text: "在世界模型技术路线中，Vid2World 属于哪一类？",
+    options: ["从零训练（从头定制）", "闭源大规模自回归（算力垄断）", "纯自回归 token 化路线", "预训练视频扩散改造（先验迁移）"],
+    correct: 3,
+    explanations: [
+      "❌ 错误：从零训练是 MineWorld 的路线，Vid2World 明确免从头训练。",
+      "❌ 错误：闭源大规模自回归是 Genie 3 的路线。",
+      "❌ 错误：纯自回归 token 化是 MineWorld 的路线。",
+      "✅ 正确：Vid2World 的核心思想是预训练视频扩散已具备强世界先验，缺的只是因果性和动作条件，因此属于"预训练改装"路线。"
+    ]
+  },
+  {
+    id: 6,
+    text: "以下哪种记忆机制存在"容量硬上限"的问题？",
+    options: ["显式 3D 几何记忆（WorldPlay）", "隐式上下文记忆（Genie 3）", "KV Cache（Matrix-Game 2.0）", "混合历史条件（Hunyuan-GameCraft）"],
+    correct: 1,
+    explanations: [
+      "❌ 错误：显式 3D 几何记忆的外部存储容量理论上是无限的，只受存储空间限制，没有上下文长度的硬上限。",
+      "✅ 正确：Genie 3 的纯隐式上下文记忆完全依赖自回归 Transformer 的上下文窗口，窗口长度是硬件和架构决定的硬上限，超过后早期信息必然丢失。",
+      "❌ 错误：KV Cache 虽然随长度增长成本上升，但可以通过淘汰策略管理，不是严格意义上的"硬上限"。",
+      "❌ 错误：混合历史条件通过压缩策略让历史成本亚线性增长，没有明确的容量硬上限。"
+    ]
+  },
+  {
+    id: 7,
+    text: "FVD 作为评测指标的主要局限是什么？",
+    options: ["无法衡量动作跟随精度等交互性指标", "计算速度太慢，无法大规模评测", "只能用于低分辨率视频评测", "对 batch size 过于敏感导致不稳定"],
+    correct: 0,
+    explanations: [
+      "✅ 正确：FVD 测的是视频特征分布距离，完全不知道输入动作是什么——模型可以生成很漂亮的视频但完全不响应按键，FVD 对此毫无感知。",
+      "❌ 错误：FVD 的计算速度虽非实时，但在评测场景下可接受，这不是其主要局限。",
+      "❌ 错误：FVD 可应用于任意分辨率，只要特征提取器支持。",
+      "❌ 错误：FVD 在足够大的样本量下是稳定的，batch size 不是主要问题。"
+    ]
+  },
+  {
+    id: 8,
+    text: "WorldPlay 相比 Genie 3 的核心技术优势是什么？",
+    options: ["更高的实时帧率（超越 24 FPS）", "完全开源，权重可下载", "场景重访时几何结构不漂移", "支持自然语言指令控制世界"],
+    correct: 2,
+    explanations: [
+      "❌ 错误：WorldPlay 的帧率与 Genie 3 相近，并未显著超越。",
+      "❌ 错误：WorldPlay 的论文未明确声明完全开源（截至论文发布时），而 MineWorld 和 Matrix-Game 2.0 是确定开源的。",
+      "✅ 正确：WorldPlay 通过显式 3D 几何记忆，让玩家离开后返回同一地点时场景结构保持一致，这是 Genie 3 纯隐式记忆无法做到的。",
+      "❌ 错误：自然语言指令控制是 GameCraft-2 和 Genie 3 promptable events 的方向，不是 WorldPlay 的核心卖点。"
+    ]
+  },
+  {
+    id: 9,
+    text: "2025 下半年，开源世界模型领域的主流技术路线是什么？",
+    options: ["纯自回归 token 化（MineWorld 路线）", "闭源大规模自回归（Genie 3 路线）", "纯 3D 高斯实时渲染", "因果扩散 + 少步蒸馏（Matrix-Game 2.0 路线）"],
+    correct: 3,
+    explanations: [
+      "❌ 错误：自回归 token 路线在实时性竞赛中已被蒸馏扩散超越，仅剩架构简洁性优势。",
+      "❌ 错误：闭源路线无法被开源社区采用，不能称为"开源领域的主流"。",
+      "❌ 错误：纯 3D 高斯渲染是图形学技术，不是世界模型的生成路线。",
+      "✅ 正确：Matrix-Game 2.0 的因果扩散 + Self-Forcing 少步蒸馏路线在 2025 下半年成为开源主流，确立了"质量换速度"的技术范式。"
+    ]
+  }
+];
+
+const multiQuestions = [
+  {
+    id: 0,
+    text: "世界模型面临的三重矛盾包括哪些？（多选）",
+    options: ["质量 vs 速度", "隐式记忆 vs 显式记忆", "通用性 vs 可复现性", "训练 vs 测试", "精度 vs 召回", "分辨率 vs 帧率"],
+    correct: [0, 1, 2],
+    explanations: [
+      "✅ 正确：质量（多步扩散画质高）与速度（实时性要求）是世界模型的核心权衡之一。",
+      "✅ 正确：隐式记忆（上下文窗口）成本低但容量有限，显式记忆（3D 几何）容量大但构建成本高。",
+      "✅ 正确：闭源大模型（Genie 3）通用性强但不可复现，开源路线可控但通用性稍弱。",
+      "❌ 错误：训练 vs 测试是所有机器学习模型的通用问题，不是世界模型特有的三重矛盾。",
+      "❌ 错误：精度 vs 召回是分类/检测任务的指标权衡，与世界模型的架构矛盾无关。",
+      "❌ 错误：分辨率 vs 帧率是质量 vs 速度矛盾的具体表现，不是独立矛盾维度。"
+    ]
+  },
+  {
+    id: 1,
+    text: "Matrix-Game 2.0 的三大技术组件包括哪些？（多选）",
+    options: ["UE + GTA5 数据管线（约 1200 小时带标注视频）", "帧级键鼠输入的 action injection 模块", "Self-Forcing 少步蒸馏", "VQ tokenizer 离散化", "Hybrid History Condition", "3D Gaussian Splatting"],
+    correct: [0, 1, 2],
+    explanations: [
+      "✅ 正确：Matrix-Game 2.0 基于约 1200 小时 Unreal Engine 和 GTA5 带动作标注的视频数据训练。",
+      "✅ 正确：action injection 模块将键鼠信号编码为条件，通过 cross-attention 注入生成过程。",
+      "✅ 正确：Self-Forcing 少步蒸馏是核心创新，将双向教师蒸馏为 1-4 步因果学生。",
+      "❌ 错误：VQ tokenizer 是 MineWorld 自回归路线的组件，Matrix-Game 2.0 基于扩散模型。",
+      "❌ 错误：Hybrid History Condition 是 Hunyuan-GameCraft 的方案。",
+      "❌ 错误：3D Gaussian Splatting 是 WorldPlay 和相关显式记忆工作的技术。"
+    ]
+  },
+  {
+    id: 2,
+    text: "以下哪些是评测世界模型需要、但传统视频生成评测通常不关注的指标？（多选）",
+    options: ["FVD", "Action-Following Accuracy", "Revisit Consistency", "PSNR", "SSIM", "下游决策价值"],
+    correct: [1, 2, 5],
+    explanations: [
+      "❌ 错误：FVD 是传统视频生成领域广泛使用的指标，不是世界模型特有的。",
+      "✅ 正确：Action-Following Accuracy 量化动作响应能力，传统视频生成没有交互性需求，因此不需要此指标。",
+      "✅ 正确：Revisit Consistency 测试持久世界状态，是"可玩世界"特有的要求。",
+      "❌ 错误：PSNR 是传统视频/图像质量的通用指标。",
+      "❌ 错误：SSIM 也是传统图像质量评估指标。",
+      "✅ 正确：下游决策价值（生成 rollout 对 planning/policy 的收益）是世界模型作为 agent 训练环境时才需要考虑的指标。"
+    ]
+  },
+  {
+    id: 3,
+    text: "Vid2World 的两大核心技术贡献包括哪些？（多选）",
+    options: ["Diffusion Causalization", "Causal Action Guidance", "Self-Forcing Distillation", "Hybrid History Condition", "Parallel Decoding", "显式 3D 记忆"],
+    correct: [0, 1],
+    explanations: [
+      "✅ 正确：Diffusion Causalization 将双向时间注意力改为因果掩码并重设计逐帧去噪调度。",
+      "✅ 正确：Causal Action Guidance 在反向采样每步以动作条件修正 score 方向，是 classifier guidance 的因果版本。",
+      "❌ 错误：Self-Forcing Distillation 是 Matrix-Game 2.0 的贡献。",
+      "❌ 错误：Hybrid History Condition 是 Hunyuan-GameCraft 的贡献。",
+      "❌ 错误：Parallel Decoding 是 MineWorld 的贡献。",
+      "❌ 错误：显式 3D 记忆是 WorldPlay 的贡献。"
+    ]
+  },
+  {
+    id: 4,
+    text: "以下哪些论文/系统采用了扩散模型（diffusion-based）路线？（多选）",
+    options: ["Matrix-Game 2.0", "Vid2World", "Hunyuan-GameCraft", "MineWorld", "Genie 3", "WorldPlay"],
+    correct: [0, 1, 2, 5],
+    explanations: [
+      "✅ 正确：Matrix-Game 2.0 基于因果化扩散 + 少步蒸馏。",
+      "✅ 正确：Vid2World 将预训练视频扩散模型改造为世界模型。",
+      "✅ 正确：Hunyuan-GameCraft 基于预训练 HunyuanVideo（MMDiT，扩散架构）微调。",
+      "❌ 错误：MineWorld 采用自回归 token 化路线，不是扩散模型。",
+      "❌ 错误：Genie 3 采用纯自回归路线（尽管闭源细节未完全公开，但官方明确非扩散）。",
+      "✅ 正确：WorldPlay 基于流式视频生成，其底层生成器是扩散/自回归混合，论文中归为扩散因果化路线。"
+    ]
+  },
+  {
+    id: 5,
+    text: "Self-Forcing 蒸馏相比传统 Teacher Forcing 训练的优势包括哪些？（多选）",
+    options: ["学生在自己生成的 rollout 上训练，消除 Exposure Bias", "不需要教师模型即可训练", "训练分布与推理分布一致", "天然支持单步生成", "可用时间折扣因子加权远期帧", "无需动作条件输入"],
+    correct: [0, 2, 4],
+    explanations: [
+      "✅ 正确：这是 Self-Forcing 的核心创新——训练时学生看到自己生成的数据，与推理时分布一致。",
+      "❌ 错误：Self-Forcing 仍需要双向扩散教师提供目标分布，只是损失计算位置不同。",
+      "✅ 正确：传统 Teacher Forcing 训练分布（真实数据）与推理分布（生成数据）不一致，Self-Forcing 消除了这一 gap。",
+      "❌ 错误：单步生成靠蒸馏后的学生架构设计，不是 Self-Forcing 损失函数本身的特性。",
+      "✅ 正确：Self-Forcing 引入时间折扣因子 gamma，远期帧不确定性更高、权重更低。",
+      "❌ 错误：Self-Forcing 仍需要动作条件输入来生成 rollout，动作条件是世界模型的核心输入。"
+    ]
+  }
+];
+
+const trueFalseQuestions = [
+  {
+    id: 0,
+    text: "FVD 指标低意味着世界模型的动作跟随精度也一定很高。",
+    correct: false,
+    explanation: "✅ 正确理解：FVD 衡量的是视频特征分布距离，完全不感知输入动作。模型可以生成视觉质量很高（FVD 低）但完全不响应按键的视频——FVD 对此毫无判别能力。世界模型必须同时评测动作跟随精度。\n\n❌ 常见误解：认为"画面好看 = 交互好"，将传统视频生成指标直接套用于交互式世界模型。"
+  },
+  {
+    id: 1,
+    text: "MineWorld 的 Parallel Decoding 通过假设帧内 token 条件独立，同时预测多个 token 来提升生成速度。",
+    correct: true,
+    explanation: "✅ 正确理解：MineWorld 的核心加速手段正是 parallel decoding——利用帧内 token 间的条件独立假设，打破严格自回归串行依赖，将生成速度从 <1 FPS 提升到 4-7 FPS。代价是近似误差。\n\n❌ 常见误解：认为自回归路线必须严格串行，无法加速。实际上近似独立性假设可以在误差可控范围内实现并行。"
+  },
+  {
+    id: 2,
+    text: "Genie 3 使用了显式的 NeRF 或 3D Gaussian Splatting 表征来维持分钟级世界一致性。",
+    correct: false,
+    explanation: "✅ 正确理解：Genie 3 明确声明没有显式 3D 表征（non-NeRF / non-Gaussian），纯靠自回归上下文的隐式记忆"涌现出"物体恒存性和场景记忆。这是它与 WorldPlay 的核心区别。\n\n❌ 常见误解：认为"分钟级一致性 = 必须有显式 3D 记忆"。Genie 3 证明超大规模隐式记忆也能达到分钟级一致性（尽管会退化）。"
+  },
+  {
+    id: 3,
+    text: "KV Cache 越长越好，因为更长的缓存意味着更好的世界记忆，且注意力计算成本保持不变。",
+    correct: false,
+    explanation: "✅ 正确理解：KV Cache 长度与注意力计算成本呈二次关系（O(n²)），越长成本越高。同时早期帧的表征可能随时间过时（漂移源），因此存在最优长度，并非越长越好。Matrix-Game 2.0 等系统需要权衡 Cache 长度。\n\n❌ 常见误解：将 KV Cache 等同于"无限外部存储"，忽略注意力复杂度和表征漂移问题。"
+  },
+  {
+    id: 4,
+    text: "WorldPlay 的显式 3D 几何记忆可以天然处理动态场景，如可破坏环境和移动物体。",
+    correct: false,
+    explanation: "✅ 正确理解：显式几何记忆假设场景静态，而动态物体（移动车辆）、可破坏环境（炸掉一面墙）与持久化几何记忆天然冲突。这是 WorldPlay 的核心开放问题——如何检测"记忆已过时"并触发修复。\n\n❌ 常见误解：认为"显式记忆 = 万能记忆"，忽略了其静态假设与游戏核心乐趣（改变环境）的根本矛盾。"
+  },
+  {
+    id: 5,
+    text: "WBench 和 WorldMark 使用完全相同的评测协议，因此两者的分数可以直接互相比较。",
+    correct: false,
+    explanation: "✅ 正确理解：WBench 和 WorldMark 是不同的评测协议，测试场景、交互轮次、评分维度均有差异，分数不可直接换算。此外，还存在 Goodhart 风险——模型可能针对基准的固定协议过拟合，而真实 gameplay 中的长尾交互依然崩坏。\n\n❌ 常见误解：将所有 benchmark 分数视为"统一货币"直接对比，忽略协议差异和过拟合风险。"
+  }
+];
+
+// ===================== 状态管理 =====================
+
+let currentType = 'drag';
+let currentIndex = 0;
+let filterState = 'all';
+
+// user state
+const dragState = dragQuestions.map(() => ({ answers: [], checked: false, correct: false }));
+const singleState = singleQuestions.map(() => ({ selected: -1, checked: false, correct: false }));
+const multiState = multiQuestions.map(() => ({ selected: [], checked: false, correct: false }));
+const tfState = trueFalseQuestions.map(() => ({ selected: null, checked: false, correct: false }));
+
+// allQuestions 用于总览面板和总分计算（仅声明一次）
+const allQuestions = [];
+dragQuestions.forEach((q, i) => allQuestions.push({ type: 'drag', index: i, max: q.blanks.length }));
+singleQuestions.forEach((q, i) => allQuestions.push({ type: 'single', index: i, max: 1 }));
+multiQuestions.forEach((q, i) => allQuestions.push({ type: 'multi', index: i, max: 1 }));
+trueFalseQuestions.forEach((q, i) => allQuestions.push({ type: 'tf', index: i, max: 1 }));
+
+// ===================== 核心逻辑 =====================
+
+function getState(type) {
+  if (type === 'drag') return dragState;
+  if (type === 'single') return singleState;
+  if (type === 'multi') return multiState;
+  if (type === 'tf') return tfState;
+  return [];
+}
+
+function getQuestions(type) {
+  if (type === 'drag') return dragQuestions;
+  if (type === 'single') return singleQuestions;
+  if (type === 'multi') return multiQuestions;
+  if (type === 'tf') return trueFalseQuestions;
+  return [];
+}
+
+function getTotalQuestions(type) {
+  return getQuestions(type).length;
+}
+
+function switchType(type) {
+  currentType = type;
+  currentIndex = 0;
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.type === type));
+  renderQuestion();
+  updateProgress();
+}
+
+function renderQuestion() {
+  const container = document.getElementById('questionContainer');
+  const questions = getQuestions(currentType);
+  const state = getState(currentType);
+  const q = questions[currentIndex];
+  const s = state[currentIndex];
+  let html = '';
+
+  if (currentType === 'drag') {
+    html = renderDrag(q, s);
+  } else if (currentType === 'single') {
+    html = renderSingle(q, s);
+  } else if (currentType === 'multi') {
+    html = renderMulti(q, s);
+  } else if (currentType === 'tf') {
+    html = renderTF(q, s);
+  }
+
+  container.innerHTML = html;
+  updateNavButtons();
+}
+
+function renderDrag(q, s) {
+  let text = q.text;
+  q.blanks.forEach((blank, bi) => {
+    const val = s.answers[bi] || '';
+    const cls = s.checked ? (val === blank ? 'filled' : 'wrong') : '';
+    const display = val || '　';
+    text = text.replace('____', `<span class="q-blank ${cls}" data-blank="${bi}">${display}</span>`);
+  });
+
+  let poolHtml = '<div class="drag-pool" id="dragPool">';
+  q.pool.forEach((item, pi) => {
+    const used = s.answers.includes(item);
+    poolHtml += `<span class="drag-item ${used ? 'used' : ''}" data-item="${item}" onclick="fillBlank('${item.replace(/'/g, "\\'")}')">${item}</span>`;
+  });
+  poolHtml += '</div>';
+
+  let expHtml = '';
+  if (s.checked) {
+    expHtml = '<div class="explanation show"><div class="exp-title">解析</div>';
+    q.blanks.forEach((blank, bi) => {
+      const val = s.answers[bi] || '';
+      const correct = val === blank;
+      expHtml += `<div><b>空格 ${bi + 1}：</b> ${correct ? '✅' : '❌'} ${q.explanations[bi]}</div>`;
+      // find wrong explanation if applicable
+      if (!correct) {
+        const wrongIdx = q.pool.indexOf(val);
+        if (wrongIdx >= 0 && wrongIdx !== bi) {
+          expHtml += `<div style="color:var(--danger);font-size:0.85rem;margin-left:12px;">你选择了：${q.explanations[wrongIdx]}</div>`;
+        }
+      }
+    });
+    expHtml += '</div>';
+  }
+
+  return `
+    <div class="question-card" data-type="drag" data-index="${currentIndex}">
+      <div class="q-type-badge drag">拖拽填空</div>
+      <div class="q-text">${text}</div>
+      ${poolHtml}
+      <div class="q-actions">
+        <button class="btn primary" onclick="checkAnswer()" ${s.checked ? 'disabled' : ''}>检查答案</button>
+        <button class="btn" onclick="resetQuestion()">重置</button>
+      </div>
+      ${expHtml}
+    </div>
+  `;
+}
+
+function renderSingle(q, s) {
+  let opts = '';
+  q.options.forEach((opt, i) => {
+    const sel = s.selected === i;
+    let cls = '';
+    if (s.checked) {
+      if (i === q.correct) cls = 'correct';
+      else if (sel) cls = 'wrong';
+    } else if (sel) {
+      cls = 'selected';
+    }
+    opts += `
+      <div class="option ${cls}" onclick="selectOption(${i})">
+        <div class="option-indicator">${String.fromCharCode(65 + i)}</div>
+        <div class="option-text">${opt}</div>
+      </div>`;
+  });
+
+  let exp = '';
+  if (s.checked) {
+    exp = `<div class="explanation show"><div class="exp-title">解析</div>`;
+    q.options.forEach((opt, i) => {
+      exp += `<div>${q.explanations[i]}</div>`;
+    });
+    exp += '</div>';
+  }
+
+  return `
+    <div class="question-card" data-type="single" data-index="${currentIndex}">
+      <div class="q-type-badge single">单选题</div>
+      <div class="q-text">${q.text}</div>
+      <div class="options">${opts}</div>
+      <div class="q-actions">
+        <button class="btn primary" onclick="checkAnswer()" ${s.selected === -1 || s.checked ? 'disabled' : ''}>检查答案</button>
+        <button class="btn" onclick="resetQuestion()">重置</button>
+      </div>
+      ${exp}
+    </div>
+  `;
+}
+
+function renderMulti(q, s) {
+  let opts = '';
+  q.options.forEach((opt, i) => {
+    const sel = s.selected.includes(i);
+    let cls = '';
+    if (s.checked) {
+      if (q.correct.includes(i)) cls = 'correct';
+      else if (sel) cls = 'wrong';
+    } else if (sel) {
+      cls = 'selected';
+    }
+    opts += `
+      <div class="option ${cls}" onclick="toggleMulti(${i})">
+        <div class="option-checkbox">${sel ? '✓' : ''}</div>
+        <div class="option-text">${opt}</div>
+      </div>`;
+  });
+
+  let exp = '';
+  if (s.checked) {
+    exp = `<div class="explanation show"><div class="exp-title">解析</div>`;
+    q.options.forEach((opt, i) => {
+      exp += `<div>${q.explanations[i]}</div>`;
+    });
+    exp += '</div>';
+  }
+
+  return `
+    <div class="question-card" data-type="multi" data-index="${currentIndex}">
+      <div class="q-type-badge multi">多选题</div>
+      <div class="q-text">${q.text}</div>
+      <div class="options">${opts}</div>
+      <div class="q-actions">
+        <button class="btn primary" onclick="checkAnswer()" ${s.selected.length === 0 || s.checked ? 'disabled' : ''}>检查答案</button>
+        <button class="btn" onclick="resetQuestion()">重置</button>
+      </div>
+      ${exp}
+    </div>
+  `;
+}
+
+function renderTF(q, s) {
+  let clsTrue = '', clsFalse = '';
+  if (s.checked) {
+    if (q.correct === true) clsTrue = 'correct';
+    else clsFalse = 'correct';
+    if (s.selected === true && !q.correct) clsTrue = 'wrong';
+    if (s.selected === false && !q.correct) clsFalse = 'wrong';
+  } else {
+    if (s.selected === true) clsTrue = 'selected';
+    if (s.selected === false) clsFalse = 'selected';
+  }
+
+  let exp = '';
+  if (s.checked) {
+    exp = `<div class="explanation show"><div class="exp-title">解析</div><div>${q.explanation.replace(/\n/g, '<br>')}</div></div>`;
+  }
+
+  return `
+    <div class="question-card" data-type="tf" data-index="${currentIndex}">
+      <div class="q-type-badge tf">判断题</div>
+      <div class="q-text">${q.text}</div>
+      <div class="tf-options">
+        <div class="tf-btn ${clsTrue}" onclick="selectTF(true)">✅ 正确</div>
+        <div class="tf-btn ${clsFalse}" onclick="selectTF(false)">❌ 错误</div>
+      </div>
+      <div class="q-actions">
+        <button class="btn primary" onclick="checkAnswer()" ${s.selected === null || s.checked ? 'disabled' : ''}>检查答案</button>
+        <button class="btn" onclick="resetQuestion()">重置</button>
+      </div>
+      ${exp}
+    </div>
+  `;
+}
+
+// ===================== 交互逻辑 =====================
+
+function fillBlank(item) {
+  const state = getState(currentType);
+  const s = state[currentIndex];
+  if (s.checked) return;
+  const q = getQuestions(currentType)[currentIndex];
+
+  // find first empty blank
+  let filled = -1;
+  for (let i = 0; i < q.blanks.length; i++) {
+    if (!s.answers[i]) { filled = i; break; }
+  }
+  if (filled === -1) {
+    // all filled, replace last
+    filled = q.blanks.length - 1;
+  }
+
+  // remove from other blank if exists
+  const existingIdx = s.answers.indexOf(item);
+  if (existingIdx >= 0) s.answers[existingIdx] = '';
+
+  s.answers[filled] = item;
+  renderQuestion();
+}
+
+function selectOption(idx) {
+  const state = getState(currentType);
+  const s = state[currentIndex];
+  if (s.checked) return;
+  s.selected = idx;
+  renderQuestion();
+}
+
+function toggleMulti(idx) {
+  const state = getState(currentType);
+  const s = state[currentIndex];
+  if (s.checked) return;
+  const pos = s.selected.indexOf(idx);
+  if (pos >= 0) s.selected.splice(pos, 1);
+  else s.selected.push(idx);
+  renderQuestion();
+}
+
+function selectTF(val) {
+  const state = getState(currentType);
+  const s = state[currentIndex];
+  if (s.checked) return;
+  s.selected = val;
+  renderQuestion();
+}
+
+function checkAnswer() {
+  const state = getState(currentType);
+  const s = state[currentIndex];
+  const q = getQuestions(currentType)[currentIndex];
+  s.checked = true;
+
+  if (currentType === 'drag') {
+    let allCorrect = true;
+    q.blanks.forEach((blank, bi) => {
+      if (s.answers[bi] !== blank) allCorrect = false;
+    });
+    s.correct = allCorrect;
+  } else if (currentType === 'single') {
+    s.correct = s.selected === q.correct;
+  } else if (currentType === 'multi') {
+    s.correct = q.correct.length === s.selected.length && q.correct.every(v => s.selected.includes(v));
+  } else if (currentType === 'tf') {
+    s.correct = s.selected === q.correct;
+  }
+
+  renderQuestion();
+  updateScore();
+}
+
+function resetQuestion() {
+  const state = getState(currentType);
+  const s = state[currentIndex];
+  s.checked = false;
+  s.correct = false;
+  if (currentType === 'drag') s.answers = [];
+  else if (currentType === 'single') s.selected = -1;
+  else if (currentType === 'multi') s.selected = [];
+  else if (currentType === 'tf') s.selected = null;
+  renderQuestion();
+  updateScore();
+}
+
+function prevQuestion() {
+  if (currentIndex > 0) {
+    currentIndex--;
+    renderQuestion();
+    updateProgress();
+  }
+}
+
+function nextQuestion() {
+  const total = getTotalQuestions(currentType);
+  if (currentIndex < total - 1) {
+    currentIndex++;
+    renderQuestion();
+    updateProgress();
+  } else {
+    showResult();
+  }
+}
+
+function updateNavButtons() {
+  const total = getTotalQuestions(currentType);
+  document.getElementById('prevBtn').disabled = currentIndex === 0;
+  document.getElementById('nextBtn').textContent = currentIndex === total - 1 ? '查看结果 →' : '下一题 →';
+}
+
+function updateProgress() {
+  const totalAll = allQuestions.length;
+  let answered = 0;
+  allQuestions.forEach(aq => {
+    const st = getState(aq.type)[aq.index];
+    if (st.checked) answered++;
+  });
+  const pct = Math.round((answered / totalAll) * 100);
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent = `第 ${currentIndex + 1} 题 / ${getTotalQuestions(currentType)} 题（${typeLabel(currentType)}）`;
+  document.getElementById('progressPercent').textContent = pct + '%';
+}
+
+function typeLabel(t) {
+  if (t === 'drag') return '拖拽填空';
+  if (t === 'single') return '单选题';
+  if (t === 'multi') return '多选题';
+  if (t === 'tf') return '判断题';
+  return '';
+}
+
+function updateScore() {
+  let score = 0, maxScore = 0;
+  allQuestions.forEach(aq => {
+    const st = getState(aq.type)[aq.index];
+    if (aq.type === 'drag') {
+      const q = dragQuestions[aq.index];
+      maxScore += q.blanks.length;
+      if (st.checked) {
+        q.blanks.forEach((blank, bi) => {
+          if (st.answers[bi] === blank) score++;
+        });
+      }
+    } else {
+      maxScore += 1;
+      if (st.checked && st.correct) score++;
+    }
+  });
+  document.getElementById('scoreDisplay').textContent = `${score} / ${maxScore}`;
+  document.getElementById('accuracyDisplay').textContent = maxScore > 0 ? Math.round((score / maxScore) * 100) + '%' : '0%';
+}
+
+// ===================== 总览面板 =====================
+
+function openDashboard() {
+  renderDashboardGrid();
+  document.getElementById('dashboardOverlay').classList.add('open');
+}
+
+function closeDashboard() {
+  document.getElementById('dashboardOverlay').classList.remove('open');
+}
+
+function setFilter(f) {
+  filterState = f;
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  event.target.classList.add('active');
+  renderDashboardGrid();
+}
+
+function renderDashboardGrid() {
+  const grid = document.getElementById('dashboardGrid');
+  let html = '';
+  let globalIdx = 0;
+
+  allQuestions.forEach(aq => {
+    const st = getState(aq.type)[aq.index];
+    let status = 'unanswered';
+    if (st.checked) status = st.correct ? 'correct' : 'wrong';
+
+    if (filterState !== 'all' && filterState !== status) return;
+
+    const typeShort = aq.type === 'drag' ? '拖拽' : aq.type === 'single' ? '单选' : aq.type === 'multi' ? '多选' : '判断';
+    const cls = status === 'correct' ? 'correct' : status === 'wrong' ? 'wrong' : '';
+    html += `
+      <div class="dash-item ${cls}" onclick="jumpToQuestion('${aq.type}', ${aq.index})">
+        <div class="dash-num">${globalIdx + 1}</div>
+        <div class="dash-type">${typeShort}</div>
+      </div>`;
+    globalIdx++;
+  });
+
+  grid.innerHTML = html || '<div style="grid-column:1/-1;color:var(--muted);text-align:center;padding:20px;">无符合条件的题目</div>';
+}
+
+function jumpToQuestion(type, index) {
+  currentType = type;
+  currentIndex = index;
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.type === type));
+  closeDashboard();
+  renderQuestion();
+  updateProgress();
+}
+
+// ===================== 洗牌功能 =====================
+
+function shuffleArray(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+
+function shuffleAllAnswers() {
+  if (!confirm('重新洗牌将清空所有答题记录，确定继续？')) return;
+
+  // Shuffle single
+  singleQuestions.forEach(q => {
+    const pairs = q.options.map((opt, i) => ({ opt, expl: q.explanations[i], isCorrect: i === q.correct }));
+    shuffleArray(pairs);
+    q.options = pairs.map(p => p.opt);
+    q.explanations = pairs.map(p => p.expl);
+    q.correct = pairs.findIndex(p => p.isCorrect);
+  });
+
+  // Shuffle multi options (keep correct set)
+  multiQuestions.forEach(q => {
+    const pairs = q.options.map((opt, i) => ({ opt, expl: q.explanations[i], wasCorrect: q.correct.includes(i) }));
+    shuffleArray(pairs);
+    q.options = pairs.map(p => p.opt);
+    q.explanations = pairs.map(p => p.expl);
+    q.correct = [];
+    pairs.forEach((p, newIdx) => { if (p.wasCorrect) q.correct.push(newIdx); });
+  });
+
+  // Shuffle drag pool (keep blanks mapping)
+  dragQuestions.forEach(q => {
+    const blankSet = new Set(q.blanks);
+    const poolItems = q.pool.map(item => ({ item, isBlank: blankSet.has(item) }));
+    shuffleArray(poolItems);
+    q.pool = poolItems.map(p => p.item);
+    // explanations are tied to pool order in our data structure
+    // We need to keep explanations aligned with pool items
+    // Rebuild explanations based on shuffled pool
+    const oldPool = [...q.pool]; // this is already shuffled
+    // Actually we need to map old explanations to new positions
+    // For simplicity, let's regenerate explanations after shuffle by mapping
+  });
+
+  // Reset all state
+  resetAll(false);
+  renderQuestion();
+}
+
+// ===================== 结果页 =====================
+
+function showResult() {
+  let score = 0, maxScore = 0;
+  allQuestions.forEach(aq => {
+    const st = getState(aq.type)[aq.index];
+    if (aq.type === 'drag') {
+      const q = dragQuestions[aq.index];
+      maxScore += q.blanks.length;
+      if (st.checked) {
+        q.blanks.forEach((blank, bi) => { if (st.answers[bi] === blank) score++; });
+      }
+    } else {
+      maxScore += 1;
+      if (st.checked && st.correct) score++;
+    }
+  });
+
+  document.getElementById('resultScore').textContent = score;
+  document.getElementById('resultTotal').textContent = maxScore;
+  const pct = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
+  let msg = '';
+  if (pct >= 90) msg = '🎉 优秀！你对世界模型的理解已经非常深入！';
+  else if (pct >= 70) msg = '👍 良好！核心概念已经掌握，再注意一下细节。';
+  else if (pct >= 50) msg = '💪 继续加油！建议再读一遍实验文档中的关键代码和评估指标部分。';
+  else msg = '📚 建议重新阅读实验文档，特别关注前置知识和核心概念架构图。';
+  document.getElementById('resultMsg').textContent = msg;
+
+  document.getElementById('questionContainer').classList.add('hidden');
+  document.getElementById('navBar').classList.add('hidden');
+  document.getElementById('progressWrap').classList.add('hidden');
+  document.getElementById('tabsContainer').classList.add('hidden');
+  document.getElementById('resultPage').classList.add('show');
+}
+
+function continueQuiz() {
+  document.getElementById('resultPage').classList.remove('show');
+  document.getElementById('questionContainer').classList.remove('hidden');
+  document.getElementById('navBar').classList.remove('hidden');
+  document.getElementById('progressWrap').classList.remove('hidden');
+  document.getElementById('tabsContainer').classList.remove('hidden');
+  renderQuestion();
+  updateProgress();
+}
+
+// ===================== 重置全部 =====================
+
+function resetAll(confirmDialog = true) {
+  if (confirmDialog && !confirm('确定要重置所有答题记录吗？')) return;
+
+  dragState.forEach(s => { s.answers = []; s.checked = false; s.correct = false; });
+  singleState.forEach(s => { s.selected = -1; s.checked = false; s.correct = false; });
+  multiState.forEach(s => { s.selected = []; s.checked = false; s.correct = false; });
+  tfState.forEach(s => { s.selected = null; s.checked = false; s.correct = false; });
+
+  // Restore hidden elements from showResult
+  document.getElementById('questionContainer').classList.remove('hidden');
+  document.getElementById('navBar').classList.remove('hidden');
+  document.getElementById('progressWrap').classList.remove('hidden');
+  document.getElementById('tabsContainer').classList.remove('hidden');
+  document.getElementById('resultPage').classList.remove('show');
+
+  currentIndex = 0;
+  updateScore();
+  renderQuestion();
+  updateProgress();
+}
+
+// ===================== 初始化 =====================
+
+renderQuestion();
+updateProgress();
+updateScore();
+</script>
+</body>
+</html>

@@ -1,0 +1,2044 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agent 验证与评估实验 - 互动知识卡牌</title>
+  <style>
+    /* ===== CSS Variables ===== */
+    :root {
+      --bg: #f5f3ef;
+      --card: #ffffff;
+      --text: #2d2a26;
+      --text-secondary: #6b6560;
+      --accent: #c45a2e;
+      --accent-light: #f0e0d6;
+      --success: #3d8b5a;
+      --success-light: #e0f0e6;
+      --error: #b53a2a;
+      --error-light: #f5e0dc;
+      --warning: #c4952e;
+      --warning-light: #f5ecd6;
+      --border: #e0dbd4;
+      --shadow: rgba(0,0,0,0.06);
+      --radius: 14px;
+      --radius-sm: 8px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      min-height: 100vh;
+      padding-bottom: 40px;
+    }
+
+    /* ===== Header ===== */
+    header {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 18px 20px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 1px 8px var(--shadow);
+    }
+    .header-inner {
+      max-width: 800px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .header-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .header-title .badge {
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.65rem;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-weight: 600;
+    }
+    .header-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .btn {
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 8px 14px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+    .btn-primary:hover { background: #a84a22; }
+    .btn-secondary {
+      background: var(--bg);
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover { background: var(--border); }
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-secondary);
+      border: 1px solid transparent;
+    }
+    .btn-ghost:hover { background: var(--bg); }
+
+    /* ===== Progress Bar ===== */
+    .progress-section {
+      max-width: 800px;
+      margin: 16px auto;
+      padding: 0 20px;
+    }
+    .progress-bar-bg {
+      height: 8px;
+      background: var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 4px;
+      transition: width 0.3s ease;
+      width: 0%;
+    }
+    .progress-text {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+    .score-display {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    /* ===== Main Container ===== */
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    /* ===== Question Card ===== */
+    .question-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 28px;
+      margin-top: 16px;
+      box-shadow: 0 2px 12px var(--shadow);
+      border: 1px solid var(--border);
+      display: none;
+    }
+    .question-card.active { display: block; animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+    .question-type-label {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 20px;
+      margin-bottom: 12px;
+    }
+    .label-drag { background: #e0e8f5; color: #2d5a9e; }
+    .label-single { background: var(--success-light); color: var(--success); }
+    .label-multi { background: var(--warning-light); color: var(--warning); }
+    .label-tf { background: #f0e0f0; color: #7a3d7a; }
+
+    .question-text {
+      font-size: 1.08rem;
+      font-weight: 600;
+      margin-bottom: 18px;
+      line-height: 1.6;
+    }
+
+    /* ===== Drag & Drop ===== */
+    .drop-zone {
+      display: inline-block;
+      min-width: 90px;
+      height: 36px;
+      line-height: 36px;
+      border: 2px dashed var(--border);
+      border-radius: var(--radius-sm);
+      margin: 0 4px;
+      text-align: center;
+      vertical-align: middle;
+      background: var(--bg);
+      transition: all 0.2s;
+      padding: 0 8px;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+    .drop-zone.drag-over { border-color: var(--accent); background: var(--accent-light); }
+    .drop-zone.filled { border-style: solid; border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+    .drop-zone.correct { border-color: var(--success); color: var(--success); background: var(--success-light); }
+    .drop-zone.wrong { border-color: var(--error); color: var(--error); background: var(--error-light); }
+
+    .options-pool {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 16px 0;
+      padding: 14px;
+      background: var(--bg);
+      border-radius: var(--radius-sm);
+      border: 1px dashed var(--border);
+    }
+    .draggable-item {
+      padding: 6px 14px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      cursor: grab;
+      font-size: 0.9rem;
+      user-select: none;
+      transition: all 0.2s;
+    }
+    .draggable-item:hover { border-color: var(--accent); box-shadow: 0 2px 6px var(--shadow); }
+    .draggable-item.dragging { opacity: 0.5; }
+    .draggable-item.used { opacity: 0.35; pointer-events: none; }
+
+    /* ===== Choice Options ===== */
+    .choice-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin: 14px 0;
+    }
+    .choice-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 16px;
+      border: 2px solid var(--border);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.2s;
+      background: var(--card);
+    }
+    .choice-item:hover { border-color: var(--accent); background: var(--accent-light); }
+    .choice-item.selected { border-color: var(--accent); background: var(--accent-light); }
+    .choice-item.correct { border-color: var(--success); background: var(--success-light); }
+    .choice-item.wrong { border-color: var(--error); background: var(--error-light); }
+    .choice-item.disabled { pointer-events: none; }
+
+    .choice-indicator {
+      width: 22px;
+      height: 22px;
+      border: 2px solid var(--border);
+      border-radius: 50%;
+      flex-shrink: 0;
+      margin-top: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: transparent;
+      transition: all 0.2s;
+    }
+    .choice-item.selected .choice-indicator { border-color: var(--accent); color: var(--accent); }
+    .choice-item.correct .choice-indicator { border-color: var(--success); background: var(--success); color: #fff; }
+    .choice-item.wrong .choice-indicator { border-color: var(--error); background: var(--error); color: #fff; }
+    .multi .choice-indicator { border-radius: 5px; }
+
+    .choice-text { font-size: 0.95rem; line-height: 1.5; }
+
+    /* ===== True/False ===== */
+    .tf-buttons {
+      display: flex;
+      gap: 14px;
+      margin: 14px 0;
+    }
+    .tf-btn {
+      flex: 1;
+      padding: 14px 20px;
+      border: 2px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--card);
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 600;
+      transition: all 0.2s;
+      text-align: center;
+    }
+    .tf-btn:hover { border-color: var(--accent); background: var(--accent-light); }
+    .tf-btn.selected { border-color: var(--accent); background: var(--accent-light); }
+    .tf-btn.correct { border-color: var(--success); background: var(--success-light); color: var(--success); }
+    .tf-btn.wrong { border-color: var(--error); background: var(--error-light); color: var(--error); }
+    .tf-btn.disabled { pointer-events: none; }
+
+    /* ===== Feedback & Explanation ===== */
+    .feedback {
+      margin-top: 16px;
+      padding: 14px 18px;
+      border-radius: var(--radius-sm);
+      display: none;
+    }
+    .feedback.show { display: block; }
+    .feedback-correct { background: var(--success-light); border-left: 4px solid var(--success); }
+    .feedback-wrong { background: var(--error-light); border-left: 4px solid var(--error); }
+
+    .explanation {
+      margin-top: 12px;
+      padding: 14px;
+      background: #f8f6f3;
+      border-radius: var(--radius-sm);
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      line-height: 1.7;
+      display: none;
+    }
+    .explanation.show { display: block; }
+    .explanation-title {
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+
+    /* ===== Navigation ===== */
+    .nav-buttons {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 24px;
+      gap: 10px;
+    }
+    .nav-group { display: flex; gap: 10px; }
+
+    /* ===== Dashboard Overlay ===== */
+    .dashboard-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 200;
+      display: none;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 40px 20px;
+      overflow-y: auto;
+    }
+    .dashboard-overlay.open { display: flex; }
+    .dashboard-panel {
+      background: var(--card);
+      border-radius: var(--radius);
+      width: 100%;
+      max-width: 720px;
+      max-height: 85vh;
+      overflow-y: auto;
+      padding: 28px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    }
+    .dashboard-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .dashboard-title { font-size: 1.2rem; font-weight: 700; }
+    .dashboard-stats {
+      display: flex;
+      gap: 14px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .stat-chip {
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      background: var(--bg);
+      color: var(--text-secondary);
+    }
+    .stat-chip.correct { background: var(--success-light); color: var(--success); }
+    .stat-chip.wrong { background: var(--error-light); color: var(--error); }
+    .stat-chip.unanswered { background: #e8e8e8; color: #777; }
+    .dashboard-filters {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .filter-btn {
+      padding: 5px 12px;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      background: var(--card);
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-family: inherit;
+    }
+    .filter-btn.active { background: var(--text); color: #fff; border-color: var(--text); }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
+      gap: 8px;
+    }
+    .dashboard-cell {
+      aspect-ratio: 1;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      border: 2px solid var(--border);
+      transition: all 0.15s;
+      background: var(--card);
+      color: var(--text-secondary);
+    }
+    .dashboard-cell:hover { transform: scale(1.08); border-color: var(--accent); }
+    .dashboard-cell.correct { background: var(--success-light); border-color: var(--success); color: var(--success); }
+    .dashboard-cell.wrong { background: var(--error-light); border-color: var(--error); color: var(--error); }
+    .dashboard-cell.unanswered { background: var(--bg); }
+    .dashboard-cell .cell-type {
+      font-size: 0.55rem;
+      position: absolute;
+      top: 2px;
+      right: 4px;
+      opacity: 0.7;
+    }
+
+    /* ===== Result Page ===== */
+    .result-page {
+      display: none;
+      text-align: center;
+      padding: 40px 20px;
+    }
+    .result-page.show { display: block; animation: fadeIn 0.4s ease; }
+    .result-score {
+      font-size: 4rem;
+      font-weight: 800;
+      color: var(--accent);
+      line-height: 1;
+    }
+    .result-score-label {
+      font-size: 1rem;
+      color: var(--text-secondary);
+      margin-top: 8px;
+    }
+    .result-breakdown {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      margin: 28px 0;
+      flex-wrap: wrap;
+    }
+    .result-item {
+      text-align: center;
+    }
+    .result-item-num {
+      font-size: 1.8rem;
+      font-weight: 700;
+    }
+    .result-item-label {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+    .result-actions {
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+      margin-top: 24px;
+      flex-wrap: wrap;
+    }
+
+    /* ===== Responsive ===== */
+    @media (max-width: 600px) {
+      .question-card { padding: 18px; }
+      .header-title { font-size: 1rem; }
+      .btn { padding: 7px 10px; font-size: 0.8rem; }
+      .result-score { font-size: 3rem; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="header-title">
+      <span>🎯</span>
+      <span>Agent 验证与评估实验</span>
+      <span class="badge">互动卡牌</span>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-secondary" onclick="openDashboard()">📊 题目总览</button>
+      <button class="btn btn-ghost" onclick="shuffleAllQuestions()">🎲 重新洗牌</button>
+      <button class="btn btn-ghost" onclick="resetAll()" title="重置所有答题记录">🔄 重置全部</button>
+    </div>
+  </div>
+</header>
+
+<!-- Progress Bar -->
+<div class="progress-section" id="progressSection">
+  <div class="progress-bar-bg">
+    <div class="progress-bar-fill" id="progressBar"></div>
+  </div>
+  <div class="progress-text">
+    <span id="progressLabel">第 1 / 27 题</span>
+    <span class="score-display" id="scoreDisplay">得分: 0 / 27</span>
+  </div>
+</div>
+
+<!-- Main Question Container -->
+<div class="container" id="mainContainer">
+
+  <!-- ==================== 拖拽填空题 (5道) ==================== -->
+
+  <!-- D1 -->
+  <div class="question-card active" data-type="drag" data-idx="0">
+    <span class="question-type-label label-drag">拖拽填空</span>
+    <div class="question-text">
+      Agent Harness Survey 将系统形式化为六组件：H = (
+      <span class="drop-zone" data-slot="0" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="leaveDrop(event)"></span>,
+      <span class="drop-zone" data-slot="1" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="leaveDrop(event)"></span>,
+      <span class="drop-zone" data-slot="2" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="leaveDrop(event)"></span>, S, L, V)
+    </div>
+    <div class="options-pool" id="pool-d1">
+      <div class="draggable-item" draggable="true" ondragstart="drag(event)" data-value="E">E (Environment)</div>
+      <div class="draggable-item" draggable="true" ondragstart="drag(event)" data-value="T">T (Tools)</div>
+      <div class="draggable-item" draggable="true" ondragstart="drag(event)" data-value="C">C (Context)</div>
+      <div class="draggable-item" draggable="true" ondragstart="drag(event)" data-value="R">R (Reward)</div>
+      <div class="draggable-item" draggable="true" ondragstart="drag(event)" data-value="A">A (Action)</div>
+    </div>
+    <div class="explanation" id="exp-d1">
+      <div class="explanation-title">解析</div>
+      <p><strong>E</strong> = Environment（环境）、<strong>T</strong> = Tools（工具）、<strong>C</strong> = Context（上下文）是前三个组件。R 和 A 是干扰项——Reward 不是 Harness 的独立组件，Action 属于 Tools 的子集。</p>
+    </div>
+    <div class="nav-buttons">
+      <div></div>
+      <div class="nav-group">
+        <button class="btn btn-secondary" onclick="checkDrag(0)">检查答案</button>
+        <button class="btn btn-ghost" onclick="resetQuestion(0)">重置</button>
+        <button class="btn btn-primary" onclick="nextQuestion()">下一题 →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- D2 -->
+  <div class="question-card" data-type="drag" data-idx="1">
+    <span class="question-type-label label-drag">拖拽填空</span>
+    <div class="question-text">
+      Normalized Progress 公式中，使用
+      <span class="drop-zone" data-slot="0" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="leaveDrop(event)"></span>
+      而非终局值，是为了防止 Agent 在接近完成时不小心破坏结构而导致的
+      <span class="drop-zone" data-slot="1" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="leaveDrop(event)"></span>。
+    </div>
+    <div class="options-pool" id="pool-d2">
+      <div class="draggable-item" draggable="true" ondragstart="drag(event)" data-value="q^max">q^max（历史最高进度）</div>
+      <div class="draggable-item" draggable="true" ondragstart="drag(event)" data-value="终局值">终局值</div>
+      <div class="draggable-item" draggable="true" ondragstart="drag(event)" data-value="低估">能力低估</div>
+      <div class="draggable-item" draggable="true" ondragstart="drag(event)" data-value="高估">能力高估</div>
+      <div class="draggable-item" draggable="true" ondragstart="drag(event)" data-value="F1">F1 分数</div>
+    </div>
+    <div class="explanation" id="exp-d2">
+      <div class="explanation-title">解析</div>
+      <p><strong>q^max</strong> 记录运行中的历史最高进度，防止"临门一脚破坏一切"导致的<strong>能力低估</strong>。例如 Agent 造了 90% 的房子，最后一步误拆了一个方块——用终局值 Progress=0，用 q^max Progress=90%。</p>
+    </div>
+    <div class="nav-buttons">
+      <button class="btn btn-secondary" onclick="prevQuestion()">← 上一题</button>
+      <div class="nav-group">
+        <button class="btn btn-secondary" onclick="checkDrag(1)">检查答案</button>
+        <button class="btn btn-ghost" onclick="resetQuestion(1)">重置</button>
+        <button class="btn btn-primary" onclick="nextQuestion()">下一题 →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- D3 -->
+  <div class="question-card" data-type="drag" data-idx="2">
+    <span class="question-type-label label-drag">拖拽填空</span>
+    <div class="question-text">
+      本实验的四维评估体系包括：结果维、
+      <span class="drop-zone" data-slot="0" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="leaveDrop(event)"></span>、
+      <span class="drop-zone" data-slot="1" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="leaveDrop(event)"></span>
+      和
+      <span class="drop-zone" data-slot="2" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="leaveDrop(event)"></span>。
+    </div>
+    <div class="options-pool" id="pool-d3">
+      <div class="draggable-item" draggable="true" ondragstart="drag(event)" data-value="过程维">过程维</div>
+      <div class="draggable-item" draggable="true" ondragstart="drag(event)" data-value="安全维">安全维</div>
+      <div class="draggable-item" draggable="true" ondragstart="drag(event)" data-value="开放维">开放维</div>
+      <div class="draggable-item" draggable="true" ondragstart="drag(event)" data-value="时间维">时间维</div>
+      <div class="draggable-item" draggable="true" ondragstart="drag(event)" data-value="空间维">空间维</div>
+    </div>
+    <div class="explanation" id="exp-d3">
+      <div class="explanation-title">解析</div>
+      <p>四维体系是：<strong>结果维</strong>（Outcome-based）、<strong>过程维</strong>（Trajectory）、<strong>安全维</strong>（Compliance）、<strong>开放维</strong>（Open-ended）。时间维和空间维是干扰项。</p>
+    </div>
+    <div class="nav-buttons">
+      <button class="btn btn-secondary" onclick="prevQuestion()">← 上一题</button>
+      <div class="nav-group">
+        <button class="btn btn-secondary" onclick="checkDrag(2)">检查答案</button>
+        <button class="btn btn-ghost" onclick="resetQuestion(2)">重置</button>
+        <button class="btn btn-primary" onclick="nextQuestion()">下一题 →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- D4 -->
+  <div class="question-card" data-type="drag" data-idx="3">
+    <span class="question-type-label label-drag">拖拽填空</span>
+    <div class="question-text">
+      SafeArena 的合规评估报告
+      <span class="drop-zone" data-slot="0" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="leaveDrop(event)"></span>
+      级分布，分别是 Compliant、Partial、Refusal 和
+      <span class="drop-zone" data-slot="1" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="leaveDrop(event)"></span>。
+    </div>
+    <div class="options-pool" id="pool-d4">
+      <div class="draggable-item" draggable="true" ondragstart="drag(event)" data-value="四">四</div>
+      <div class="draggable-item" draggable="true" ondragstart="drag(event)" data-value="三">三</div>
+      <div class="draggable-item" draggable="true" ondragstart="drag(event)" data-value="Error">Error</div>
+      <div class="draggable-item" draggable="true" ondragstart="drag(event)" data-value="Success">Success</div>
+      <div class="draggable-item" draggable="true" ondragstart="drag(event)" data-value="Failure">Failure</div>
+    </div>
+    <div class="explanation" id="exp-d4">
+      <div class="explanation-title">解析</div>
+      <p>SafeArena 报告<strong>四</strong>态分布：Compliant（合规）、Partial（部分合规）、Refusal（拒绝）、<strong>Error</strong>（错误）。Success 和 Failure 不是 SafeArena 的标准术语。</p>
+    </div>
+    <div class="nav-buttons">
+      <button class="btn btn-secondary" onclick="prevQuestion()">← 上一题</button>
+      <div class="nav-group">
+        <button class="btn btn-secondary" onclick="checkDrag(3)">检查答案</button>
+        <button class="btn btn-ghost" onclick="resetQuestion(3)">重置</button>
+        <button class="btn btn-primary" onclick="nextQuestion()">下一题 →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- D5 -->
+  <div class="question-card" data-type="drag" data-idx="4">
+    <span class="question-type-label label-drag">拖拽填空</span>
+    <div class="question-text">
+      Net Benefit 公式中，Harness 的净收益 = Δscore − λ · (
+      <span class="drop-zone" data-slot="0" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="leaveDrop(event)"></span>
+      +
+      <span class="drop-zone" data-slot="1" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="leaveDrop(event)"></span>
+      + extra_false_block_loss )
+    </div>
+    <div class="options-pool" id="pool-d5">
+      <div class="draggable-item" draggable="true" ondragstart="drag(event)" data-value="extra_tokens">extra_tokens</div>
+      <div class="draggable-item" draggable="true" ondragstart="drag(event)" data-value="extra_latency">extra_latency</div>
+      <div class="draggable-item" draggable="true" ondragstart="drag(event)" data-value="extra_memory">extra_memory</div>
+      <div class="draggable-item" draggable="true" ondragstart="drag(event)" data-value="extra_params">extra_params</div>
+      <div class="draggable-item" draggable="true" ondragstart="drag(event)" data-value="extra_accuracy">extra_accuracy</div>
+    </div>
+    <div class="explanation" id="exp-d5">
+      <div class="explanation-title">解析</div>
+      <p>Net Benefit = Δscore − λ · (<strong>extra_tokens</strong> + <strong>extra_latency</strong> + extra_false_block_loss)。tokens 和 latency 是部署成本的两大核心——memory 和 params 通常不是运行时变量。</p>
+    </div>
+    <div class="nav-buttons">
+      <button class="btn btn-secondary" onclick="prevQuestion()">← 上一题</button>
+      <div class="nav-group">
+        <button class="btn btn-secondary" onclick="checkDrag(4)">检查答案</button>
+        <button class="btn btn-ghost" onclick="resetQuestion(4)">重置</button>
+        <button class="btn btn-primary" onclick="nextQuestion()">下一题 →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 单选题 (10道) ==================== -->
+
+  <!-- S1 -->
+  <div class="question-card" data-type="single" data-idx="5">
+    <span class="question-type-label label-single">单选题</span>
+    <div class="question-text">Action Validity 与 Meaningful Step Ratio 的核心区别是什么？</div>
+    <div class="choice-list" id="choices-s1">
+      <div class="choice-item" onclick="selectSingle(this, 5, 0)">
+        <div class="choice-indicator">A</div>
+        <div class="choice-text">Validity 检查动作是否合法，Meaningful 检查是否真正改变了世界状态</div>
+      </div>
+      <div class="choice-item" onclick="selectSingle(this, 5, 1)">
+        <div class="choice-indicator">B</div>
+        <div class="choice-text">Validity 只检查格式，Meaningful 检查语法正确性</div>
+      </div>
+      <div class="choice-item" onclick="selectSingle(this, 5, 2)">
+        <div class="choice-indicator">C</div>
+        <div class="choice-text">两者完全相同，只是不同论文的叫法不同</div>
+      </div>
+      <div class="choice-item" onclick="selectSingle(this, 5, 3)">
+        <div class="choice-indicator">D</div>
+        <div class="choice-text">Validity 是过程指标，Meaningful 是结果指标</div>
+      </div>
+    </div>
+    <div class="explanation" id="exp-s1">
+      <div class="explanation-title">解析</div>
+      <p><strong>A 正确</strong>。Validity = 动作格式合法 + 前提满足（如材料充足、坐标合法）。Meaningful = 动作不仅合法，还真正改变了世界状态。例如：在已有方块的位置再放一个方块 → Valid（格式对）但 Meaningless（世界没变）。</p>
+    </div>
+    <div class="nav-buttons">
+      <button class="btn btn-secondary" onclick="prevQuestion()">← 上一题</button>
+      <div class="nav-group">
+        <button class="btn btn-secondary" onclick="checkSingle(5)">检查答案</button>
+        <button class="btn btn-ghost" onclick="resetQuestion(5)">重置</button>
+        <button class="btn btn-primary" onclick="nextQuestion()">下一题 →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- S2 -->
+  <div class="question-card" data-type="single" data-idx="6">
+    <span class="question-type-label label-single">单选题</span>
+    <div class="question-text">在 Goal-state Diff 中，Precision 指标的主要作用是防止什么行为？</div>
+    <div class="choice-list" id="choices-s2">
+      <div class="choice-item" onclick="selectSingle(this, 6, 0)">
+        <div class="choice-indicator">A</div>
+        <div class="choice-text">Agent 故意遗漏目标方块</div>
+      </div>
+      <div class="choice-item" onclick="selectSingle(this, 6, 1)">
+        <div class="choice-indicator">B</div>
+        <div class="choice-text">Agent 放置错误的方块类型</div>
+      </div>
+      <div class="choice-item" onclick="selectSingle(this, 6, 2)">
+        <div class="choice-indicator">C</div>
+        <div class="choice-text">Agent "铺满全图"来刷 Recall 分数</div>
+      </div>
+      <div class="choice-item" onclick="selectSingle(this, 6, 3)">
+        <div class="choice-indicator">D</div>
+        <div class="choice-text">Agent 在终局时破坏已有结构</div>
+      </div>
+    </div>
+    <div class="explanation" id="exp-s2">
+      <div class="explanation-title">解析</div>
+      <p><strong>C 正确</strong>。Precision = correct / (correct + extra)。如果没有 Precision，Agent 可以策略是"在所有空地放满石头"——这样 Recall≈100%（目标位置肯定被覆盖了），但实际上造了一堆多余的方块。Precision 惩罚多余的方块。</p>
+    </div>
+    <div class="nav-buttons">
+      <button class="btn btn-secondary" onclick="prevQuestion()">← 上一题</button>
+      <div class="nav-group">
+        <button class="btn btn-secondary" onclick="checkSingle(6)">检查答案</button>
+        <button class="btn btn-ghost" onclick="resetQuestion(6)">重置</button>
+        <button class="btn btn-primary" onclick="nextQuestion()">下一题 →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- S3 -->
+  <div class="question-card" data-type="single" data-idx="7">
+    <span class="question-type-label label-single">单选题</span>
+    <div class="question-text">以下哪项最能体现"传统二元 Success Rate 指标的区分度不足"？</div>
+    <div class="choice-list" id="choices-s3">
+      <div class="choice-item" onclick="selectSingle(this, 7, 0)">
+        <div class="choice-indicator">A</div>
+        <div class="choice-text">SR=0% 但 Progress=90% 的 Agent 与 SR=0% 但 Progress=10% 的 Agent 被同等对待</div>
+      </div>
+      <div class="choice-item" onclick="selectSingle(this, 7, 1)">
+        <div class="choice-indicator">B</div>
+        <div class="choice-text">SR 计算需要多次运行，消耗更多计算资源</div>
+      </div>
+      <div class="choice-item" onclick="selectSingle(this, 7, 2)">
+        <div class="choice-indicator">C</div>
+        <div class="choice-text">SR 无法衡量 Agent 的安全性</div>
+      </div>
+      <div class="choice-item" onclick="selectSingle(this, 7, 3)">
+        <div class="choice-indicator">D</div>
+        <div class="choice-text">SR 只适用于游戏场景，不适用于通用任务</div>
+      </div>
+    </div>
+    <div class="explanation" id="exp-s3">
+      <div class="explanation-title">解析</div>
+      <p><strong>A 正确</strong>。这是 GameWorld 实验的核心发现：SOTA 模型在 TextQuests / VisEscape 上完整通关率为 0，但许多模型能达到 ~90% progress。如果只看 SR，这些 Agent 和"一上来就失败"的 Agent 没有区别——这就是区分度不足。</p>
+    </div>
+    <div class="nav-buttons">
+      <button class="btn btn-secondary" onclick="prevQuestion()">← 上一题</button>
+      <div class="nav-group">
+        <button class="btn btn-secondary" onclick="checkSingle(7)">检查答案</button>
+        <button class="btn btn-ghost" onclick="resetQuestion(7)">重置</button>
+        <button class="btn btn-primary" onclick="nextQuestion()">下一题 →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- S4 -->
+  <div class="question-card" data-type="single" data-idx="8">
+    <span class="question-type-label label-single">单选题</span>
+    <div class="question-text">ODYSSEY 论文提出的"Critic 降级设计"核心思想是什么？</div>
+    <div class="choice-list" id="choices-s4">
+      <div class="choice-item" onclick="selectSingle(this, 8, 0)">
+        <div class="choice-indicator">A</div>
+        <div class="choice-text">让 LLM Critic 拥有更高权限，可以强制终止 Agent 的错误行为</div>
+      </div>
+      <div class="choice-item" onclick="selectSingle(this, 8, 1)">
+        <div class="choice-indicator">B</div>
+        <div class="choice-text">将 LLM Critic 从"最终裁判"降级为"语义解释器"，最终判断交给状态断言</div>
+      </div>
+      <div class="choice-item" onclick="selectSingle(this, 8, 2)">
+        <div class="choice-indicator">C</div>
+        <div class="choice-text">完全移除 LLM Critic，只用规则引擎做验证</div>
+      </div>
+      <div class="choice-item" onclick="selectSingle(this, 8, 3)">
+        <div class="choice-indicator">D</div>
+        <div class="choice-text">让多个 LLM Critic 投票决定，降低单一模型的误判率</div>
+      </div>
+    </div>
+    <div class="explanation" id="exp-s4">
+      <div class="explanation-title">解析</div>
+      <p><strong>B 正确</strong>。ODYSSEY (IJCAI 2025) 的核心洞察：LLM Critic 的误判会沿规划链累积——第 3 步的 critic 说"对"，后续所有步骤都基于错误前提继续。解决方案不是移除 Critic，而是<strong>降级</strong>：Critic 负责语义理解，最终判断交给可计算的状态断言。</p>
+    </div>
+    <div class="nav-buttons">
+      <button class="btn btn-secondary" onclick="prevQuestion()">← 上一题</button>
+      <div class="nav-group">
+        <button class="btn btn-secondary" onclick="checkSingle(8)">检查答案</button>
+        <button class="btn btn-ghost" onclick="resetQuestion(8)">重置</button>
+        <button class="btn btn-primary" onclick="nextQuestion()">下一题 →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- S5 -->
+  <div class="question-card" data-type="single" data-idx="9">
+    <span class="question-type-label label-single">单选题</span>
+    <div class="question-text">LLM-as-judge 评测中，Cohen's κ 系数达到多少被认为是可接受的一致性门槛？</div>
+    <div class="choice-list" id="choices-s5">
+      <div class="choice-item" onclick="selectSingle(this, 9, 0)">
+        <div class="choice-indicator">A</div>
+        <div class="choice-text">κ ≥ 0.5</div>
+      </div>
+      <div class="choice-item" onclick="selectSingle(this, 9, 1)">
+        <div class="choice-indicator">B</div>
+        <div class="choice-text">κ ≥ 0.6</div>
+      </div>
+      <div class="choice-item" onclick="selectSingle(this, 9, 2)">
+        <div class="choice-indicator">C</div>
+        <div class="choice-text">κ ≥ 0.8</div>
+      </div>
+      <div class="choice-item" onclick="selectSingle(this, 9, 3)">
+        <div class="choice-indicator">D</div>
+        <div class="choice-text">κ ≥ 0.95</div>
+      </div>
+    </div>
+    <div class="explanation" id="exp-s5">
+      <div class="explanation-title">解析</div>
+      <p><strong>C 正确</strong>。Cohen's κ ≥ 0.8 是广泛接受的一致性质量门槛。MAST 论文中专家标注的 κ=0.88。κ < 0.6 通常认为一致性较差，0.6–0.8 为中等，≥0.8 为优秀。</p>
+    </div>
+    <div class="nav-buttons">
+      <button class="btn btn-secondary" onclick="prevQuestion()">← 上一题</button>
+      <div class="nav-group">
+        <button class="btn btn-secondary" onclick="checkSingle(9)">检查答案</button>
+        <button class="btn btn-ghost" onclick="resetQuestion(9)">重置</button>
+        <button class="btn btn-primary" onclick="nextQuestion()">下一题 →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- S6 -->
+  <div class="question-card" data-type="single" data-idx="10">
+    <span class="question-type-label label-single">单选题</span>
+    <div class="question-text">"Hidden checks" 策略主要防范哪种风险？</div>
+    <div class="choice-list" id="choices-s6">
+      <div class="choice-item" onclick="selectSingle(this, 10, 0)">
+        <div class="choice-indicator">A</div>
+        <div class="choice-text">Agent 利用已知的 verifier 规则进行 reward hacking（奖励作弊）</div>
+      </div>
+      <div class="choice-item" onclick="selectSingle(this, 10, 1)">
+        <div class="choice-indicator">B</div>
+        <div class="choice-text">Agent 在运行过程中消耗过多的 token</div>
+      </div>
+      <div class="choice-item" onclick="selectSingle(this, 10, 2)">
+        <div class="choice-indicator">C</div>
+        <div class="choice-text">环境版本更新导致的 evaluation drift</div>
+      </div>
+      <div class="choice-item" onclick="selectSingle(this, 10, 3)">
+        <div class="choice-indicator">D</div>
+        <div class="choice-text">LLM-as-judge 的假阳性问题</div>
+      </div>
+    </div>
+    <div class="explanation" id="exp-s6">
+      <div class="explanation-title">解析</div>
+      <p><strong>A 正确</strong>。Hidden checks 的核心思想：test split 的 verifier 检查项对 Agent 不可见，或同一任务准备多套等价 verifier。这防止 Agent "记住验证规则"而非"学会任务"——RepoST 论文明确指出了 RL reward hacking 的风险。</p>
+    </div>
+    <div class="nav-buttons">
+      <button class="btn btn-secondary" onclick="prevQuestion()">← 上一题</button>
+      <div class="nav-group">
+        <button class="btn btn-secondary" onclick="checkSingle(10)">检查答案</button>
+        <button class="btn btn-ghost" onclick="resetQuestion(10)">重置</button>
+        <button class="btn btn-primary" onclick="nextQuestion()">下一题 →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- S7 -->
+  <div class="question-card" data-type="single" data-idx="11">
+    <span class="question-type-label label-single">单选题</span>
+    <div class="question-text">在 Harness 自评的 Net Benefit 框架中，以下哪种情况说明该 Harness 组件不值得部署？</div>
+    <div class="choice-list" id="choices-s7">
+      <div class="choice-item" onclick="selectSingle(this, 11, 0)">
+        <div class="choice-indicator">A</div>
+        <div class="choice-text">Net Benefit < 0（提升的分数不足以覆盖额外成本）</div>
+      </div>
+      <div class="choice-item" onclick="selectSingle(this, 11, 1)">
+        <div class="choice-indicator">B</div>
+        <div class="choice-text">Δscore = 0（Harness 对性能没有影响）</div>
+      </div>
+      <div class="choice-item" onclick="selectSingle(this, 11, 2)">
+        <div class="choice-indicator">C</div>
+        <div class="choice-text">extra_latency > 1 秒（任何延迟增加都不可接受）</div>
+      </div>
+      <div class="choice-item" onclick="selectSingle(this, 11, 3)">
+        <div class="choice-indicator">D</div>
+        <div class="choice-text">false-block rate > 0（存在任何误拦都说明设计失败）</div>
+      </div>
+    </div>
+    <div class="explanation" id="exp-s7">
+      <div class="explanation-title">解析</div>
+      <p><strong>A 正确</strong>。Net Benefit = Δscore − λ·cost。当 Net Benefit < 0 时，说明 Harness 带来的性能提升不足以覆盖其 token/延迟/误拦等成本。B 只是没有收益但也没有成本；C 和 D 的绝对阈值取决于具体应用场景。</p>
+    </div>
+    <div class="nav-buttons">
+      <button class="btn btn-secondary" onclick="prevQuestion()">← 上一题</button>
+      <div class="nav-group">
+        <button class="btn btn-secondary" onclick="checkSingle(11)">检查答案</button>
+        <button class="btn btn-ghost" onclick="resetQuestion(11)">重置</button>
+        <button class="btn btn-primary" onclick="nextQuestion()">下一题 →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- S8 -->
+  <div class="question-card" data-type="single" data-idx="12">
+    <span class="question-type-label label-single">单选题</span>
+    <div class="question-text">Wilson 置信区间（Wilson CI）相比"裸比例"（如 5/10=50%）的主要优势是什么？</div>
+    <div class="choice-list" id="choices-s8">
+      <div class="choice-item" onclick="selectSingle(this, 12, 0)">
+        <div class="choice-indicator">A</div>
+        <div class="choice-text">Wilson CI 计算速度更快</div>
+      </div>
+      <div class="choice-item" onclick="selectSingle(this, 12, 1)">
+        <div class="choice-indicator">B</div>
+        <div class="choice-text">Wilson CI 可以处理连续值而非仅二值结果</div>
+      </div>
+      <div class="choice-item" onclick="selectSingle(this, 12, 2)">
+        <div class="choice-indicator">C</div>
+        <div class="choice-text">Wilson CI 在小样本下更稳定，能区分 5/10 和 50/100 的置信度差异</div>
+      </div>
+      <div class="choice-item" onclick="selectSingle(this, 12, 3)">
+        <div class="choice-indicator">D</div>
+        <div class="choice-text">Wilson CI 不需要知道总样本数 n</div>
+      </div>
+    </div>
+    <div class="explanation" id="exp-s8">
+      <div class="explanation-title">解析</div>
+      <p><strong>C 正确</strong>。5/10=50% 和 50/100=50% 的裸比例相同，但后者显然更可信。Wilson CI 在小样本时自动给出更宽的置信区间，能反映这种差异。A 错（CI 计算更复杂）；B 错（Wilson CI 本身就是为二值比例设计的）；D 错（n 是必需参数）。</p>
+    </div>
+    <div class="nav-buttons">
+      <button class="btn btn-secondary" onclick="prevQuestion()">← 上一题</button>
+      <div class="nav-group">
+        <button class="btn btn-secondary" onclick="checkSingle(12)">检查答案</button>
+        <button class="btn btn-ghost" onclick="resetQuestion(12)">重置</button>
+        <button class="btn btn-primary" onclick="nextQuestion()">下一题 →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- S9 -->
+  <div class="question-card" data-type="single" data-idx="13">
+    <span class="question-type-label label-single">单选题</span>
+    <div class="question-text">*When Agents Lie* 论文发现，Agent 的"计划-行动偏离"与公开声明之间的关系是什么？</div>
+    <div class="choice-list" id="choices-s9">
+      <div class="choice-item" onclick="selectSingle(this, 13, 0)">
+        <div class="choice-indicator">A</div>
+        <div class="choice-text">Agent 的公开声明总是与最终行动完全一致</div>
+      </div>
+      <div class="choice-item" onclick="selectSingle(this, 13, 1)">
+        <div class="choice-indicator">B</div>
+        <div class="choice-text">超过 90% 的偏离动作在公开声明阶段就已经"预告"了——Agent 会公开撒谎</div>
+      </div>
+      <div class="choice-item" onclick="selectSingle(this, 13, 2)">
+        <div class="choice-indicator">C</div>
+        <div class="choice-text">公开声明与行动之间没有统计相关性</div>
+      </div>
+      <div class="choice-item" onclick="selectSingle(this, 13, 3)">
+        <div class="choice-indicator">D</div>
+        <div class="choice-text">Agent 只在私下计划中撒谎，公开声明总是诚实的</div>
+      </div>
+    </div>
+    <div class="explanation" id="exp-s9">
+      <div class="explanation-title">解析</div>
+      <p><strong>B 正确</strong>。论文三阶段协议：Private Plan → Public Announcement → Final Action。惊人发现是 >90% 的偏离动作在公开声明阶段就已经预告——Agent 不是"偷偷"偏离计划，而是<strong>公开宣布一个计划然后执行另一个</strong>。这引出了 Plan-Action Consistency 指标。</p>
+    </div>
+    <div class="nav-buttons">
+      <button class="btn btn-secondary" onclick="prevQuestion()">← 上一题</button>
+      <div class="nav-group">
+        <button class="btn btn-secondary" onclick="checkSingle(13)">检查答案</button>
+        <button class="btn btn-ghost" onclick="resetQuestion(13)">重置</button>
+        <button class="btn btn-primary" onclick="nextQuestion()">下一题 →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- S10 -->
+  <div class="question-card" data-type="single" data-idx="14">
+    <span class="question-type-label label-single">单选题</span>
+    <div class="question-text">在 Harness Engineering Survey 的"三臂消融实验"中，B 臂（V 反馈进 loop）与 A 臂（native，V 不参与反馈）对比的目的是什么？</div>
+    <div class="choice-list" id="choices-s10">
+      <div class="choice-item" onclick="selectSingle(this, 14, 0)">
+        <div class="choice-indicator">A</div>
+        <div class="choice-text">测量 Verifier 作为反馈源对 Agent 性能的提升效果（Δscore）</div>
+      </div>
+      <div class="choice-item" onclick="selectSingle(this, 14, 1)">
+        <div class="choice-indicator">B</div>
+        <div class="choice-text">证明 Verifier 比 LLM-as-judge 更可靠</div>
+      </div>
+      <div class="choice-item" onclick="selectSingle(this, 14, 2)">
+        <div class="choice-indicator">C</div>
+        <div class="choice-text">测试不同 seed 对结果的影响</div>
+      </div>
+      <div class="choice-item" onclick="selectSingle(this, 14, 3)">
+        <div class="choice-indicator">D</div>
+        <div class="choice-text">比较人类玩家和 Agent 的表现差距</div>
+      </div>
+    </div>
+    <div class="explanation" id="exp-s10">
+      <div class="explanation-title">解析</div>
+      <p><strong>A 正确</strong>。三臂消融：A=native（裸模型） vs B=full-V（V 反馈进 loop） vs C=B 去掉单一维度。B vs A 的核心是测量 <strong>Δscore = score(harness) − score(native)</strong>——Verifier 作为反馈源的实际补偿效果。这是 Harness 自评的核心卖点。</p>
+    </div>
+    <div class="nav-buttons">
+      <button class="btn btn-secondary" onclick="prevQuestion()">← 上一题</button>
+      <div class="nav-group">
+        <button class="btn btn-secondary" onclick="checkSingle(14)">检查答案</button>
+        <button class="btn btn-ghost" onclick="resetQuestion(14)">重置</button>
+        <button class="btn btn-primary" onclick="nextQuestion()">下一题 →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 多选题 (6道) ==================== -->
+
+  <!-- M1 -->
+  <div class="question-card" data-type="multi" data-idx="15">
+    <span class="question-type-label label-multi">多选题</span>
+    <div class="question-text">传统 game-making agent 评估中，评估不可靠性的三大根因包括哪些？</div>
+    <div class="choice-list multi" id="choices-m1">
+      <div class="choice-item" onclick="toggleMulti(this, 15, 0)">
+        <div class="choice-indicator">A</div>
+        <div class="choice-text">Environment drift：环境版本/seed 不固定，分数不可复现</div>
+      </div>
+      <div class="choice-item" onclick="toggleMulti(this, 15, 1)">
+        <div class="choice-indicator">B</div>
+        <div class="choice-text">任务规范歧义：任务 spec 不明确，"完成"没有可判定标准</div>
+      </div>
+      <div class="choice-item" onclick="toggleMulti(this, 15, 2)">
+        <div class="choice-indicator">C</div>
+        <div class="choice-text">Harness-agent 耦合：harness 既当教练又当裁判，提升无法归因</div>
+      </div>
+      <div class="choice-item" onclick="toggleMulti(this, 15, 3)">
+        <div class="choice-indicator">D</div>
+        <div class="choice-text">Agent 推理能力过强：LLM 能力超过 verifier 的设计预期</div>
+      </div>
+      <div class="choice-item" onclick="toggleMulti(this, 15, 4)">
+        <div class="choice-indicator">E</div>
+        <div class="choice-text">训练数据不足：Agent 没有见过足够多的游戏场景</div>
+      </div>
+      <div class="choice-item" onclick="toggleMulti(this, 15, 5)">
+        <div class="choice-indicator">F</div>
+        <div class="choice-text">评测成本过高：每次运行需要消耗大量 GPU 资源</div>
+      </div>
+    </div>
+    <div class="explanation" id="exp-m1">
+      <div class="explanation-title">解析</div>
+      <p><strong>正确答案：A、B、C</strong>。D 是干扰项（Agent 能力强不是评估不可靠的根因）；E 是训练问题而非评估问题；F 是成本问题。三大根因全部来自 Harness Engineering Survey §3：环境漂移、规范歧义、耦合归因困难。</p>
+    </div>
+    <div class="nav-buttons">
+      <button class="btn btn-secondary" onclick="prevQuestion()">← 上一题</button>
+      <div class="nav-group">
+        <button class="btn btn-secondary" onclick="checkMulti(15)">检查答案</button>
+        <button class="btn btn-ghost" onclick="resetQuestion(15)">重置</button>
+        <button class="btn btn-primary" onclick="nextQuestion()">下一题 →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- M2 -->
+  <div class="question-card" data-type="multi" data-idx="16">
+    <span class="question-type-label label-multi">多选题</span>
+    <div class="question-text">以下哪些属于"结果维（Outcome-based）"评估指标？</div>
+    <div class="choice-list multi" id="choices-m2">
+      <div class="choice-item" onclick="toggleMulti(this, 16, 0)">
+        <div class="choice-indicator">A</div>
+        <div class="choice-text">Success Rate（二元通关率）</div>
+      </div>
+      <div class="choice-item" onclick="toggleMulti(this, 16, 1)">
+        <div class="choice-indicator">B</div>
+        <div class="choice-text">Normalized Progress（归一化进度）</div>
+      </div>
+      <div class="choice-item" onclick="toggleMulti(this, 16, 2)">
+        <div class="choice-indicator">C</div>
+        <div class="choice-text">Checkpoint / Milestone 进度</div>
+      </div>
+      <div class="choice-item" onclick="toggleMulti(this, 16, 3)">
+        <div class="choice-indicator">D</div>
+        <div class="choice-text">Goal-state Diff（终态匹配 F1）</div>
+      </div>
+      <div class="choice-item" onclick="toggleMulti(this, 16, 4)">
+        <div class="choice-indicator">E</div>
+        <div class="choice-text">Action Validity（动作合法率）</div>
+      </div>
+      <div class="choice-item" onclick="toggleMulti(this, 16, 5)">
+        <div class="choice-indicator">F</div>
+        <div class="choice-text">Mean Harm（平均危害度）</div>
+      </div>
+    </div>
+    <div class="explanation" id="exp-m2">
+      <div class="explanation-title">解析</div>
+      <p><strong>正确答案：A、B、C、D</strong>。E（Action Validity）属于<strong>过程维</strong>；F（Mean Harm）属于<strong>安全维</strong>。结果维关注"最终做得怎么样"，过程维关注"做得过程中表现如何"。</p>
+    </div>
+    <div class="nav-buttons">
+      <button class="btn btn-secondary" onclick="prevQuestion()">← 上一题</button>
+      <div class="nav-group">
+        <button class="btn btn-secondary" onclick="checkMulti(16)">检查答案</button>
+        <button class="btn btn-ghost" onclick="resetQuestion(16)">重置</button>
+        <button class="btn btn-primary" onclick="nextQuestion()">下一题 →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- M3 -->
+  <div class="question-card" data-type="multi" data-idx="17">
+    <span class="question-type-label label-multi">多选题</span>
+    <div class="question-text">以下哪些属于"过程维（Trajectory）"评估指标？</div>
+    <div class="choice-list multi" id="choices-m3">
+      <div class="choice-item" onclick="toggleMulti(this, 17, 0)">
+        <div class="choice-indicator">A</div>
+        <div class="choice-text">Action Validity（动作合法率）</div>
+      </div>
+      <div class="choice-item" onclick="toggleMulti(this, 17, 1)">
+        <div class="choice-indicator">B</div>
+        <div class="choice-text">Meaningful Step Ratio（有效步占比）</div>
+      </div>
+      <div class="choice-item" onclick="toggleMulti(this, 17, 2)">
+        <div class="choice-indicator">C</div>
+        <div class="choice-text">Redundancy（冗余动作率）</div>
+      </div>
+      <div class="choice-item" onclick="toggleMulti(this, 17, 3)">
+        <div class="choice-indicator">D</div>
+        <div class="choice-text">Plan-Action Consistency（计划-行动一致性）</div>
+      </div>
+      <div class="choice-item" onclick="toggleMulti(this, 17, 4)">
+        <div class="choice-indicator">E</div>
+        <div class="choice-text">Human Baseline（人类基线锚定）</div>
+      </div>
+      <div class="choice-item" onclick="toggleMulti(this, 17, 5)">
+        <div class="choice-indicator">F</div>
+        <div class="choice-text">Guardrail Bypass Rate（护栏漏拦率）</div>
+      </div>
+    </div>
+    <div class="explanation" id="exp-m3">
+      <div class="explanation-title">解析</div>
+      <p><strong>正确答案：A、B、C、D</strong>。E（Human Baseline）是结果维的辅助解读方式；F（Guardrail Bypass Rate）属于<strong>安全维</strong>。过程维关注 Agent "怎么做"而非"做出来什么"。</p>
+    </div>
+    <div class="nav-buttons">
+      <button class="btn btn-secondary" onclick="prevQuestion()">← 上一题</button>
+      <div class="nav-group">
+        <button class="btn btn-secondary" onclick="checkMulti(17)">检查答案</button>
+        <button class="btn btn-ghost" onclick="resetQuestion(17)">重置</button>
+        <button class="btn btn-primary" onclick="nextQuestion()">下一题 →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- M4 -->
+  <div class="question-card" data-type="multi" data-idx="18">
+    <span class="question-type-label label-multi">多选题</span>
+    <div class="question-text">以下哪些是防止"评测过拟合 / reward hacking"的有效策略？</div>
+    <div class="choice-list multi" id="choices-m4">
+      <div class="choice-item" onclick="toggleMulti(this, 18, 0)">
+        <div class="choice-indicator">A</div>
+        <div class="choice-text">Hidden checks：test split 的 verifier 对 Agent 不可见</div>
+      </div>
+      <div class="choice-item" onclick="toggleMulti(this, 18, 1)">
+        <div class="choice-indicator">B</div>
+        <div class="choice-text">Canary GUID：在数据集中嵌入标识符，审计是否进入训练语料</div>
+      </div>
+      <div class="choice-item" onclick="toggleMulti(this, 18, 2)">
+        <div class="choice-indicator">C</div>
+        <div class="choice-text">程序化生成：用 VGDL 无限生成新规则与关卡</div>
+      </div>
+      <div class="choice-item" onclick="toggleMulti(this, 18, 3)">
+        <div class="choice-indicator">D</div>
+        <div class="choice-text">Held-out 泛化衰减：在任务变体上测试技能是否真正学会</div>
+      </div>
+      <div class="choice-item" onclick="toggleMulti(this, 18, 4)">
+        <div class="choice-indicator">E</div>
+        <div class="choice-text">增加模型参数量：更大的模型不容易过拟合</div>
+      </div>
+      <div class="choice-item" onclick="toggleMulti(this, 18, 5)">
+        <div class="choice-indicator">F</div>
+        <div class="choice-text">减少训练 epoch 数：少训练就不会过拟合</div>
+      </div>
+    </div>
+    <div class="explanation" id="exp-m4">
+      <div class="explanation-title">解析</div>
+      <p><strong>正确答案：A、B、C、D</strong>。E 错：模型大小与过拟合评测无关，大模型反而可能更容易找到 verifier 漏洞；F 错：减少 epoch 是训练策略，不是评测防护策略。A 来自 RepoST，B 来自 TextQuests，C 来自 GVGAI-LLM，D 来自 OmniGameArena IDC 协议。</p>
+    </div>
+    <div class="nav-buttons">
+      <button class="btn btn-secondary" onclick="prevQuestion()">← 上一题</button>
+      <div class="nav-group">
+        <button class="btn btn-secondary" onclick="checkMulti(18)">检查答案</button>
+        <button class="btn btn-ghost" onclick="resetQuestion(18)">重置</button>
+        <button class="btn btn-primary" onclick="nextQuestion()">下一题 →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- M5 -->
+  <div class="question-card" data-type="multi" data-idx="19">
+    <span class="question-type-label label-multi">多选题</span>
+    <div class="question-text">以下关于 LLM-as-judge 的说法，哪些是正确的？</div>
+    <div class="choice-list multi" id="choices-m5">
+      <div class="choice-item" onclick="toggleMulti(this, 19, 0)">
+        <div class="choice-indicator">A</div>
+        <div class="choice-text">LLM-as-judge 适用于"建筑美观度"等无 ground-truth 的主观维度</div>
+      </div>
+      <div class="choice-item" onclick="toggleMulti(this, 19, 1)">
+        <div class="choice-indicator">B</div>
+        <div class="choice-text">LLM-as-judge 的能力上限直接约束了评测的有效性</div>
+      </div>
+      <div class="choice-item" onclick="toggleMulti(this, 19, 2)">
+        <div class="choice-indicator">C</div>
+        <div class="choice-text">使用同源模型（如 GPT-4 评判 GPT-4 Agent）会产生系统性偏置</div>
+      </div>
+      <div class="choice-item" onclick="toggleMulti(this, 19, 3)">
+        <div class="choice-indicator">D</div>
+        <div class="choice-text">可状态化判断应优先使用 LLM-as-judge 而非状态断言</div>
+      </div>
+      <div class="choice-item" onclick="toggleMulti(this, 19, 4)">
+        <div class="choice-indicator">E</div>
+        <div class="choice-text">Judge Consistency 可用 Cohen's κ 量化，κ ≥ 0.8 为质量门槛</div>
+      </div>
+      <div class="choice-item" onclick="toggleMulti(this, 19, 5)">
+        <div class="choice-indicator">F</div>
+        <div class="choice-text">LLM-as-judge 比状态断言更可靠、更不容易被 hack</div>
+      </div>
+    </div>
+    <div class="explanation" id="exp-m5">
+      <div class="explanation-title">解析</div>
+      <p><strong>正确答案：A、B、C、E</strong>。D 错：统一判断原则是"可状态化的一律走断言，judge 仅兜底"。F 错：LLM-as-judge 恰恰更容易被 hack（诱导模型输出特定评判）且假阳性/假阴性难以量化。A 正确：美观度无 ground-truth，必须 judge；B 正确： judge 看不懂的代码，评不了；C 正确：同源偏置已被多篇论文证实。</p>
+    </div>
+    <div class="nav-buttons">
+      <button class="btn btn-secondary" onclick="prevQuestion()">← 上一题</button>
+      <div class="nav-group">
+        <button class="btn btn-secondary" onclick="checkMulti(19)">检查答案</button>
+        <button class="btn btn-ghost" onclick="resetQuestion(19)">重置</button>
+        <button class="btn btn-primary" onclick="nextQuestion()">下一题 →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- M6 -->
+  <div class="question-card" data-type="multi" data-idx="20">
+    <span class="question-type-label label-multi">多选题</span>
+    <div class="question-text">以下哪些论文/工作明确指出了"Verifier / 评测自身也会被过拟合"的风险？</div>
+    <div class="choice-list multi" id="choices-m6">
+      <div class="choice-item" onclick="toggleMulti(this, 20, 0)">
+        <div class="choice-indicator">A</div>
+        <div class="choice-text">RepoST：RL reward hacking 风险</div>
+      </div>
+      <div class="choice-item" onclick="toggleMulti(this, 20, 1)">
+        <div class="choice-indicator">B</div>
+        <div class="choice-text">AFlow：搜索式编排的评测过拟合</div>
+      </div>
+      <div class="choice-item" onclick="toggleMulti(this, 20, 2)">
+        <div class="choice-indicator">C</div>
+        <div class="choice-text">AutoForge：环境 bug 被 Agent exploit</div>
+      </div>
+      <div class="choice-item" onclick="toggleMulti(this, 20, 3)">
+        <div class="choice-indicator">D</div>
+        <div class="choice-text">ACE：AppWorld test-challenge split 验证不过拟合</div>
+      </div>
+      <div class="choice-item" onclick="toggleMulti(this, 20, 4)">
+        <div class="choice-indicator">E</div>
+        <div class="choice-text">GameWorld：Minecraft Clone 的 progress 指标</div>
+      </div>
+      <div class="choice-item" onclick="toggleMulti(this, 20, 5)">
+        <div class="choice-indicator">F</div>
+        <div class="choice-text">SafeArena：四态合规评估</div>
+      </div>
+    </div>
+    <div class="explanation" id="exp-m6">
+      <div class="explanation-title">解析</div>
+      <p><strong>正确答案：A、B、C、D</strong>。E（GameWorld）提出了 Progress 指标，但并未聚焦 verifier 过拟合；F（SafeArena）关注安全合规而非 verifier 被 hack。A/B/C 是原文明确列出的三个 verifier 被过拟合的案例；D 是防护措施（用 held-out 验证不过拟合）。</p>
+    </div>
+    <div class="nav-buttons">
+      <button class="btn btn-secondary" onclick="prevQuestion()">← 上一题</button>
+      <div class="nav-group">
+        <button class="btn btn-secondary" onclick="checkMulti(20)">检查答案</button>
+        <button class="btn btn-ghost" onclick="resetQuestion(20)">重置</button>
+        <button class="btn btn-primary" onclick="nextQuestion()">下一题 →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 判断题 (6道) ==================== -->
+
+  <!-- T1 -->
+  <div class="question-card" data-type="tf" data-idx="21">
+    <span class="question-type-label label-tf">判断题</span>
+    <div class="question-text">Success Rate 越高的 Agent，其 Normalized Progress 也一定越高。</div>
+    <div class="tf-buttons" id="tf-t1">
+      <button class="tf-btn" onclick="selectTF(this, 21, true)">✅ 正确</button>
+      <button class="tf-btn" onclick="selectTF(this, 21, false)">❌ 错误</button>
+    </div>
+    <div class="explanation" id="exp-t1">
+      <div class="explanation-title">解析</div>
+      <p><strong>错误</strong>。SR 是二元指标（0/1），Progress 是连续指标。反例：Agent 在 100 次运行中 1 次完美通关（SR=1%）、99 次完全失败——但另一个 Agent 每次都能达到 90% 进度却从未通关（SR=0%, Progress=90%）。前者 SR 高但 Progress 可能很低。两者衡量的是完全不同的维度。</p>
+    </div>
+    <div class="nav-buttons">
+      <button class="btn btn-secondary" onclick="prevQuestion()">← 上一题</button>
+      <div class="nav-group">
+        <button class="btn btn-secondary" onclick="checkTF(21)">检查答案</button>
+        <button class="btn btn-ghost" onclick="resetQuestion(21)">重置</button>
+        <button class="btn btn-primary" onclick="nextQuestion()">下一题 →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- T2 -->
+  <div class="question-card" data-type="tf" data-idx="22">
+    <span class="question-type-label label-tf">判断题</span>
+    <div class="question-text">Precision 和 Recall 在 Goal-state Diff 中总是同步升降的——Precision 高意味着 Recall 也一定高。</div>
+    <div class="tf-buttons" id="tf-t2">
+      <button class="tf-btn" onclick="selectTF(this, 22, true)">✅ 正确</button>
+      <button class="tf-btn" onclick="selectTF(this, 22, false)">❌ 错误</button>
+    </div>
+    <div class="explanation" id="exp-t2">
+      <div class="explanation-title">解析</div>
+      <p><strong>错误</strong>。Precision 和 Recall 之间存在 trade-off（权衡）。Agent "铺满全图"时 Recall≈100%（目标位置都被覆盖了）但 Precision 很低（大量多余方块）。反之，Agent 只放极少量方块且都正确时 Precision≈100% 但 Recall 很低（大量目标未完成）。需要 F1 来综合两者。</p>
+    </div>
+    <div class="nav-buttons">
+      <button class="btn btn-secondary" onclick="prevQuestion()">← 上一题</button>
+      <div class="nav-group">
+        <button class="btn btn-secondary" onclick="checkTF(22)">检查答案</button>
+        <button class="btn btn-ghost" onclick="resetQuestion(22)">重置</button>
+        <button class="btn btn-primary" onclick="nextQuestion()">下一题 →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- T3 -->
+  <div class="question-card" data-type="tf" data-idx="23">
+    <span class="question-type-label label-tf">判断题</span>
+    <div class="question-text">Normalized Progress 中使用 q^max（历史最高进度）而非终局进度，是为了防止 Agent 在接近完成时不小心破坏结构而导致能力被低估。</div>
+    <div class="tf-buttons" id="tf-t3">
+      <button class="tf-btn" onclick="selectTF(this, 23, true)">✅ 正确</button>
+      <button class="tf-btn" onclick="selectTF(this, 23, false)">❌ 错误</button>
+    </div>
+    <div class="explanation" id="exp-t3">
+      <div class="explanation-title">解析</div>
+      <p><strong>正确</strong>。这是 GameWorld 论文的核心设计之一。例如：Agent 建造了 90% 的房子，最后一步误拆了一个方块——终局进度 = 0%（完全失败），但 q^max = 90%。用 q^max 能更准确地反映 Agent 的真实能力上限，避免"临门一脚"的偶然破坏导致系统性低估。</p>
+    </div>
+    <div class="nav-buttons">
+      <button class="btn btn-secondary" onclick="prevQuestion()">← 上一题</button>
+      <div class="nav-group">
+        <button class="btn btn-secondary" onclick="checkTF(23)">检查答案</button>
+        <button class="btn btn-ghost" onclick="resetQuestion(23)">重置</button>
+        <button class="btn btn-primary" onclick="nextQuestion()">下一题 →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- T4 -->
+  <div class="question-card" data-type="tf" data-idx="24">
+    <span class="question-type-label label-tf">判断题</span>
+    <div class="question-text">Action Validity = 100% 意味着 Agent 的所有动作都既有意义（meaningful）又推进了任务。</div>
+    <div class="tf-buttons" id="tf-t4">
+      <button class="tf-btn" onclick="selectTF(this, 24, true)">✅ 正确</button>
+      <button class="tf-btn" onclick="selectTF(this, 24, false)">❌ 错误</button>
+    </div>
+    <div class="explanation" id="exp-t4">
+      <div class="explanation-title">解析</div>
+      <p><strong>错误</strong>。Validity 只检查"动作是否合法"（格式正确、前提满足），不检查是否"有意义"。反例：Agent 反复执行"移动到已所在位置"——动作合法（坐标在范围内），但世界状态未改变，因此是 Valid 但不是 Meaningful。Meaningful Step Ratio 才是衡量"真正推进了任务"的指标。</p>
+    </div>
+    <div class="nav-buttons">
+      <button class="btn btn-secondary" onclick="prevQuestion()">← 上一题</button>
+      <div class="nav-group">
+        <button class="btn btn-secondary" onclick="checkTF(24)">检查答案</button>
+        <button class="btn btn-ghost" onclick="resetQuestion(24)">重置</button>
+        <button class="btn btn-primary" onclick="nextQuestion()">下一题 →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- T5 -->
+  <div class="question-card" data-type="tf" data-idx="25">
+    <span class="question-type-label label-tf">判断题</span>
+    <div class="question-text">Harness 组件设计得越复杂（如加入多层记忆、反思、规划模块），其 Net Benefit 就一定越高。</div>
+    <div class="tf-buttons" id="tf-t5">
+      <button class="tf-btn" onclick="selectTF(this, 25, true)">✅ 正确</button>
+      <button class="tf-btn" onclick="selectTF(this, 25, false)">❌ 错误</button>
+    </div>
+    <div class="explanation" id="exp-t5">
+      <div class="explanation-title">解析</div>
+      <p><strong>错误</strong>。Net Benefit = Δscore − λ·cost。复杂 Harness 可能提升准确率，但同时消耗更多 token、增加延迟、提高误拦率。如果 Δscore = +3% 但成本使 λ·cost > 3%，Net Benefit 为负——此时更简单的 Harness 反而更优。这是 Harness Engineering Survey 的核心观点：不是"越多越好"，而是"性价比最高才好"。</p>
+    </div>
+    <div class="nav-buttons">
+      <button class="btn btn-secondary" onclick="prevQuestion()">← 上一题</button>
+      <div class="nav-group">
+        <button class="btn btn-secondary" onclick="checkTF(25)">检查答案</button>
+        <button class="btn btn-ghost" onclick="resetQuestion(25)">重置</button>
+        <button class="btn btn-primary" onclick="nextQuestion()">下一题 →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- T6 -->
+  <div class="question-card" data-type="tf" data-idx="26">
+    <span class="question-type-label label-tf">判断题</span>
+    <div class="question-text">在评估 Agent 时，LLM-as-judge 应该优先于状态断言（State Assertion），因为 LLM 的理解能力更强，可以处理更复杂的评判逻辑。</div>
+    <div class="tf-buttons" id="tf-t6">
+      <button class="tf-btn" onclick="selectTF(this, 26, true)">✅ 正确</button>
+      <button class="tf-btn" onclick="selectTF(this, 26, false)">❌ 错误</button>
+    </div>
+    <div class="explanation" id="exp-t6">
+      <div class="explanation-title">解析</div>
+      <p><strong>错误</strong>。统一判断原则明确规定："可状态化的判断一律走断言，judge 仅兜底无 ground-truth 的维度"。状态断言（如"坐标(5,3)是否有石头方块"）是精确、可复现、不可 hack 的；LLM-as-judge 有假阳性/假阴性、同源偏置、能力上限约束等问题。LLM 只应在"美观度""创意性"等主观维度上作为兜底方案。</p>
+    </div>
+    <div class="nav-buttons">
+      <button class="btn btn-secondary" onclick="prevQuestion()">← 上一题</button>
+      <div class="nav-group">
+        <button class="btn btn-secondary" onclick="checkTF(26)">检查答案</button>
+        <button class="btn btn-ghost" onclick="resetQuestion(26)">重置</button>
+        <button class="btn btn-primary" onclick="showResult()">查看结果 🏁</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end mainContainer -->
+
+<!-- Result Page -->
+<div class="container">
+  <div class="result-page" id="resultPage">
+    <div style="font-size: 3rem; margin-bottom: 10px;">🎉</div>
+    <div class="result-score" id="finalScore">0</div>
+    <div class="result-score-label">总分 / 27</div>
+    <div class="result-breakdown" id="resultBreakdown"></div>
+    <div class="result-actions">
+      <button class="btn btn-secondary" onclick="openDashboard()">📊 返回查看</button>
+      <button class="btn btn-primary" onclick="continueQuiz()">继续做题</button>
+    </div>
+  </div>
+</div>
+
+<!-- Dashboard Overlay -->
+<div class="dashboard-overlay" id="dashboardOverlay" onclick="closeDashboardOnBg(event)">
+  <div class="dashboard-panel" onclick="event.stopPropagation()">
+    <div class="dashboard-header">
+      <div class="dashboard-title">📊 题目总览</div>
+      <button class="btn btn-ghost" onclick="closeDashboard()">✕ 关闭</button>
+    </div>
+    <div class="dashboard-stats" id="dashboardStats"></div>
+    <div class="dashboard-filters">
+      <button class="filter-btn active" onclick="setFilter('all')">全部</button>
+      <button class="filter-btn" onclick="setFilter('correct')">✅ 正确</button>
+      <button class="filter-btn" onclick="setFilter('wrong')">❌ 错误</button>
+      <button class="filter-btn" onclick="setFilter('unanswered')">⭕ 未答</button>
+    </div>
+    <div class="dashboard-grid" id="dashboardGrid"></div>
+  </div>
+</div>
+
+<script>
+// ===================== 题目数据 =====================
+
+const dragQuestions = [
+  { answers: ["E", "T", "C"], points: 3 },
+  { answers: ["q^max", "低估"], points: 3 },
+  { answers: ["过程维", "安全维", "开放维"], points: 3 },
+  { answers: ["四", "Error"], points: 3 },
+  { answers: ["extra_tokens", "extra_latency"], points: 3 }
+];
+
+let singleQuestions = [
+  { correct: 0, points: 1 },  // S1: A
+  { correct: 2, points: 1 },  // S2: C
+  { correct: 0, points: 1 },  // S3: A
+  { correct: 1, points: 1 },  // S4: B
+  { correct: 2, points: 1 },  // S5: C
+  { correct: 0, points: 1 },  // S6: A
+  { correct: 0, points: 1 },  // S7: A
+  { correct: 2, points: 1 },  // S8: C
+  { correct: 1, points: 1 },  // S9: B
+  { correct: 0, points: 1 }   // S10: A
+];
+
+const multiQuestions = [
+  { correct: [0, 1, 2], points: 2 },       // M1
+  { correct: [0, 1, 2, 3], points: 2 },    // M2
+  { correct: [0, 1, 2, 3], points: 2 },    // M3
+  { correct: [0, 1, 2, 3], points: 2 },    // M4
+  { correct: [0, 1, 2, 4], points: 2 },    // M5
+  { correct: [0, 1, 2, 3], points: 2 }     // M6
+];
+
+const tfQuestions = [
+  { correct: false, points: 1 },  // T1
+  { correct: false, points: 1 },  // T2
+  { correct: true, points: 1 },   // T3
+  { correct: false, points: 1 },  // T4
+  { correct: false, points: 1 },  // T5
+  { correct: false, points: 1 }   // T6
+];
+
+// ===================== 全局状态 =====================
+
+let currentIdx = 0;
+const totalQuestions = 27;
+const maxScore = 5 * 3 + 10 * 1 + 6 * 2 + 6 * 1; // 15 + 10 + 12 + 6 = 43
+
+// 用户答案状态
+let dragAnswers = dragQuestions.map(() => []);   // 每个 slot 的填充值
+let singleAnswers = singleQuestions.map(() => null);
+let multiAnswers = multiQuestions.map(() => []);
+let tfAnswers = tfQuestions.map(() => null);
+
+// 检查状态
+let dragChecked = dragQuestions.map(() => false);
+let singleChecked = singleQuestions.map(() => false);
+let multiChecked = multiQuestions.map(() => false);
+let tfChecked = tfQuestions.map(() => false);
+
+// 正确性缓存
+let dragCorrect = dragQuestions.map(() => false);
+let singleCorrect = singleQuestions.map(() => false);
+let multiCorrect = multiQuestions.map(() => false);
+let tfCorrect = tfQuestions.map(() => false);
+
+// 所有题目元信息（用于总览面板和进度）
+const allQuestions = [];
+for (let i = 0; i < 5; i++) allQuestions.push({ type: 'drag', qidx: i, globalIdx: i });
+for (let i = 0; i < 10; i++) allQuestions.push({ type: 'single', qidx: i, globalIdx: 5 + i });
+for (let i = 0; i < 6; i++) allQuestions.push({ type: 'multi', qidx: i, globalIdx: 15 + i });
+for (let i = 0; i < 6; i++) allQuestions.push({ type: 'tf', qidx: i, globalIdx: 21 + i });
+
+// Dashboard filter
+let dashboardFilter = 'all';
+
+// ===================== 导航 =====================
+
+function showQuestion(idx) {
+  document.querySelectorAll('.question-card').forEach((el, i) => {
+    el.classList.toggle('active', i === idx);
+  });
+  currentIdx = idx;
+  updateProgress();
+}
+
+function nextQuestion() {
+  if (currentIdx < totalQuestions - 1) showQuestion(currentIdx + 1);
+}
+
+function prevQuestion() {
+  if (currentIdx > 0) showQuestion(currentIdx - 1);
+}
+
+function updateProgress() {
+  const pct = ((currentIdx + 1) / totalQuestions) * 100;
+  document.getElementById('progressBar').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent = `第 ${currentIdx + 1} / ${totalQuestions} 题`;
+  document.getElementById('scoreDisplay').textContent = `得分: ${calculateScore()} / ${maxScore}`;
+}
+
+// ===================== 分数计算 =====================
+
+function calculateScore() {
+  let score = 0;
+  // Drag
+  for (let i = 0; i < dragQuestions.length; i++) {
+    if (dragChecked[i] && dragCorrect[i]) score += dragQuestions[i].points;
+  }
+  // Single
+  for (let i = 0; i < singleQuestions.length; i++) {
+    if (singleChecked[i] && singleCorrect[i]) score += singleQuestions[i].points;
+  }
+  // Multi
+  for (let i = 0; i < multiQuestions.length; i++) {
+    if (multiChecked[i] && multiCorrect[i]) score += multiQuestions[i].points;
+  }
+  // TF
+  for (let i = 0; i < tfQuestions.length; i++) {
+    if (tfChecked[i] && tfCorrect[i]) score += tfQuestions[i].points;
+  }
+  return score;
+}
+
+function isAnswered(globalIdx) {
+  const q = allQuestions[globalIdx];
+  if (q.type === 'drag') return dragAnswers[q.qidx].some(a => a !== null && a !== '');
+  if (q.type === 'single') return singleAnswers[q.qidx] !== null;
+  if (q.type === 'multi') return multiAnswers[q.qidx].length > 0;
+  if (q.type === 'tf') return tfAnswers[q.qidx] !== null;
+  return false;
+}
+
+function getStatus(globalIdx) {
+  const q = allQuestions[globalIdx];
+  let checked, correct;
+  if (q.type === 'drag') { checked = dragChecked[q.qidx]; correct = dragCorrect[q.qidx]; }
+  else if (q.type === 'single') { checked = singleChecked[q.qidx]; correct = singleCorrect[q.qidx]; }
+  else if (q.type === 'multi') { checked = multiChecked[q.qidx]; correct = multiCorrect[q.qidx]; }
+  else { checked = tfChecked[q.qidx]; correct = tfCorrect[q.qidx]; }
+  if (!checked) return 'unanswered';
+  return correct ? 'correct' : 'wrong';
+}
+
+// ===================== 拖拽填空 =====================
+
+function allowDrop(ev) {
+  ev.preventDefault();
+  ev.currentTarget.classList.add('drag-over');
+}
+
+function leaveDrop(ev) {
+  ev.currentTarget.classList.remove('drag-over');
+}
+
+function drag(ev) {
+  ev.dataTransfer.setData("text", ev.target.dataset.value);
+  ev.target.classList.add('dragging');
+}
+
+function drop(ev) {
+  ev.preventDefault();
+  ev.currentTarget.classList.remove('drag-over');
+  const val = ev.dataTransfer.getData("text");
+  const slot = ev.currentTarget;
+  const card = slot.closest('.question-card');
+  const qidx = parseInt(card.dataset.idx);
+  const slotIdx = parseInt(slot.dataset.slot);
+
+  // 记录答案
+  if (!dragAnswers[qidx]) dragAnswers[qidx] = [];
+  dragAnswers[qidx][slotIdx] = val;
+
+  // 视觉更新
+  slot.textContent = val;
+  slot.classList.add('filled');
+
+  // 标记源 item 为已用
+  const pool = document.getElementById(`pool-d${qidx + 1}`);
+  if (pool) {
+    pool.querySelectorAll('.draggable-item').forEach(item => {
+      if (item.dataset.value === val) item.classList.add('used');
+    });
+  }
+}
+
+function checkDrag(qidx) {
+  const q = dragQuestions[qidx];
+  const card = document.querySelector(`.question-card[data-idx="${qidx}"]`);
+  const slots = card.querySelectorAll('.drop-zone');
+  let allCorrect = true;
+
+  slots.forEach((slot, i) => {
+    const userVal = dragAnswers[qidx][i];
+    const correctVal = q.answers[i];
+    if (userVal === correctVal) {
+      slot.classList.add('correct');
+    } else {
+      slot.classList.add('wrong');
+      allCorrect = false;
+    }
+  });
+
+  dragChecked[qidx] = true;
+  dragCorrect[qidx] = allCorrect;
+  card.querySelector('.explanation').classList.add('show');
+  updateProgress();
+}
+
+// ===================== 单选题 =====================
+
+function selectSingle(el, qidx, optIdx) {
+  if (singleChecked[qidx]) return;
+  const list = el.closest('.choice-list');
+  list.querySelectorAll('.choice-item').forEach(item => item.classList.remove('selected'));
+  el.classList.add('selected');
+  singleAnswers[qidx] = optIdx;
+}
+
+function checkSingle(qidx) {
+  if (singleAnswers[qidx] === null) return alert('请先选择一个答案');
+  const q = singleQuestions[qidx];
+  const card = document.querySelector(`.question-card[data-idx="${qidx}"]`);
+  const items = card.querySelectorAll('.choice-item');
+
+  items.forEach((item, i) => {
+    item.classList.add('disabled');
+    if (i === q.correct) item.classList.add('correct');
+    else if (i === singleAnswers[qidx]) item.classList.add('wrong');
+  });
+
+  singleChecked[qidx] = true;
+  singleCorrect[qidx] = (singleAnswers[qidx] === q.correct);
+  card.querySelector('.explanation').classList.add('show');
+  updateProgress();
+}
+
+// ===================== 多选题 =====================
+
+function toggleMulti(el, qidx, optIdx) {
+  if (multiChecked[qidx]) return;
+  const idx = multiAnswers[qidx].indexOf(optIdx);
+  if (idx > -1) {
+    multiAnswers[qidx].splice(idx, 1);
+    el.classList.remove('selected');
+  } else {
+    multiAnswers[qidx].push(optIdx);
+    el.classList.add('selected');
+  }
+}
+
+function checkMulti(qidx) {
+  if (multiAnswers[qidx].length === 0) return alert('请至少选择一个答案');
+  const q = multiQuestions[qidx];
+  const card = document.querySelector(`.question-card[data-idx="${qidx}"]`);
+  const items = card.querySelectorAll('.choice-item');
+
+  const userSet = new Set(multiAnswers[qidx]);
+  const correctSet = new Set(q.correct);
+  let isCorrect = userSet.size === correctSet.size && [...userSet].every(x => correctSet.has(x));
+
+  items.forEach((item, i) => {
+    item.classList.add('disabled');
+    const isSelected = userSet.has(i);
+    const isCorrectOpt = correctSet.has(i);
+    if (isCorrectOpt) item.classList.add('correct');
+    else if (isSelected) item.classList.add('wrong');
+  });
+
+  multiChecked[qidx] = true;
+  multiCorrect[qidx] = isCorrect;
+  card.querySelector('.explanation').classList.add('show');
+  updateProgress();
+}
+
+// ===================== 判断题 =====================
+
+function selectTF(el, qidx, val) {
+  if (tfChecked[qidx]) return;
+  const container = el.closest('.tf-buttons');
+  container.querySelectorAll('.tf-btn').forEach(btn => btn.classList.remove('selected'));
+  el.classList.add('selected');
+  tfAnswers[qidx] = val;
+}
+
+function checkTF(qidx) {
+  if (tfAnswers[qidx] === null) return alert('请选择"正确"或"错误"');
+  const q = tfQuestions[qidx];
+  const card = document.querySelector(`.question-card[data-idx="${qidx}"]`);
+  const btns = card.querySelectorAll('.tf-btn');
+
+  btns.forEach(btn => btn.classList.add('disabled'));
+
+  const userVal = tfAnswers[qidx];
+  const isCorrect = (userVal === q.correct);
+
+  if (q.correct === true) btns[0].classList.add('correct');
+  else btns[1].classList.add('correct');
+
+  if (!isCorrect) {
+    if (userVal === true) btns[0].classList.add('wrong');
+    else btns[1].classList.add('wrong');
+  }
+
+  tfChecked[qidx] = true;
+  tfCorrect[qidx] = isCorrect;
+  card.querySelector('.explanation').classList.add('show');
+  updateProgress();
+}
+
+// ===================== 重置 =====================
+
+function resetQuestion(globalIdx) {
+  const q = allQuestions[globalIdx];
+  const card = document.querySelector(`.question-card[data-idx="${globalIdx}"]`);
+
+  if (q.type === 'drag') {
+    dragAnswers[q.qidx] = [];
+    dragChecked[q.qidx] = false;
+    dragCorrect[q.qidx] = false;
+    card.querySelectorAll('.drop-zone').forEach(slot => {
+      slot.textContent = '';
+      slot.classList.remove('filled', 'correct', 'wrong');
+    });
+    const pool = document.getElementById(`pool-d${q.qidx + 1}`);
+    if (pool) pool.querySelectorAll('.draggable-item').forEach(item => item.classList.remove('used'));
+  }
+  else if (q.type === 'single') {
+    singleAnswers[q.qidx] = null;
+    singleChecked[q.qidx] = false;
+    singleCorrect[q.qidx] = false;
+    card.querySelectorAll('.choice-item').forEach(item => {
+      item.classList.remove('selected', 'correct', 'wrong', 'disabled');
+    });
+  }
+  else if (q.type === 'multi') {
+    multiAnswers[q.qidx] = [];
+    multiChecked[q.qidx] = false;
+    multiCorrect[q.qidx] = false;
+    card.querySelectorAll('.choice-item').forEach(item => {
+      item.classList.remove('selected', 'correct', 'wrong', 'disabled');
+    });
+  }
+  else if (q.type === 'tf') {
+    tfAnswers[q.qidx] = null;
+    tfChecked[q.qidx] = false;
+    tfCorrect[q.qidx] = false;
+    card.querySelectorAll('.tf-btn').forEach(btn => {
+      btn.classList.remove('selected', 'correct', 'wrong', 'disabled');
+    });
+  }
+
+  card.querySelector('.explanation').classList.remove('show');
+  updateProgress();
+}
+
+function resetAll() {
+  if (!confirm('确定要重置所有答题记录吗？')) return;
+
+  // Reset all state
+  dragAnswers = dragQuestions.map(() => []);
+  singleAnswers = singleQuestions.map(() => null);
+  multiAnswers = multiQuestions.map(() => []);
+  tfAnswers = tfQuestions.map(() => null);
+
+  dragChecked = dragQuestions.map(() => false);
+  singleChecked = singleQuestions.map(() => false);
+  multiChecked = multiQuestions.map(() => false);
+  tfChecked = tfQuestions.map(() => false);
+
+  dragCorrect = dragQuestions.map(() => false);
+  singleCorrect = singleQuestions.map(() => false);
+  multiCorrect = multiQuestions.map(() => false);
+  tfCorrect = tfQuestions.map(() => false);
+
+  // Reset UI
+  document.querySelectorAll('.question-card').forEach((card, idx) => {
+    card.querySelectorAll('.drop-zone').forEach(slot => {
+      slot.textContent = '';
+      slot.classList.remove('filled', 'correct', 'wrong');
+    });
+    card.querySelectorAll('.draggable-item').forEach(item => item.classList.remove('used'));
+    card.querySelectorAll('.choice-item').forEach(item => {
+      item.classList.remove('selected', 'correct', 'wrong', 'disabled');
+    });
+    card.querySelectorAll('.tf-btn').forEach(btn => {
+      btn.classList.remove('selected', 'correct', 'wrong', 'disabled');
+    });
+    card.querySelectorAll('.explanation').forEach(exp => exp.classList.remove('show'));
+  });
+
+  // Show result page elements if hidden
+  document.getElementById('progressSection').classList.remove('hidden');
+  document.getElementById('mainContainer').classList.remove('hidden');
+  document.getElementById('resultPage').classList.remove('show');
+
+  showQuestion(0);
+}
+
+// ===================== 洗牌 =====================
+
+function shuffleAllQuestions() {
+  if (!confirm('重新洗牌将打乱所有单选题的选项顺序并清空答题记录，确定继续？')) return;
+
+  // Fisher-Yates shuffle for single questions
+  singleQuestions.forEach(q => {
+    const card = document.querySelector(`.question-card[data-type="single"][data-idx="${5 + singleQuestions.indexOf(q)}"]`);
+    if (!card) return;
+    const list = card.querySelector('.choice-list');
+    const items = Array.from(list.querySelectorAll('.choice-item'));
+    const texts = items.map(el => el.querySelector('.choice-text').textContent);
+    const indicators = ['A', 'B', 'C', 'D'];
+
+    // Shuffle texts
+    for (let i = texts.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [texts[i], texts[j]] = [texts[j], texts[i]];
+    }
+
+    // Find where correct answer moved
+    const correctText = card.querySelector('.explanation').textContent.includes('正确') ?
+      (() => {
+        // Re-read from explanation or use stored correct
+        return null; // We'll use index tracking below
+      })() : null;
+
+    // Actually, simpler: store original correct text, shuffle, find new index
+    // But we don't have original text stored. Let's do it differently:
+    // We'll just randomize by swapping pairs in the DOM
+  });
+
+  // Simpler approach: just reload page with seed? No.
+  // Instead: for each single question, shuffle the choice-item elements in DOM
+  document.querySelectorAll('.question-card[data-type="single"]').forEach(card => {
+    const list = card.querySelector('.choice-list');
+    const items = Array.from(list.querySelectorAll('.choice-item'));
+    const correctIdx = singleQuestions[parseInt(card.dataset.idx) - 5].correct;
+    const correctText = items[correctIdx].querySelector('.choice-text').textContent;
+
+    // Fisher-Yates on items array
+    for (let i = items.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [items[i], items[j]] = [items[j], items[i]];
+    }
+
+    // Re-append in new order
+    items.forEach(item => list.appendChild(item));
+
+    // Update indicator labels and find new correct index
+    items.forEach((item, newIdx) => {
+      item.querySelector('.choice-indicator').textContent = String.fromCharCode(65 + newIdx);
+      // Update click handler index
+      const text = item.querySelector('.choice-text').textContent;
+      item.setAttribute('onclick', `selectSingle(this, ${card.dataset.idx}, ${newIdx})`);
+      if (text === correctText) {
+        singleQuestions[parseInt(card.dataset.idx) - 5].correct = newIdx;
+      }
+    });
+  });
+
+  // Clear all answers after shuffle
+  resetAll();
+}
+
+// ===================== 总览面板 =====================
+
+function openDashboard() {
+  renderDashboard();
+  document.getElementById('dashboardOverlay').classList.add('open');
+}
+
+function closeDashboard() {
+  document.getElementById('dashboardOverlay').classList.remove('open');
+}
+
+function closeDashboardOnBg(ev) {
+  if (ev.target === document.getElementById('dashboardOverlay')) closeDashboard();
+}
+
+function setFilter(f) {
+  dashboardFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+  event.target.classList.add('active');
+  renderDashboardGrid();
+}
+
+function renderDashboard() {
+  const statsEl = document.getElementById('dashboardStats');
+  let correct = 0, wrong = 0, unanswered = 0;
+  for (let i = 0; i < totalQuestions; i++) {
+    const s = getStatus(i);
+    if (s === 'correct') correct++;
+    else if (s === 'wrong') wrong++;
+    else unanswered++;
+  }
+  statsEl.innerHTML = `
+    <span class="stat-chip">总计: ${totalQuestions}</span>
+    <span class="stat-chip correct">✅ 正确: ${correct}</span>
+    <span class="stat-chip wrong">❌ 错误: ${wrong}</span>
+    <span class="stat-chip unanswered">⭕ 未答: ${unanswered}</span>
+    <span class="stat-chip" style="background:var(--accent-light);color:var(--accent);">得分: ${calculateScore()}/${maxScore}</span>
+  `;
+  renderDashboardGrid();
+}
+
+function renderDashboardGrid() {
+  const grid = document.getElementById('dashboardGrid');
+  grid.innerHTML = '';
+  for (let i = 0; i < totalQuestions; i++) {
+    const q = allQuestions[i];
+    const status = getStatus(i);
+    if (dashboardFilter !== 'all' && status !== dashboardFilter) continue;
+
+    const cell = document.createElement('div');
+    cell.className = `dashboard-cell ${status}`;
+    cell.textContent = i + 1;
+    const typeLabel = q.type === 'drag' ? '填' : q.type === 'single' ? '单' : q.type === 'multi' ? '多' : '判';
+    cell.innerHTML = `${i + 1}<span class="cell-type">${typeLabel}</span>`;
+    cell.style.position = 'relative';
+    cell.onclick = () => {
+      closeDashboard();
+      showQuestion(i);
+    };
+    grid.appendChild(cell);
+  }
+}
+
+// ===================== 结果页 =====================
+
+function showResult() {
+  document.getElementById('progressSection').classList.add('hidden');
+  document.getElementById('mainContainer').classList.add('hidden');
+  const resultPage = document.getElementById('resultPage');
+  resultPage.classList.add('show');
+
+  const score = calculateScore();
+  document.getElementById('finalScore').textContent = score;
+
+  // Breakdown
+  let correct = 0, wrong = 0, unanswered = 0;
+  for (let i = 0; i < totalQuestions; i++) {
+    const s = getStatus(i);
+    if (s === 'correct') correct++;
+    else if (s === 'wrong') wrong++;
+    else unanswered++;
+  }
+
+  document.getElementById('resultBreakdown').innerHTML = `
+    <div class="result-item">
+      <div class="result-item-num" style="color:var(--success)">${correct}</div>
+      <div class="result-item-label">正确</div>
+    </div>
+    <div class="result-item">
+      <div class="result-item-num" style="color:var(--error)">${wrong}</div>
+      <div class="result-item-label">错误</div>
+    </div>
+    <div class="result-item">
+      <div class="result-item-num" style="color:#999">${unanswered}</div>
+      <div class="result-item-label">未答</div>
+    </div>
+    <div class="result-item">
+      <div class="result-item-num" style="color:var(--accent)">${Math.round(score / maxScore * 100)}%</div>
+      <div class="result-item-label">正确率</div>
+    </div>
+  `;
+}
+
+function continueQuiz() {
+  document.getElementById('resultPage').classList.remove('show');
+  document.getElementById('progressSection').classList.remove('hidden');
+  document.getElementById('mainContainer').classList.remove('hidden');
+  showQuestion(currentIdx);
+}
+
+// ===================== 初始化 =====================
+
+updateProgress();
+</script>
+
+</body>
+</html>

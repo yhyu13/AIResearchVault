@@ -1,0 +1,1697 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>合成环境 RL 实验 — 互动知识卡牌</title>
+<style>
+/* ==================== 基础重置与变量 ==================== */
+:root {
+  --bg: #f5f3ef;
+  --card-bg: #ffffff;
+  --primary: #2d6a4f;
+  --primary-light: #40916c;
+  --accent: #d4a373;
+  --accent-light: #e9c46a;
+  --danger: #bc4749;
+  --success: #52b788;
+  --text: #2b2d42;
+  --text-light: #6c757d;
+  --border: #e0e0e0;
+  --shadow: 0 4px 20px rgba(0,0,0,0.08);
+  --radius: 14px;
+  --transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.7;
+  min-height: 100vh;
+  padding-bottom: 40px;
+}
+
+/* ==================== 头部 ==================== */
+header {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+  color: white;
+  padding: 32px 24px;
+  text-align: center;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 16px rgba(45,106,79,0.25);
+}
+header h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: 0.5px; }
+header p { font-size: 0.9rem; opacity: 0.9; margin-top: 6px; }
+
+/* ==================== 工具栏 ==================== */
+.toolbar {
+  display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;
+  padding: 16px 12px; background: var(--card-bg);
+  border-bottom: 1px solid var(--border); position: sticky; top: 110px; z-index: 90;
+}
+.toolbar button {
+  padding: 8px 16px; border: none; border-radius: 8px; cursor: pointer;
+  font-size: 0.85rem; font-weight: 500; transition: var(--transition);
+}
+.btn-primary { background: var(--primary); color: white; }
+.btn-primary:hover { background: #1b4332; transform: translateY(-1px); }
+.btn-accent { background: var(--accent); color: #fff; }
+.btn-accent:hover { background: #b07d46; }
+.btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+.btn-outline:hover { background: var(--bg); }
+
+/* ==================== 分数栏 ==================== */
+.score-bar {
+  background: var(--card-bg); padding: 16px 20px; border-bottom: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;
+}
+.score-bar .score-display { font-size: 1.1rem; font-weight: 600; }
+.score-bar .score-display span { color: var(--primary); font-size: 1.3rem; }
+.score-bar .progress-outer {
+  flex: 1; min-width: 120px; max-width: 300px; height: 10px;
+  background: #e9ecef; border-radius: 5px; overflow: hidden;
+}
+.score-bar .progress-inner {
+  height: 100%; background: linear-gradient(90deg, var(--primary-light), var(--success));
+  border-radius: 5px; transition: width 0.5s ease; width: 0%;
+}
+
+/* ==================== 进度条与导航 ==================== */
+.progress-text {
+  text-align: center; padding: 10px; font-size: 0.85rem; color: var(--text-light);
+  background: var(--card-bg); border-bottom: 1px solid var(--border);
+}
+.nav-bar {
+  display: flex; justify-content: center; gap: 12px; padding: 12px;
+  background: var(--card-bg); border-bottom: 1px solid var(--border);
+}
+.nav-bar button {
+  padding: 8px 18px; border: none; border-radius: 8px; cursor: pointer;
+  font-size: 0.85rem; background: var(--primary); color: white; transition: var(--transition);
+}
+.nav-bar button:disabled { background: #adb5bd; cursor: not-allowed; }
+.nav-bar button:hover:not(:disabled) { background: #1b4332; }
+
+/* ==================== 题型标签页 ==================== */
+.tab-bar {
+  display: flex; justify-content: center; gap: 4px; padding: 12px;
+  background: var(--card-bg); border-bottom: 1px solid var(--border); flex-wrap: wrap;
+}
+.tab-btn {
+  padding: 8px 16px; border: none; border-radius: 8px; cursor: pointer;
+  font-size: 0.85rem; background: transparent; color: var(--text-light);
+  transition: var(--transition); position: relative;
+}
+.tab-btn.active { background: var(--primary); color: white; font-weight: 600; }
+.tab-btn .badge {
+  position: absolute; top: -4px; right: -4px; background: var(--danger);
+  color: white; font-size: 0.65rem; padding: 2px 5px; border-radius: 8px;
+}
+
+/* ==================== 题目卡片 ==================== */
+.container { max-width: 760px; margin: 0 auto; padding: 20px 16px; }
+.question-card {
+  background: var(--card-bg); border-radius: var(--radius); padding: 28px;
+  margin-bottom: 20px; box-shadow: var(--shadow); display: none;
+  animation: fadeIn 0.4s ease;
+}
+.question-card.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+.q-header {
+  display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;
+}
+.q-type-tag {
+  font-size: 0.75rem; padding: 4px 10px; border-radius: 20px; font-weight: 600;
+}
+.tag-drag { background: #e0f2f1; color: #00695c; }
+.tag-single { background: #e3f2fd; color: #1565c0; }
+.tag-multi { background: #fff3e0; color: #ef6c00; }
+.tag-tf { background: #fce4ec; color: #c2185b; }
+.q-number { font-size: 0.8rem; color: var(--text-light); }
+
+.q-title { font-size: 1.05rem; font-weight: 600; margin-bottom: 20px; line-height: 1.8; }
+
+/* ==================== 拖拽填空 ==================== */
+.drop-zone {
+  display: inline-block; min-width: 100px; height: 36px; line-height: 34px;
+  border: 2px dashed var(--border); border-radius: 6px; margin: 0 4px;
+  padding: 0 10px; text-align: center; vertical-align: middle;
+  background: #fafafa; transition: var(--transition); cursor: pointer;
+}
+.drop-zone.filled { border-style: solid; border-color: var(--primary); background: #e8f5e9; font-weight: 600; }
+.drop-zone.correct { border-color: var(--success); background: #e8f5e9; color: #1b5e20; }
+.drop-zone.wrong { border-color: var(--danger); background: #ffebee; color: #b71c1c; }
+.drag-pool {
+  display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; padding: 14px;
+  background: #f8f9fa; border-radius: 10px; min-height: 50px;
+}
+.drag-item {
+  padding: 6px 14px; background: white; border: 1px solid var(--border);
+  border-radius: 6px; cursor: grab; font-size: 0.9rem; transition: var(--transition);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.drag-item:hover { border-color: var(--primary); transform: translateY(-1px); }
+.drag-item.dragging { opacity: 0.5; }
+.drag-item.used { opacity: 0.4; pointer-events: none; }
+
+/* ==================== 选项 ==================== */
+.options { display: flex; flex-direction: column; gap: 10px; }
+.option {
+  padding: 14px 16px; border: 1.5px solid var(--border); border-radius: 10px;
+  cursor: pointer; transition: var(--transition); display: flex; align-items: flex-start; gap: 10px;
+}
+.option:hover { border-color: var(--primary-light); background: #f8f9fa; }
+.option.selected { border-color: var(--primary); background: #e8f5e9; }
+.option.correct-ans { border-color: var(--success); background: #e8f5e9; }
+.option.wrong-ans { border-color: var(--danger); background: #ffebee; }
+.option-marker {
+  min-width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--border);
+  display: flex; align-items: center; justify-content: center; font-size: 0.75rem;
+  font-weight: 700; margin-top: 1px;
+}
+.option.selected .option-marker { border-color: var(--primary); background: var(--primary); color: white; }
+.option.correct-ans .option-marker { border-color: var(--success); background: var(--success); color: white; }
+.option.wrong-ans .option-marker { border-color: var(--danger); background: var(--danger); color: white; }
+.option-text { flex: 1; font-size: 0.95rem; }
+
+/* ==================== 判断题 ==================== */
+.tf-options { display: flex; gap: 16px; justify-content: center; margin-top: 16px; }
+.tf-btn {
+  padding: 12px 36px; border: 2px solid var(--border); border-radius: 10px;
+  cursor: pointer; font-size: 1rem; font-weight: 600; transition: var(--transition); background: white;
+}
+.tf-btn:hover { border-color: var(--primary-light); }
+.tf-btn.selected { border-color: var(--primary); background: #e8f5e9; }
+.tf-btn.correct-ans { border-color: var(--success); background: #e8f5e9; }
+.tf-btn.wrong-ans { border-color: var(--danger); background: #ffebee; }
+
+/* ==================== 按钮组 ==================== */
+.btn-group { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+.btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 500; transition: var(--transition); }
+.btn-check { background: var(--primary); color: white; }
+.btn-check:hover { background: #1b4332; }
+.btn-reset { background: #e9ecef; color: var(--text); }
+.btn-reset:hover { background: #dee2e6; }
+
+/* ==================== 解析区域 ==================== */
+.explanation {
+  margin-top: 18px; padding: 16px; border-radius: 10px; display: none;
+  border-left: 4px solid;
+}
+.explanation.show { display: block; animation: fadeIn 0.3s ease; }
+.explanation.correct { background: #e8f5e9; border-color: var(--success); }
+.explanation.wrong { background: #ffebee; border-color: var(--danger); }
+.explanation-title { font-weight: 700; margin-bottom: 8px; }
+.explanation.correct .explanation-title { color: #1b5e20; }
+.explanation.wrong .explanation-title { color: #b71c1c; }
+.explanation-text { font-size: 0.9rem; color: #444; line-height: 1.8; }
+
+/* ==================== 结果页 ==================== */
+.result-page {
+  display: none; text-align: center; padding: 40px 20px;
+}
+.result-page.show { display: block; animation: fadeIn 0.5s ease; }
+.result-score { font-size: 4rem; font-weight: 800; color: var(--primary); line-height: 1; }
+.result-label { font-size: 1.1rem; color: var(--text-light); margin-top: 8px; }
+.result-detail { margin-top: 24px; display: flex; justify-content: center; gap: 24px; flex-wrap: wrap; }
+.result-stat { text-align: center; }
+.result-stat-value { font-size: 1.6rem; font-weight: 700; color: var(--primary); }
+.result-stat-label { font-size: 0.8rem; color: var(--text-light); margin-top: 4px; }
+.result-actions { margin-top: 32px; display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+.result-actions .btn { padding: 12px 28px; font-size: 1rem; }
+
+/* ==================== 总览面板 ==================== */
+.dashboard-overlay {
+  display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.45); z-index: 200; backdrop-filter: blur(3px);
+}
+.dashboard-overlay.open { display: block; }
+.dashboard-panel {
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  background: var(--card-bg); width: 92%; max-width: 720px; max-height: 85vh;
+  border-radius: var(--radius); box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  overflow: hidden; display: flex; flex-direction: column;
+}
+.dashboard-header {
+  padding: 20px 24px; border-bottom: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.dashboard-header h2 { font-size: 1.1rem; }
+.dashboard-close {
+  width: 32px; height: 32px; border: none; background: #e9ecef; border-radius: 50%;
+  cursor: pointer; font-size: 1.2rem; line-height: 1; transition: var(--transition);
+}
+.dashboard-close:hover { background: #dee2e6; }
+.dashboard-filters {
+  display: flex; gap: 8px; padding: 12px 20px; border-bottom: 1px solid var(--border); flex-wrap: wrap;
+}
+.filter-btn {
+  padding: 6px 14px; border: 1px solid var(--border); border-radius: 20px;
+  background: white; cursor: pointer; font-size: 0.8rem; transition: var(--transition);
+}
+.filter-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+.dashboard-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
+  gap: 10px; padding: 20px; overflow-y: auto;
+}
+.dashboard-item {
+  aspect-ratio: 1; border-radius: 10px; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; cursor: pointer;
+  border: 2px solid var(--border); transition: var(--transition); font-size: 0.8rem;
+}
+.dashboard-item:hover { transform: scale(1.08); border-color: var(--primary); }
+.dashboard-item.correct { background: #e8f5e9; border-color: var(--success); }
+.dashboard-item.wrong { background: #ffebee; border-color: var(--danger); }
+.dashboard-item.unanswered { background: #f8f9fa; border-color: var(--border); }
+.dashboard-item .d-num { font-weight: 700; font-size: 0.9rem; }
+.dashboard-item .d-type { font-size: 0.6rem; color: var(--text-light); margin-top: 2px; }
+
+/* ==================== 响应式 ==================== */
+@media (max-width: 600px) {
+  header h1 { font-size: 1.2rem; }
+  .question-card { padding: 20px; }
+  .result-score { font-size: 3rem; }
+  .dashboard-panel { width: 96%; max-height: 90vh; }
+}
+
+/* ==================== 隐藏类 ==================== */
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🎮 合成环境 RL 实验 — 互动知识卡牌</h1>
+  <p>覆盖 SPIRAL · Absolute Zero · R-Zero · RLVE · GEM · AutoForge · GIFT 核心概念</p>
+</header>
+
+<!-- 工具栏 -->
+<div class="toolbar">
+  <button class="btn-primary" onclick="openDashboard()">📊 题目总览</button>
+  <button class="btn-accent" onclick="shuffleAllQuestions()">🎲 重新洗牌选项</button>
+  <button class="btn-outline" onclick="resetAll()">🔄 重置全部分数</button>
+</div>
+
+<!-- 分数栏 -->
+<div class="score-bar" id="scoreBar">
+  <div class="score-display">得分：<span id="scoreValue">0</span> / <span id="totalValue">0</span></div>
+  <div class="progress-outer"><div class="progress-inner" id="progressBar"></div></div>
+  <div style="font-size:0.85rem;color:var(--text-light);">正确率：<span id="accuracyValue">0%</span></div>
+</div>
+
+<!-- 进度文本 -->
+<div class="progress-text" id="progressText">准备开始...</div>
+
+<!-- 导航 -->
+<div class="nav-bar" id="navBar">
+  <button onclick="prevQuestion()">◀ 上一题</button>
+  <button onclick="nextQuestion()">下一题 ▶</button>
+</div>
+
+<!-- 题型标签 -->
+<div class="tab-bar" id="tabBar">
+  <button class="tab-btn active" data-type="drag" onclick="switchType('drag')">拖拽填空</button>
+  <button class="tab-btn" data-type="single" onclick="switchType('single')">单选题</button>
+  <button class="tab-btn" data-type="multi" onclick="switchType('multi')">多选题</button>
+  <button class="tab-btn" data-type="tf" onclick="switchType('tf')">判断题</button>
+</div>
+
+<!-- 题目容器 -->
+<div class="container" id="questionContainer">
+  <!-- 拖拽填空题 -->
+  <div class="question-card active" data-type="drag" data-index="0">
+    <div class="q-header">
+      <span class="q-type-tag tag-drag">拖拽填空</span>
+      <span class="q-number">1 / 5</span>
+    </div>
+    <div class="q-title">
+      SPIRAL 提出的核心算法是 <span class="drop-zone" data-index="0"></span> ，用于解决多智能体非平稳性中的 <span class="drop-zone" data-index="1"></span> 问题。
+    </div>
+    <div class="drag-pool" data-question="0">
+      <span class="drag-item" data-value="RAE" draggable="true">RAE</span>
+      <span class="drag-item" data-value="GRPO" draggable="true">GRPO</span>
+      <span class="drag-item" data-value="baseline 污染" draggable="true">baseline 污染</span>
+      <span class="drag-item" data-value="角色偏差" draggable="true">角色偏差</span>
+      <span class="drag-item" data-value="PPO" draggable="true">PPO</span>
+      <span class="drag-item" data-value="稀疏奖励" draggable="true">稀疏奖励</span>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-check" onclick="checkDrag(0)">检查答案</button>
+      <button class="btn btn-reset" onclick="resetDrag(0)">重置</button>
+    </div>
+    <div class="explanation" id="exp-drag-0">
+      <div class="explanation-title"></div>
+      <div class="explanation-text"></div>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="drag" data-index="1">
+    <div class="q-header">
+      <span class="q-type-tag tag-drag">拖拽填空</span>
+      <span class="q-number">2 / 5</span>
+    </div>
+    <div class="q-title">
+      Absolute Zero 中，单一模型同时扮演 <span class="drop-zone" data-index="0"></span> 和 <span class="drop-zone" data-index="1"></span> 两个角色。
+    </div>
+    <div class="drag-pool" data-question="1">
+      <span class="drag-item" data-value="Proposer" draggable="true">Proposer</span>
+      <span class="drag-item" data-value="Solver" draggable="true">Solver</span>
+      <span class="drag-item" data-value="Challenger" draggable="true">Challenger</span>
+      <span class="drag-item" data-value="Verifier" draggable="true">Verifier</span>
+      <span class="drag-item" data-value="Discriminator" draggable="true">Discriminator</span>
+      <span class="drag-item" data-value="Generator" draggable="true">Generator</span>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-check" onclick="checkDrag(1)">检查答案</button>
+      <button class="btn btn-reset" onclick="resetDrag(1)">重置</button>
+    </div>
+    <div class="explanation" id="exp-drag-1">
+      <div class="explanation-title"></div>
+      <div class="explanation-text"></div>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="drag" data-index="2">
+    <div class="q-header">
+      <span class="q-type-tag tag-drag">拖拽填空</span>
+      <span class="q-number">3 / 5</span>
+    </div>
+    <div class="q-title">
+      R-Zero 的核心 reward 设计是 <span class="drop-zone" data-index="0"></span> ，当 Solver 的 <span class="drop-zone" data-index="1"></span> 时 Proposer 获得最高奖励。
+    </div>
+    <div class="drag-pool" data-question="2">
+      <span class="drag-item" data-value="edge-of-learnability" draggable="true">edge-of-learnability</span>
+      <span class="drag-item" data-value="通过率等于 0.5" draggable="true">通过率等于 0.5</span>
+      <span class="drag-item" data-value="课程学习" draggable="true">课程学习</span>
+      <span class="drag-item" data-value="通过率为 100%" draggable="true">通过率为 100%</span>
+      <span class="drag-item" data-value="self-play" draggable="true">self-play</span>
+      <span class="drag-item" data-value="通过率为 0" draggable="true">通过率为 0</span>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-check" onclick="checkDrag(2)">检查答案</button>
+      <button class="btn btn-reset" onclick="resetDrag(2)">重置</button>
+    </div>
+    <div class="explanation" id="exp-drag-2">
+      <div class="explanation-title"></div>
+      <div class="explanation-text"></div>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="drag" data-index="3">
+    <div class="q-header">
+      <span class="q-type-tag tag-drag">拖拽填空</span>
+      <span class="q-number">4 / 5</span>
+    </div>
+    <div class="q-title">
+      RLVE 证明 <span class="drop-zone" data-index="0"></span> 是新的 scale 轴：400 个环境联合训练比 <span class="drop-zone" data-index="1"></span> 算力的原训练有效约 7 倍。
+    </div>
+    <div class="drag-pool" data-question="3">
+      <span class="drag-item" data-value="environment scaling" draggable="true">environment scaling</span>
+      <span class="drag-item" data-value="3 倍" draggable="true">3 倍</span>
+      <span class="drag-item" data-value="data scaling" draggable="true">data scaling</span>
+      <span class="drag-item" data-value="2 倍" draggable="true">2 倍</span>
+      <span class="drag-item" data-value="model scaling" draggable="true">model scaling</span>
+      <span class="drag-item" data-value="5 倍" draggable="true">5 倍</span>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-check" onclick="checkDrag(3)">检查答案</button>
+      <button class="btn btn-reset" onclick="resetDrag(3)">重置</button>
+    </div>
+    <div class="explanation" id="exp-drag-3">
+      <div class="explanation-title"></div>
+      <div class="explanation-text"></div>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="drag" data-index="4">
+    <div class="q-header">
+      <span class="q-type-tag tag-drag">拖拽填空</span>
+      <span class="q-number">5 / 5</span>
+    </div>
+    <div class="q-title">
+      AutoForge 提出的 <span class="drop-zone" data-index="0"></span> 通过按环境聚合去均值，解决了合成环境中 <span class="drop-zone" data-index="1"></span> 的问题。
+    </div>
+    <div class="drag-pool" data-question="4">
+      <span class="drag-item" data-value="environment-level advantage" draggable="true">environment-level advantage</span>
+      <span class="drag-item" data-value="环境异质性" draggable="true">环境异质性</span>
+      <span class="drag-item" data-value="RAE" draggable="true">RAE</span>
+      <span class="drag-item" data-value="模拟用户不稳定" draggable="true">模拟用户不稳定</span>
+      <span class="drag-item" data-value="ReBN" draggable="true">ReBN</span>
+      <span class="drag-item" data-value="课程停滞" draggable="true">课程停滞</span>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-check" onclick="checkDrag(4)">检查答案</button>
+      <button class="btn btn-reset" onclick="resetDrag(4)">重置</button>
+    </div>
+    <div class="explanation" id="exp-drag-4">
+      <div class="explanation-title"></div>
+      <div class="explanation-text"></div>
+    </div>
+  </div>
+
+  <!-- 单选题 -->
+  <div class="question-card" data-type="single" data-index="0">
+    <div class="q-header">
+      <span class="q-type-tag tag-single">单选题</span>
+      <span class="q-number">1 / 10</span>
+    </div>
+    <div class="q-title">Absolute Zero 使用什么作为统一的可验证 reward 来源？</div>
+    <div class="options" data-question="0">
+      <div class="option" data-value="0" onclick="selectSingle(0,0)"><span class="option-marker">A</span><span class="option-text">Code executor（代码执行器）</span></div>
+      <div class="option" data-value="1" onclick="selectSingle(0,1)"><span class="option-marker">B</span><span class="option-text">人类标注员</span></div>
+      <div class="option" data-value="2" onclick="selectSingle(0,2)"><span class="option-marker">C</span><span class="option-text">神经网络判别器</span></div>
+      <div class="option" data-value="3" onclick="selectSingle(0,3)"><span class="option-marker">D</span><span class="option-text">游戏规则引擎</span></div>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-check" onclick="checkSingle(0)">检查答案</button>
+      <button class="btn btn-reset" onclick="resetSingle(0)">重置</button>
+    </div>
+    <div class="explanation" id="exp-single-0">
+      <div class="explanation-title"></div>
+      <div class="explanation-text"></div>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="single" data-index="1">
+    <div class="q-header">
+      <span class="q-type-tag tag-single">单选题</span>
+      <span class="q-number">2 / 10</span>
+    </div>
+    <div class="q-title">SPIRAL 中 RAE 的全称是什么？</div>
+    <div class="options" data-question="1">
+      <div class="option" data-value="0" onclick="selectSingle(1,0)"><span class="option-marker">A</span><span class="option-text">Relative Advantage Estimation</span></div>
+      <div class="option" data-value="1" onclick="selectSingle(1,1)"><span class="option-marker">B</span><span class="option-text">Role-conditioned Advantage Estimation</span></div>
+      <div class="option" data-value="2" onclick="selectSingle(1,2)"><span class="option-marker">C</span><span class="option-text">Return Advantage Estimation</span></div>
+      <div class="option" data-value="3" onclick="selectSingle(1,3)"><span class="option-marker">D</span><span class="option-text">Recursive Advantage Estimation</span></div>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-check" onclick="checkSingle(1)">检查答案</button>
+      <button class="btn btn-reset" onclick="resetSingle(1)">重置</button>
+    </div>
+    <div class="explanation" id="exp-single-1">
+      <div class="explanation-title"></div>
+      <div class="explanation-text"></div>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="single" data-index="2">
+    <div class="q-header">
+      <span class="q-type-tag tag-single">单选题</span>
+      <span class="q-number">3 / 10</span>
+    </div>
+    <div class="q-title">在 R-Zero 中，Proposer 获得最高奖励时，Solver 的通过率约为多少？</div>
+    <div class="options" data-question="2">
+      <div class="option" data-value="0" onclick="selectSingle(2,0)"><span class="option-marker">A</span><span class="option-text">0%</span></div>
+      <div class="option" data-value="1" onclick="selectSingle(2,1)"><span class="option-marker">B</span><span class="option-text">25%</span></div>
+      <div class="option" data-value="2" onclick="selectSingle(2,2)"><span class="option-marker">C</span><span class="option-text">50%</span></div>
+      <div class="option" data-value="3" onclick="selectSingle(2,3)"><span class="option-marker">D</span><span class="option-text">100%</span></div>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-check" onclick="checkSingle(2)">检查答案</button>
+      <button class="btn btn-reset" onclick="resetSingle(2)">重置</button>
+    </div>
+    <div class="explanation" id="exp-single-2">
+      <div class="explanation-title"></div>
+      <div class="explanation-text"></div>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="single" data-index="3">
+    <div class="q-header">
+      <span class="q-type-tag tag-single">单选题</span>
+      <span class="q-number">4 / 10</span>
+    </div>
+    <div class="q-title">以下哪个方法属于"环境工业化"主线，而非"零数据自博弈"家族？</div>
+    <div class="options" data-question="3">
+      <div class="option" data-value="0" onclick="selectSingle(3,0)"><span class="option-marker">A</span><span class="option-text">Absolute Zero</span></div>
+      <div class="option" data-value="1" onclick="selectSingle(3,1)"><span class="option-marker">B</span><span class="option-text">SPIRAL</span></div>
+      <div class="option" data-value="2" onclick="selectSingle(3,2)"><span class="option-marker">C</span><span class="option-text">R-Zero</span></div>
+      <div class="option" data-value="3" onclick="selectSingle(3,3)"><span class="option-marker">D</span><span class="option-text">AutoForge</span></div>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-check" onclick="checkSingle(3)">检查答案</button>
+      <button class="btn btn-reset" onclick="resetSingle(3)">重置</button>
+    </div>
+    <div class="explanation" id="exp-single-3">
+      <div class="explanation-title"></div>
+      <div class="explanation-text"></div>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="single" data-index="4">
+    <div class="q-header">
+      <span class="q-type-tag tag-single">单选题</span>
+      <span class="q-number">5 / 10</span>
+    </div>
+    <div class="q-title">GEM 提出的 ReBN 算法与 GRPO 的关键区别在于 ReBN 支持什么？</div>
+    <div class="options" data-question="4">
+      <div class="option" data-value="0" onclick="selectSingle(4,0)"><span class="option-marker">A</span><span class="option-text">dense per-turn rewards（逐回合稠密奖励）</span></div>
+      <div class="option" data-value="1" onclick="selectSingle(4,1)"><span class="option-marker">B</span><span class="option-text">sparse rewards only（仅稀疏奖励）</span></div>
+      <div class="option" data-value="2" onclick="selectSingle(4,2)"><span class="option-marker">C</span><span class="option-text">连续动作空间</span></div>
+      <div class="option" data-value="3" onclick="selectSingle(4,3)"><span class="option-marker">D</span><span class="option-text">离线训练模式</span></div>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-check" onclick="checkSingle(4)">检查答案</button>
+      <button class="btn btn-reset" onclick="resetSingle(4)">重置</button>
+    </div>
+    <div class="explanation" id="exp-single-4">
+      <div class="explanation-title"></div>
+      <div class="explanation-text"></div>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="single" data-index="5">
+    <div class="q-header">
+      <span class="q-type-tag tag-single">单选题</span>
+      <span class="q-number">6 / 10</span>
+    </div>
+    <div class="q-title">GIFT 提出的 CST 方法的核心思想是什么？</div>
+    <div class="options" data-question="5">
+      <div class="option" data-value="0" onclick="selectSingle(5,0)"><span class="option-marker">A</span><span class="option-text">并行多任务梯度平均</span></div>
+      <div class="option" data-value="1" onclick="selectSingle(5,1)"><span class="option-marker">B</span><span class="option-text">顺序子任务专属更新</span></div>
+      <div class="option" data-value="2" onclick="selectSingle(5,2)"><span class="option-marker">C</span><span class="option-text">单任务逐层训练</span></div>
+      <div class="option" data-value="3" onclick="selectSingle(5,3)"><span class="option-marker">D</span><span class="option-text">对抗训练框架</span></div>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-check" onclick="checkSingle(5)">检查答案</button>
+      <button class="btn btn-reset" onclick="resetSingle(5)">重置</button>
+    </div>
+    <div class="explanation" id="exp-single-5">
+      <div class="explanation-title"></div>
+      <div class="explanation-text"></div>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="single" data-index="6">
+    <div class="q-header">
+      <span class="q-type-tag tag-single">单选题</span>
+      <span class="q-number">7 / 10</span>
+    </div>
+    <div class="q-title">Vision-Zero 将 self-play 扩展到了哪种模态？</div>
+    <div class="options" data-question="6">
+      <div class="option" data-value="0" onclick="selectSingle(6,0)"><span class="option-marker">A</span><span class="option-text">纯文本</span></div>
+      <div class="option" data-value="1" onclick="selectSingle(6,1)"><span class="option-marker">B</span><span class="option-text">代码</span></div>
+      <div class="option" data-value="2" onclick="selectSingle(6,2)"><span class="option-marker">C</span><span class="option-text">视觉 / 多模态</span></div>
+      <div class="option" data-value="3" onclick="selectSingle(6,3)"><span class="option-marker">D</span><span class="option-text">音频</span></div>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-check" onclick="checkSingle(6)">检查答案</button>
+      <button class="btn btn-reset" onclick="resetSingle(6)">重置</button>
+    </div>
+    <div class="explanation" id="exp-single-6">
+      <div class="explanation-title"></div>
+      <div class="explanation-text"></div>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="single" data-index="7">
+    <div class="q-header">
+      <span class="q-type-tag tag-single">单选题</span>
+      <span class="q-number">8 / 10</span>
+    </div>
+    <div class="q-title">AutoForge 的 environment-level advantage 旨在解决合成环境中的什么问题？</div>
+    <div class="options" data-question="7">
+      <div class="option" data-value="0" onclick="selectSingle(7,0)"><span class="option-marker">A</span><span class="option-text">任务分布坍缩</span></div>
+      <div class="option" data-value="1" onclick="selectSingle(7,1)"><span class="option-marker">B</span><span class="option-text">环境异质性导致的 baseline 污染</span></div>
+      <div class="option" data-value="2" onclick="selectSingle(7,2)"><span class="option-marker">C</span><span class="option-text">计算成本过高</span></div>
+      <div class="option" data-value="3" onclick="selectSingle(7,3)"><span class="option-marker">D</span><span class="option-text">冷启动困难</span></div>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-check" onclick="checkSingle(7)">检查答案</button>
+      <button class="btn btn-reset" onclick="resetSingle(7)">重置</button>
+    </div>
+    <div class="explanation" id="exp-single-7">
+      <div class="explanation-title"></div>
+      <div class="explanation-text"></div>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="single" data-index="8">
+    <div class="q-header">
+      <span class="q-type-tag tag-single">单选题</span>
+      <span class="q-number">9 / 10</span>
+    </div>
+    <div class="q-title">以下哪项是 RLVE 的核心实验结论？</div>
+    <div class="options" data-question="8">
+      <div class="option" data-value="0" onclick="selectSingle(8,0)"><span class="option-marker">A</span><span class="option-text">400 环境联合训练比 3× 算力原训练有效约 7 倍</span></div>
+      <div class="option" data-value="1" onclick="selectSingle(8,1)"><span class="option-marker">B</span><span class="option-text">模型越大，推理能力提升越显著</span></div>
+      <div class="option" data-value="2" onclick="selectSingle(8,2)"><span class="option-marker">C</span><span class="option-text">环境数量超过 100 后无额外收益</span></div>
+      <div class="option" data-value="3" onclick="selectSingle(8,3)"><span class="option-marker">D</span><span class="option-text">自博弈训练优于程序化环境训练</span></div>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-check" onclick="checkSingle(8)">检查答案</button>
+      <button class="btn btn-reset" onclick="resetSingle(8)">重置</button>
+    </div>
+    <div class="explanation" id="exp-single-8">
+      <div class="explanation-title"></div>
+      <div class="explanation-text"></div>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="single" data-index="9">
+    <div class="q-header">
+      <span class="q-type-tag tag-single">单选题</span>
+      <span class="q-number">10 / 10</span>
+    </div>
+    <div class="q-title">SPIRAL 在 3 游戏联合训练后，迁移到推理 benchmark 的最高增益约为？</div>
+    <div class="options" data-question="9">
+      <div class="option" data-value="0" onclick="selectSingle(9,0)"><span class="option-marker">A</span><span class="option-text">+3%</span></div>
+      <div class="option" data-value="1" onclick="selectSingle(9,1)"><span class="option-marker">B</span><span class="option-text">+10%</span></div>
+      <div class="option" data-value="2" onclick="selectSingle(9,2)"><span class="option-marker">C</span><span class="option-text">+15%</span></div>
+      <div class="option" data-value="3" onclick="selectSingle(9,3)"><span class="option-marker">D</span><span class="option-text">+20%</span></div>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-check" onclick="checkSingle(9)">检查答案</button>
+      <button class="btn btn-reset" onclick="resetSingle(9)">重置</button>
+    </div>
+    <div class="explanation" id="exp-single-9">
+      <div class="explanation-title"></div>
+      <div class="explanation-text"></div>
+    </div>
+  </div>
+
+  <!-- 多选题 -->
+  <div class="question-card" data-type="multi" data-index="0">
+    <div class="q-header">
+      <span class="q-type-tag tag-multi">多选题</span>
+      <span class="q-number">1 / 6</span>
+    </div>
+    <div class="q-title">零数据自博弈家族（Absolute Zero → R-Zero → SPIRAL → Vision-Zero）的共同特点包括哪些？（多选）</div>
+    <div class="options" data-question="0">
+      <div class="option" data-value="0" onclick="toggleMulti(0,0)"><span class="option-marker">A</span><span class="option-text">不依赖人工标注数据</span></div>
+      <div class="option" data-value="1" onclick="toggleMulti(0,1)"><span class="option-marker">B</span><span class="option-text">使用可验证环境提供奖励信号</span></div>
+      <div class="option" data-value="2" onclick="toggleMulti(0,2)"><span class="option-marker">C</span><span class="option-text">都使用单模型双角色架构</span></div>
+      <div class="option" data-value="3" onclick="toggleMulti(0,3)"><span class="option-marker">D</span><span class="option-text">共同风险包括分布坍缩和 reward hacking</span></div>
+      <div class="option" data-value="4" onclick="toggleMulti(0,4)"><span class="option-marker">E</span><span class="option-text">都基于零和博弈</span></div>
+      <div class="option" data-value="5" onclick="toggleMulti(0,5)"><span class="option-marker">F</span><span class="option-text">都可以直接扩展到多模态</span></div>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-check" onclick="checkMulti(0)">检查答案</button>
+      <button class="btn btn-reset" onclick="resetMulti(0)">重置</button>
+    </div>
+    <div class="explanation" id="exp-multi-0">
+      <div class="explanation-title"></div>
+      <div class="explanation-text"></div>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="multi" data-index="1">
+    <div class="q-header">
+      <span class="q-type-tag tag-multi">多选题</span>
+      <span class="q-number">2 / 6</span>
+    </div>
+    <div class="q-title">SPIRAL 的 RAE 算法的设计动机包括哪些？（多选）</div>
+    <div class="options" data-question="1">
+      <div class="option" data-value="0" onclick="toggleMulti(1,0)"><span class="option-marker">A</span><span class="option-text">多智能体训练中的非平稳对手</span></div>
+      <div class="option" data-value="1" onclick="toggleMulti(1,1)"><span class="option-marker">B</span><span class="option-text">不同角色的结构性优劣（如先手优势）</span></div>
+      <div class="option" data-value="2" onclick="toggleMulti(1,2)"><span class="option-marker">C</span><span class="option-text">全局 baseline 会被游戏结构污染</span></div>
+      <div class="option" data-value="3" onclick="toggleMulti(1,3)"><span class="option-marker">D</span><span class="option-text">减少训练所需的 GPU 显存</span></div>
+      <div class="option" data-value="4" onclick="toggleMulti(1,4)"><span class="option-marker">E</span><span class="option-text">提高采样效率</span></div>
+      <div class="option" data-value="5" onclick="toggleMulti(1,5)"><span class="option-marker">F</span><span class="option-text">解决稀疏奖励问题</span></div>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-check" onclick="checkMulti(1)">检查答案</button>
+      <button class="btn btn-reset" onclick="resetMulti(1)">重置</button>
+    </div>
+    <div class="explanation" id="exp-multi-1">
+      <div class="explanation-title"></div>
+      <div class="explanation-text"></div>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="multi" data-index="2">
+    <div class="q-header">
+      <span class="q-type-tag tag-multi">多选题</span>
+      <span class="q-number">3 / 6</span>
+    </div>
+    <div class="q-title">以下哪些属于"环境工业化"主线的论文？（多选）</div>
+    <div class="options" data-question="2">
+      <div class="option" data-value="0" onclick="toggleMulti(2,0)"><span class="option-marker">A</span><span class="option-text">RLVE</span></div>
+      <div class="option" data-value="1" onclick="toggleMulti(2,1)"><span class="option-marker">B</span><span class="option-text">GEM</span></div>
+      <div class="option" data-value="2" onclick="toggleMulti(2,2)"><span class="option-marker">C</span><span class="option-text">AutoForge</span></div>
+      <div class="option" data-value="3" onclick="toggleMulti(2,3)"><span class="option-marker">D</span><span class="option-text">SPIRAL</span></div>
+      <div class="option" data-value="4" onclick="toggleMulti(2,4)"><span class="option-marker">E</span><span class="option-text">GIFT</span></div>
+      <div class="option" data-value="5" onclick="toggleMulti(2,5)"><span class="option-marker">F</span><span class="option-text">Absolute Zero</span></div>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-check" onclick="checkMulti(2)">检查答案</button>
+      <button class="btn btn-reset" onclick="resetMulti(2)">重置</button>
+    </div>
+    <div class="explanation" id="exp-multi-2">
+      <div class="explanation-title"></div>
+      <div class="explanation-text"></div>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="multi" data-index="3">
+    <div class="q-header">
+      <span class="q-type-tag tag-multi">多选题</span>
+      <span class="q-number">4 / 6</span>
+    </div>
+    <div class="q-title">R-Zero 相比 Absolute Zero 的改进包括哪些？（多选）</div>
+    <div class="options" data-question="3">
+      <div class="option" data-value="0" onclick="toggleMulti(3,0)"><span class="option-marker">A</span><span class="option-text">将单模型双角色解耦为双模型</span></div>
+      <div class="option" data-value="1" onclick="toggleMulti(3,1)"><span class="option-marker">B</span><span class="option-text">引入 edge-of-learnability reward 设计</span></div>
+      <div class="option" data-value="2" onclick="toggleMulti(3,2)"><span class="option-marker">C</span><span class="option-text">完全消除了课程坍缩风险</span></div>
+      <div class="option" data-value="3" onclick="toggleMulti(3,3)"><span class="option-marker">D</span><span class="option-text">训练成本降低一半</span></div>
+      <div class="option" data-value="4" onclick="toggleMulti(3,4)"><span class="option-marker">E</span><span class="option-text">课程更稳定</span></div>
+      <div class="option" data-value="5" onclick="toggleMulti(3,5)"><span class="option-marker">F</span><span class="option-text">支持多模态输入</span></div>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-check" onclick="checkMulti(3)">检查答案</button>
+      <button class="btn btn-reset" onclick="resetMulti(3)">重置</button>
+    </div>
+    <div class="explanation" id="exp-multi-3">
+      <div class="explanation-title"></div>
+      <div class="explanation-text"></div>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="multi" data-index="4">
+    <div class="q-header">
+      <span class="q-type-tag tag-multi">多选题</span>
+      <span class="q-number">5 / 6</span>
+    </div>
+    <div class="q-title">合成环境 RL 面临的核心矛盾包括哪些？（多选）</div>
+    <div class="options" data-question="4">
+      <div class="option" data-value="0" onclick="toggleMulti(4,0)"><span class="option-marker">A</span><span class="option-text">无限课程 vs 信号有效性</span></div>
+      <div class="option" data-value="1" onclick="toggleMulti(4,1)"><span class="option-marker">B</span><span class="option-text">验证成本 vs 任务开放性</span></div>
+      <div class="option" data-value="2" onclick="toggleMulti(4,2)"><span class="option-marker">C</span><span class="option-text">环境多样性 vs 工程成本</span></div>
+      <div class="option" data-value="3" onclick="toggleMulti(4,3)"><span class="option-marker">D</span><span class="option-text">多智能体非平稳性</span></div>
+      <div class="option" data-value="4" onclick="toggleMulti(4,4)"><span class="option-marker">E</span><span class="option-text">模型规模 vs 推理速度</span></div>
+      <div class="option" data-value="5" onclick="toggleMulti(4,5)"><span class="option-marker">F</span><span class="option-text">数据隐私 vs 模型安全</span></div>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-check" onclick="checkMulti(4)">检查答案</button>
+      <button class="btn btn-reset" onclick="resetMulti(4)">重置</button>
+    </div>
+    <div class="explanation" id="exp-multi-4">
+      <div class="explanation-title"></div>
+      <div class="explanation-text"></div>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="multi" data-index="5">
+    <div class="q-header">
+      <span class="q-type-tag tag-multi">多选题</span>
+      <span class="q-number">6 / 6</span>
+    </div>
+    <div class="q-title">以下哪些是 GIFT 论文的核心贡献？（多选）</div>
+    <div class="options" data-question="5">
+      <div class="option" data-value="0" onclick="toggleMulti(5,0)"><span class="option-marker">A</span><span class="option-text">提出 informal learning 概念框架</span></div>
+      <div class="option" data-value="1" onclick="toggleMulti(5,1)"><span class="option-marker">B</span><span class="option-text">提出 CST 协调子任务训练</span></div>
+      <div class="option" data-value="2" onclick="toggleMulti(5,2)"><span class="option-marker">C</span><span class="option-text">证明游戏化非正式学习带来超出纯正式训练的泛化</span></div>
+      <div class="option" data-value="3" onclick="toggleMulti(5,3)"><span class="option-marker">D</span><span class="option-text">自动化环境合成</span></div>
+      <div class="option" data-value="4" onclick="toggleMulti(5,4)"><span class="option-marker">E</span><span class="option-text">自适应难度机制</span></div>
+      <div class="option" data-value="5" onclick="toggleMulti(5,5)"><span class="option-marker">F</span><span class="option-text">覆盖推理/规划/创造力/社会智能的能力面</span></div>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-check" onclick="checkMulti(5)">检查答案</button>
+      <button class="btn btn-reset" onclick="resetMulti(5)">重置</button>
+    </div>
+    <div class="explanation" id="exp-multi-5">
+      <div class="explanation-title"></div>
+      <div class="explanation-text"></div>
+    </div>
+  </div>
+
+  <!-- 判断题 -->
+  <div class="question-card" data-type="tf" data-index="0">
+    <div class="q-header">
+      <span class="q-type-tag tag-tf">判断题</span>
+      <span class="q-number">1 / 6</span>
+    </div>
+    <div class="q-title">Absolute Zero 使用两个独立模型分别扮演 Proposer 和 Solver。</div>
+    <div class="tf-options" data-question="0">
+      <button class="tf-btn" onclick="selectTf(0,true)">✅ 正确</button>
+      <button class="tf-btn" onclick="selectTf(0,false)">❌ 错误</button>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-check" onclick="checkTf(0)">检查答案</button>
+      <button class="btn btn-reset" onclick="resetTf(0)">重置</button>
+    </div>
+    <div class="explanation" id="exp-tf-0">
+      <div class="explanation-title"></div>
+      <div class="explanation-text"></div>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="tf" data-index="1">
+    <div class="q-header">
+      <span class="q-type-tag tag-tf">判断题</span>
+      <span class="q-number">2 / 6</span>
+    </div>
+    <div class="q-title">RLVE 证明环境数量是新的 scale 轴，400 环境联合训练比 3× 算力的原训练更有效。</div>
+    <div class="tf-options" data-question="1">
+      <button class="tf-btn" onclick="selectTf(1,true)">✅ 正确</button>
+      <button class="tf-btn" onclick="selectTf(1,false)">❌ 错误</button>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-check" onclick="checkTf(1)">检查答案</button>
+      <button class="btn btn-reset" onclick="resetTf(1)">重置</button>
+    </div>
+    <div class="explanation" id="exp-tf-1">
+      <div class="explanation-title"></div>
+      <div class="explanation-text"></div>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="tf" data-index="2">
+    <div class="q-header">
+      <span class="q-type-tag tag-tf">判断题</span>
+      <span class="q-number">3 / 6</span>
+    </div>
+    <div class="q-title">SPIRAL 的 RAE 与 AutoForge 的 environment-level advantage 本质上是同一分层去均值思想在不同轴上的应用。</div>
+    <div class="tf-options" data-question="2">
+      <button class="tf-btn" onclick="selectTf(2,true)">✅ 正确</button>
+      <button class="tf-btn" onclick="selectTf(2,false)">❌ 错误</button>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-check" onclick="checkTf(2)">检查答案</button>
+      <button class="btn btn-reset" onclick="resetTf(2)">重置</button>
+    </div>
+    <div class="explanation" id="exp-tf-2">
+      <div class="explanation-title"></div>
+      <div class="explanation-text"></div>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="tf" data-index="3">
+    <div class="q-header">
+      <span class="q-type-tag tag-tf">判断题</span>
+      <span class="q-number">4 / 6</span>
+    </div>
+    <div class="q-title">GRPO 可以完美兼容 dense per-turn reward 的设定，这是它相比 PPO 的优势之一。</div>
+    <div class="tf-options" data-question="3">
+      <button class="tf-btn" onclick="selectTf(3,true)">✅ 正确</button>
+      <button class="tf-btn" onclick="selectTf(3,false)">❌ 错误</button>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-check" onclick="checkTf(3)">检查答案</button>
+      <button class="btn btn-reset" onclick="resetTf(3)">重置</button>
+    </div>
+    <div class="explanation" id="exp-tf-3">
+      <div class="explanation-title"></div>
+      <div class="explanation-text"></div>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="tf" data-index="4">
+    <div class="q-header">
+      <span class="q-type-tag tag-tf">判断题</span>
+      <span class="q-number">5 / 6</span>
+    </div>
+    <div class="q-title">R-Zero 的 edge-of-learnability 设计意味着 Proposer 应该总是出 Solver 100% 能答对的题目。</div>
+    <div class="tf-options" data-question="4">
+      <button class="tf-btn" onclick="selectTf(4,true)">✅ 正确</button>
+      <button class="tf-btn" onclick="selectTf(4,false)">❌ 错误</button>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-check" onclick="checkTf(4)">检查答案</button>
+      <button class="btn btn-reset" onclick="resetTf(4)">重置</button>
+    </div>
+    <div class="explanation" id="exp-tf-4">
+      <div class="explanation-title"></div>
+      <div class="explanation-text"></div>
+    </div>
+  </div>
+
+  <div class="question-card" data-type="tf" data-index="5">
+    <div class="q-header">
+      <span class="q-type-tag tag-tf">判断题</span>
+      <span class="q-number">6 / 6</span>
+    </div>
+    <div class="q-title">GIFT 的 CST 方法通过并行同时更新所有子任务来防止多任务训练中的梯度冲突。</div>
+    <div class="tf-options" data-question="5">
+      <button class="tf-btn" onclick="selectTf(5,true)">✅ 正确</button>
+      <button class="tf-btn" onclick="selectTf(5,false)">❌ 错误</button>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-check" onclick="checkTf(5)">检查答案</button>
+      <button class="btn btn-reset" onclick="resetTf(5)">重置</button>
+    </div>
+    <div class="explanation" id="exp-tf-5">
+      <div class="explanation-title"></div>
+      <div class="explanation-text"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 结果页 -->
+<div class="result-page" id="resultPage">
+  <div class="result-score" id="resultScore">0</div>
+  <div class="result-label">总分 / <span id="resultTotal">0</span></div>
+  <div class="result-detail">
+    <div class="result-stat"><div class="result-stat-value" id="statCorrect">0</div><div class="result-stat-label">正确</div></div>
+    <div class="result-stat"><div class="result-stat-value" id="statWrong">0</div><div class="result-stat-label">错误</div></div>
+    <div class="result-stat"><div class="result-stat-value" id="statUnanswered">0</div><div class="result-stat-label">未答</div></div>
+  </div>
+  <div class="result-actions">
+    <button class="btn btn-check" onclick="openDashboard()">📊 返回查看</button>
+    <button class="btn btn-primary" onclick="continueQuiz()">▶ 继续做题</button>
+  </div>
+</div>
+
+<!-- 总览面板 -->
+<div class="dashboard-overlay" id="dashboardOverlay" onclick="closeDashboard(event)">
+  <div class="dashboard-panel" onclick="event.stopPropagation()">
+    <div class="dashboard-header">
+      <h2>📊 题目总览</h2>
+      <button class="dashboard-close" onclick="closeDashboard()">&times;</button>
+    </div>
+    <div class="dashboard-filters">
+      <button class="filter-btn active" onclick="filterDashboard('all')">全部</button>
+      <button class="filter-btn" onclick="filterDashboard('correct')">✅ 正确</button>
+      <button class="filter-btn" onclick="filterDashboard('wrong')">❌ 错误</button>
+      <button class="filter-btn" onclick="filterDashboard('unanswered')">⭕ 未答</button>
+    </div>
+    <div class="dashboard-grid" id="dashboardGrid"></div>
+  </div>
+</div>
+
+<script>
+// ==================== 题目数据 ====================
+
+const dragQuestions = [
+  {
+    answers: ["RAE", "角色偏差"],
+    pool: ["RAE", "GRPO", "baseline 污染", "角色偏差", "PPO", "稀疏奖励"],
+    explanations: [
+      "✅ <b>RAE</b>（Role-conditioned Advantage Estimation）是 SPIRAL 的核心创新，用于消除多智能体训练中的角色结构性偏差。❌ GRPO 是 DeepSeek 的 RL 算法；PPO 是通用 RL 算法；稀疏奖励是另一类问题。",
+      "✅ <b>角色偏差</b>指不同角色（如井字棋先手/后手）的结构性优劣。RAE 按 game×role 维护独立 baseline 来消除它。❌ baseline 污染是 AutoForge 解决的问题；稀疏奖励是通用 RL 挑战。"
+    ]
+  },
+  {
+    answers: ["Proposer", "Solver"],
+    pool: ["Proposer", "Solver", "Challenger", "Verifier", "Discriminator", "Generator"],
+    explanations: [
+      "✅ <b>Proposer</b>（出题者）负责提出任务，Absolute Zero 中由同一模型的"出题角色"完成。❌ Challenger 是 R-Zero 的术语；Verifier 是验证器；Discriminator/Generator 是 GAN 术语。",
+      "✅ <b>Solver</b>（解题者）负责解答任务，Absolute Zero 中由同一模型的"解题角色"完成。❌ 注意：R-Zero 将 Proposer/Solver 解耦为两个独立模型（Challenger/Solver）。"
+    ]
+  },
+  {
+    answers: ["edge-of-learnability", "通过率等于 0.5"],
+    pool: ["edge-of-learnability", "通过率等于 0.5", "课程学习", "通过率为 100%", "self-play", "通过率为 0"],
+    explanations: [
+      "✅ <b>edge-of-learnability</b> 是 R-Zero 的核心 reward 设计：Proposer 因提出"恰好位于 Solver 能力边缘"的任务而获奖。❌ 课程学习是通用概念；self-play 是训练范式。",
+      "✅ 当 Solver 的 <b>通过率等于 0.5</b>（50%）时，二元结果的熵最大，信息量最大，Proposer 获得最高奖励。❌ 通过率 100% 或 0% 时几乎没有学习信号。"
+    ]
+  },
+  {
+    answers: ["environment scaling", "3 倍"],
+    pool: ["environment scaling", "3 倍", "data scaling", "2 倍", "model scaling", "5 倍"],
+    explanations: [
+      "✅ <b>environment scaling</b> 是 RLVE 的核心命题：环境数量是与 data/model scale 并列的新扩展轴。❌ data scaling 和 model scaling 是传统扩展维度。",
+      "✅ RLVE 的关键对照实验：400 环境联合训练比 <b>3 倍</b>算力继续原训练有效约 7 倍（+3.37% vs +0.49%）。"
+    ]
+  },
+  {
+    answers: ["environment-level advantage", "环境异质性"],
+    pool: ["environment-level advantage", "环境异质性", "RAE", "模拟用户不稳定", "ReBN", "课程停滞"],
+    explanations: [
+      "✅ <b>environment-level advantage</b> 是 AutoForge 的核心方法：同环境内多条轨迹聚合去均值。❌ RAE 是 SPIRAL 的方法；ReBN 是 GEM 的方法。",
+      "✅ 合成环境中不同环境的难度/噪声差异巨大，导致 <b>环境异质性</b>。AutoForge 按环境聚合去均值来缓解。❌ 模拟用户不稳定是另一障碍；课程停滞是 self-play 的通用问题。"
+    ]
+  }
+];
+
+const singleQuestions = [
+  {
+    options: ["Code executor（代码执行器）", "人类标注员", "神经网络判别器", "游戏规则引擎"],
+    correct: 0,
+    explanations: [
+      "✅ 正确：Absolute Zero 使用 <b>Code executor</b> 作为统一可验证 reward 来源，出题合法性由执行器校验，答案对错由执行器验证。",
+      "❌ 错误：Absolute Zero 的核心正是<b>零人工数据</b>，不使用人类标注员。",
+      "❌ 错误：神经网络判别器不可验证，存在 reward hacking 风险。",
+      "❌ 错误：游戏规则引擎是 SPIRAL/Vision-Zero 的 verifier，不是 Absolute Zero 的。"
+    ]
+  },
+  {
+    options: ["Relative Advantage Estimation", "Role-conditioned Advantage Estimation", "Return Advantage Estimation", "Recursive Advantage Estimation"],
+    correct: 1,
+    explanations: [
+      "❌ 错误：Relative Advantage Estimation 不是 SPIRAL 提出的术语。",
+      "✅ 正确：RAE = <b>Role-conditioned Advantage Estimation</b>，按 game×role 维护独立 baseline。",
+      "❌ 错误：Return Advantage Estimation 不是正确全称。",
+      "❌ 错误：Recursive Advantage Estimation 不是正确全称。"
+    ]
+  },
+  {
+    options: ["0%", "25%", "50%", "100%"],
+    correct: 2,
+    explanations: [
+      "❌ 错误：0% 通过率意味着题目太难，Solver 完全学不到。",
+      "❌ 错误：25% 虽然有一定信息量，但不是最大值点。",
+      "✅ 正确：通过率 <b>50%</b> 时二元熵最大（信息量最大），对应 edge-of-learnability 的最优点。",
+      "❌ 错误：100% 通过率意味着题目太简单，没有学习信号。"
+    ]
+  },
+  {
+    options: ["Absolute Zero", "SPIRAL", "R-Zero", "AutoForge"],
+    correct: 3,
+    explanations: [
+      "❌ 错误：Absolute Zero 属于"零数据自博弈"家族（自命题路线）。",
+      "❌ 错误：SPIRAL 属于"零数据自博弈"家族（自对弈路线）。",
+      "❌ 错误：R-Zero 属于"零数据自博弈"家族（双模型共进化）。",
+      "✅ 正确：AutoForge 属于"环境工业化"主线，解决环境自动合成问题。"
+    ]
+  },
+  {
+    options: ["dense per-turn rewards（逐回合稠密奖励）", "sparse rewards only（仅稀疏奖励）", "连续动作空间", "离线训练模式"],
+    correct: 0,
+    explanations: [
+      "✅ 正确：GEM 论文明确指出 ReBN 兼容 <b>dense per-turn rewards</b>，而 GRPO 的 outcome-level group 归一化不适合 multi-turn dense reward。",
+      "❌ 错误：GRPO 更适合 sparse reward，而不是 ReBN 的优势。",
+      "❌ 错误：两者都是用于离散动作空间（LLM 文本生成）。",
+      "❌ 错误：两者都是在线 RL 算法。"
+    ]
+  },
+  {
+    options: ["并行多任务梯度平均", "顺序子任务专属更新", "单任务逐层训练", "对抗训练框架"],
+    correct: 1,
+    explanations: [
+      "❌ 错误：并行梯度平均会导致异质信号冲突，正是 GIFT 要解决的问题。",
+      "✅ 正确：CST = Coordinated Subtask Training，核心是将一次混合更新拆为各子任务的<b>顺序专属更新</b>。",
+      "❌ 错误：不是单任务，而是多任务协调。",
+      "❌ 错误：CST 不是对抗训练。"
+    ]
+  },
+  {
+    options: ["纯文本", "代码", "视觉 / 多模态", "音频"],
+    correct: 2,
+    explanations: [
+      "❌ 错误：纯文本是 SPIRAL/Absolute Zero/R-Zero 的模态。",
+      "❌ 错误：代码是 Absolute Zero 的任务域，不是 Vision-Zero 的模态扩展。",
+      "✅ 正确：Vision-Zero 将 self-play 扩展到 <b>视觉/多模态</b>，在"谁是卧底"式视觉博弈中训练 VLM。",
+      "❌ 错误：音频不是 Vision-Zero 的模态。"
+    ]
+  },
+  {
+    options: ["任务分布坍缩", "环境异质性导致的 baseline 污染", "计算成本过高", "冷启动困难"],
+    correct: 1,
+    explanations: [
+      "❌ 错误：任务分布坍缩是零数据方法的通用风险，不是 env-level advantage 直接解决的。",
+      "✅ 正确：合成环境间难度/噪声差异大，per-trajectory baseline 会被环境偏置污染。<b>Environment-level advantage</b> 通过按环境聚合去均值来解决。",
+      "❌ 错误：env-level advantage 不直接降低计算成本。",
+      "❌ 错误：冷启动是另一个问题。"
+    ]
+  },
+  {
+    options: ["400 环境联合训练比 3× 算力原训练有效约 7 倍", "模型越大，推理能力提升越显著", "环境数量超过 100 后无额外收益", "自博弈训练优于程序化环境训练"],
+    correct: 0,
+    explanations: [
+      "✅ 正确：RLVE 的核心对照实验：400 环境 → +3.37%，3× 算力原训练 → +0.49%，效率比约 7 倍。",
+      "❌ 错误：RLVE 实验使用的是 1.5B 模型，核心结论是关于环境数量而非模型规模。",
+      "❌ 错误：RLVE 展示了环境数量与泛化能力的单调关系，未观察到饱和。",
+      "❌ 错误：RLVE 不比较自博弈与程序化环境，它们是互补路线。"
+    ]
+  },
+  {
+    options: ["+3%", "+10%", "+15%", "+20%"],
+    correct: 1,
+    explanations: [
+      "❌ 错误：+3% 接近 RLVE 的结果，不是 SPIRAL 的。",
+      "✅ 正确：SPIRAL 在 8 个推理 benchmark 上最高提升约 <b>+10%</b>，优于 25,000 条专家轨迹 SFT。",
+      "❌ 错误：SPIRAL 的最高增益约为 +10%，不是 +15%。",
+      "❌ 错误：SPIRAL 的最高增益约为 +10%，不是 +20%。"
+    ]
+  }
+];
+
+const multiQuestions = [
+  {
+    options: ["不依赖人工标注数据", "使用可验证环境提供奖励信号", "都使用单模型双角色架构", "共同风险包括分布坍缩和 reward hacking", "都基于零和博弈", "都可以直接扩展到多模态"],
+    correct: [0, 1, 3],
+    explanations: [
+      "✅ 正确：零数据家族的核心特征就是不依赖人工标注。",
+      "✅ 正确：都使用 code executor / 游戏规则 / 答案检查等可验证 verifier。",
+      "❌ 错误：只有 Absolute Zero 使用单模型双角色；R-Zero 是双模型；SPIRAL 是多智能体对弈。",
+      "✅ 正确：分布坍缩（mode collapse）和 reward hacking 是所有自生成信号方法的共同风险。",
+      "❌ 错误：Absolute Zero/R-Zero 不是基于零和博弈，而是自命题。",
+      "❌ 错误：只有 Vision-Zero 扩展到了多模态，其他方法需要额外适配。"
+    ]
+  },
+  {
+    options: ["多智能体训练中的非平稳对手", "不同角色的结构性优劣（如先手优势）", "全局 baseline 会被游戏结构污染", "减少训练所需的 GPU 显存", "提高采样效率", "解决稀疏奖励问题"],
+    correct: [0, 1, 2],
+    explanations: [
+      "✅ 正确：Self-play 的对手策略每轮都在变（非平稳），全局 baseline 失效。",
+      "✅ 正确：不同角色（先手/后手）有结构性优劣，需要分别估计期望回报。",
+      "✅ 正确：全局 baseline 无法区分"角色天然劣势"和"策略能力差"，导致梯度污染。",
+      "❌ 错误：RAE 反而增加了 baseline 的维护成本。",
+      "❌ 错误：RAE 不直接提高采样效率。",
+      "❌ 错误：RAE 解决的是 baseline 估计问题，不是稀疏奖励问题。"
+    ]
+  },
+  {
+    options: ["RLVE", "GEM", "AutoForge", "SPIRAL", "GIFT", "Absolute Zero"],
+    correct: [0, 1, 2],
+    explanations: [
+      "✅ 正确：RLVE 提出 environment scaling，属于环境工业化主线。",
+      "✅ 正确：GEM 提供训练基础设施（LLM 时代的 OpenAI Gym）。",
+      "✅ 正确：AutoForge 实现环境自动合成，补全生产层。",
+      "❌ 错误：SPIRAL 属于零数据自博弈家族。",
+      "❌ 错误：GIFT 属于游戏即非正式学习主线。",
+      "❌ 错误：Absolute Zero 属于零数据自博弈家族。"
+    ]
+  },
+  {
+    options: ["将单模型双角色解耦为双模型", "引入 edge-of-learnability reward 设计", "完全消除了课程坍缩风险", "训练成本降低一半", "课程更稳定", "支持多模态输入"],
+    correct: [0, 1, 4],
+    explanations: [
+      "✅ 正确：R-Zero 用 Challenger/Solver 两个独立模型，避免目标冲突。",
+      "✅ 正确：R-Zero 明确设计了 edge-of-learnability reward。",
+      "❌ 错误：R-Zero 并未完全消除课程坍缩，只是缓解了不稳定性。",
+      "❌ 错误：双模型训练成本约翻倍，而不是降低。",
+      "✅ 正确：双模型解耦使两个优化目标互不干扰，课程更稳定。",
+      "❌ 错误：R-Zero 是文本模态，多模态扩展由 Vision-Zero 完成。"
+    ]
+  },
+  {
+    options: ["无限课程 vs 信号有效性", "验证成本 vs 任务开放性", "环境多样性 vs 工程成本", "多智能体非平稳性", "模型规模 vs 推理速度", "数据隐私 vs 模型安全"],
+    correct: [0, 1, 2, 3],
+    explanations: [
+      "✅ 正确：Self-play 提供无限数据，但太易/太难都无梯度。",
+      "✅ 正确：Code executor 保证可验证，但只能覆盖代码可验证域。",
+      "✅ 正确：RLVE 证明 400 环境有效，但手工工程不可扩展。",
+      "✅ 正确：Self-play 对手持续变强，标准 RLVR baseline 失效。",
+      "❌ 错误：这不是合成环境 RL 特有的核心矛盾。",
+      "❌ 错误：这不是合成环境 RL 特有的核心矛盾。"
+    ]
+  },
+  {
+    options: ["提出 informal learning 概念框架", "提出 CST 协调子任务训练", "证明游戏化非正式学习带来超出纯正式训练的泛化", "自动化环境合成", "自适应难度机制", "覆盖推理/规划/创造力/社会智能的能力面"],
+    correct: [0, 1, 2, 5],
+    explanations: [
+      "✅ 正确：GIFT 借鉴人类"正式教育+非正式游戏经验"的类比。",
+      "✅ 正确：CST 是 GIFT 的核心方法贡献。",
+      "✅ 正确：实验证明游戏混合训练在通用能力评测上超过纯数学训练。",
+      "❌ 错误：自动化环境合成是 AutoForge 的贡献。",
+      "❌ 错误：自适应难度是 RLVE 的贡献。",
+      "✅ 正确：GIFT 用 Matrix Games/TicTacToe/Who's the Spy 覆盖四类能力。"
+    ]
+  }
+];
+
+const trueFalseQuestions = [
+  {
+    statement: "Absolute Zero 使用两个独立模型分别扮演 Proposer 和 Solver。",
+    correct: false,
+    explanationCorrect: "✅ 正确理解：<b>Absolute Zero 使用单一模型</b>同时扮演 Proposer 和 Solver（参数共享），这是它与 R-Zero（双模型解耦）的核心区别。",
+    explanationWrong: "❌ 常见误解：把 Absolute Zero 和 R-Zero 的架构搞混。Absolute Zero 是<b>单模型双角色</b>，R-Zero 才是 Challenger/Solver 双模型。"
+  },
+  {
+    statement: "RLVE 证明环境数量是新的 scale 轴，400 环境联合训练比 3× 算力的原训练更有效。",
+    correct: true,
+    explanationCorrect: "✅ 正确：RLVE 的对照实验显示，400 环境联合训练在 6 个推理 benchmark 平均提升 +3.37%，而 3× 算力继续原训练仅 +0.49%。",
+    explanationWrong: "❌ 误解：实际上"换环境"确实比"堆算力"高效得多，这是 RLVE 最具说服力的实验结果。"
+  },
+  {
+    statement: "SPIRAL 的 RAE 与 AutoForge 的 environment-level advantage 本质上是同一分层去均值思想在不同轴上的应用。",
+    correct: true,
+    explanationCorrect: "✅ 正确：两者都是<b>分层 baseline 估计</b>——RAE 按 game×role 去均值，env-level advantage 按环境去均值，都是对混淆因子做条件化。",
+    explanationWrong: "❌ 误解：这不是巧合，而是 agentic RL 中条件化 baseline 正在收敛为标准设计模式。"
+  },
+  {
+    statement: "GRPO 可以完美兼容 dense per-turn reward 的设定，这是它相比 PPO 的优势之一。",
+    correct: false,
+    explanationCorrect: "✅ 正确理解：GEM 论文明确指出 <b>GRPO 不适合 dense per-turn reward</b>。GRPO 做 outcome-level group 归一化，multi-turn POMDP 需要 per-turn 信号时 GRPO 失效。",
+    explanationWrong: "❌ 常见误解：GRPO 省掉了价值模型，但它的 group 归一化假设所有回合共享同一个 outcome reward，无法处理每回合都有独立 reward 的情况。"
+  },
+  {
+    statement: "R-Zero 的 edge-of-learnability 设计意味着 Proposer 应该总是出 Solver 100% 能答对的题目。",
+    correct: false,
+    explanationCorrect: "✅ 正确理解：Edge-of-learnability 追求的是 <b>通过率 50%</b> 的题目。100% 通过率的题没有学习信号，0% 的题也没有——信息量在最"不确定"时最大。",
+    explanationWrong: "❌ 常见误解：把"可学习"等同于"一定能答对"。实际上最难但仍有概率答对的题信息量最大，这与主动学习理论相通。"
+  },
+  {
+    statement: "GIFT 的 CST 方法通过并行同时更新所有子任务来防止多任务训练中的梯度冲突。",
+    correct: false,
+    explanationCorrect: "✅ 正确理解：CST 是 <b>顺序</b> 子任务专属更新（Sequential），不是并行同时更新。直接混合更新才会导致梯度冲突，CST 通过顺序分离异质信号来避免。",
+    explanationWrong: "❌ 常见误解：把 CST 和 PCGrad/CAGrad 等"梯度投影"方法混淆。CST 更简单——不需要计算梯度冲突角，只需轮流更新各子任务。"
+  }
+];
+
+// ==================== 全局状态 ====================
+
+const allQuestions = [];
+let currentType = 'drag';
+let currentIndex = 0;
+let dragState = Array(dragQuestions.length).fill(null).map(() => ({ filled: [], checked: false, correct: null, score: 0 }));
+let singleState = Array(singleQuestions.length).fill(null).map(() => ({ selected: null, checked: false, correct: null, score: 0 }));
+let multiState = Array(multiQuestions.length).fill(null).map(() => ({ selected: [], checked: false, correct: null, score: 0 }));
+let tfState = Array(trueFalseQuestions.length).fill(null).map(() => ({ selected: null, checked: false, correct: null, score: 0 }));
+
+// 初始化 allQuestions（用于总览面板和总分计算）
+function initAllQuestions() {
+  allQuestions.length = 0;
+  dragQuestions.forEach((_, i) => allQuestions.push({ type: 'drag', index: i, state: dragState[i] }));
+  singleQuestions.forEach((_, i) => allQuestions.push({ type: 'single', index: i, state: singleState[i] }));
+  multiQuestions.forEach((_, i) => allQuestions.push({ type: 'multi', index: i, state: multiState[i] }));
+  trueFalseQuestions.forEach((_, i) => allQuestions.push({ type: 'tf', index: i, state: tfState[i] }));
+}
+
+// ==================== 拖拽填空逻辑 ====================
+
+function initDrag() {
+  document.querySelectorAll('.drag-item').forEach(item => {
+    item.addEventListener('dragstart', e => { item.classList.add('dragging'); e.dataTransfer.setData('text', item.dataset.value); });
+    item.addEventListener('dragend', () => item.classList.remove('dragging'));
+    item.addEventListener('click', () => {
+      const qIdx = parseInt(item.closest('.drag-pool').dataset.question);
+      if (dragState[qIdx].checked) return;
+      const zones = document.querySelectorAll(`.question-card[data-type="drag"][data-index="${qIdx}"] .drop-zone`);
+      for (let z of zones) {
+        if (!z.textContent.trim()) { z.textContent = item.dataset.value; z.classList.add('filled'); item.classList.add('used'); break; }
+      }
+      updateDragState(qIdx);
+    });
+  });
+  document.querySelectorAll('.drop-zone').forEach(zone => {
+    zone.addEventListener('dragover', e => e.preventDefault());
+    zone.addEventListener('drop', e => {
+      e.preventDefault();
+      const qIdx = parseInt(zone.closest('.question-card').dataset.index);
+      if (dragState[qIdx].checked) return;
+      const val = e.dataTransfer.getData('text');
+      const item = document.querySelector(`.drag-pool[data-question="${qIdx}"] .drag-item[data-value="${val}"]`);
+      if (item && !zone.textContent.trim()) { zone.textContent = val; zone.classList.add('filled'); item.classList.add('used'); }
+      updateDragState(qIdx);
+    });
+    zone.addEventListener('click', () => {
+      const qIdx = parseInt(zone.closest('.question-card').dataset.index);
+      if (dragState[qIdx].checked) return;
+      const val = zone.textContent.trim();
+      if (val) {
+        const item = document.querySelector(`.drag-pool[data-question="${qIdx}"] .drag-item[data-value="${val}"]`);
+        if (item) item.classList.remove('used');
+        zone.textContent = ''; zone.classList.remove('filled');
+      }
+      updateDragState(qIdx);
+    });
+  });
+}
+
+function updateDragState(qIdx) {
+  const zones = document.querySelectorAll(`.question-card[data-type="drag"][data-index="${qIdx}"] .drop-zone`);
+  dragState[qIdx].filled = Array.from(zones).map(z => z.textContent.trim());
+}
+
+function checkDrag(qIdx) {
+  const st = dragState[qIdx];
+  if (st.filled.some(v => !v)) { alert('请填满所有空格'); return; }
+  st.checked = true;
+  const q = dragQuestions[qIdx];
+  let allCorrect = true;
+  const zones = document.querySelectorAll(`.question-card[data-type="drag"][data-index="${qIdx}"] .drop-zone`);
+  zones.forEach((zone, i) => {
+    const correct = q.answers[i];
+    const filled = st.filled[i];
+    if (filled === correct) { zone.classList.add('correct'); }
+    else { zone.classList.add('wrong'); allCorrect = false; }
+  });
+  st.correct = allCorrect;
+  st.score = allCorrect ? 1 : 0;
+  const exp = document.getElementById(`exp-drag-${qIdx}`);
+  exp.classList.add('show', allCorrect ? 'correct' : 'wrong');
+  exp.querySelector('.explanation-title').textContent = allCorrect ? '✅ 回答正确' : '❌ 回答错误';
+  exp.querySelector('.explanation-text').innerHTML = q.explanations.map((e, i) => `<p><b>空格 ${i+1}：</b>${e}</p>`).join('');
+  updateScore();
+}
+
+function resetDrag(qIdx) {
+  dragState[qIdx] = { filled: [], checked: false, correct: null, score: 0 };
+  const card = document.querySelector(`.question-card[data-type="drag"][data-index="${qIdx}"]`);
+  card.querySelectorAll('.drop-zone').forEach(z => { z.textContent = ''; z.className = 'drop-zone'; });
+  card.querySelectorAll('.drag-item').forEach(item => item.classList.remove('used'));
+  const exp = document.getElementById(`exp-drag-${qIdx}`);
+  exp.className = 'explanation';
+  updateScore();
+}
+
+// ==================== 单选逻辑 ====================
+
+function selectSingle(qIdx, optIdx) {
+  if (singleState[qIdx].checked) return;
+  singleState[qIdx].selected = optIdx;
+  const opts = document.querySelectorAll(`.question-card[data-type="single"][data-index="${qIdx}"] .option`);
+  opts.forEach((o, i) => o.classList.toggle('selected', i === optIdx));
+}
+
+function checkSingle(qIdx) {
+  const st = singleState[qIdx];
+  if (st.selected === null) { alert('请选择一个选项'); return; }
+  st.checked = true;
+  const q = singleQuestions[qIdx];
+  const opts = document.querySelectorAll(`.question-card[data-type="single"][data-index="${qIdx}"] .option`);
+  opts.forEach((o, i) => {
+    o.classList.remove('selected');
+    if (i === q.correct) o.classList.add('correct-ans');
+    else if (i === st.selected) o.classList.add('wrong-ans');
+  });
+  st.correct = st.selected === q.correct;
+  st.score = st.correct ? 1 : 0;
+  const exp = document.getElementById(`exp-single-${qIdx}`);
+  exp.classList.add('show', st.correct ? 'correct' : 'wrong');
+  exp.querySelector('.explanation-title').textContent = st.correct ? '✅ 回答正确' : '❌ 回答错误';
+  exp.querySelector('.explanation-text').innerHTML = q.explanations.map((e, i) => `<p>${e}</p>`).join('');
+  updateScore();
+}
+
+function resetSingle(qIdx) {
+  singleState[qIdx] = { selected: null, checked: false, correct: null, score: 0 };
+  const card = document.querySelector(`.question-card[data-type="single"][data-index="${qIdx}"]`);
+  card.querySelectorAll('.option').forEach(o => o.className = 'option');
+  const exp = document.getElementById(`exp-single-${qIdx}`);
+  exp.className = 'explanation';
+  updateScore();
+}
+
+// ==================== 多选逻辑 ====================
+
+function toggleMulti(qIdx, optIdx) {
+  if (multiState[qIdx].checked) return;
+  const sel = multiState[qIdx].selected;
+  const pos = sel.indexOf(optIdx);
+  if (pos >= 0) sel.splice(pos, 1); else sel.push(optIdx);
+  const opts = document.querySelectorAll(`.question-card[data-type="multi"][data-index="${qIdx}"] .option`);
+  opts.forEach((o, i) => o.classList.toggle('selected', sel.includes(i)));
+}
+
+function checkMulti(qIdx) {
+  const st = multiState[qIdx];
+  if (st.selected.length === 0) { alert('请至少选择一个选项'); return; }
+  st.checked = true;
+  const q = multiQuestions[qIdx];
+  const opts = document.querySelectorAll(`.question-card[data-type="multi"][data-index="${qIdx}"] .option`);
+  let allCorrect = true;
+  opts.forEach((o, i) => {
+    o.classList.remove('selected');
+    const isCorrect = q.correct.includes(i);
+    const isSelected = st.selected.includes(i);
+    if (isCorrect) o.classList.add('correct-ans');
+    else if (isSelected) { o.classList.add('wrong-ans'); allCorrect = false; }
+    if (!isCorrect && !isSelected) allCorrect = false;
+  });
+  st.correct = allCorrect;
+  st.score = allCorrect ? 1 : 0;
+  const exp = document.getElementById(`exp-multi-${qIdx}`);
+  exp.classList.add('show', allCorrect ? 'correct' : 'wrong');
+  exp.querySelector('.explanation-title').textContent = allCorrect ? '✅ 回答正确' : '❌ 回答错误';
+  exp.querySelector('.explanation-text').innerHTML = q.explanations.map((e, i) => `<p><b>${String.fromCharCode(65+i)}：</b>${e}</p>`).join('');
+  updateScore();
+}
+
+function resetMulti(qIdx) {
+  multiState[qIdx] = { selected: [], checked: false, correct: null, score: 0 };
+  const card = document.querySelector(`.question-card[data-type="multi"][data-index="${qIdx}"]`);
+  card.querySelectorAll('.option').forEach(o => o.className = 'option');
+  const exp = document.getElementById(`exp-multi-${qIdx}`);
+  exp.className = 'explanation';
+  updateScore();
+}
+
+// ==================== 判断题逻辑 ====================
+
+function selectTf(qIdx, val) {
+  if (tfState[qIdx].checked) return;
+  tfState[qIdx].selected = val;
+  const btns = document.querySelectorAll(`.question-card[data-type="tf"][data-index="${qIdx}"] .tf-btn`);
+  btns.forEach((b, i) => b.classList.toggle('selected', i === (val ? 0 : 1)));
+}
+
+function checkTf(qIdx) {
+  const st = tfState[qIdx];
+  if (st.selected === null) { alert('请选择正确或错误'); return; }
+  st.checked = true;
+  const q = trueFalseQuestions[qIdx];
+  const btns = document.querySelectorAll(`.question-card[data-type="tf"][data-index="${qIdx}"] .tf-btn`);
+  btns.forEach(b => b.classList.remove('selected'));
+  if (q.correct) btns[0].classList.add('correct-ans');
+  else btns[1].classList.add('correct-ans');
+  if (st.selected !== q.correct) {
+    btns[st.selected ? 0 : 1].classList.add('wrong-ans');
+  }
+  st.correct = st.selected === q.correct;
+  st.score = st.correct ? 1 : 0;
+  const exp = document.getElementById(`exp-tf-${qIdx}`);
+  exp.classList.add('show', st.correct ? 'correct' : 'wrong');
+  exp.querySelector('.explanation-title').textContent = st.correct ? '✅ 回答正确' : '❌ 回答错误';
+  exp.querySelector('.explanation-text').innerHTML = `<p>${st.correct ? q.explanationCorrect : q.explanationWrong}</p>`;
+  updateScore();
+}
+
+function resetTf(qIdx) {
+  tfState[qIdx] = { selected: null, checked: false, correct: null, score: 0 };
+  const card = document.querySelector(`.question-card[data-type="tf"][data-index="${qIdx}"]`);
+  card.querySelectorAll('.tf-btn').forEach(b => b.className = 'tf-btn');
+  const exp = document.getElementById(`exp-tf-${qIdx}`);
+  exp.className = 'explanation';
+  updateScore();
+}
+
+// ==================== 分数与进度 ====================
+
+function updateScore() {
+  let totalScore = 0, totalMax = 0;
+  dragState.forEach(s => { totalScore += s.score; totalMax += 1; });
+  singleState.forEach(s => { totalScore += s.score; totalMax += 1; });
+  multiState.forEach(s => { totalScore += s.score; totalMax += 1; });
+  tfState.forEach(s => { totalScore += s.score; totalMax += 1; });
+  document.getElementById('scoreValue').textContent = totalScore;
+  document.getElementById('totalValue').textContent = totalMax;
+  const pct = totalMax > 0 ? Math.round(totalScore / totalMax * 100) : 0;
+  document.getElementById('accuracyValue').textContent = pct + '%';
+  document.getElementById('progressBar').style.width = pct + '%';
+  updateProgressText();
+}
+
+function updateProgressText() {
+  const typeNames = { drag: '拖拽填空', single: '单选题', multi: '多选题', tf: '判断题' };
+  const idx = currentIndex + 1;
+  const total = getQuestionsByType(currentType).length;
+  document.getElementById('progressText').textContent = `${typeNames[currentType]} 第 ${idx}/${total} 题`;
+}
+
+function getQuestionsByType(type) {
+  if (type === 'drag') return dragQuestions;
+  if (type === 'single') return singleQuestions;
+  if (type === 'multi') return multiQuestions;
+  return trueFalseQuestions;
+}
+
+// ==================== 导航 ====================
+
+function showQuestion(type, index) {
+  currentType = type; currentIndex = index;
+  document.querySelectorAll('.question-card').forEach(c => c.classList.remove('active'));
+  const target = document.querySelector(`.question-card[data-type="${type}"][data-index="${index}"]`);
+  if (target) target.classList.add('active');
+  document.querySelectorAll('.tab-btn').forEach(t => t.classList.toggle('active', t.dataset.type === type));
+  updateProgressText();
+}
+
+function switchType(type) {
+  currentType = type; currentIndex = 0;
+  showQuestion(type, 0);
+}
+
+function nextQuestion() {
+  const total = getQuestionsByType(currentType).length;
+  if (currentIndex < total - 1) showQuestion(currentType, currentIndex + 1);
+  else {
+    // 跳到下一个题型
+    const types = ['drag', 'single', 'multi', 'tf'];
+    const idx = types.indexOf(currentType);
+    if (idx < types.length - 1) switchType(types[idx + 1]);
+    else showResult();
+  }
+}
+
+function prevQuestion() {
+  if (currentIndex > 0) showQuestion(currentType, currentIndex - 1);
+  else {
+    const types = ['drag', 'single', 'multi', 'tf'];
+    const idx = types.indexOf(currentType);
+    if (idx > 0) {
+      const prevType = types[idx - 1];
+      const prevTotal = getQuestionsByType(prevType).length;
+      currentType = prevType; currentIndex = prevTotal - 1;
+      showQuestion(prevType, prevTotal - 1);
+    }
+  }
+}
+
+// ==================== 总览面板 ====================
+
+function openDashboard() {
+  renderDashboardGrid('all');
+  document.getElementById('dashboardOverlay').classList.add('open');
+}
+
+function closeDashboard(e) {
+  if (!e || e.target === document.getElementById('dashboardOverlay')) {
+    document.getElementById('dashboardOverlay').classList.remove('open');
+  }
+}
+
+let currentFilter = 'all';
+function filterDashboard(filter) {
+  currentFilter = filter;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.textContent.includes(filter === 'all' ? '全部' : filter === 'correct' ? '正确' : filter === 'wrong' ? '错误' : '未答')));
+  renderDashboardGrid(filter);
+}
+
+function renderDashboardGrid(filter) {
+  const grid = document.getElementById('dashboardGrid');
+  grid.innerHTML = '';
+  const typeLabels = { drag: '填', single: '单', multi: '多', tf: '判' };
+  allQuestions.forEach((q, globalIdx) => {
+    const st = q.state;
+    let status = 'unanswered';
+    if (st.checked) status = st.correct ? 'correct' : 'wrong';
+    if (filter !== 'all' && status !== filter) return;
+    const item = document.createElement('div');
+    item.className = `dashboard-item ${status}`;
+    item.innerHTML = `<div class="d-num">${globalIdx + 1}</div><div class="d-type">${typeLabels[q.type]}</div>`;
+    item.onclick = () => { closeDashboard(); showQuestion(q.type, q.index); };
+    grid.appendChild(item);
+  });
+}
+
+// ==================== 结果页 ====================
+
+function showResult() {
+  document.querySelector('.container').classList.add('hidden');
+  document.getElementById('navBar').classList.add('hidden');
+  document.getElementById('tabBar').classList.add('hidden');
+  document.getElementById('scoreBar').classList.add('hidden');
+  document.getElementById('progressText').classList.add('hidden');
+  const result = document.getElementById('resultPage');
+  result.classList.add('show');
+  let totalScore = 0, totalMax = 0, correct = 0, wrong = 0, unanswered = 0;
+  allQuestions.forEach(q => {
+    totalMax += 1;
+    if (q.state.checked) {
+      totalScore += q.state.score;
+      if (q.state.correct) correct++; else wrong++;
+    } else unanswered++;
+  });
+  document.getElementById('resultScore').textContent = totalScore;
+  document.getElementById('resultTotal').textContent = totalMax;
+  document.getElementById('statCorrect').textContent = correct;
+  document.getElementById('statWrong').textContent = wrong;
+  document.getElementById('statUnanswered').textContent = unanswered;
+}
+
+function continueQuiz() {
+  document.getElementById('resultPage').classList.remove('show');
+  document.querySelector('.container').classList.remove('hidden');
+  document.getElementById('navBar').classList.remove('hidden');
+  document.getElementById('tabBar').classList.remove('hidden');
+  document.getElementById('scoreBar').classList.remove('hidden');
+  document.getElementById('progressText').classList.remove('hidden');
+  showQuestion(currentType, currentIndex);
+}
+
+// ==================== 洗牌 ====================
+
+function shuffleArray(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+
+function shuffleAllQuestions() {
+  if (!confirm('重新洗牌将清空所有答题记录，确定继续？')) return;
+  // 单选洗牌
+  singleQuestions.forEach(q => {
+    const pairs = q.options.map((opt, i) => ({ opt, expl: q.explanations[i] }));
+    shuffleArray(pairs);
+    q.options = pairs.map(p => p.opt);
+    q.explanations = pairs.map(p => p.expl);
+    q.correct = pairs.findIndex(p => p.expl.startsWith('✅'));
+  });
+  // 多选洗牌
+  multiQuestions.forEach(q => {
+    const pairs = q.options.map((opt, i) => ({ opt, expl: q.explanations[i] }));
+    shuffleArray(pairs);
+    q.options = pairs.map(p => p.opt);
+    q.explanations = pairs.map(p => p.expl);
+    // 重新映射正确答案索引
+    const oldCorrect = q.correct;
+    const newCorrect = oldCorrect.map(oldIdx => pairs.findIndex(p => p.expl === q.explanations[oldIdx]));
+    q.correct = newCorrect;
+  });
+  // 清空状态
+  resetAll();
+  // 重新渲染单选/多选选项
+  singleQuestions.forEach((_, i) => {
+    const card = document.querySelector(`.question-card[data-type="single"][data-index="${i}"]`);
+    const optsDiv = card.querySelector('.options');
+    optsDiv.innerHTML = '';
+    _.options.forEach((opt, j) => {
+      const div = document.createElement('div');
+      div.className = 'option';
+      div.dataset.value = j;
+      div.onclick = () => selectSingle(i, j);
+      div.innerHTML = `<span class="option-marker">${String.fromCharCode(65+j)}</span><span class="option-text">${opt}</span>`;
+      optsDiv.appendChild(div);
+    });
+  });
+  multiQuestions.forEach((q, i) => {
+    const card = document.querySelector(`.question-card[data-type="multi"][data-index="${i}"]`);
+    const optsDiv = card.querySelector('.options');
+    optsDiv.innerHTML = '';
+    q.options.forEach((opt, j) => {
+      const div = document.createElement('div');
+      div.className = 'option';
+      div.dataset.value = j;
+      div.onclick = () => toggleMulti(i, j);
+      div.innerHTML = `<span class="option-marker">${String.fromCharCode(65+j)}</span><span class="option-text">${opt}</span>`;
+      optsDiv.appendChild(div);
+    });
+  });
+  alert('选项已重新洗牌！');
+}
+
+// ==================== 重置全部 ====================
+
+function resetAll() {
+  dragState = Array(dragQuestions.length).fill(null).map(() => ({ filled: [], checked: false, correct: null, score: 0 }));
+  singleState = Array(singleQuestions.length).fill(null).map(() => ({ selected: null, checked: false, correct: null, score: 0 }));
+  multiState = Array(multiQuestions.length).fill(null).map(() => ({ selected: [], checked: false, correct: null, score: 0 }));
+  tfState = Array(trueFalseQuestions.length).fill(null).map(() => ({ selected: null, checked: false, correct: null, score: 0 }));
+  initAllQuestions();
+  // 恢复 UI
+  document.querySelectorAll('.drop-zone').forEach(z => { z.textContent = ''; z.className = 'drop-zone'; });
+  document.querySelectorAll('.drag-item').forEach(item => item.classList.remove('used'));
+  document.querySelectorAll('.option').forEach(o => o.className = 'option');
+  document.querySelectorAll('.tf-btn').forEach(b => b.className = 'tf-btn');
+  document.querySelectorAll('.explanation').forEach(e => e.className = 'explanation');
+  document.querySelector('.container').classList.remove('hidden');
+  document.getElementById('navBar').classList.remove('hidden');
+  document.getElementById('tabBar').classList.remove('hidden');
+  document.getElementById('scoreBar').classList.remove('hidden');
+  document.getElementById('progressText').classList.remove('hidden');
+  document.getElementById('resultPage').classList.remove('show');
+  currentType = 'drag'; currentIndex = 0;
+  showQuestion('drag', 0);
+  updateScore();
+}
+
+// ==================== 初始化 ====================
+
+initAllQuestions();
+initDrag();
+updateScore();
+showQuestion('drag', 0);
+</script>
+
+</body>
+</html>

@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Game Agent 执行系统 - 互动知识卡牌</title>
+<style>
+:root {
+    --bg: #f5f0e8;
+    --card-bg: #ffffff;
+    --primary: #5c4033;
+    --accent: #c4956a;
+    --success: #4a7c59;
+    --error: #b85c5c;
+    --warn: #c49a3c;
+    --text: #2d2d2d;
+    --text-light: #666666;
+    --border: #ddd5c7;
+    --shadow: rgba(92,64,51,0.08);
+    --radius: 12px;
+    --radius-sm: 8px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.6;
+    min-height: 100vh; padding-bottom: 120px;
+}
+.header {
+    background: linear-gradient(135deg, var(--primary) 0%, #3d2b22 100%);
+    color: white; padding: 24px 20px; text-align: center;
+    position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px var(--shadow);
+}
+.header h1 { font-size: 1.4rem; margin-bottom: 6px; letter-spacing: 1px; }
+.header p { font-size: 0.85rem; opacity: 0.8; }
+.nav-tabs {
+    display: flex; justify-content: center; gap: 8px; margin-top: 16px; flex-wrap: wrap;
+}
+.nav-tab {
+    padding: 8px 18px; border: 1px solid rgba(255,255,255,0.25);
+    background: rgba(255,255,255,0.08); color: white; border-radius: 20px;
+    cursor: pointer; font-size: 0.85rem; transition: all 0.25s; user-select: none;
+}
+.nav-tab:hover { background: rgba(255,255,255,0.2); }
+.nav-tab.active { background: var(--accent); border-color: var(--accent); font-weight: 600; }
+.score-bar {
+    background: var(--card-bg); padding: 14px 20px;
+    display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 10px;
+    position: sticky; top: 112px; z-index: 90;
+}
+.score-info { display: flex; gap: 18px; font-size: 0.9rem; }
+.score-info span { font-weight: 600; color: var(--primary); }
+.progress-wrap { flex: 1; max-width: 400px; display: flex; align-items: center; gap: 10px; }
+.progress-text { font-size: 0.8rem; color: var(--text-light); white-space: nowrap; }
+.progress-track { flex: 1; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--primary)); border-radius: 4px; transition: width 0.4s ease; width: 0%; }
+.controls {
+    display: flex; justify-content: center; gap: 10px; padding: 12px 20px;
+    background: var(--card-bg); border-bottom: 1px solid var(--border); flex-wrap: wrap;
+    position: sticky; top: 164px; z-index: 80;
+}
+.btn {
+    padding: 8px 16px; border: 1px solid var(--border); background: var(--card-bg);
+    border-radius: var(--radius-sm); cursor: pointer; font-size: 0.85rem;
+    transition: all 0.2s; color: var(--text);
+}
+.btn:hover { background: var(--bg); border-color: var(--accent); }
+.btn.primary { background: var(--primary); color: white; border-color: var(--primary); }
+.btn.primary:hover { background: #4a332a; }
+.btn.success { background: var(--success); color: white; border-color: var(--success); }
+.btn.warn { background: var(--warn); color: white; border-color: var(--warn); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.container { max-width: 800px; margin: 0 auto; padding: 20px; }
+.question-type-section { display: none; }
+.question-type-section.active { display: block; }
+.q-card {
+    background: var(--card-bg); border-radius: var(--radius); padding: 24px;
+    margin-bottom: 20px; box-shadow: 0 2px 8px var(--shadow);
+    border: 1px solid var(--border); animation: fadeIn 0.3s ease;
+}
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.q-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+.q-number { background: var(--primary); color: white; padding: 4px 12px; border-radius: 12px; font-size: 0.8rem; font-weight: 600; }
+.q-type-label { font-size: 0.75rem; color: var(--text-light); border: 1px solid var(--border); padding: 2px 10px; border-radius: 10px; }
+.q-text { font-size: 1.05rem; margin-bottom: 18px; line-height: 1.7; }
+.q-text code { background: #f0ebe3; padding: 2px 6px; border-radius: 4px; font-family: "Consolas","Monaco",monospace; font-size: 0.9em; }
+.drag-drop-zone {
+    display: inline-block; min-width: 100px; min-height: 36px; border: 2px dashed var(--accent);
+    border-radius: var(--radius-sm); background: #faf6f0; vertical-align: middle;
+    margin: 0 4px; padding: 4px 10px; text-align: center; cursor: pointer; transition: all 0.2s;
+}
+.drag-drop-zone.filled { border-style: solid; background: #f0ebe3; }
+.drag-drop-zone.correct { border-color: var(--success); background: #e8f5e9; }
+.drag-drop-zone.wrong { border-color: var(--error); background: #fce4e4; }
+.drag-options { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; padding: 14px; background: var(--bg); border-radius: var(--radius-sm); }
+.drag-item {
+    padding: 8px 16px; background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); cursor: grab; font-size: 0.9rem; user-select: none; transition: all 0.15s;
+}
+.drag-item:hover { border-color: var(--accent); box-shadow: 0 2px 6px var(--shadow); }
+.drag-item:active { cursor: grabbing; }
+.drag-item.used { opacity: 0.4; pointer-events: none; }
+.options { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+.option {
+    display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px;
+    border: 1.5px solid var(--border); border-radius: var(--radius-sm); cursor: pointer;
+    transition: all 0.2s; background: var(--card-bg);
+}
+.option:hover { border-color: var(--accent); background: #fdfaf5; }
+.option.selected { border-color: var(--primary); background: #f5f0e8; }
+.option.correct-ans { border-color: var(--success); background: #e8f5e9; }
+.option.wrong-ans { border-color: var(--error); background: #fce4e4; }
+.option input { margin-top: 3px; accent-color: var(--primary); }
+.option-label { font-weight: 600; min-width: 28px; color: var(--primary); }
+.option-text { flex: 1; }
+.tf-options { display: flex; gap: 16px; justify-content: center; margin: 16px 0; }
+.tf-btn {
+    flex: 1; max-width: 140px; padding: 14px 20px; border: 2px solid var(--border);
+    border-radius: var(--radius); cursor: pointer; text-align: center;
+    font-size: 1rem; font-weight: 600; transition: all 0.2s; background: var(--card-bg);
+}
+.tf-btn:hover { border-color: var(--accent); }
+.tf-btn.selected { border-color: var(--primary); background: #f5f0e8; }
+.tf-btn.correct-ans { border-color: var(--success); background: #e8f5e9; }
+.tf-btn.wrong-ans { border-color: var(--error); background: #fce4e4; }
+.feedback {
+    margin-top: 16px; padding: 16px; border-radius: var(--radius-sm);
+    display: none; font-size: 0.92rem; line-height: 1.7;
+}
+.feedback.show { display: block; }
+.feedback.correct { background: #e8f5e9; border-left: 4px solid var(--success); }
+.feedback.wrong { background: #fce4e4; border-left: 4px solid var(--error); }
+.feedback-title { font-weight: 700; margin-bottom: 6px; }
+.feedback.correct .feedback-title { color: var(--success); }
+.feedback.wrong .feedback-title { color: var(--error); }
+.slot-explanation { margin: 8px 0; padding: 8px 12px; background: rgba(0,0,0,0.03); border-radius: 6px; }
+.slot-explanation.correct-slot { border-left: 3px solid var(--success); }
+.slot-explanation.wrong-slot { border-left: 3px solid var(--error); }
+.q-nav { display: flex; justify-content: space-between; align-items: center; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border); }
+.dashboard-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200;
+    display: none; align-items: center; justify-content: center; padding: 20px;
+}
+.dashboard-overlay.open { display: flex; }
+.dashboard {
+    background: var(--card-bg); border-radius: var(--radius); max-width: 700px;
+    width: 100%; max-height: 85vh; overflow: hidden; display: flex; flex-direction: column;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+}
+.dashboard-header { padding: 18px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+.dashboard-header h2 { font-size: 1.1rem; color: var(--primary); }
+.dashboard-close { font-size: 1.4rem; cursor: pointer; color: var(--text-light); padding: 4px; }
+.dashboard-close:hover { color: var(--error); }
+.dashboard-filters { display: flex; gap: 8px; padding: 12px 24px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.filter-btn { padding: 5px 14px; border: 1px solid var(--border); border-radius: 14px; cursor: pointer; font-size: 0.8rem; background: var(--card-bg); transition: all 0.2s; }
+.filter-btn:hover, .filter-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+.dashboard-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); gap: 8px; padding: 20px 24px; overflow-y: auto; }
+.thumb { aspect-ratio: 1; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 600; cursor: pointer; border: 2px solid var(--border); transition: all 0.15s; background: var(--card-bg); }
+.thumb:hover { transform: scale(1.08); border-color: var(--accent); }
+.thumb.answered { border-color: var(--warn); background: #fff8e6; }
+.thumb.correct { border-color: var(--success); background: #e8f5e9; color: var(--success); }
+.thumb.wrong { border-color: var(--error); background: #fce4e4; color: var(--error); }
+.result-page { display: none; text-align: center; padding: 40px 20px; animation: fadeIn 0.5s ease; }
+.result-page.show { display: block; }
+.result-score { font-size: 3.5rem; font-weight: 700; color: var(--primary); margin: 16px 0; }
+.result-grade { font-size: 1.2rem; color: var(--text-light); margin-bottom: 24px; }
+.result-breakdown { display: flex; justify-content: center; gap: 24px; margin: 24px 0; flex-wrap: wrap; }
+.breakdown-item { background: var(--card-bg); padding: 14px 20px; border-radius: var(--radius); border: 1px solid var(--border); min-width: 120px; }
+.breakdown-item .label { font-size: 0.8rem; color: var(--text-light); }
+.breakdown-item .value { font-size: 1.3rem; font-weight: 700; color: var(--primary); margin-top: 4px; }
+.result-actions { display: flex; gap: 14px; justify-content: center; margin-top: 30px; flex-wrap: wrap; }
+@media (max-width: 600px) {
+    .header h1 { font-size: 1.1rem; }
+    .score-bar { flex-direction: column; align-items: flex-start; }
+    .progress-wrap { max-width: 100%; width: 100%; }
+    .q-card { padding: 16px; }
+    .dashboard-grid { grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); }
+}
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+<header class="header">
+    <h1>🎮 Game Agent 执行系统</h1>
+    <p>互动知识卡牌 — 从动作抽象到可验证评测</p>
+    <nav class="nav-tabs">
+        <button class="nav-tab active" data-type="drag" onclick="switchType('drag')">🧩 拖拽填空</button>
+        <button class="nav-tab" data-type="single" onclick="switchType('single')">🔘 单选题</button>
+        <button class="nav-tab" data-type="multi" onclick="switchType('multi')">☑️ 多选题</button>
+        <button class="nav-tab" data-type="tf" onclick="switchType('tf')">⚖️ 判断题</button>
+    </nav>
+</header>
+<div class="score-bar" id="scoreBar">
+    <div class="score-info">
+        <div>✅ 正确: <span id="correctCount">0</span></div>
+        <div>❌ 错误: <span id="wrongCount">0</span></div>
+        <div>📊 得分: <span id="scoreDisplay">0</span> / <span id="totalScore">0</span></div>
+    </div>
+    <div class="progress-wrap">
+        <span class="progress-text" id="progressText">0 / 0</span>
+        <div class="progress-track"><div class="progress-fill" id="progressBar"></div></div>
+    </div>
+</div>
+<div class="controls">
+    <button class="btn" onclick="openDashboard()">📊 题目总览</button>
+    <button class="btn warn" onclick="shuffleAllQuestions()">🎲 重新洗牌选项</button>
+    <button class="btn" onclick="resetAll()">🔄 重置所有分数</button>
+</div>
+<div class="container" id="mainContainer">
+    <section class="question-type-section active" id="section-drag"></section>
+    <section class="question-type-section" id="section-single"></section>
+    <section class="question-type-section" id="section-multi"></section>
+    <section class="question-type-section" id="section-tf"></section>
+    <div class="result-page" id="resultPage">
+        <h2>🎉 答题完成！</h2>
+        <div class="result-score" id="finalScore">0</div>
+        <div class="result-grade" id="finalGrade">-</div>
+        <div class="result-breakdown">
+            <div class="breakdown-item"><div class="label">拖拽填空</div><div class="value" id="dragScore">0/0</div></div>
+            <div class="breakdown-item"><div class="label">单选题</div><div class="value" id="singleScore">0/0</div></div>
+            <div class="breakdown-item"><div class="label">多选题</div><div class="value" id="multiScore">0/0</div></div>
+            <div class="breakdown-item"><div class="label">判断题</div><div class="value" id="tfScore">0/0</div></div>
+        </div>
+        <div class="result-actions">
+            <button class="btn primary" onclick="openDashboard()">📊 返回查看</button>
+            <button class="btn success" onclick="continueQuiz()">▶️ 继续做题</button>
+        </div>
+    </div>
+</div>
+<div class="dashboard-overlay" id="dashboardOverlay" onclick="closeDashboardOnBg(event)">
+    <div class="dashboard" onclick="event.stopPropagation()">
+        <div class="dashboard-header">
+            <h2>📊 题目总览</h2>
+            <span class="dashboard-close" onclick="closeDashboard()">&times;</span>
+        </div>
+        <div class="dashboard-filters">
+            <button class="filter-btn active" onclick="filterDashboard('all')">全部</button>
+            <button class="filter-btn" onclick="filterDashboard('correct')">✅ 正确</button>
+            <button class="filter-btn" onclick="filterDashboard('wrong')">❌ 错误</button>
+            <button class="filter-btn" onclick="filterDashboard('unanswered')">⭕ 未答</button>
+        </div>
+        <div class="dashboard-grid" id="dashboardGrid"></div>
+    </div>
+</div>
+<script>
+// 题目数据
+const dragQuestions = [
+{
+    id: "drag1",
+    text: "ReAct 架构的核心循环包含四个步骤，依次为：首先进行 <span class='drag-drop-zone' data-slot='0'></span>，然后执行 <span class='drag-drop-zone' data-slot='1'></span>，接着 <span class='drag-drop-zone' data-slot='2'></span> 环境反馈，最后基于反馈进行下一轮 <span class='drag-drop-zone' data-slot='3'></span>。",
+    answers: ["思考（Reasoning）","行动（Action）","观察（Observation）","思考（Reasoning）"],
+    options: ["思考（Reasoning）","行动（Action）","观察（Observation）","验证（Verification）","规划（Planning）","反思（Reflection）"],
+    explanations: [
+        "✅ 正确：ReAct 的第一步是 Reasoning（思考），分析当前状态并决定下一步。",
+        "✅ 正确：思考之后执行 Action（行动）。",
+        "✅ 正确：行动后需要 Observation（观察）环境反馈。",
+        "✅ 正确：观察后再次进入 Reasoning（思考），形成闭环。"
+    ]
+},
+{
+    id: "drag2",
+    text: "游戏环境的形式化定义为五元组 E = (<span class='drag-drop-zone' data-slot='0'></span>, <span class='drag-drop-zone' data-slot='1'></span>, <span class='drag-drop-zone' data-slot='2'></span>, <span class='drag-drop-zone' data-slot='3'></span>, <span class='drag-drop-zone' data-slot='4'></span>)。",
+    answers: ["状态空间 S","动作空间 A","转移函数 P","奖励函数 R","观测空间 Ω"],
+    options: ["状态空间 S","动作空间 A","转移函数 P","奖励函数 R","观测空间 Ω","策略函数 π","价值函数 V","折扣因子 γ"],
+    explanations: [
+        "✅ 正确：S（State Space）是状态空间。",
+        "✅ 正确：A（Action Space）是动作空间。",
+        "✅ 正确：P（Transition Function）是转移函数。",
+        "✅ 正确：R（Reward Function）是奖励函数。",
+        "✅ 正确：Ω（Observation Space）是观测空间。"
+    ]
+},
+{
+    id: "drag3",
+    text: "Odyssey 的 Planner-Actor-Critic 架构中，<span class='drag-drop-zone' data-slot='0'></span> 负责将终极目标分解为子目标，<span class='drag-drop-zone' data-slot='1'></span> 负责调用技能库执行代码动作，<span class='drag-drop-zone' data-slot='2'></span> 负责通过自验证与反思评估动作效果。",
+    answers: ["Planner","Actor","Critic"],
+    options: ["Planner","Actor","Critic","Router","Reflector","Moderator"],
+    explanations: [
+        "✅ 正确：Planner（规划器）负责高层任务分解。",
+        "✅ 正确：Actor（执行器）负责调用技能库执行具体动作。",
+        "✅ 正确：Critic（评判器）负责验证动作效果并给出反馈。"
+    ]
+},
+{
+    id: "drag4",
+    text: "动作空间抽象层级从高到低依次为：<span class='drag-drop-zone' data-slot='0'></span> → <span class='drag-drop-zone' data-slot='1'></span> → <span class='drag-drop-zone' data-slot='2'></span> → <span class='drag-drop-zone' data-slot='3'></span>。",
+    answers: ["目标级（Goal-level）","技能级（Skill-level）","代码级（Code-as-Action）","原始输入级（Raw Input）"],
+    options: ["目标级（Goal-level）","技能级（Skill-level）","代码级（Code-as-Action）","原始输入级（Raw Input）","状态级（State-level）","策略级（Policy-level）"],
+    explanations: [
+        "✅ 正确：目标级抽象最高。",
+        "✅ 正确：技能级是 API 调用。",
+        "✅ 正确：代码级生成具体代码。",
+        "✅ 正确：原始输入级是直接控制键鼠。"
+    ]
+},
+{
+    id: "drag5",
+    text: "在游戏 Agent 评测中，<span class='drag-drop-zone' data-slot='0'></span> 用于度量任务是否完成的二元指标，<span class='drag-drop-zone' data-slot='1'></span> 提供 [0,1] 区间的连续完成度，<span class='drag-drop-zone' data-slot='2'></span> 测量 Agent 在多轮反思后的性能演化曲线，<span class='drag-drop-zone' data-slot='3'></span> 用于 Agent 两两对战的相对强度评分。",
+    answers: ["Success Rate","Normalized Progress","IDC（改进动态曲线）","Elo Rating"],
+    options: ["Success Rate","Normalized Progress","IDC（改进动态曲线）","Elo Rating","Milestone Rate","F1 Score","BLEU Score","Perplexity"],
+    explanations: [
+        "✅ 正确：Success Rate 是二元指标，0=未完成，1=完成。",
+        "✅ 正确：Progress 是 [0,1] 连续度量。",
+        "✅ 正确：IDC 测量反思后的性能演化。",
+        "✅ 正确：Elo 用于对战排名。"
+    ]
+}
+];
+
+const singleQuestions = [
+{
+    id: "single1",
+    text: "MindForge 的核心创新是什么？",
+    options: ["A. 自动发现游戏技能库","B. 用 MoE 架构实现任务路由","C. 引入结构化 Theory of Mind + 多 Agent 文化学习","D. 从游戏视频自动提取动作标注"],
+    correct: 2,
+    explanations: ["❌ 错误：自动技能发现是 Voyager 的特点。","❌ 错误：MoE 路由是 Optimus-3 的创新。","✅ 正确：MindForge 给 Agent 加入显式 perspective-taking 和结构化 ToM 表示。","❌ 错误：视频动作提取是 NitroGen 的方法。"]
+},
+{
+    id: "single2",
+    text: "Optimus-3 的 Dual-Router MoE 包含哪两个 Router？",
+    options: ["A. Task Router（任务级）+ Layer Router（层级）","B. Input Router + Output Router","C. Expert Router + Gate Router","D. Fast Router + Slow Router"],
+    correct: 0,
+    explanations: ["✅ 正确：Task Router 做参数解耦，Layer Router 动态调节推理深度。","❌ 错误：不存在 Input/Output Router 的划分。","❌ 错误：Expert/Gate Router 是传统 MoE 术语。","❌ 错误：Fast/Slow 是路径名称。"]
+},
+{
+    id: "single3",
+    text: "Odyssey 的技能库包含多少个 primitive skills 和 compositional skills？",
+    options: ["A. 20 个 + 100 个","B. 40 个 + 183 个","C. 60 个 + 200 个","D. 80 个 + 150 个"],
+    correct: 1,
+    explanations: ["❌ 错误：数量不匹配。","✅ 正确：Odyssey 技能库包含 40 个 primitive skills 与 183 个 compositional skills。","❌ 错误：数量不匹配。","❌ 错误：数量不匹配。"]
+},
+{
+    id: "single4",
+    text: "NitroGen 在多少款游戏的多少小时实玩视频上训练？",
+    options: ["A. 500+ 游戏 / 10000 小时","B. 800+ 游戏 / 25000 小时","C. 900+ 游戏 / 30000 小时","D. 1000+ 游戏 / 40000 小时"],
+    correct: 3,
+    explanations: ["❌ 错误：数据规模过小。","❌ 错误：数据规模不足。","❌ 错误：数据规模仍不足。","✅ 正确：NitroGen 在 1000+ 游戏的 40000 小时实玩视频上训练。"]
+},
+{
+    id: "single5",
+    text: "GameWorld 的评测基于什么核心机制？",
+    options: ["A. 序列化 gameAPI 状态断言","B. LLM-as-judge 判断截图","C. 人类专家手动评分","D. 玩家对战 Elo 排名"],
+    correct: 0,
+    explanations: ["✅ 正确：GameWorld 主张'读状态、不猜图'，用序列化 gameAPI 状态断言。","❌ 错误：GameWorld 明确反对 LLM-as-judge。","❌ 错误：人工评分成本高且不可复现。","❌ 错误：Elo 是 Orak 的方法。"]
+},
+{
+    id: "single6",
+    text: "FlashAdventure 提出的核心概念是什么？",
+    options: ["A. Theory of Mind（心智理论）","B. Observation-Behavior Gap（观察-行为鸿沟）","C. Improvement Dynamics Curve（改进动态曲线）","D. Dual-Granularity Reasoning（双粒度推理）"],
+    correct: 1,
+    explanations: ["❌ 错误：ToM 是 MindForge 的核心概念。","✅ 正确：FlashAdventure 提出 observation-behavior gap。","❌ 错误：IDC 是 OmniGameArena 的创新。","❌ 错误：DGRPO 是 Optimus-3 的方法。"]
+},
+{
+    id: "single7",
+    text: "Orak 使用什么协议统一 12 款游戏的接口？",
+    options: ["A. HTTP REST API","B. gRPC","C. Model Context Protocol（MCP）","D. WebSocket"],
+    correct: 2,
+    explanations: ["❌ 错误：HTTP REST 是通用协议。","❌ 错误：gRPC 也未被 Orak 采用。","✅ 正确：Orak 基于 MCP 构建 plug-and-play 接口。","❌ 错误：WebSocket 是通信协议。"]
+},
+{
+    id: "single8",
+    text: "OmniGameArena 的核心创新是什么？",
+    options: ["A. 用 ToM 实现多 Agent 协作","B. 提出状态断言评测协议","C. 从视频自动提取动作标注","D. Improvement Dynamics Curve（IDC）测量 Agent 可学习性"],
+    correct: 3,
+    explanations: ["❌ 错误：ToM 协作是 MindForge 的工作。","❌ 错误：状态断言是 GameWorld 的方法。","❌ 错误：视频动作提取是 NitroGen 的方法。","✅ 正确：OmniGameArena 提出 IDC 曲线，区分'记住答案'与'学会技能'。"]
+},
+{
+    id: "single9",
+    text: "在动作空间抽象谱系中，哪种抽象层级的幻觉率最低？",
+    options: ["A. 原始输入级（Raw Input）","B. 代码级（Code-as-Action）","C. 目标级（Goal-level）","D. 它们的幻觉率相同"],
+    correct: 2,
+    explanations: ["❌ 错误：原始输入级动作空间最大，幻觉率最高。","❌ 错误：代码级幻觉率中等。","✅ 正确：目标级动作空间最小，幻觉率最低。","❌ 错误：不同层级的幻觉率差异显著。"]
+},
+{
+    id: "single10",
+    text: "Elo Rating 系统的关键假设是什么？",
+    options: ["A. 选手水平稳定不变","B. 对局结果完全随机","C. 所有选手初始评分相同","D. 对局次数无限多"],
+    correct: 0,
+    explanations: ["✅ 正确：Elo 假设选手水平稳定，但 LLM Agent 持续更新，非平稳性是主要局限。","❌ 错误：Elo 不是假设随机性。","❌ 错误：初始评分可以不同。","❌ 错误：对局次数不需要无限多。"]
+},
+{
+    id: "single11",
+    text: "Optimus-3 提出的 DGRPO 的全称是什么？",
+    options: ["A. Dual-Gradient Reinforcement Policy Optimization","B. Dual-Granularity Reasoning-Aware Policy Optimization","C. Deep-Generalized Reward Policy Optimization","D. Dynamic-Gated Routing Policy Optimization"],
+    correct: 1,
+    explanations: ["❌ 错误：名称不匹配。","✅ 正确：Dual-Granularity Reasoning-Aware Policy Optimization。","❌ 错误：名称不匹配。","❌ 错误：名称不匹配。"]
+},
+{
+    id: "single12",
+    text: "MCP（Model Context Protocol）的主要设计目标是什么？",
+    options: ["A. 提高 LLM 的推理速度","B. 统一 LLM 与外部工具/数据源之间的通信方式","C. 减少 LLM 的幻觉率","D. 增强 LLM 的长上下文能力"],
+    correct: 1,
+    explanations: ["❌ 错误：MCP 不直接提高推理速度。","✅ 正确：MCP 类似'USB 接口'，统一 LLM 与外部工具的通信。","❌ 错误：MCP 不是直接减少幻觉的机制。","❌ 错误：MCP 与上下文长度无关。"]
+}
+];
+
+const multiQuestions = [
+{
+    id: "multi1",
+    text: "ReAct（Reasoning + Acting）架构的完整循环包含哪些步骤？（多选）",
+    options: ["A. 思考（Reasoning）","B. 行动（Action）","C. 观察（Observation）","D. 验证（Verification）","E. 记忆更新（Memory Update）","F. 奖励计算（Reward Calculation）"],
+    correct: [0,1,2],
+    explanations: ["✅ 正确：Reasoning 是 ReAct 的第一步。","✅ 正确：Action 是第二步。","✅ 正确：Observation 是第三步。","❌ 错误：Verification 不是 ReAct 循环的标准步骤。","❌ 错误：Memory Update 是辅助机制。","❌ 错误：Reward Calculation 是 RL 的概念。"]
+},
+{
+    id: "multi2",
+    text: "MindForge 的关键设计包括哪些？（多选）",
+    options: ["A. 结构化 Theory of Mind 表示","B. Agent 之间用自然语言交流","C. 多组件 Memory 系统","D. Dual-Router MoE 架构","E. Instructive 与 Collaborative 两种设定","F. 从游戏视频自动提取动作的标注管线"],
+    correct: [0,1,2,4],
+    explanations: ["✅ 正确：结构化 ToM 是 MindForge 的核心创新。","✅ 正确：自然语言 inter-agent 通信是关键设计。","✅ 正确：多组件 Memory 系统支持长期知识存储。","❌ 错误：Dual-Router MoE 是 Optimus-3 的设计。","✅ 正确：Instructive 和 Collaborative 是两种实验设定。","❌ 错误：视频动作提取是 NitroGen 的方法。"]
+},
+{
+    id: "multi3",
+    text: "Optimus-3 的技术亮点包括哪些？（多选）",
+    options: ["A. Dual-Router Aligned MoE","B. Knowledge-Enhanced 自动数据生成管线","C. DGRPO 双粒度稠密奖励","D. 结构化 Theory of Mind 表示","E. OptimusM4 数据集发布","F. MCP 统一接口协议"],
+    correct: [0,1,2,4],
+    explanations: ["✅ 正确：Dual-Router MoE 是架构核心。","✅ 正确：知识增强的自动数据生成管线。","✅ 正确：DGRPO 以双粒度稠密奖励保证思考与答案一致。","❌ 错误：ToM 表示是 MindForge 的设计。","✅ 正确：OptimusM4 是发布的数据集。","❌ 错误：MCP 是 Orak 使用的协议。"]
+},
+{
+    id: "multi4",
+    text: "GameWorld 评测框架的特点包括哪些？（多选）",
+    options: ["A. 基于序列化 gameAPI 状态断言","B. 计算 0/1 Success Rate 与 [0,1] normalized Progress","C. 不依赖截图推断或 LLM judge","D. 覆盖 34 款游戏、170 个任务","E. 使用 MCP 统一接口","F. 提供 GameWorld-RT 实时变体"],
+    correct: [0,1,2,3,5],
+    explanations: ["✅ 正确：GameWorld 的核心是可验证的状态断言。","✅ 正确：输出二元 Success 和连续 Progress。","✅ 正确：全程不依赖 LLM judge。","✅ 正确：覆盖 34 款游戏、170 个任务。","❌ 错误：MCP 是 Orak 的协议。","✅ 正确：GameWorld-RT 是实时变体。"]
+},
+{
+    id: "multi5",
+    text: "游戏 Agent 面临的核心矛盾包括哪些？（多选）",
+    options: ["A. 动作抽象 vs 控制精度","B. 长程信息 vs 有限上下文","C. 泛化 vs 专精","D. 评测真实性 vs 可验证性","E. 训练速度 vs 推理速度","F. 模型参数量 vs 内存占用"],
+    correct: [0,1,2,3],
+    explanations: ["✅ 正确：语义动作降低幻觉率但损失控制自由度。","✅ 正确：observation-behavior gap 是核心瓶颈。","✅ 正确：单游戏专精 vs 跨游戏泛化。","✅ 正确：LLM-as-judge 便宜但不可靠，状态断言可靠但需人工编写。","❌ 错误：不是论文中定义的核心矛盾。","❌ 错误：是工程问题，不是核心矛盾。"]
+},
+{
+    id: "multi6",
+    text: "状态断言式评测相比 LLM-as-judge 的优势包括哪些？（多选）",
+    options: ["A. 完全可验证、可复现","B. 不依赖 LLM 自身的判断能力","C. 可以精确度量部分完成度（Progress）","D. 评测成本低（无需调用 LLM API）","E. 适用于所有类型的游戏任务","F. 可以自动适应新游戏无需人工配置"],
+    correct: [0,1,2,3],
+    explanations: ["✅ 正确：状态断言基于明确的 gameAPI 状态。","✅ 正确：不需要 LLM 来判断截图。","✅ 正确：Progress 提供 [0,1] 细粒度度量。","✅ 正确：不需要调用 LLM API。","❌ 错误：难以应用于开放世界游戏。","❌ 错误：需要逐游戏人工编写断言。"]
+},
+{
+    id: "multi7",
+    text: "以下关于动作空间抽象层级的描述，正确的有哪些？（多选）",
+    options: ["A. 目标级（Goal-level）的开放性最高","B. 原始输入级（Raw Input）的控制精度最高","C. 技能级（Skill-level）的幻觉率低于代码级","D. 抽象层级越高，动作空间越小","E. 所有层级在控制精度上没有差异","F. Odyssey 使用技能级抽象，Voyager 使用代码级抽象"],
+    correct: [0,1,2,3,5],
+    explanations: ["✅ 正确：目标级只描述'做什么'，开放性最高。","✅ 正确：原始输入级直接控制键鼠，精度最高。","✅ 正确：技能级动作空间更小，LLM 更不容易出错。","✅ 正确：抽象层级越高，可选动作越少。","❌ 错误：不同层级在控制精度上差异显著。","✅ 正确：Odyssey 用技能库，Voyager 生成代码。"]
+},
+{
+    id: "multi8",
+    text: "OmniGameArena 的 IDC（Improvement Dynamics Curve）协议包含哪些关键设计？（多选）",
+    options: ["A. tool-using reflector LLM 自主精炼 skill prompt","B. 测量分数随反思轮数的演化","C. 在 held-out 任务变体上验证 skill 泛化","D. bounded skill prompt 防止无限堆叠","E. 使用 Elo 对战排名系统","F. 统一 Solo/PvP/Coop 三种模式接口"],
+    correct: [0,1,2,3,5],
+    explanations: ["✅ 正确：reflector LLM 自主精炼 skill prompt 是 IDC 核心机制。","✅ 正确：IDC 测量分数随反思轮数的演化曲线。","✅ 正确：必须在 held-out 变体上验证。","✅ 正确：bounded skill prompt 是工程约束。","❌ 错误：Elo 是 Orak 的方法。","✅ 正确：OmniGameArena 统一了三种模式。"]
+}
+];
+
+const trueFalseQuestions = [
+{
+    id: "tf1",
+    text: "ReAct 架构中，Agent 会一次性规划完所有步骤后再开始执行。",
+    correct: false,
+    explanationFalse: "❌ 常见误解：ReAct 的核心是'交替'循环——每步只思考当前状态并执行一个动作，然后观察反馈。"
+},
+{
+    id: "tf2",
+    text: "Odyssey 的技能库（40 primitive + 183 compositional）完全由自动程序发现，无需人工设计。",
+    correct: false,
+    explanationFalse: "❌ 常见误解：Odyssey 代表的是'手工技能 API 层'路线。40 个 primitive 和 183 个 compositional 技能均为人工设计。"
+},
+{
+    id: "tf3",
+    text: "NitroGen 使用强化学习（RL）在线与环境交互来训练 vision-action 模型。",
+    correct: false,
+    explanationFalse: "❌ 常见误解：NitroGen 使用的是 Behavior Cloning（行为克隆），从 4 万小时游戏视频中学习，不需要在线交互。"
+},
+{
+    id: "tf4",
+    text: "GameWorld 的评测依赖 LLM 判断游戏截图来评分。",
+    correct: false,
+    explanationFalse: "❌ 常见误解：GameWorld 明确反对 LLM-as-judge。它使用序列化 gameAPI 状态断言，全程不依赖截图推断。"
+},
+{
+    id: "tf5",
+    text: "Elo Rating 系统完全适用于 LLM Agent 持续更新模型版本和 prompt 的场景。",
+    correct: false,
+    explanationFalse: "❌ 常见误解：Elo 假设选手水平稳定，但 LLM Agent 持续更新，非平稳性使其排名意义有限。应使用 Glicko-2 等带时间衰减的评级系统。"
+},
+{
+    id: "tf6",
+    text: "Semantic Action（语义动作）接口的控制精度高于 Raw Computer-Use（键鼠直控）接口。",
+    correct: false,
+    explanationFalse: "❌ 常见误解：Semantic Action 抽象层级更高，幻觉率更低，但控制精度更低。Raw Computer-Use 精度最高但规划能力弱。"
+},
+{
+    id: "tf7",
+    text: "MindForge 的 Theory of Mind（ToM）表示是 LLM 每轮重新生成的纯文本描述。",
+    correct: false,
+    explanationFalse: "❌ 常见误解：MindForge 使用结构化的符号式 ToM 表示（percept→belief→desire→action 链条），而非纯文本。"
+},
+{
+    id: "tf8",
+    text: "Optimus-3 的 Layer Router 负责决定任务分配给哪个 Expert（任务级路由）。",
+    correct: false,
+    explanationFalse: "❌ 常见误解：Task Router 负责任务级路由，Layer Router 负责层级路由（决定走 Fast Path 还是 Deep Path）。"
+}
+];
+
+// 只声明一次 allQuestions
+const allQuestions = [];
+for (let i = 0; i < dragQuestions.length; i++) allQuestions.push({ type: 'drag', index: i, maxScore: dragQuestions[i].answers.length });
+for (let i = 0; i < singleQuestions.length; i++) allQuestions.push({ type: 'single', index: i, maxScore: 1 });
+for (let i = 0; i < multiQuestions.length; i++) allQuestions.push({ type: 'multi', index: i, maxScore: 1 });
+for (let i = 0; i < trueFalseQuestions.length; i++) allQuestions.push({ type: 'tf', index: i, maxScore: 1 });
+
+const totalMaxScore = allQuestions.reduce((s, q) => s + q.maxScore, 0);
+
+let dragAnswers = dragQuestions.map(() => []);
+let dragChecked = dragQuestions.map(() => false);
+let singleSelected = singleQuestions.map(() => -1);
+let singleChecked = singleQuestions.map(() => false);
+let multiSelected = multiQuestions.map(() => []);
+let multiChecked = multiQuestions.map(() => false);
+let tfSelected = trueFalseQuestions.map(() => null);
+let tfChecked = trueFalseQuestions.map(() => false);
+
+let currentType = 'drag';
+let currentIndices = { drag: 0, single: 0, multi: 0, tf: 0 };
+
+function renderDragQuestions() {
+    const container = document.getElementById('section-drag');
+    let html = '<h2 style="margin-bottom:16px;color:var(--primary);">🧩 拖拽填空（把下方选项拖入正确位置）</h2>';
+    dragQuestions.forEach((q, idx) => {
+        let textHtml = q.text;
+        for (let s = 0; s < q.answers.length; s++) {
+            const ans = dragAnswers[idx][s] || '';
+            const zoneClass = dragChecked[idx] ? (ans === q.answers[s] ? 'correct' : 'wrong') : (ans ? 'filled' : '');
+            textHtml = textHtml.replace(new RegExp(`<span class='drag-drop-zone' data-slot='${s}'(></span>|[^>]*>[^<]*</span>)`),
+                `<span class="drag-drop-zone ${zoneClass}" data-slot="${s}" onclick="clearDragSlot(${idx},${s})">${ans}</span>`);
+        }
+        const used = dragAnswers[idx] || [];
+        const poolHtml = q.options.map(opt => {
+            const isUsed = used.includes(opt);
+            return `<span class="drag-item ${isUsed ? 'used' : ''}" onclick="fillDragSlot(${idx},'${opt.replace(/'/g,"\\'")}')">${opt}</span>`;
+        }).join('');
+        let fbHtml = '';
+        if (dragChecked[idx]) {
+            const allCorrect = q.answers.every((ans, s) => dragAnswers[idx][s] === ans);
+            fbHtml = `<div class="feedback show ${allCorrect ? 'correct' : 'wrong'}"><div class="feedback-title">${allCorrect ? '✅ 全部正确！' : '❌ 有错误，请查看解析'}</div>`;
+            q.answers.forEach((ans, s) => {
+                const userAns = dragAnswers[idx][s] || '(空)';
+                const isCorrect = userAns === ans;
+                fbHtml += `<div class="slot-explanation ${isCorrect ? 'correct-slot' : 'wrong-slot'}">空 ${s + 1}：你的答案「${userAns}」${isCorrect ? '✅' : `❌ 正确应为「${ans}」`}<br><small>${q.explanations[s]}</small></div>`;
+            });
+            fbHtml += '</div>';
+        }
+        const isActive = currentType === 'drag' && currentIndices.drag === idx ? '' : 'hidden';
+        html += `<div class="q-card ${isActive}" data-drag-idx="${idx}"><div class="q-meta"><span class="q-number">拖拽 ${idx + 1}</span><span class="q-type-label">拖拽填空</span></div><div class="q-text">${textHtml}</div><div class="drag-options">${poolHtml}</div>${fbHtml}<div class="q-nav"><button class="btn" onclick="prevQuestion()" ${idx === 0 ? 'disabled' : ''}>← 上一题</button><button class="btn primary" onclick="checkDrag(${idx})">检查答案</button><button class="btn" onclick="resetDrag(${idx})">🔄 重置</button><button class="btn" onclick="nextQuestion()" ${idx === dragQuestions.length - 1 ? 'disabled' : ''}>下一题 →</button></div></div>`;
+    });
+    container.innerHTML = html;
+}
+
+function renderSingleQuestions() {
+    const container = document.getElementById('section-single');
+    let html = '<h2 style="margin-bottom:16px;color:var(--primary);">🔘 单选题（选择唯一正确答案）</h2>';
+    singleQuestions.forEach((q, idx) => {
+        const optionsHtml = q.options.map((opt, oi) => {
+            let cls = 'option';
+            if (singleSelected[idx] === oi) cls += ' selected';
+            if (singleChecked[idx]) { if (oi === q.correct) cls += ' correct-ans'; else if (singleSelected[idx] === oi) cls += ' wrong-ans'; }
+            return `<label class="${cls}" onclick="selectSingle(${idx},${oi})"><input type="radio" name="single${idx}" ${singleSelected[idx] === oi ? 'checked' : ''}><span class="option-label">${String.fromCharCode(65 + oi)}.</span><span class="option-text">${opt.substring(3)}</span></label>`;
+        }).join('');
+        let fbHtml = '';
+        if (singleChecked[idx]) {
+            const isCorrect = singleSelected[idx] === q.correct;
+            fbHtml = `<div class="feedback show ${isCorrect ? 'correct' : 'wrong'}"><div class="feedback-title">${isCorrect ? '✅ 回答正确！' : '❌ 回答错误'}</div>`;
+            q.explanations.forEach((exp, oi) => fbHtml += `<div style="margin:6px 0;padding:6px 10px;border-radius:4px;background:rgba(0,0,0,0.03);">${String.fromCharCode(65 + oi)}. ${exp}</div>`);
+            fbHtml += '</div>';
+        }
+        const isActive = currentType === 'single' && currentIndices.single === idx ? '' : 'hidden';
+        html += `<div class="q-card ${isActive}" data-single-idx="${idx}"><div class="q-meta"><span class="q-number">单选 ${idx + 1}</span><span class="q-type-label">单选题</span></div><div class="q-text">${q.text}</div><div class="options">${optionsHtml}</div>${fbHtml}<div class="q-nav"><button class="btn" onclick="prevQuestion()" ${idx === 0 ? 'disabled' : ''}>← 上一题</button><button class="btn primary" onclick="checkSingle(${idx})">检查答案</button><button class="btn" onclick="resetSingle(${idx})">🔄 重置</button><button class="btn" onclick="nextQuestion()" ${idx === singleQuestions.length - 1 ? 'disabled' : ''}>下一题 →</button></div></div>`;
+    });
+    container.innerHTML = html;
+}
+
+function renderMultiQuestions() {
+    const container = document.getElementById('section-multi');
+    let html = '<h2 style="margin-bottom:16px;color:var(--primary);">☑️ 多选题（选择所有正确答案）</h2>';
+    multiQuestions.forEach((q, idx) => {
+        const optionsHtml = q.options.map((opt, oi) => {
+            let cls = 'option';
+            if (multiSelected[idx].includes(oi)) cls += ' selected';
+            if (multiChecked[idx]) { if (q.correct.includes(oi)) cls += ' correct-ans'; else if (multiSelected[idx].includes(oi)) cls += ' wrong-ans'; }
+            return `<label class="${cls}" onclick="toggleMulti(${idx},${oi})"><input type="checkbox" ${multiSelected[idx].includes(oi) ? 'checked' : ''}><span class="option-label">${String.fromCharCode(65 + oi)}.</span><span class="option-text">${opt.substring(3)}</span></label>`;
+        }).join('');
+        let fbHtml = '';
+        if (multiChecked[idx]) {
+            const isCorrect = q.correct.length === multiSelected[idx].length && q.correct.every(c => multiSelected[idx].includes(c));
+            fbHtml = `<div class="feedback show ${isCorrect ? 'correct' : 'wrong'}"><div class="feedback-title">${isCorrect ? '✅ 全部选对！' : '❌ 选择不完整或有错误'}</div><div style="margin:8px 0;"><strong>正确答案：${q.correct.map(c => String.fromCharCode(65 + c)).join(', ')}</strong></div>`;
+            q.explanations.forEach((exp, oi) => { const isRight = q.correct.includes(oi); fbHtml += `<div style="margin:4px 0;padding:6px 10px;border-radius:4px;background:rgba(0,0,0,0.03);border-left:3px solid ${isRight ? 'var(--success)' : 'var(--error)'}">${String.fromCharCode(65 + oi)}. ${exp}</div>`; });
+            fbHtml += '</div>';
+        }
+        const isActive = currentType === 'multi' && currentIndices.multi === idx ? '' : 'hidden';
+        html += `<div class="q-card ${isActive}" data-multi-idx="${idx}"><div class="q-meta"><span class="q-number">多选 ${idx + 1}</span><span class="q-type-label">多选题</span></div><div class="q-text">${q.text}</div><div class="options">${optionsHtml}</div>${fbHtml}<div class="q-nav"><button class="btn" onclick="prevQuestion()" ${idx === 0 ? 'disabled' : ''}>← 上一题</button><button class="btn primary" onclick="checkMulti(${idx})">检查答案</button><button class="btn" onclick="resetMulti(${idx})">🔄 重置</button><button class="btn" onclick="nextQuestion()" ${idx === multiQuestions.length - 1 ? 'disabled' : ''}>下一题 →</button></div></div>`;
+    });
+    container.innerHTML = html;
+}
+
+function renderTFQuestions() {
+    const container = document.getElementById('section-tf');
+    let html = '<h2 style="margin-bottom:16px;color:var(--primary);">⚖️ 判断题（判断陈述正误）</h2>';
+    trueFalseQuestions.forEach((q, idx) => {
+        let fbHtml = '';
+        if (tfChecked[idx]) {
+            const isCorrect = tfSelected[idx] === q.correct;
+            fbHtml = `<div class="feedback show ${isCorrect ? 'correct' : 'wrong'}"><div class="feedback-title">${isCorrect ? '✅ 判断正确！' : '❌ 判断错误'}</div><div>${q.correct ? '✅ 该陈述为 <strong>正确</strong>' : q.explanationFalse}</div></div>`;
+        }
+        const isActive = currentType === 'tf' && currentIndices.tf === idx ? '' : 'hidden';
+        html += `<div class="q-card ${isActive}" data-tf-idx="${idx}"><div class="q-meta"><span class="q-number">判断 ${idx + 1}</span><span class="q-type-label">判断题</span></div><div class="q-text">${q.text}</div><div class="tf-options"><button class="tf-btn ${tfSelected[idx] === true ? 'selected' : ''} ${tfChecked[idx] ? (q.correct === true ? 'correct-ans' : (tfSelected[idx] === true ? 'wrong-ans' : '')) : ''}" onclick="selectTF(${idx},true)">✅ 正确</button><button class="tf-btn ${tfSelected[idx] === false ? 'selected' : ''} ${tfChecked[idx] ? (q.correct === false ? 'correct-ans' : (tfSelected[idx] === false ? 'wrong-ans' : '')) : ''}" onclick="selectTF(${idx},false)">❌ 错误</button></div>${fbHtml}<div class="q-nav"><button class="btn" onclick="prevQuestion()" ${idx === 0 ? 'disabled' : ''}>← 上一题</button><button class="btn primary" onclick="checkTF(${idx})">检查答案</button><button class="btn" onclick="resetTF(${idx})">🔄 重置</button><button class="btn" onclick="nextQuestion()" ${idx === trueFalseQuestions.length - 1 ? 'disabled' : ''}>下一题 →</button></div></div>`;
+    });
+    container.innerHTML = html;
+}
+
+function switchType(type) {
+    currentType = type;
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.toggle('active', t.dataset.type === type));
+    document.getElementById('resultPage').classList.remove('show');
+    document.querySelectorAll('.question-type-section').forEach(s => s.classList.toggle('active', s.id === 'section-' + type));
+    renderAll();
+}
+
+function renderAll() {
+    renderDragQuestions(); renderSingleQuestions(); renderMultiQuestions(); renderTFQuestions(); updateScoreUI();
+}
+
+function fillDragSlot(qIdx, value) {
+    if (dragChecked[qIdx]) return;
+    const q = dragQuestions[qIdx];
+    for (let s = 0; s < q.answers.length; s++) { if (!dragAnswers[qIdx][s]) { dragAnswers[qIdx][s] = value; break; } }
+    renderDragQuestions();
+}
+function clearDragSlot(qIdx, slotIdx) { if (dragChecked[qIdx]) return; dragAnswers[qIdx][slotIdx] = ''; renderDragQuestions(); }
+function checkDrag(qIdx) { dragChecked[qIdx] = true; renderDragQuestions(); updateScoreUI(); }
+function resetDrag(qIdx) { dragAnswers[qIdx] = []; dragChecked[qIdx] = false; renderDragQuestions(); updateScoreUI(); }
+
+function selectSingle(qIdx, oIdx) { if (singleChecked[qIdx]) return; singleSelected[qIdx] = oIdx; renderSingleQuestions(); }
+function checkSingle(qIdx) { if (singleSelected[qIdx] === -1) { alert('请先选择一个答案'); return; } singleChecked[qIdx] = true; renderSingleQuestions(); updateScoreUI(); }
+function resetSingle(qIdx) { singleSelected[qIdx] = -1; singleChecked[qIdx] = false; renderSingleQuestions(); updateScoreUI(); }
+
+function toggleMulti(qIdx, oIdx) { if (multiChecked[qIdx]) return; const arr = multiSelected[qIdx]; const pos = arr.indexOf(oIdx); if (pos >= 0) arr.splice(pos, 1); else arr.push(oIdx); renderMultiQuestions(); }
+function checkMulti(qIdx) { if (multiSelected[qIdx].length === 0) { alert('请至少选择一个答案'); return; } multiChecked[qIdx] = true; renderMultiQuestions(); updateScoreUI(); }
+function resetMulti(qIdx) { multiSelected[qIdx] = []; multiChecked[qIdx] = false; renderMultiQuestions(); updateScoreUI(); }
+
+function selectTF(qIdx, value) { if (tfChecked[qIdx]) return; tfSelected[qIdx] = value; renderTFQuestions(); }
+function checkTF(qIdx) { if (tfSelected[qIdx] === null) { alert('请先选择正确或错误'); return; } tfChecked[qIdx] = true; renderTFQuestions(); updateScoreUI(); }
+function resetTF(qIdx) { tfSelected[qIdx] = null; tfChecked[qIdx] = false; renderTFQuestions(); updateScoreUI(); }
+
+function prevQuestion() { const idx = currentIndices[currentType]; if (idx > 0) { currentIndices[currentType]--; renderAll(); } }
+function nextQuestion() { const idx = currentIndices[currentType]; const maxIdx = { drag: dragQuestions.length - 1, single: singleQuestions.length - 1, multi: multiQuestions.length - 1, tf: trueFalseQuestions.length - 1 }[currentType]; if (idx < maxIdx) { currentIndices[currentType]++; renderAll(); } }
+
+function calcScore() {
+    let score = 0, correct = 0, wrong = 0;
+    dragQuestions.forEach((q, i) => { if (!dragChecked[i]) return; const allRight = q.answers.every((ans, s) => dragAnswers[i][s] === ans); if (allRight) { score += q.answers.length; correct++; } else wrong++; });
+    singleQuestions.forEach((q, i) => { if (!singleChecked[i]) return; if (singleSelected[i] === q.correct) { score += 1; correct++; } else wrong++; });
+    multiQuestions.forEach((q, i) => { if (!multiChecked[i]) return; const sel = multiSelected[i]; const allRight = q.correct.length === sel.length && q.correct.every(c => sel.includes(c)); if (allRight) { score += 1; correct++; } else wrong++; });
+    trueFalseQuestions.forEach((q, i) => { if (!tfChecked[i]) return; if (tfSelected[i] === q.correct) { score += 1; correct++; } else wrong++; });
+    return { score, correct, wrong };
+}
+
+function updateScoreUI() {
+    const { score, correct, wrong } = calcScore();
+    document.getElementById('correctCount').textContent = correct;
+    document.getElementById('wrongCount').textContent = wrong;
+    document.getElementById('scoreDisplay').textContent = score;
+    document.getElementById('totalScore').textContent = totalMaxScore;
+    const answered = dragChecked.filter(Boolean).length + singleChecked.filter(Boolean).length + multiChecked.filter(Boolean).length + tfChecked.filter(Boolean).length;
+    const totalQ = dragQuestions.length + singleQuestions.length + multiQuestions.length + trueFalseQuestions.length;
+    document.getElementById('progressText').textContent = `${answered} / ${totalQ}`;
+    document.getElementById('progressBar').style.width = totalQ > 0 ? (answered / totalQ * 100) + '%' : '0%';
+    if (answered === totalQ && totalQ > 0) showResult();
+}
+
+function showResult() {
+    const { score } = calcScore();
+    const pct = totalMaxScore > 0 ? Math.round(score / totalMaxScore * 100) : 0;
+    document.querySelectorAll('.question-type-section').forEach(s => s.classList.remove('active'));
+    document.getElementById('scoreBar').classList.add('hidden');
+    document.querySelector('.controls').classList.add('hidden');
+    document.querySelector('.nav-tabs').parentElement.classList.add('hidden');
+    const rp = document.getElementById('resultPage');
+    rp.classList.add('show');
+    document.getElementById('finalScore').textContent = pct + '%';
+    let grade = pct >= 90 ? '🏆 优秀！你对 Game Agent 执行系统有深入理解' : pct >= 70 ? '👍 良好！大部分核心概念已掌握' : pct >= 50 ? '💪 及格！建议回顾标记为错误的题目' : '📚 需要加强！建议重新阅读实验文档后再来挑战';
+    document.getElementById('finalGrade').textContent = grade;
+    let dragScore = 0, dragMax = 0;
+    dragQuestions.forEach((q, i) => { dragMax += q.answers.length; if (dragChecked[i] && q.answers.every((a, s) => dragAnswers[i][s] === a)) dragScore += q.answers.length; });
+    document.getElementById('dragScore').textContent = `${dragScore}/${dragMax}`;
+    let singleScore = 0;
+    singleQuestions.forEach((q, i) => { if (singleChecked[i] && singleSelected[i] === q.correct) singleScore++; });
+    document.getElementById('singleScore').textContent = `${singleScore}/${singleQuestions.length}`;
+    let multiScore = 0;
+    multiQuestions.forEach((q, i) => { if (multiChecked[i]) { const sel = multiSelected[i]; if (q.correct.length === sel.length && q.correct.every(c => sel.includes(c))) multiScore++; } });
+    document.getElementById('multiScore').textContent = `${multiScore}/${multiQuestions.length}`;
+    let tfScore = 0;
+    trueFalseQuestions.forEach((q, i) => { if (tfChecked[i] && tfSelected[i] === q.correct) tfScore++; });
+    document.getElementById('tfScore').textContent = `${tfScore}/${trueFalseQuestions.length}`;
+}
+
+function continueQuiz() {
+    document.getElementById('resultPage').classList.remove('show');
+    document.getElementById('scoreBar').classList.remove('hidden');
+    document.querySelector('.controls').classList.remove('hidden');
+    document.querySelector('.nav-tabs').parentElement.classList.remove('hidden');
+    switchType(currentType);
+}
+
+function openDashboard() { renderDashboardGrid('all'); document.getElementById('dashboardOverlay').classList.add('open'); }
+function closeDashboard() { document.getElementById('dashboardOverlay').classList.remove('open'); }
+function closeDashboardOnBg(e) { if (e.target.id === 'dashboardOverlay') closeDashboard(); }
+function filterDashboard(filter) { document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active')); event.target.classList.add('active'); renderDashboardGrid(filter); }
+
+function getQuestionStatus(type, idx) {
+    if (type === 'drag') { if (!dragChecked[idx]) return 'unanswered'; const allRight = dragQuestions[idx].answers.every((a, s) => dragAnswers[idx][s] === a); return allRight ? 'correct' : 'wrong'; }
+    if (type === 'single') { if (!singleChecked[idx]) return 'unanswered'; return singleSelected[idx] === singleQuestions[idx].correct ? 'correct' : 'wrong'; }
+    if (type === 'multi') { if (!multiChecked[idx]) return 'unanswered'; const sel = multiSelected[idx]; const q = multiQuestions[idx]; const allRight = q.correct.length === sel.length && q.correct.every(c => sel.includes(c)); return allRight ? 'correct' : 'wrong'; }
+    if (type === 'tf') { if (!tfChecked[idx]) return 'unanswered'; return tfSelected[idx] === trueFalseQuestions[idx].correct ? 'correct' : 'wrong'; }
+    return 'unanswered';
+}
+
+function renderDashboardGrid(filter) {
+    const grid = document.getElementById('dashboardGrid');
+    let html = '';
+    const typeLabels = { drag: '填', single: '单', multi: '多', tf: '判' };
+    allQuestions.forEach((q, i) => {
+        const status = getQuestionStatus(q.type, q.index);
+        if (filter === 'correct' && status !== 'correct') return;
+        if (filter === 'wrong' && status !== 'wrong') return;
+        if (filter === 'unanswered' && status !== 'unanswered') return;
+        let thumbClass = 'thumb';
+        if (status === 'unanswered') thumbClass += ' answered';
+        if (status === 'correct') thumbClass += ' correct';
+        if (status === 'wrong') thumbClass += ' wrong';
+        const label = typeLabels[q.type] + (q.index + 1);
+        html += `<div class="${thumbClass}" onclick="jumpToQuestion('${q.type}',${q.index})">${label}</div>`;
+    });
+    grid.innerHTML = html || '<div style="grid-column:1/-1;text-align:center;color:var(--text-light);padding:20px;">无匹配题目</div>';
+}
+
+function jumpToQuestion(type, idx) { currentType = type; currentIndices[type] = idx; closeDashboard(); continueQuiz(); }
+
+function shuffleArray(arr) { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function shuffleQuestionData(questions) {
+    questions.forEach(q => {
+        const pairs = q.options.map((opt, i) => ({ opt, expl: q.explanations[i] }));
+        const shuffled = shuffleArray(pairs);
+        q.options = shuffled.map(p => p.opt);
+        q.explanations = shuffled.map(p => p.expl);
+        q.correct = shuffled.findIndex(p => p.expl.startsWith('✅'));
+    });
+}
+
+function shuffleAllQuestions() {
+    if (!confirm('🎲 重新洗牌将打乱所有单选题的选项顺序，并清空所有答题记录。确定继续吗？')) return;
+    shuffleQuestionData(singleQuestions);
+    dragAnswers = dragQuestions.map(() => []);
+    dragChecked = dragQuestions.map(() => false);
+    singleSelected = singleQuestions.map(() => -1);
+    singleChecked = singleQuestions.map(() => false);
+    multiSelected = multiQuestions.map(() => []);
+    multiChecked = multiQuestions.map(() => false);
+    tfSelected = trueFalseQuestions.map(() => null);
+    tfChecked = trueFalseQuestions.map(() => false);
+    currentIndices = { drag: 0, single: 0, multi: 0, tf: 0 };
+    document.getElementById('resultPage').classList.remove('show');
+    document.getElementById('scoreBar').classList.remove('hidden');
+    document.querySelector('.controls').classList.remove('hidden');
+    document.querySelector('.nav-tabs').parentElement.classList.remove('hidden');
+    renderAll();
+    alert('🎲 选项已重新洗牌，请重新开始答题！');
+}
+
+function resetAll() {
+    if (!confirm('确定要重置所有答题记录吗？')) return;
+    dragAnswers = dragQuestions.map(() => []);
+    dragChecked = dragQuestions.map(() => false);
+    singleSelected = singleQuestions.map(() => -1);
+    singleChecked = singleQuestions.map(() => false);
+    multiSelected = multiQuestions.map(() => []);
+    multiChecked = multiQuestions.map(() => false);
+    tfSelected = trueFalseQuestions.map(() => null);
+    tfChecked = trueFalseQuestions.map(() => false);
+    currentIndices = { drag: 0, single: 0, multi: 0, tf: 0 };
+    currentType = 'drag';
+    document.getElementById('resultPage').classList.remove('show');
+    document.getElementById('scoreBar').classList.remove('hidden');
+    document.querySelector('.controls').classList.remove('hidden');
+    document.querySelector('.nav-tabs').parentElement.classList.remove('hidden');
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.toggle('active', t.dataset.type === 'drag'));
+    renderAll();
+}
+
+document.addEventListener('DOMContentLoaded', renderAll);
+</script>
+</body>
+</html>

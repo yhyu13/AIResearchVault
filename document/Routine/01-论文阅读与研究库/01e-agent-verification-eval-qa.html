@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agent 验证与评估 · 互动自测卡牌</title>
+  <style>
+    :root {
+      --bg-body: #FAF8F5;
+      --bg-card: #FFFFFF;
+      --bg-warm: #F5F0E8;
+      --primary: #2D5F5F;
+      --primary-light: #3D7A7A;
+      --accent: #4A7C59;
+      --accent-light: #E8F3E8;
+      --text-main: #2C2C2C;
+      --text-muted: #6B6B6B;
+      --border: #D8D2C8;
+      --shadow: rgba(0,0,0,0.06);
+      --correct: #3A8C5D;
+      --correct-bg: #EAF6EE;
+      --wrong: #C44B4B;
+      --wrong-bg: #FCEAEA;
+      --warning: #C9943A;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg-body);
+      color: var(--text-main);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    .container { max-width: 720px; margin: 0 auto; padding: 16px; }
+
+    header { text-align: center; margin-bottom: 20px; }
+    header h1 { font-size: 1.6rem; color: var(--primary); margin-bottom: 4px; }
+    header .topic { font-size: 0.95rem; color: var(--text-muted); }
+
+    .score-bar {
+      display: flex; justify-content: space-between; align-items: center;
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 12px 16px; margin-bottom: 16px;
+      box-shadow: 0 2px 8px var(--shadow); flex-wrap: wrap; gap: 8px;
+    }
+    .score-bar .score { font-size: 1.1rem; font-weight: 600; color: var(--primary); }
+    .score-bar .actions { display: flex; gap: 8px; }
+
+    .btn {
+      border: none; border-radius: 8px; padding: 8px 14px; font-size: 0.85rem;
+      cursor: pointer; transition: all 0.2s ease; font-family: inherit;
+    }
+    .btn-sm { padding: 6px 10px; font-size: 0.78rem; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-light); }
+    .btn-secondary { background: var(--bg-warm); color: var(--text-main); border: 1px solid var(--border); }
+    .btn-secondary:hover { background: #EDE8DE; }
+    .btn-warning { background: #FFF8E6; color: #8A6D1F; border: 1px solid #F0E0B0; }
+    .btn-warning:hover { background: #FFF0CC; }
+
+    .tabs { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+    .tab {
+      flex: 1; min-width: 80px; text-align: center; padding: 10px 8px;
+      border-radius: 10px; border: 1px solid var(--border); background: var(--bg-card);
+      color: var(--text-muted); cursor: pointer; font-size: 0.88rem; transition: all 0.2s ease;
+    }
+    .tab.active { background: var(--primary); color: #fff; border-color: var(--primary); font-weight: 600; }
+    .tab .badge {
+      display: inline-block; margin-left: 4px; background: rgba(255,255,255,0.25);
+      padding: 1px 6px; border-radius: 10px; font-size: 0.72rem;
+    }
+    .tab:not(.active) .badge { background: var(--bg-warm); }
+
+    .card {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px;
+      padding: 20px; box-shadow: 0 2px 12px var(--shadow); margin-bottom: 16px;
+    }
+
+    .progress-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .progress-bar {
+      flex: 1; height: 8px; background: #EAE5DC; border-radius: 4px;
+      overflow: hidden; margin: 0 12px;
+    }
+    .progress-bar .fill { height: 100%; background: var(--primary); border-radius: 4px; transition: width 0.3s ease; }
+
+    .question-text { font-size: 1.05rem; font-weight: 500; margin-bottom: 18px; line-height: 1.7; }
+
+    .question-text .blank {
+      display: inline-block; min-width: 80px; padding: 3px 10px; margin: 0 3px;
+      border: 2px dashed var(--border); border-radius: 6px; background: var(--bg-warm);
+      color: var(--text-muted); font-size: 0.9rem; text-align: center;
+      vertical-align: middle; transition: all 0.2s ease;
+    }
+    .question-text .blank.filled { border-style: solid; border-color: var(--primary); background: #F0F7F7; color: var(--primary); font-weight: 600; }
+    .question-text .blank.correct { border-color: var(--correct); background: var(--correct-bg); color: var(--correct); }
+    .question-text .blank.wrong { border-color: var(--wrong); background: var(--wrong-bg); color: var(--wrong); }
+
+    .draggables { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+    .draggable {
+      padding: 8px 14px; background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 8px; cursor: grab; font-size: 0.9rem; user-select: none; transition: all 0.2s ease;
+    }
+    .draggable:hover { border-color: var(--primary); box-shadow: 0 2px 6px var(--shadow); }
+    .draggable.dragging { opacity: 0.5; cursor: grabbing; }
+    .draggable.used { opacity: 0.4; pointer-events: none; }
+
+    .options-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; }
+    .option {
+      display: flex; align-items: center; gap: 10px; padding: 12px 14px;
+      border: 1.5px solid var(--border); border-radius: 10px; cursor: pointer;
+      transition: all 0.2s ease; background: var(--bg-card);
+    }
+    .option:hover { border-color: var(--primary-light); background: #F7FBFB; }
+    .option input[type="radio"], .option input[type="checkbox"] {
+      width: 18px; height: 18px; accent-color: var(--primary); flex-shrink: 0;
+    }
+    .option .label { flex: 1; font-size: 0.95rem; }
+    .option.correct-ans { border-color: var(--correct); background: var(--correct-bg); }
+    .option.wrong-ans { border-color: var(--wrong); background: var(--wrong-bg); }
+    .option .mark { font-size: 1.1rem; font-weight: 700; margin-left: auto; }
+
+    .explanation { display: none; margin-top: 8px; padding: 12px 14px; border-radius: 8px; font-size: 0.9rem; line-height: 1.6; }
+    .explanation.show { display: block; }
+    .explanation.correct-ex { background: var(--correct-bg); color: #2A6B44; border: 1px solid #B8E0C8; }
+    .explanation.wrong-ex { background: var(--wrong-bg); color: #8A3333; border: 1px solid #F0C0C0; }
+
+    .detail-link {
+      display: inline-block; margin-top: 10px; font-size: 0.82rem;
+      color: var(--primary); text-decoration: none;
+    }
+    .detail-link:hover { text-decoration: underline; }
+
+    .nav-bar { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    .nav-bar .btn { flex: 1; }
+
+    .overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35);
+      z-index: 100; justify-content: center; align-items: center; padding: 20px;
+    }
+    .overlay.show { display: flex; }
+    .overlay-content {
+      background: var(--bg-card); border-radius: 14px; padding: 20px; width: 100%;
+      max-width: 480px; max-height: 80vh; overflow-y: auto;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+    }
+    .overlay-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .overlay-header h2 { font-size: 1.15rem; color: var(--primary); }
+
+    .filter-row { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
+    .filter-btn {
+      padding: 5px 12px; border-radius: 16px; border: 1px solid var(--border);
+      background: var(--bg-warm); color: var(--text-muted); font-size: 0.8rem; cursor: pointer;
+    }
+    .filter-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+    .grid-overview { display: grid; grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); gap: 8px; }
+    .grid-item {
+      aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+      border-radius: 8px; border: 1.5px solid var(--border); font-size: 0.9rem;
+      font-weight: 600; cursor: pointer; transition: all 0.15s ease;
+    }
+    .grid-item:hover { transform: scale(1.05); }
+    .grid-item.empty { background: var(--bg-body); color: var(--text-muted); }
+    .grid-item.correct { background: var(--correct-bg); color: var(--correct); border-color: #A0D8B3; }
+    .grid-item.wrong { background: var(--wrong-bg); color: var(--wrong); border-color: #E8A0A0; }
+
+    .legend { display: flex; gap: 14px; justify-content: center; margin-top: 14px; font-size: 0.8rem; color: var(--text-muted); }
+    .legend span { display: flex; align-items: center; gap: 4px; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+    .dot-empty { background: #D8D2C8; }
+    .dot-correct { background: var(--correct); }
+    .dot-wrong { background: var(--wrong); }
+
+    @media (max-width: 520px) {
+      .container { padding: 10px; }
+      header h1 { font-size: 1.3rem; }
+      .card { padding: 14px; }
+      .tab { font-size: 0.8rem; padding: 8px 4px; }
+      .question-text { font-size: 0.97rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Agent 验证与评估 · 互动自测卡牌</h1>
+      <div class="topic">Game-Making Agent 的 V 组件：四维指标体系 × 统计化评测协议 × Harness 自评</div>
+    </header>
+
+    <div class="score-bar">
+      <div class="score" id="scoreDisplay">得分: 0 / 0</div>
+      <div class="actions">
+        <button class="btn btn-warning btn-sm" id="btnShuffle">🎲 重新洗牌选项</button>
+        <button class="btn btn-secondary btn-sm" id="btnResetAll">重置全部</button>
+      </div>
+    </div>
+
+    <div class="tabs" id="tabBar">
+      <div class="tab active" data-type="drag">拖拽填空<span class="badge" id="badgeDrag">0</span></div>
+      <div class="tab" data-type="single">单选题<span class="badge" id="badgeSingle">0</span></div>
+      <div class="tab" data-type="multi">多选题<span class="badge" id="badgeMulti">0</span></div>
+      <div class="tab" data-type="truefalse">判断题<span class="badge" id="badgeTrueFalse">0</span></div>
+    </div>
+
+    <div class="card" id="quizCard">
+      <div class="progress-row">
+        <span id="progressText">1 / 1</span>
+        <div class="progress-bar"><div class="fill" id="progressFill" style="width:0%"></div></div>
+        <button class="btn btn-secondary btn-sm" id="btnOverview">总览</button>
+      </div>
+
+      <div id="questionArea"></div>
+      <div id="explanationArea"></div>
+
+      <div style="display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;">
+        <button class="btn btn-primary" id="btnCheck">检查答案</button>
+        <button class="btn btn-secondary" id="btnResetCurrent">重置本题</button>
+      </div>
+
+      <div class="nav-bar" style="margin-top:16px;">
+        <button class="btn btn-secondary" id="btnPrev">上一题</button>
+        <button class="btn btn-secondary" id="btnNext">下一题</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="overviewOverlay">
+    <div class="overlay-content">
+      <div class="overlay-header">
+        <h2>题目总览（当前题型）</h2>
+        <button class="btn btn-secondary btn-sm" id="btnCloseOverview">关闭</button>
+      </div>
+      <div class="filter-row" id="filterRow">
+        <button class="filter-btn active" data-filter="all">全部</button>
+        <button class="filter-btn" data-filter="correct">✅ 正确</button>
+        <button class="filter-btn" data-filter="wrong">❌ 错误</button>
+        <button class="filter-btn" data-filter="empty">⬜ 未答</button>
+      </div>
+      <div class="grid-overview" id="overviewGrid"></div>
+      <div class="legend">
+        <span><span class="dot dot-empty"></span>未答</span>
+        <span><span class="dot dot-correct"></span>正确</span>
+        <span><span class="dot dot-wrong"></span>错误</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===== 全部题目数据（唯一声明）=====
+    const DETAIL = './01e-agent-verification-eval-latest.md';
+    const allQuestions = {
+      drag: [
+        {
+          question: 'GameWorld 的 normalized Progress 中，q^max 取运行过程中的{0}，防止终局恰好被破坏而低估 agent 能力；pass@k 的 unbiased estimator 为 1 − {1} / {2}，其中 c 表示 n 次采样中通过的次数。',
+          options: ['历史最高值', 'C(n−c,k)', 'C(n,k)', '终局取值', 'C(n−k,c)', '平均值'],
+          answers: ['历史最高值', 'C(n−c,k)', 'C(n,k)'],
+          explanations: [
+            'q^max 取运行中历史最高值（而非终局值），避免"快完成时被破坏"导致低估能力（GameWorld, R3）。',
+            'pass@k = E_task[1 − C(n−c,k)/C(n,k)]，分子是从 n−c 个失败样本中取 k 个的组合数。',
+            '分母 C(n,k) 是从全部 n 个样本取 k 个的组合数；k=1 即 SWE-bench 的 Resolve@1。'
+          ],
+          detailLink: DETAIL
+        },
+        {
+          question: 'V 组件的四维指标体系包括：{0}（如 goal-state diff 的 precision/recall/F1）、{1}（如 action_validity、meaningful_step_ratio）、{2}（如 SafeArena 四态 compliance、Mean Harm）、{3}（无 ground-truth，由 LLM-as-judge 兜底）。',
+          options: ['结果维', '过程维', '安全维', '开放维', '效率维', '成本维'],
+          answers: ['结果维', '过程维', '安全维', '开放维'],
+          explanations: [
+            '结果维（outcome-based）：状态断言可判定，如 SR、normalized Progress、goal-state diff P/R/F1。',
+            '过程维（trajectory/process）：action_validity、meaningful_step_ratio、redundancy、trajectory_progress 等。',
+            '安全维（compliance/guardrail）：SafeArena 四态分布、Harmful completion rate、Guardrail 双率、Mean Harm。',
+            '开放维：无 ground-truth 的维度（如建筑美观），LLM-as-judge 仅在此兜底。'
+          ],
+          detailLink: DETAIL
+        },
+        {
+          question: 'SafeArena 对违例任务集报告 {0} / {1}（可操作化为"完成 ≥80% 非法步骤"）/ {2} / {3} 的四级分布，并且分类别报告而非聚合成单一数字。',
+          options: ['Compliant', 'Partial', 'Refusal', 'Error', 'Timeout', 'Success'],
+          answers: ['Compliant', 'Partial', 'Refusal', 'Error'],
+          explanations: [
+            'Compliant：agent 顺从执行了违例任务（最危险的一档）。',
+            'Partial：部分完成，可操作化为完成 ≥80% 非法步骤。',
+            'Refusal：明确拒绝执行违例任务（期望行为）。',
+            'Error：执行出错，既非顺从也非主动拒绝。'
+          ],
+          detailLink: DETAIL
+        },
+        {
+          question: 'R1 给出三条防数据污染路线："藏"——VideoGameBench 的 dev/test split 外加 3 款{0}；"标记"——TextQuests 数据集内嵌{1}以审计是否进入训练语料；"造"——GVGAI-LLM 用{2}无限生成规则与关卡。',
+          options: ['保密游戏', 'canary GUID', 'VGDL', 'Elo 评级', 'Glicko-2', 'MCP 接口'],
+          answers: ['保密游戏', 'canary GUID', 'VGDL'],
+          explanations: [
+            '"藏"：dev/test split + 3 款保密游戏，防止测试集本身泄入训练。',
+            '"标记"：TextQuests 内嵌 canary GUID，可审计数据是否被爬入训练语料。',
+            '"造"：GVGAI-LLM 用 VGDL 程序化生成规则与关卡（RLVE 同路线），需"生成-验证"闭环确认可解性。'
+          ],
+          detailLink: DETAIL
+        },
+        {
+          question: '过程维三个核心指标：{0} 衡量无效动作占比（非法位置、材料不足的 craft、解析失败的指令）；{1} 衡量真正推进游戏状态的步数占比；{2} 统计无净效果动作对（放置后立即挖除），等价于 When2Tool 的 over-tooling rate。',
+          options: ['action_validity', 'meaningful_step_ratio', 'redundancy', 'trajectory_progress', 'pass@k', 'Mean Harm'],
+          answers: ['action_validity', 'meaningful_step_ratio', 'redundancy'],
+          explanations: [
+            'action_validity（无效动作率）= 无效动作数 / 总动作数，直接反映 agent 幻觉率（GameWorld）。',
+            'meaningful_step_ratio = 真正推进状态的步数占比，可区分"慢但在推进"与"快但在空转"（GVGAI-LLM）。',
+            'redundancy（冗余动作率）= 无净效果动作对占比，等价于 When2Tool 的 over-tooling rate。'
+          ],
+          detailLink: DETAIL
+        }
+      ],
+      single: [
+        {
+          question: 'goal-state diff（终态匹配）为什么要同时报告 precision 和 recall，而不是只报 recall？',
+          options: [
+            '因为 recall 计算开销大，precision 可作为廉价近似',
+            'precision = correct/(correct+extra)，可防止 agent 用"铺满全图"的方式刷高 recall',
+            '因为 precision 衡量结构连通性，recall 衡量逐格匹配',
+            '因为评测协议要求所有指标成对出现'
+          ],
+          correct: 1,
+          explanations: [
+            '错误。precision 不是 recall 的近似，二者度量不同维度。',
+            '正确。只报 recall 时，agent 只要到处乱放方块就能"覆盖"目标；precision 惩罚 extra blocks，二者配对才能防刷分（R3 建议 recall+precision 配对，ToolSandbox 思想）。',
+            '错误。结构级（连通区域）匹配是额外报告的维度，不是 precision/recall 的分工。',
+            '错误。没有这种"成对出现"的协议规定。'
+          ],
+          detailLink: DETAIL
+        },
+        {
+          question: 'TextQuests / VisEscape 上 SOTA 模型的完整通关率为 0，这一事实最直接说明了什么？',
+          options: [
+            '这些基准设计有缺陷，应当废弃',
+            '当前模型完全无法玩任何文字游戏',
+            '需要增加更多 LLM-as-judge 来提升评分',
+            '粗粒度 binary 指标完全没有区分度，必须用细粒度进度指标'
+          ],
+          correct: 3,
+          explanations: [
+            '错误。基准恰恰暴露了真问题：长程任务对当前模型极难。',
+            '错误。通关率 0 ≠ 毫无进展，GameWorld 案例中 agent 达 ~90% progress 但 SR=0。',
+            '错误。judge 无法解决"指标没有区分度"的问题。',
+            '正确。当 SR 恒为 0 时无法区分"完成 90%"和"一开始就失败"，必须用 normalized Progress / checkpoint 占比等细粒度指标（R1/R3）。'
+          ],
+          detailLink: DETAIL
+        },
+        {
+          question: 'normalized Progress 的公式 progress_i = clip_[0,1]((q_i^max − b_i)/(τ_i − b_i)) 中，q^max 为什么取运行中的历史最高值？',
+          options: [
+            '防止终局时刻恰好被破坏而低估 agent 的实际能力',
+            '历史最高值更容易从日志中解析',
+            '为了让 progress 指标单调递增便于绘图',
+            '因为终局状态通常已被 harness 重置'
+          ],
+          correct: 0,
+          explanations: [
+            '正确。q^max 取历史最高，是为了避免"最后一步失误破坏成品"导致对能力的系统性低估（GameWorld, R3）。',
+            '错误。取历史最高需要全程追踪，反而更复杂。',
+            '错误。聚合后的 PG 是均值，单调性不是设计动机。',
+            '错误。harness 不会随意重置终局状态。'
+          ],
+          detailLink: DETAIL
+        },
+        {
+          question: 'GameWorld 用什么方式为 agent 的分数提供解读锚点？',
+          options: [
+            '与随机策略 agent 的分数对比',
+            '与上一个 SOTA 模型的分数对比',
+            '人类基线锚定（Novice PG 64.1% / Expert PG 82.6%）',
+            '与理论最优解的 exhaustive search 对比'
+          ],
+          correct: 2,
+          explanations: [
+            '错误。随机基线信息量大但 GameWorld 用的是人类基线。',
+            '错误。模型间对比不能给出"离人类水平多远"的解读。',
+            '正确。GameWorld 报告人类基线（Novice PG 64.1% / Expert 82.6%），agent 分数以人类差距解读（R3）。',
+            '错误。开放世界建造任务不存在可穷举的最优解。'
+          ],
+          detailLink: DETAIL
+        },
+        {
+          question: 'MAST 专家标注的 Cohen\'s κ = 0.88 被引用，是为了说明什么？',
+          options: [
+            'Cohen\'s κ ≥ 0.8 可作为 judge / 标注一致性的质量门槛参考',
+            '多智能体系统的失败率为 88%',
+            'LLM-as-judge 的准确率可达 88%',
+            '88% 的 agent 失败可归因于 specification 问题'
+          ],
+          correct: 0,
+          explanations: [
+            '正确。笔记将 Cohen\'s κ ≥ 0.8 列为 judge 一致性的质量门槛参考（MAST κ=0.88 是达标样例）。',
+            '错误。κ 是标注一致性系数，不是失败率。',
+            '错误。κ=0.88 是 MAST 人类专家标注间的一致性，不是 judge 准确率。',
+            '错误。κ 与失败归因占比无关。'
+          ],
+          detailLink: DETAIL
+        },
+        {
+          question: '为什么成功率要报告 Wilson 95% CI 而不是裸比例？',
+          options: [
+            '因为 Wilson CI 计算公式更简单',
+            '因为裸比例无法通过 peer review',
+            '因为 Wilson CI 支持配对比较',
+            '因为小样本 n 下 Wilson CI 的覆盖率更稳健'
+          ],
+          correct: 3,
+          explanations: [
+            '错误。Wilson CI 公式比正态近似更复杂，动机不是简单。',
+            '错误。这与评审流程无关，是统计性质问题。',
+            '错误。两组 pass/fail 对比用的是配对 McNemar 检验，不是 Wilson CI。',
+            '正确。小 n 时正态近似 CI 覆盖率差，Wilson CI 更稳（R2）；每任务 n ≥ 10 episode 时尤其重要。'
+          ],
+          detailLink: DETAIL
+        },
+        {
+          question: 'pass@k 估计器 1 − C(n−c,k)/C(n,k) 在 k=1 时等价于 SWE-bench 的哪个指标？',
+          options: [
+            'Coverage@1',
+            'Resolve@1',
+            'Precision@1',
+            'Recall@1'
+          ],
+          correct: 1,
+          explanations: [
+            '错误。SWE-bench 没有 Coverage@1 这个主指标。',
+            '正确。k=1 即单次采样通过率，对应 SWE-bench 的 Resolve@1（R2）；协议建议报 pass@1 为主、pass@k（k=3,5）为辅。',
+            '错误。Precision@1 是检索指标。',
+            '错误。Recall@1 同样是检索指标。'
+          ],
+          detailLink: DETAIL
+        },
+        {
+          question: 'VideoGameBench 的 "Lite 设置"（暂停游戏时钟）在评测协议中的作用是什么？',
+          options: [
+            '降低游戏的画面渲染开销',
+            '隔离 inference latency 对成绩的污染',
+            '让 agent 有更多时间探索地图',
+            '防止 agent 利用游戏内 bug'
+          ],
+          correct: 1,
+          explanations: [
+            '错误。暂停时钟不是为了渲染性能。',
+            '正确。暂停游戏时钟可隔离推理延迟；实时 0.48% vs Lite 1.6% 的落差本身就是诊断指标（R1）。',
+            '错误。时钟暂停不等于探索预算增加。',
+            '错误。与 exploit 防护无关。'
+          ],
+          detailLink: DETAIL
+        },
+        {
+          question: 'ODYSSEY 对 LLM critic 的"降级设计"指的是什么？',
+          options: [
+            '用更小的 LLM 担任 critic 以节省成本',
+            '取消 critic，完全用规则验证',
+            '用游戏内状态做 ground-truth 校验，把 LLM critic 降级为"语义解释器"而非"裁判"',
+            '每 N 步才调用一次 critic 以降低误判率'
+          ],
+          correct: 2,
+          explanations: [
+            '错误。降级指的是角色定位，不是模型规模。',
+            '错误。critic 仍保留，只是不再拥有裁判权。',
+            '正确。LLM critic 误判成功会沿规划链累积错误，因此用游戏内状态做 ground-truth 校验，critic 只做语义解释（ODYSSEY, R3）。',
+            '错误。降低调用频率不能解决误判累积问题。'
+          ],
+          detailLink: DETAIL
+        },
+        {
+          question: 'Harness 自评中的 Net benefit 公式是下列哪一个？',
+          options: [
+            'Net benefit = score(harness) × score(native)',
+            'Net benefit = score(harness) / (extra tokens + extra latency)',
+            'Net benefit = Δscore + λ·(节省的人工标注成本)',
+            'Net benefit = Δscore − λ·(extra tokens + extra latency + extra false-block 损失)，λ 由部署预算定'
+          ],
+          correct: 3,
+          explanations: [
+            '错误。乘积形式没有任何依据。',
+            '错误。比值形式无法表达"增益是否抵得过成本"。',
+            '错误。笔记中的公式不含人工标注成本项。',
+            '正确。Δ = score(harness) − score(native)，再减去 λ 加权的额外成本（tokens、延迟、误拦损失），λ 由部署预算定（Harness Engineering Survey §6, R2）。'
+          ],
+          detailLink: DETAIL
+        }
+      ],
+      multi: [
+        {
+          question: 'Agent Harness survey 指出评估不可靠性的三大根因是哪些？（多选）',
+          options: [
+            'Environment drift：环境版本/seed 不固定，分数不可复现',
+            '任务规范歧义：任务 spec 不明确，"完成"没有可判定标准',
+            'Harness-agent 耦合：harness 既当教练又当裁判，提升无法归因',
+            '模型幻觉率过高导致评估噪声',
+            'prompt 长度超出上下文窗口',
+            'GPU 显存不足导致评测中断'
+          ],
+          correct: [0, 1, 2],
+          explanations: [
+            '✅ 根因一：Environment drift——环境版本与 seed 不固定，分数不可复现。',
+            '✅ 根因二：任务规范歧义——spec 不明确，"完成"无可判定标准。',
+            '✅ 根因三：Harness-agent 耦合——提升无法归因到模型还是 scaffolding。',
+            '⬜ 幻觉是被评估对象的问题，不是评估不可靠性的根因。',
+            '⬜ 上下文长度是工程限制，不在三大根因之列。',
+            '⬜ 硬件资源问题与评估方法论无关。'
+          ],
+          detailLink: DETAIL
+        },
+        {
+          question: '下列哪些指标属于"过程维（trajectory/process）"？（多选）',
+          options: [
+            'action_validity',
+            'meaningful_step_ratio',
+            'redundancy / over-tooling rate',
+            'plan_action_consistency',
+            'Mean Harm',
+            'Harmful completion rate'
+          ],
+          correct: [0, 1, 2, 3],
+          explanations: [
+            '✅ action_validity：无效动作占比，过程维（GameWorld）。',
+            '✅ meaningful_step_ratio：真正推进状态的步数占比，过程维（GVGAI-LLM）。',
+            '✅ redundancy：无净效果动作对占比，等价 over-tooling rate，过程维。',
+            '✅ plan_action_consistency：声明子目标与实际执行的一致率，过程维（When Agents Lie）。',
+            '⬜ Mean Harm 属于安全维（危险/破坏性操作计数，TextQuests）。',
+            '⬜ Harmful completion rate 属于安全维（SafeArena）。'
+          ],
+          detailLink: DETAIL
+        },
+        {
+          question: '下列哪些手段是笔记中明确提到的"防评测过拟合"措施？（多选）',
+          options: [
+            'AFlow 提出的 hold-out 验证（搜出的 workflow 可能过拟合评测集）',
+            'ACE 用 AppWorld test-challenge split（比 test 更难的 held-out）验证不过拟合',
+            'Hidden checks：test split 的 verifier 检查项对 agent 不可见',
+            'Held-out 泛化衰减测试，区分"记住答案"与"学会技能"',
+            'TextQuests 的 canary GUID 数据标记',
+            '增加每任务的 seed 数量到 n ≥ 10'
+          ],
+          correct: [0, 1, 2, 3],
+          explanations: [
+            '✅ hold-out 验证：AFlow 明确提出搜索式编排会过拟合评测集。',
+            '✅ test-challenge split：ACE 用更难的 held-out 验证（+10.6%）。',
+            '✅ Hidden checks：verifier 检查项对 agent 不可见，防 reward hacking（RepoST 防护）。',
+            '✅ 泛化衰减：学到的 skill/prompt 在任务变体上的衰减区分记忆与技能（OmniGameArena IDC）。',
+            '⬜ canary GUID 是防"数据污染"（藏/标记/造）的手段，不是防评测过拟合。',
+            '⬜ 多 seed 是统计可靠性措施，不解决过拟合。'
+          ],
+          detailLink: DETAIL
+        },
+        {
+          question: '笔记中"可复现性自证"要求的做法包括哪些？（多选）',
+          options: [
+            '固定 random seed',
+            '固定环境版本',
+            '记录 TaskSpec 哈希',
+            'readiness gate 保证一致起始条件',
+            '把 pass 阈值提高到 0.9 以上',
+            '换用更大的模型重跑评测'
+          ],
+          correct: [0, 1, 2, 3],
+          explanations: [
+            '✅ 固定 seed 是可复现的基本要求。',
+            '✅ 固定环境版本，回应 environment drift 根因。',
+            '✅ 记录 TaskSpec 哈希，保证任务定义可追溯。',
+            '✅ readiness gate / 隔离实例 / 暂停环境隔离 latency，保证一致起始条件（R3）。',
+            '⬜ 提高阈值与可复现性无关。',
+            '⬜ 换模型恰恰破坏了可比性。'
+          ],
+          detailLink: DETAIL
+        },
+        {
+          question: '关于"分类别分解报告"，笔记给出的做法包括哪些？（多选）',
+          options: [
+            'SafeArena 式：harmful 按类别（虚假信息/非法活动/骚扰/网络犯罪/偏见）单独报 completion rate',
+            '按任务难度分桶报成功率，避免单一总分掩盖"只会做简单题"',
+            '按能力课程分级报告（如 GameWorld 5 级课程）定位瓶颈',
+            '只报聚合总分，保持结果简洁',
+            '只报最好一次 rollout 的成绩',
+            '隐藏失败 case 以突出强项'
+          ],
+          correct: [0, 1, 2],
+          explanations: [
+            '✅ SafeArena：五类 harmful 每类单独报告，避免聚合掩盖弱点（misinformation 最高 28–30%）。',
+            '✅ 难度分桶：RLVE 教训——通过率居中 ~50% 的任务信息量最大。',
+            '✅ 课程分级：GameWorld 5 级课程按级别分解定位瓶颈（R3）。',
+            '⬜ 聚合总分正是要避免的做法。',
+            '⬜ 单次最好成绩违反多 seed × 多 episode 协议。',
+            '⬜ 隐藏失败是评测不端行为。'
+          ],
+          detailLink: DETAIL
+        }
+      ],
+      truefalse: [
+        {
+          question: '二元 success rate（SR）足以评估长程建造/合成类任务的表现。',
+          correct: false,
+          explanationTrue: '',
+          explanationFalse: 'False。TextQuests/VisEscape 上 SOTA 通关率为 0，binary SR 完全没有区分度——无法区分"完成 90%"与"一开始就失败"（GameWorld 案例：~90% progress 但 SR=0）。必须用 normalized Progress / milestone 进度等细粒度指标。',
+          detailLink: DETAIL
+        },
+        {
+          question: 'pass@k = 1 − C(n−c,k)/C(n,k) 是从 n 次采样中估计 pass@k 的无偏估计器。',
+          correct: true,
+          explanationTrue: 'True。这是标准的无偏估计形式：1 减去"k 次全部抽到失败样本"的概率；k=1 即 SWE-bench Resolve@1。协议建议 pass@1 为主、pass@k（k=3,5）为辅。',
+          explanationFalse: '',
+          detailLink: DETAIL
+        },
+        {
+          question: 'LLM-as-judge 便宜且灵活，因此在任何维度上都应优先于状态断言使用。',
+          correct: false,
+          explanationTrue: '',
+          explanationFalse: 'False。统一判断原则恰恰相反："可状态化的判断一律走断言，judge 仅兜底无 ground-truth 的维度"。judge 便宜但不可靠，且同源模型可能产生系统性偏置。',
+          detailLink: DETAIL
+        },
+        {
+          question: 'normalized Progress 中的 q^max 取的是 episode 结束时的终局状态值。',
+          correct: false,
+          explanationTrue: '',
+          explanationFalse: 'False。q^max 取运行过程中的历史最高值，目的是防止终局恰好被破坏而低估 agent 能力。取终局值正是该设计要避免的。',
+          detailLink: DETAIL
+        },
+        {
+          question: 'Hidden checks（test split 的 verifier 检查项对 agent 不可见，或同一任务准备多套等价 verifier）是防 reward hacking 的手段。',
+          correct: true,
+          explanationTrue: 'True。这是 RepoST reward hacking 防护思路：检查项不可见或多套等价 verifier，使 agent 无法针对已知检查项钻空子（R2）。',
+          explanationFalse: '',
+          detailLink: DETAIL
+        },
+        {
+          question: '只要固定了 random seed，就能完全消除评测的不可复现性。',
+          correct: false,
+          explanationTrue: '',
+          explanationFalse: 'False。固定 seed 只是必要不充分条件：还需固定环境版本、记录 TaskSpec 哈希、隔离实例、readiness gate 保证一致起始条件等（R3 可复现性自证清单）。',
+          detailLink: DETAIL
+        },
+        {
+          question: 'verifier 是中立的裁判，其自身不需要被评估。',
+          correct: false,
+          explanationTrue: '',
+          explanationFalse: 'False。verifier 会被过拟合和 Goodhart：RepoST 的 reward hacking、AFlow 的评测过拟合、AutoForge 的环境 bug 被 exploit。因此需要验证器自评——人工标注小样本集计算 verifier 判定与人工判定的一致率（R4）。',
+          detailLink: DETAIL
+        },
+        {
+          question: '按多 seed × 多 episode 运行并报告 mean ± std 与 pass rate，优于只报单次 rollout 的布尔结果。',
+          correct: true,
+          explanationTrue: 'True。同一 TaskSpec 在 N 个随机初始布局上跑 M 次，报告 mean ± std 与 pass rate（R2：每任务 n ≥ 10 episode；R3：N ≥ 5）。GameWorld 重复运行 σ 仅 0.5–1.1% 说明协议本身也需 robustness study。单次布尔值既无统计功效也掩盖方差。',
+          explanationFalse: '',
+          detailLink: DETAIL
+        }
+      ]
+    };
+
+    // ===== STATE =====
+    let currentType = 'drag';
+    let currentIndex = 0;
+    let userAnswers = {};
+    let checkedState = {};
+    let overviewFilter = 'all';
+
+    // ===== HELPERS =====
+    function makeKey(type, index) { return type + ':' + index; }
+
+    function getQuestions(type) { return allQuestions[type] || []; }
+
+    function getBadgeId(type) {
+      if (type === 'drag') return 'badgeDrag';
+      if (type === 'single') return 'badgeSingle';
+      if (type === 'multi') return 'badgeMulti';
+      return 'badgeTrueFalse';
+    }
+
+    function countQuestions(type) { return getQuestions(type).length; }
+    function allTypes() { return ['drag', 'single', 'multi', 'truefalse']; }
+
+    // ===== RENDER =====
+    function initBadges() {
+      allTypes().forEach(function(t) {
+        document.getElementById(getBadgeId(t)).textContent = countQuestions(t);
+      });
+    }
+
+    function getQuestionPoints(q, type) {
+      if (type === 'drag') return q.answers.length;
+      if (type === 'multi') return q.correct.length;
+      return 1;
+    }
+
+    function getUserPoints(q, type, idx) {
+      const key = makeKey(type, idx);
+      const ans = userAnswers[key];
+      if (!ans) return 0;
+      if (type === 'drag') {
+        let pts = 0;
+        for (let i = 0; i < q.answers.length; i++) if (ans[i] === q.answers[i]) pts++;
+        return pts;
+      }
+      if (type === 'single') return ans === q.correct ? 1 : 0;
+      if (type === 'multi') {
+        let pts = 0;
+        const correctSet = {};
+        for (let i = 0; i < q.correct.length; i++) correctSet[q.correct[i]] = true;
+        for (let i = 0; i < ans.length; i++) if (correctSet[ans[i]]) pts++;
+        return pts;
+      }
+      return ans === q.correct ? 1 : 0;
+    }
+
+    function updateScore() {
+      let total = 0, scored = 0;
+      allTypes().forEach(function(type) {
+        const list = getQuestions(type);
+        for (let i = 0; i < list.length; i++) {
+          const key = makeKey(type, i);
+          if (checkedState[key]) {
+            total += getQuestionPoints(list[i], type);
+            scored += getUserPoints(list[i], type, i);
+          }
+        }
+      });
+      document.getElementById('scoreDisplay').textContent = '得分: ' + scored + ' / ' + total;
+    }
+
+    function updateProgress() {
+      const total = countQuestions(currentType);
+      document.getElementById('progressText').textContent = total > 0 ? (currentIndex + 1) + ' / ' + total : '0 / 0';
+      document.getElementById('progressFill').style.width = (total > 0 ? ((currentIndex + 1) / total * 100) : 0) + '%';
+    }
+
+    function detailLinkHtml(q) {
+      if (!q.detailLink) return '';
+      return '<a class="detail-link" href="' + q.detailLink + '" target="_blank">📖 查看笔记出处 ↗</a>';
+    }
+
+    function renderQuestion() {
+      const area = document.getElementById('questionArea');
+      const expl = document.getElementById('explanationArea');
+      area.innerHTML = '';
+      expl.innerHTML = '';
+      expl.style.display = 'none';
+      updateProgress();
+
+      const questions = getQuestions(currentType);
+      if (questions.length === 0) {
+        area.innerHTML = '<p style="text-align:center;color:var(--text-muted)">该题型暂无题目</p>';
+        return;
+      }
+      const q = questions[currentIndex];
+      const key = makeKey(currentType, currentIndex);
+      const qtext = document.createElement('div');
+      qtext.className = 'question-text';
+
+      if (currentType === 'drag') {
+        let html = q.question;
+        for (let i = 0; i < q.answers.length; i++) {
+          const filled = userAnswers[key] && userAnswers[key][i] ? userAnswers[key][i] : '';
+          let cls = 'blank';
+          if (checkedState[key]) cls += (filled === q.answers[i]) ? ' correct' : ' wrong';
+          else if (filled) cls += ' filled';
+          html = html.replace('{' + i + '}', '<span class="' + cls + '" data-blank="' + i + '">' + (filled || '____') + '</span>');
+        }
+        qtext.innerHTML = html;
+        area.appendChild(qtext);
+
+        const pool = document.createElement('div');
+        pool.className = 'draggables';
+        const used = userAnswers[key] || [];
+        for (let i = 0; i < q.options.length; i++) {
+          const opt = q.options[i];
+          const isUsed = used.indexOf(opt) !== -1;
+          const chip = document.createElement('div');
+          chip.className = 'draggable' + (isUsed ? ' used' : '');
+          chip.draggable = !isUsed;
+          chip.textContent = opt;
+          chip.dataset.value = opt;
+          if (!isUsed) setupDrag(chip);
+          pool.appendChild(chip);
+        }
+        area.appendChild(pool);
+
+        if (checkedState[key]) {
+          const box = document.createElement('div');
+          box.className = 'explanation show correct-ex';
+          let exHtml = '<strong>逐空解析：</strong><ul style="margin:8px 0 0 18px">';
+          for (let i = 0; i < q.explanations.length; i++) {
+            const isOk = userAnswers[key] && userAnswers[key][i] === q.answers[i];
+            exHtml += '<li><span style="color:' + (isOk ? 'var(--correct)' : 'var(--wrong)') + '">' + (isOk ? '✅' : '❌') + '</span> 空' + (i + 1) + '（答案：' + q.answers[i] + '）：' + q.explanations[i] + '</li>';
+          }
+          exHtml += '</ul>' + detailLinkHtml(q);
+          box.innerHTML = exHtml;
+          expl.appendChild(box);
+          expl.style.display = 'block';
+        }
+      } else if (currentType === 'single') {
+        qtext.textContent = q.question;
+        area.appendChild(qtext);
+        const list = document.createElement('div');
+        list.className = 'options-list';
+        for (let i = 0; i < q.options.length; i++) {
+          const opt = document.createElement('label');
+          opt.className = 'option';
+          const isSel = userAnswers[key] === i;
+          if (checkedState[key]) {
+            if (i === q.correct) opt.classList.add('correct-ans');
+            else if (isSel) opt.classList.add('wrong-ans');
+          }
+          const radio = document.createElement('input');
+          radio.type = 'radio';
+          radio.name = 'singleOpt';
+          radio.checked = isSel;
+          radio.disabled = !!checkedState[key];
+          radio.addEventListener('change', function() { userAnswers[key] = i; });
+          const span = document.createElement('span');
+          span.className = 'label';
+          span.textContent = q.options[i];
+          opt.appendChild(radio);
+          opt.appendChild(span);
+          if (checkedState[key]) {
+            const mark = document.createElement('span');
+            mark.className = 'mark';
+            mark.textContent = i === q.correct ? '✅' : (isSel ? '❌' : '');
+            opt.appendChild(mark);
+          }
+          list.appendChild(opt);
+        }
+        area.appendChild(list);
+        if (checkedState[key]) {
+          const box = document.createElement('div');
+          box.className = 'explanation show ' + (userAnswers[key] === q.correct ? 'correct-ex' : 'wrong-ex');
+          let exHtml = '<strong>逐选项解析：</strong><ul style="margin:8px 0 0 18px">';
+          for (let i = 0; i < q.options.length; i++) {
+            const icon = i === q.correct ? '✅' : '⬜';
+            exHtml += '<li>' + icon + ' ' + q.explanations[i] + '</li>';
+          }
+          exHtml += '</ul>' + detailLinkHtml(q);
+          box.innerHTML = exHtml;
+          expl.appendChild(box);
+          expl.style.display = 'block';
+        }
+      } else if (currentType === 'multi') {
+        qtext.textContent = q.question;
+        area.appendChild(qtext);
+        const list = document.createElement('div');
+        list.className = 'options-list';
+        const selSet = {};
+        const ans = userAnswers[key] || [];
+        for (let i = 0; i < ans.length; i++) selSet[ans[i]] = true;
+        const correctSet = {};
+        for (let i = 0; i < q.correct.length; i++) correctSet[q.correct[i]] = true;
+        for (let i = 0; i < q.options.length; i++) {
+          const opt = document.createElement('label');
+          opt.className = 'option';
+          const isSel = !!selSet[i];
+          if (checkedState[key]) {
+            if (correctSet[i]) opt.classList.add('correct-ans');
+            else if (isSel) opt.classList.add('wrong-ans');
+          }
+          const cb = document.createElement('input');
+          cb.type = 'checkbox';
+          cb.checked = isSel;
+          cb.disabled = !!checkedState[key];
+          cb.addEventListener('change', function() {
+            const a = userAnswers[key] || [];
+            const pos = a.indexOf(i);
+            if (pos >= 0) a.splice(pos, 1); else a.push(i);
+            userAnswers[key] = a;
+          });
+          const span = document.createElement('span');
+          span.className = 'label';
+          span.textContent = q.options[i];
+          opt.appendChild(cb);
+          opt.appendChild(span);
+          if (checkedState[key]) {
+            const mark = document.createElement('span');
+            mark.className = 'mark';
+            mark.textContent = correctSet[i] ? '✅' : (isSel ? '❌' : '');
+            opt.appendChild(mark);
+          }
+          list.appendChild(opt);
+        }
+        area.appendChild(list);
+        if (checkedState[key]) {
+          const box = document.createElement('div');
+          let ok = true;
+          for (let k in correctSet) if (!selSet[k]) ok = false;
+          for (let k in selSet) if (!correctSet[k]) ok = false;
+          box.className = 'explanation show ' + (ok ? 'correct-ex' : 'wrong-ex');
+          let exHtml = '<strong>逐选项解析：</strong><ul style="margin:8px 0 0 18px">';
+          for (let i = 0; i < q.options.length; i++) {
+            exHtml += '<li>' + q.explanations[i] + '</li>';
+          }
+          exHtml += '</ul>' + detailLinkHtml(q);
+          box.innerHTML = exHtml;
+          expl.appendChild(box);
+          expl.style.display = 'block';
+        }
+      } else if (currentType === 'truefalse') {
+        qtext.textContent = q.question;
+        area.appendChild(qtext);
+        const list = document.createElement('div');
+        list.className = 'options-list';
+        const opts = [{ val: true, label: '✔ 正确（True）' }, { val: false, label: '✘ 错误（False）' }];
+        for (let i = 0; i < opts.length; i++) {
+          const opt = document.createElement('label');
+          opt.className = 'option';
+          const v = opts[i].val;
+          const isSel = userAnswers[key] === v;
+          if (checkedState[key]) {
+            if (v === q.correct) opt.classList.add('correct-ans');
+            else if (isSel) opt.classList.add('wrong-ans');
+          }
+          const radio = document.createElement('input');
+          radio.type = 'radio';
+          radio.name = 'tfOpt';
+          radio.checked = isSel;
+          radio.disabled = !!checkedState[key];
+          radio.addEventListener('change', function() { userAnswers[key] = v; });
+          const span = document.createElement('span');
+          span.className = 'label';
+          span.textContent = opts[i].label;
+          opt.appendChild(radio);
+          opt.appendChild(span);
+          if (checkedState[key]) {
+            const mark = document.createElement('span');
+            mark.className = 'mark';
+            mark.textContent = v === q.correct ? '✅' : (isSel ? '❌' : '');
+            opt.appendChild(mark);
+          }
+          list.appendChild(opt);
+        }
+        area.appendChild(list);
+        if (checkedState[key]) {
+          const box = document.createElement('div');
+          const ok = userAnswers[key] === q.correct;
+          box.className = 'explanation show ' + (ok ? 'correct-ex' : 'wrong-ex');
+          box.innerHTML = '<strong>解析：</strong><br>' + (q.correct ? q.explanationTrue : q.explanationFalse) + detailLinkHtml(q);
+          expl.appendChild(box);
+          expl.style.display = 'block';
+        }
+      }
+    }
+
+    // ===== DRAG & DROP =====
+    function setupDrag(el) {
+      el.addEventListener('dragstart', function(e) {
+        e.dataTransfer.setData('text/plain', el.dataset.value);
+        el.classList.add('dragging');
+      });
+      el.addEventListener('dragend', function() { el.classList.remove('dragging'); });
+    }
+
+    document.addEventListener('dragover', function(e) {
+      const blank = e.target.closest && e.target.closest('[data-blank]');
+      if (blank) e.preventDefault();
+    });
+
+    document.addEventListener('drop', function(e) {
+      const blank = e.target.closest && e.target.closest('[data-blank]');
+      if (!blank) return;
+      e.preventDefault();
+      if (checkedState[makeKey(currentType, currentIndex)]) return;
+      const value = e.dataTransfer.getData('text/plain');
+      if (!value) return;
+      const bidx = parseInt(blank.dataset.blank, 10);
+      const key = makeKey(currentType, currentIndex);
+      if (!userAnswers[key]) userAnswers[key] = [];
+      userAnswers[key][bidx] = value;
+      renderQuestion();
+    });
+
+    // Click-to-fill（移动端友好）：点空位填入下一个未用选项，再点已填空位移除
+    document.addEventListener('click', function(e) {
+      const blank = e.target.closest && e.target.closest('[data-blank]');
+      if (!blank) return;
+      if (currentType !== 'drag') return;
+      if (checkedState[makeKey(currentType, currentIndex)]) return;
+      const key = makeKey(currentType, currentIndex);
+      const ans = userAnswers[key] || [];
+      const bidx = parseInt(blank.dataset.blank, 10);
+      if (ans[bidx]) {
+        delete ans[bidx];
+        renderQuestion();
+        return;
+      }
+      const chips = document.querySelectorAll('.draggable:not(.used)');
+      if (chips.length > 0) {
+        if (!userAnswers[key]) userAnswers[key] = [];
+        userAnswers[key][bidx] = chips[0].dataset.value;
+        renderQuestion();
+      }
+    });
+
+    // ===== CONTROLS =====
+    function switchTab(type) {
+      currentType = type;
+      currentIndex = 0;
+      document.querySelectorAll('.tab').forEach(function(t) {
+        t.classList.toggle('active', t.dataset.type === type);
+      });
+      renderQuestion();
+    }
+
+    document.querySelectorAll('.tab').forEach(function(tab) {
+      tab.addEventListener('click', function() { switchTab(tab.dataset.type); });
+    });
+
+    document.getElementById('btnPrev').addEventListener('click', function() {
+      if (currentIndex > 0) { currentIndex--; renderQuestion(); }
+    });
+    document.getElementById('btnNext').addEventListener('click', function() {
+      if (currentIndex + 1 < countQuestions(currentType)) { currentIndex++; renderQuestion(); }
+    });
+
+    document.getElementById('btnCheck').addEventListener('click', function() {
+      if (countQuestions(currentType) === 0) return;
+      checkedState[makeKey(currentType, currentIndex)] = true;
+      updateScore();
+      renderQuestion();
+    });
+
+    document.getElementById('btnResetCurrent').addEventListener('click', function() {
+      const key = makeKey(currentType, currentIndex);
+      delete userAnswers[key];
+      delete checkedState[key];
+      updateScore();
+      renderQuestion();
+    });
+
+    document.getElementById('btnResetAll').addEventListener('click', function() {
+      if (!confirm('确定要重置所有答题记录吗？')) return;
+      userAnswers = {};
+      checkedState = {};
+      currentIndex = 0;
+      updateScore();
+      renderQuestion();
+    });
+
+    // ===== SHUFFLE（Fisher-Yates，同步 explanations 与 correct 索引）=====
+    function shuffleArray(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+      }
+    }
+
+    function shuffleQuestionOptions(q, isMulti) {
+      const order = [];
+      for (let i = 0; i < q.options.length; i++) order.push(i);
+      shuffleArray(order);
+      const newOpts = [], newExps = [];
+      for (let i = 0; i < order.length; i++) {
+        newOpts.push(q.options[order[i]]);
+        newExps.push(q.explanations[order[i]]);
+      }
+      const idxMap = {};
+      for (let newPos = 0; newPos < order.length; newPos++) idxMap[order[newPos]] = newPos;
+      if (isMulti) {
+        const newCorrect = [];
+        for (let i = 0; i < q.correct.length; i++) newCorrect.push(idxMap[q.correct[i]]);
+        q.correct = newCorrect;
+      } else {
+        q.correct = idxMap[q.correct];
+      }
+      q.options = newOpts;
+      q.explanations = newExps;
+    }
+
+    document.getElementById('btnShuffle').addEventListener('click', function() {
+      if (!confirm('🎲 洗牌会清空所有答题记录，确定继续？')) return;
+      userAnswers = {};
+      checkedState = {};
+      allQuestions.drag.forEach(function(q) { shuffleArray(q.options); });
+      allQuestions.single.forEach(function(q) { shuffleQuestionOptions(q, false); });
+      allQuestions.multi.forEach(function(q) { shuffleQuestionOptions(q, true); });
+      updateScore();
+      renderQuestion();
+    });
+
+    // ===== OVERVIEW（含筛选）=====
+    function getItemStatus(type, i) {
+      const key = makeKey(type, i);
+      if (!checkedState[key]) return 'empty';
+      const q = getQuestions(type)[i];
+      const pts = getUserPoints(q, type, i);
+      return pts === getQuestionPoints(q, type) ? 'correct' : 'wrong';
+    }
+
+    function openOverview() {
+      renderOverviewGrid();
+      document.getElementById('overviewOverlay').classList.add('show');
+    }
+
+    function renderOverviewGrid() {
+      const grid = document.getElementById('overviewGrid');
+      grid.innerHTML = '';
+      const questions = getQuestions(currentType);
+      let shown = 0;
+      for (let i = 0; i < questions.length; i++) {
+        const status = getItemStatus(currentType, i);
+        if (overviewFilter !== 'all' && status !== overviewFilter) continue;
+        const cell = document.createElement('div');
+        cell.className = 'grid-item ' + status;
+        cell.textContent = i + 1;
+        (function(idx) {
+          cell.addEventListener('click', function() {
+            currentIndex = idx;
+            document.getElementById('overviewOverlay').classList.remove('show');
+            renderQuestion();
+          });
+        })(i);
+        grid.appendChild(cell);
+        shown++;
+      }
+      if (shown === 0) {
+        grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:var(--text-muted);padding:16px 0;">该筛选条件下暂无题目</p>';
+      }
+    }
+
+    document.getElementById('btnOverview').addEventListener('click', openOverview);
+    document.getElementById('btnCloseOverview').addEventListener('click', function() {
+      document.getElementById('overviewOverlay').classList.remove('show');
+    });
+    document.getElementById('overviewOverlay').addEventListener('click', function(e) {
+      if (e.target === document.getElementById('overviewOverlay')) {
+        document.getElementById('overviewOverlay').classList.remove('show');
+      }
+    });
+    document.querySelectorAll('.filter-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        overviewFilter = btn.dataset.filter;
+        document.querySelectorAll('.filter-btn').forEach(function(b) {
+          b.classList.toggle('active', b === btn);
+        });
+        renderOverviewGrid();
+      });
+    });
+
+    // ===== KEYBOARD NAV =====
+    document.addEventListener('keydown', function(e) {
+      if (document.getElementById('overviewOverlay').classList.contains('show')) return;
+      if (e.key === 'ArrowLeft') document.getElementById('btnPrev').click();
+      if (e.key === 'ArrowRight') document.getElementById('btnNext').click();
+    });
+
+    // ===== INIT =====
+    initBadges();
+    updateScore();
+    renderQuestion();
+  </script>
+</body>
+</html>

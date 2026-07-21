@@ -94,7 +94,7 @@ created: 2026-07-20
 3. **从 System 1 轨迹合成 System 2 数据的可靠性**：数据管线把交互轨迹转化为推理数据。如何证明这不是"教师幻觉的蒸馏"——即合成的推理链只是听起来合理而非因果正确？OptimusM4 数据集的质量如何保证可复现？
 
 #### 重点章节标记
-
+ 
 1. **Data Pipeline**：Knowledge-Enhanced Automated Data Generation + OptimusM4 数据集构建
 2. **Architecture**：Dual-Router MoE——Task Router（任务级）+ Layer Router（层级）
 3. **DGRPO**：双粒度稠密奖励的公式与两种 consistency reward

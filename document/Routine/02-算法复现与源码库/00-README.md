@@ -52,6 +52,7 @@ aliases: [<algorithm-name>]
 | 算法 | 主题 | 状态 | 代码 | 笔记 |
 |------|------|------|------|------|
 | Agent Harness 六组件架构 | LLM Agent × Game AI | ✅ 完成 | `agent_harness_game/` | [[02-Agent-Harness-Game-AI-2026-07-01]] |
+| Agent Harness v2：Verification/Evaluation 深化 | Agent Verification × 评测协议 | ✅ 完成（2026-07-20） | `agent_harness_game/evaluation.py`、`verifier.py`（扩展）、`demo/craft_item.py`、`demo/run_benchmark.py`、`research/R1~R4-*.md`、`plan-v2-verification-eval.md` | [[02-Agent-Harness-Game-AI-2026-07-01]]（第八节）、[[01e-agent-verification-eval-latest]] |
 | | | ☐ 待开始 / 🔄 进行中 / ✅ 完成 | | |
 
 ---

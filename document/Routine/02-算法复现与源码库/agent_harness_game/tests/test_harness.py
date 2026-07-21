@@ -264,14 +264,19 @@ class TestVerifier:
         assert result.dimensions["inventory_match"] == 1.0
 
     def test_efficiency(self):
+        # 修复（预存在失败）：verifier 的 efficiency = 1 − turn / task_spec.max_turns，
+        # 分母是任务预算（wall_2x2 为 50），而非 state.max_turns。
+        # 语义上实现更正确：效率应相对任务预算衡量，V 组件只持有 TaskSpec；
+        # 原断言设置 state.max_turns=100 属于过时假设（evaluate 从不读该字段），
+        # 故修正测试：turn=25 / budget=50 → efficiency=0.5。
         env = SandboxEnvironment(10, 10)
         state = env.reset()
-        state.turn = 50
-        state.max_turns = 100
+        state.turn = 25
 
-        verifier = TaskVerifier(TaskSpec.build_wall_2x2())
+        verifier = TaskVerifier(TaskSpec.build_wall_2x2())  # max_turns=50
         result = verifier.evaluate(state)
         assert result.dimensions["efficiency"] == 0.5
+        assert result.details["max_turns"] == 50
 
 
 class TestAgent:

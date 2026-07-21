@@ -13,6 +13,7 @@ source: [[Agent-Harness-Game-AI-2026-06-29]]
 - **主题**：[[LLM Agent]] × [[Game AI]] × [[Reinforcement Learning]]
 - **复现日期**：2026-07-01（周二）
 - **测试状态**：✅ 全部通过（24/24）
+- **v2 状态**：✅ Verification/Evaluation v2 扩展完成（2026-07-20，见"八、v2 扩展"）
 
 ---
 
@@ -299,7 +300,68 @@ print(f"Score: {result.evaluation.overall_score}")
 
 ---
 
+## 八、v2 扩展：Verification/Evaluation 深化（2026-07-20）
+
+> 依据：项目内 `research/R1-benchmarks.md`、`R2-harness-verification.md`、`R3-execution-interaction.md`、`R4-supporting-evals.md` 四份调研 brief 与 `plan-v2-verification-eval.md`；综合笔记见 [[01e-agent-verification-eval-latest]]（约 58 条引用）。
+
+### 8.1 扩展动机
+
+v1 的 V 组件是"单任务、单轨迹、静态阈值的终局检查器"（四维加权 `V(s_T) = Σ w_k·v_k`，阈值 0.75）。R1–R4 调研得出的一致结论：V 组件必须升级为**四维指标体系 + 统计化评测协议 + harness 自评（net benefit）**的组合——粗粒度 binary 指标在 TextQuests / VisEscape 上区分度为 0，需要细粒度进度与过程指标（GameWorld 案例：agent 达 ~90% progress 但 SR=0）。
+
+### 8.2 verifier.py 新增维度总表
+
+| 新维度 | 公式 / 定义 | 文献来源 |
+|--------|-------------|----------|
+| structure P/R/F1（goal-state diff） | 终态 world state 与目标 state 逐格比对：`precision = correct/(correct+extra)`、`recall = correct/(correct+missing)`、F1；precision 防"铺满全图"刷分 | ToolSandbox 有状态终态比对思想（R4）；R3 建议 recall+precision 配对 |
+| mean_harm | 危险/破坏性操作计数（误拆目标方块、破坏已有正确结构、无效合成） | TextQuests（arXiv:2507.23701）（R1） |
+| trajectory_progress（normalized progress） | `progress = clip_[0,1]((q_max − b)/(τ − b))`，q_max 取运行中历史最高值，防止终局恰好被破坏而低估能力 | GameWorld（arXiv:2604.07429）（R3） |
+| action_validity | 无效动作数 / 总动作数（非法位置、材料不足的 craft、解析失败指令） | GameWorld action-validity diagnostics（R3） |
+| meaningful_step_ratio | 真正推进游戏状态的步数占比，区分"慢但在推进"与"快但在空转" | GVGAI-LLM（arXiv:2508.08501）（R1） |
+| redundancy（冗余动作率） | 无净效果动作对占比（放置后立即挖除等），等价于 over-tooling rate | Harness Engineering Survey §3.7（R2）/ When2Tool（R4） |
+| compliance 四态 | 违例任务集报告 Compliant / Partial / Refusal / Error 四级分布，分类别报告而非聚合 | SafeArena（ICML 2025）（R4） |
+| JudgeBackend / NoOpJudge | LLM-as-judge 抽象接口；NoOpJudge 为默认空实现——可状态化的判断一律走断言，judge 仅兜底无 ground-truth 维度 | FlashAdventure CUA-as-a-Judge（R1/R3）；ODYSSEY critic 降级（R3） |
+
+v1 四维处置：structure_correctness 增强（recall→P/R/F1 配对、q_max 历史取值）；block_count 降为诊断 details；efficiency 由 normalized progress 增强；inventory_match 保留。
+
+### 8.3 evaluation.py API 摘要（新建，~650 行）
+
+| API | 说明 |
+|-----|------|
+| `TaskEntry` | 任务条目：TaskSpec + category（build/craft/adversarial）+ split（dev/test） |
+| `TaskSuite` | 任务集合（默认 10 任务），`by_category()` / `by_split()` 分组，`default_suite(seed=42)` 工厂 |
+| `generate_variants(spec, n, seed)` | 从 held-out 分布程序化生成任务变体（平移目标位置、换方块类型），dev/test 防过拟合核心 |
+| `BenchmarkRunner(n_seeds, m_episodes)` | N seeds × M episodes 批量评测，`run_suite(suite)` → 报告 dict |
+| `EpisodeRecord` | 单 episode 记录（seed、episode、passed、各维度得分），`to_dict()` 序列化 |
+| `pass_at_k(n, c, k)` | 无偏估计器 `pass@k = 1 − C(n−c,k)/C(n,k)`，k=1 即 Resolve@1 |
+| `wilson_ci(successes, n, z=1.96)` | Wilson 95% CI，小 n 下比裸比例更稳 |
+| `render_markdown(report)` / `save_json(report, path)` | 分类别分解报告输出（Markdown / JSON） |
+| `run_ablation(suite, configs, ...)` / `render_ablation_markdown(...)` | 多 harness 配置受控对比（ablation-as-protocol） |
+
+### 8.4 协议设计
+
+1. **dev/test split + 变体生成**：TaskSpec 增加 split 字段；dev 坐标固定，test 由 `generate_variants` 从 held-out 分布采样（seed 固定可复现）——对应 R1 三条防污染路线中的"造（程序化生成）"与 R2 的 hold-out 验证。
+2. **多 seed × 多 episode**：同一任务在 N 个随机初始布局上跑 M 次，报告 mean ± std 与 pass rate，而非单次 rollout 布尔值（每任务 n ≥ 10 episode 的 R2/R3 建议的可调实现）。
+3. **pass@k**：报 pass@1 为主、pass@k（k=3,5）为辅（SWE-bench Resolve@1 惯例，R2）。
+4. **Wilson CI**：成功率一律报 Wilson 95% CI；两组对比可用配对 McNemar 检验（pass/fail 二值）。
+5. **分类别分解报告**：按 build / craft / adversarial 三类分别聚合，避免单一总分掩盖弱点（SafeArena 分类别报告、RLVE 难度分桶思想）。
+6. **run_ablation（三臂消融）**：native（V 不参与反馈）vs full-V vs 去单维，报 Δscore / Δcost / net benefit——harness 自评核心（Harness Engineering Survey §6 两层评估逻辑：native capability-gap diagnosis + compensation effectiveness）。
+
+### 8.5 文件变更清单
+
+| 文件 | 变更 |
+|------|------|
+| `verifier.py` | 扩展（~230 行 → ~524 行）：structure P/R/F1、mean_harm、trajectory_progress、process 三维（action_validity / meaningful_step_ratio / redundancy）、compliance 四态、JudgeBackend/NoOpJudge |
+| `evaluation.py` | 新建（~648 行）：TaskSuite / generate_variants / BenchmarkRunner / EpisodeRecord / pass_at_k / wilson_ci / render_markdown / save_json / run_ablation |
+| `demo/craft_item.py` | 新建：合成任务演示 |
+| `demo/run_benchmark.py` | 新建：BenchmarkRunner 端到端演示 |
+| `research/R1-benchmarks.md` ~ `R4-supporting-evals.md` | 新建：4 份调研 brief（基准评测 / Harness 验证 / 执行与交互评估 / 支撑组件评估） |
+| `plan-v2-verification-eval.md` | 新建：v2 实现计划 |
+| `01e-agent-verification-eval-latest.md` | 新建（研究库）：综合调研笔记，约 58 条引用 |
+
+---
+
 *AI 执行时间：约 30 分钟（代码生成 + 测试）*
 *人类验证时间：约 30 分钟（阅读代码 + 运行测试）*
 *日期：2026-07-01 周二*
 *状态：✅ 复现完成，24/24 测试通过*
+*v2 更新：2026-07-20 · Verification/Evaluation 深化完成（见第八节）*

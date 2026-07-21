@@ -49,6 +49,7 @@ created: YYYY-MM-DD
 |------|--------|----------|
 | Game-AI | 22 | 2026-07-20 |
 | Agent Harness | 8 | 2026-07-20 |
+| Agent Verification/Eval | 1 | 2026-07-20 |
 | World Models | 7 | 2026-07-20 |
 | Human-AI Interaction | 8 | 2026-07-20 |
 | Game Benchmarks | 6 | 2026-07-20 |
@@ -117,6 +118,12 @@ created: YYYY-MM-DD
 | [[01e-agent-harness-latest]] | [🎯 自测](01e-agent-harness-latest.html) | Context Engineering Survey, ACE, MAST, AFlow, Confucius, GCC, RepoST | Harness 工程 |
 | [[01e-game-benchmarks-latest]] | [🎯 自测](01e-game-benchmarks-latest.html) | VideoGameBench, Orak, TextQuests, GVGAI-LLM, FlashAdventure, VisEscape | 游戏基准 |
 | [[01e-rl-games-envs-latest]] | [🎯 自测](01e-rl-games-envs-latest.html) | SPIRAL, Absolute Zero, R-Zero, Vision-Zero, RLVE, GEM, AutoForge, GIFT | 合成环境 RL |
+
+## Agent Verification/Eval 综合库（2026-07-20 新建）
+
+| Markdown | QA HTML | 内容 | 方向 |
+|----------|---------|------|------|
+| [[01e-agent-verification-eval-latest]] | [🎯 自测](01e-agent-verification-eval-latest.html) | 四维指标体系（结果/过程/安全/开放）、评测协议（pass@k、Wilson CI、dev/test split、ablation）、agent_harness_game v2 落地映射，约 58 条引用 | 验证与评估 |
 
 ---
 

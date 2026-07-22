@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Infra 性能优化 · 综合面试卡牌</title>
+<style>
+  :root {
+    --bg: #0d1117; --card: #161b22; --border: #30363d;
+    --text: #c9d1d9; --muted: #8b949e; --accent: #58a6ff;
+    --success: #3fb950; --danger: #f85149; --warn: #d29922;
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: var(--font); background: var(--bg); color: var(--text);
+    line-height: 1.6; min-height: 100vh;
+  }
+  header {
+    background: var(--card); border-bottom: 1px solid var(--border);
+    padding: 1rem 1.5rem; position: sticky; top: 0; z-index: 10;
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .5rem;
+  }
+  header h1 { font-size: 1.15rem; margin: 0; color: var(--accent); }
+  .score-bar { display: flex; gap: 1rem; align-items: center; font-size: .9rem; }
+  .score-bar span { font-weight: 600; }
+  .progress-bar { height: 4px; background: var(--border); border-radius: 2px; margin: .5rem 0; overflow: hidden; }
+  .progress-bar > div { height: 100%; background: var(--accent); width: 0%; transition: width .3s; }
+  .progress-text { text-align: center; font-size: .8rem; color: var(--muted); margin-bottom: .5rem; }
+  .container { max-width: 800px; margin: 0 auto; padding: 1.5rem; }
+  .nav-tabs { display: flex; gap: .5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+  .nav-tabs button {
+    background: var(--card); color: var(--muted); border: 1px solid var(--border);
+    padding: .4rem .9rem; border-radius: 6px; cursor: pointer; font-size: .85rem;
+  }
+  .nav-tabs button.active { color: var(--accent); border-color: var(--accent); background: rgba(88,166,255,.1); }
+  .question-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 1.5rem; margin-bottom: 1.2rem; display: none;
+  }
+  .question-card.active { display: block; animation: fadeIn .25s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px);} to { opacity: 1; transform: translateY(0);} }
+  .q-number { font-size: .75rem; color: var(--muted); margin-bottom: .4rem; }
+  .q-text { font-size: 1.05rem; font-weight: 600; margin-bottom: 1rem; }
+  .options label {
+    display: flex; align-items: flex-start; gap: .6rem;
+    padding: .7rem .9rem; border: 1px solid var(--border); border-radius: 8px;
+    margin-bottom: .5rem; cursor: pointer; transition: .15s; font-size: .95rem;
+  }
+  .options label:hover { border-color: var(--accent); }
+  .options label.correct { border-color: var(--success); background: rgba(63,185,80,.08); }
+  .options label.wrong { border-color: var(--danger); background: rgba(248,81,73,.08); }
+  .options input[type="radio"], .options input[type="checkbox"] { margin-top: .15rem; accent-color: var(--accent); }
+  .truefalse-btns { display: flex; gap: .8rem; }
+  .truefalse-btns button {
+    flex: 1; padding: .7rem; border: 1px solid var(--border); border-radius: 8px;
+    background: var(--bg); color: var(--text); cursor: pointer; font-size: .95rem;
+  }
+  .truefalse-btns button.correct { border-color: var(--success); background: rgba(63,185,80,.15); }
+  .truefalse-btns button.wrong { border-color: var(--danger); background: rgba(248,81,73,.15); }
+  .actions { display: flex; gap: .6rem; margin-top: 1.2rem; flex-wrap: wrap; }
+  .actions button {
+    padding: .5rem 1rem; border-radius: 6px; border: 1px solid var(--border);
+    background: var(--bg); color: var(--text); cursor: pointer; font-size: .85rem;
+  }
+  .actions button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .explanation {
+    margin-top: 1rem; padding: 1rem; border-radius: 8px; background: rgba(88,166,255,.06);
+    border-left: 3px solid var(--accent); display: none; font-size: .9rem;
+  }
+  .explanation.show { display: block; }
+  .follow-up { margin-top: .8rem; padding-top: .8rem; border-top: 1px dashed var(--border); color: var(--muted); font-size: .85rem; }
+  .follow-up strong { color: var(--warn); }
+  .dashboard-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 20;
+    display: none; justify-content: center; align-items: flex-start; padding-top: 4vh; overflow-y: auto;
+  }
+  .dashboard-overlay.open { display: flex; }
+  .dashboard { background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    width: 92%; max-width: 720px; max-height: 85vh; overflow-y: auto; padding: 1.5rem;
+  }
+  .dashboard h2 { margin-top: 0; font-size: 1.1rem; }
+  .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: .6rem; margin-top: 1rem; }
+  .thumb {
+    padding: .6rem; border-radius: 8px; text-align: center; font-size: .8rem; cursor: pointer;
+    border: 1px solid var(--border); background: var(--bg);
+  }
+  .thumb:hover { border-color: var(--accent); }
+  .thumb.correct { border-color: var(--success); color: var(--success); }
+  .thumb.wrong { border-color: var(--danger); color: var(--danger); }
+  .thumb.unchecked { color: var(--muted); }
+  .result-page { display: none; text-align: center; padding: 3rem 1rem; }
+  .result-page.show { display: block; }
+  .big-score { font-size: 4rem; font-weight: 800; color: var(--accent); }
+  .hidden { display: none !important; }
+  @media (max-width: 520px) {
+    header h1 { font-size: 1rem; }
+    .container { padding: 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🚀 AI Infra 性能优化 · 综合面试卡牌</h1>
+  <div class="score-bar">
+    <span>得分: <b id="score">0</b> / <b id="total">0</b></span>
+    <button onclick="openDashboard()" style="background:var(--card);border:1px solid var(--border);color:var(--accent);padding:.3rem .7rem;border-radius:6px;cursor:pointer;font-size:.8rem;">📊 题目总览</button>
+    <button onclick="shuffleAll()" style="background:var(--card);border:1px solid var(--border);color:var(--warn);padding:.3rem .7rem;border-radius:6px;cursor:pointer;font-size:.8rem;">🎲 重新洗牌</button>
+  </div>
+</header>
+
+<div class="progress-bar"><div id="progress-fill"></div></div>
+<div class="progress-text" id="progress-text">0 / 0</div>
+
+<div class="container">
+
+  <div class="nav-tabs">
+    <button class="active" onclick="switchTab('single')">单选题</button>
+    <button onclick="switchTab('multi')">多选题</button>
+    <button onclick="switchTab('tf')">判断题</button>
+  </div>
+
+  <div id="tab-single" class="tab-content">
+    <div id="single-container"></div>
+    <div class="actions">
+      <button class="primary" onclick="checkSingle()">检查答案</button>
+      <button onclick="resetCurrentSingle()">重置</button>
+      <button onclick="prevQuestion()">← 上一题</button>
+      <button onclick="nextQuestion()">下一题 →</button>
+    </div>
+  </div>
+
+  <div id="tab-multi" class="tab-content" style="display:none">
+    <div id="multi-container"></div>
+    <div class="actions">
+      <button class="primary" onclick="checkMulti()">检查答案</button>
+      <button onclick="resetCurrentMulti()">重置</button>
+      <button onclick="prevQuestion()">← 上一题</button>
+      <button onclick="nextQuestion()">下一题 →</button>
+    </div>
+  </div>
+
+  <div id="tab-tf" class="tab-content" style="display:none">
+    <div id="tf-container"></div>
+    <div class="actions">
+      <button class="primary" onclick="checkTF()">检查答案</button>
+      <button onclick="resetCurrentTF()">重置</button>
+      <button onclick="prevQuestion()">← 上一题</button>
+      <button onclick="nextQuestion()">下一题 →</button>
+    </div>
+  </div>
+
+  <div id="result-page" class="result-page">
+    <div class="big-score" id="big-score">0%</div>
+    <p id="result-msg">继续加油！</p>
+    <div class="actions" style="justify-content:center;margin-top:1.5rem;">
+      <button class="primary" onclick="openDashboard()">📊 返回查看</button>
+      <button onclick="resetAll()">🔄 重置所有分数</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="dashboard-overlay" id="dashboard-overlay" onclick="if(event.target===this)closeDashboard()">
+  <div class="dashboard">
+    <h2>题目总览</h2>
+    <p style="color:var(--muted);font-size:.85rem;">点击缩略图跳转至对应题目</p>
+    <div class="dashboard-grid" id="dashboard-grid"></div>
+    <div style="text-align:right;margin-top:1rem;">
+      <button onclick="closeDashboard()" style="background:var(--bg);border:1px solid var(--border);color:var(--text);padding:.4rem 1rem;border-radius:6px;cursor:pointer;">关闭</button>
+    </div>
+  </div>
+</div>
+
+<script>
+
+let singleQuestions = [
+  {
+    q: "FlashAttention-3 在 H100 上的核心硬件协同优化是什么？",
+    options: [
+      "A. 更大规模的 CUDA block 以提升 occupancy",
+      "B. Warp specialization：TMA 异步加载 + WGMMA 计算的 ping-pong 调度",
+      "C. 自动混合精度训练中的动态 loss scaling",
+      "D. 使用 Triton 编译器替代手写 CUDA kernel"
+    ],
+    correct: 1,
+    explanations: [
+      "❌ 错误：FA-3 的关键不是 block 规模，而是 warp 级别的异步调度。",
+      "✅ 正确：FA-3 专为 Hopper 设计，利用 TMA (Tensor Memory Accelerator) 异步加载和 WGMMA (Warp Group Matrix Multiply-Accumulate) 实现计算与加载的 ping-pong 重叠，H100 上达 740 TFLOPS。",
+      "❌ 错误：动态 loss scaling 是训练优化，与 FlashAttention-3 的推理 kernel 设计无关。",
+      "❌ 错误：FA-3 是手写 CUDA kernel，Triton 版本（如 FlashAttention-4 的 CuTeDSL）是 Blackwell 时代的路线。"
+    ],
+    followUp: [
+      "面试官追问：FA-3 的 FP8 路径为什么比 INT8 快？",
+      "→ 答：Hopper 原生支持 FP8 的 Tensor Core，且 floating-point exponent 天然处理 activation outlier，无需 SmoothQuant 的复杂 per-channel scaling。FP8 在 H100 上可达 1.2 PFLOPS。"
+    ]
+  },
+  {
+    q: "PagedAttention 将传统连续预分配 KV Cache 的显存浪费从 60-80% 降低到了多少？",
+    options: [
+      "A. 约 15-20%",
+      "B. 约 8-12%",
+      "C. < 4%",
+      "D. 0%（完全消除）"
+    ],
+    correct: 2,
+    explanations: [
+      "❌ 错误：15-20% 仍远高于 PagedAttention 的实际水平。",
+      "❌ 错误：8-12% 是早期 continuous batching 的改善值，非 PagedAttention。",
+      "✅ 正确：SOSP 2023 论文原文指出，传统连续预分配浪费 60-80%，PagedAttention 通过 block-level 按需分配 + copy-on-write 共享，将浪费降至 < 4%。",
+      "❌ 错误：内部碎片（intra-block fragmentation）仍不可避免，block size 为 16 tokens 时最坏情况浪费 <1 block。"
+    ],
+    followUp: [
+      "面试官追问：block size 选 16 的 trade-off 是什么？",
+      "→ 答：更小的 block size 减少内部碎片，但增加 block table 管理开销和 CUDA kernel 启动次数；更大的 block size 管理简单但内部碎片上升。16 是工程实践中的 sweet spot。"
+    ]
+  },
+  {
+    q: "Speculative Decoding 单 token 接受率的上界（maximal coupling 视角）是什么？",
+    options: [
+      "A. 1 − D_TV(p, q)",
+      "B. 1 / M（M 为包络常数）",
+      "C. min(p, q) / max(p, q)",
+      "D. KL(p ‖ q) 的指数衰减"
+    ],
+    correct: 0,
+    explanations: [
+      "✅ 正确：Leviathan et al. 2023 证明 β = E[min(1, p/q)] = Σ min(p,q) = 1 − D_TV(p,q)。这是任何以 q 为 proposal 的接受方案的概率上限——maximal coupling 的等号可被 speculative sampling 达到。",
+      "❌ 错误：1/M 是经典 rejection sampling 的接受率，speculative sampling 根本不需要包络常数 M。",
+      "❌ 错误：min/max 不是总变差距离的等价表达，接受率的闭式是 Σ min(p,q)。",
+      "❌ 错误：KL 散度与接受率无直接闭式关系；total variation distance 才是。"
+    ],
+    followUp: [
+      "面试官追问：如果 q 的支撑集不包含 p 的支撑集，acceptance rate 公式还成立吗？",
+      "→ 答：仍然成立。q(x)=0 而 p(x)>0 的位置，min(p,q)=0，自然全部落入残差分支 (p−q)_+ 由重采样补上。Speculative sampling 不要求 supp(q) ⊇ supp(p)，这是与经典 RS 的本质差异。"
+    ]
+  },
+  {
+    q: "在生产服务的高 QPS（高并发）场景下，Speculative Decoding 的典型表现是什么？",
+    options: [
+      "A. 加速比随 QPS 线性增长",
+      "B. 与低 QPS 时表现一致，约 1.5-2.8x",
+      "C. 完全失效，但不减速",
+      "D. 可能反而减速 1.4-1.8x"
+    ],
+    correct: 3,
+    explanations: [
+      "❌ 错误：加速比不随 QPS 增长；高 QPS 下额外草稿计算成为开销。",
+      "❌ 错误：低 QPS（batch=1, memory-bound）和高 QPS（compute-bound）表现截然相反。",
+      "❌ 错误：高 QPS 下不仅失效，还会因为算力放大（Theorem 3.11）导致减速。",
+      "✅ 正确：vLLM 官方博客（2024-10）实测 Llama3-70B 在高 QPS 下 draft model 减速 1.4x，n-gram 减速 1.8x。根源：continuous batching 已打满 GPU，验证的额外 FLOPs 直接变延迟。"
+    ],
+    followUp: [
+      "面试官追问：Dynamic Speculative Decoding 如何解决高 QPS 减速问题？",
+      "→ 答：根据实时 batch size 和接受率动态调整草稿长度 γ；当检测到 compute-bound 时降低 γ 或关闭 speculation。Nightjar / SmartSpec / Cascade 的 utility-driven 方案在 utility < 1 时关闭，可将 MoE 减速限制在 5% 内。"
+    ]
+  },
+  {
+    q: "Agent Memory System（如 Mem0）的在线开销主矛盾位于哪条路径？",
+    options: [
+      "A. 向量检索路径（embedding + ANN）",
+      "B. 写入/整合路径的 LLM-in-the-loop",
+      "C. 客户端网络传输延迟",
+      "D. KV Cache 的显存分配与回收"
+    ],
+    correct: 1,
+    explanations: [
+      "❌ 错误：纯 embedding + ANN 检索已能压进 100-200 ms（Zep p50=115ms），不是主矛盾。",
+      "✅ 正确：Mem0 每消息对至少引入 2 次额外 LLM 调用（extraction + update 仲裁），与回答本身同量级。SwiftMem 复现显示同一系统 search 阶段 784ms vs 纯索引 11ms，差距来自检索链路中的 LLM 调用。",
+      "❌ 错误：客户端网络延迟在系统级优化中通常可控，不是 memory 架构的主矛盾。",
+      "❌ 错误：KV Cache 显存是 serving 系统的问题，不是 Agent memory 写入路径的问题。"
+    ],
+    followUp: [
+      "面试官追问：LightMem 的 sleep-time update 具体是如何缓解这个矛盾的？",
+      "→ 答：将重的合并/仲裁从在线路径移到离线（sleep-time），在线只保留轻量过滤与分组。纯在线 token ↓106×，但总成本口径（含离线）仅 ↓38×——本质是转移成本而非消除成本。"
+    ]
+  },
+  {
+    q: "llama.cpp 生态中，让 2-bit 量化从不可用变为可用的关键技术是什么？",
+    options: [
+      "A. GGUF 格式的 mmap 内存映射",
+      "B. Q4_K_M super-block 量化方案",
+      "C. imatrix（重要性矩阵校准）",
+      "D. Metal 后端的自定义 kernel"
+    ],
+    correct: 2,
+    explanations: [
+      "❌ 错误：mmap 解决的是模型加载速度和大于 RAM 场景的加载问题，与量化精度无关。",
+      "❌ 错误：Q4_K_M 是 4-bit 方案，虽然优秀但不是 2-bit 的突破点。",
+      "✅ 正确：imatrix 通过 calibration data 识别敏感 tensor，指导量化参数。原始 Q2_K_S 的 PPL 惩罚为 +9.06，经 imatrix 校准后降到可用水平，使 2-bit 成为现实。",
+      "❌ 错误：Metal backend 提升的是运行速度，不是量化本身的精度。"
+    ],
+    followUp: [
+      "面试官追问：IQ-Quants（Importance-aware Quantization）与 imatrix 的关系是什么？",
+      "→ 答：IQ-Quants 是量化方案层（非线性码本 + 按重要性分配比特），imatrix 是校准工具层（为量化提供 per-tensor 的重要性信号）。两者协同：imatrix 的输出指导 IQ-Quants 的 bit allocation。"
+    ]
+  },
+  {
+    q: "vLLM 的 Continuous Batching（迭代级调度）对 GPU 利用率的典型提升是什么？",
+    options: [
+      "A. 从 30-40% 提升到 75-90%",
+      "B. 从 50% 提升到 65%",
+      "C. 从 20% 提升到 40%",
+      "D. 对利用率无显著影响，只改善延迟"
+    ],
+    correct: 0,
+    explanations: [
+      "✅ 正确：Continuous Batching 每 decode step 结束后踢出完成请求、补入新请求，配合 PagedAttention 消除静态 batching 的等待间隙，GPU 利用率从 30-40% 提升到 75-90%，吞吐提升 2-3x。",
+      "❌ 错误：50%→65% 低估了 continuous batching 的收益。",
+      "❌ 错误：20%→40% 远远低估了，且原始基线通常已在 30% 以上。",
+      "❌ 错误：Continuous Batching 对吞吐和利用率都有显著提升，不只是延迟。"
+    ],
+    followUp: [
+      "面试官追问：Chunked Prefill 与 Continuous Batching 配合解决了什么问题？",
+      "→ 答：Chunked Prefill 将长 prefill 切小块，与 decode 请求同批执行，避免单条长 prompt 阻塞所有 decode。TTFT p95 可降 50-70%，是长上下文服务的必备技术。"
+    ]
+  },
+  {
+    q: "LightMem 报告中声称「在线 token ↓106×」，但其实际系统总成本节省倍数约为多少？",
+    options: [
+      "A. 也是约 106×",
+      "B. 约 38×（LongMemEval）/ 20.9×（LoCoMo）",
+      "C. 约 5-10×",
+      "D. 因离线开销过大，总成本反而增加"
+    ],
+    correct: 1,
+    explanations: [
+      "❌ 错误：106× 是纯在线口径，不含离线整合成本。",
+      "✅ 正确：LightMem 论文摘要明确给出总 token 口径为 ↓38× / ↓20.9×。反解可得离线整合成本约为在线剩余成本的 1.8 倍——sleep-time update 是转移成本而非消除成本。",
+      "❌ 错误：5-10× 远低于论文报告值。",
+      "❌ 错误：离线整合虽然消耗资源，但总成本仍显著下降，不会反而增加。"
+    ],
+    followUp: [
+      "面试官追问：为什么汇报时必须区分「纯在线口径」和「总成本口径」？",
+      "→ 答：纯在线口径（106×）只反映用户感知路径的 SLO 改善，系统设计预算必须按总口径（38×）计算——离线整合的算力/存储/调度成本是真实支出。向面试官只说在线口径是误导。"
+    ]
+  }
+];
+
+let multiQuestions = [
+  {
+    q: "以下哪些是 FlashAttention 的渐进版本及其对应核心创新？（多选）",
+    options: [
+      "A. FA-1：IO-aware tiling，SRAM 内完成 softmax，避免 HBM 写 N×N attention 矩阵",
+      "B. FA-2：Warp-level 调度优化，causal mask 优化，A100 上 ~70% Tensor Core util",
+      "C. FA-3：Hopper 专用，Warp specialization + TMA/WGMMA + FP8，H100 达 740 TFLOPS",
+      "D. FA-4：针对 Turing 架构的 INT4 量化优化",
+      "E. FA-2.5：引入 KV Cache 压缩机制",
+      "F. FA-3 支持所有 NVIDIA GPU 代际"
+    ],
+    correct: [0, 1, 2],
+    explanations: [
+      "✅ 正确：FA-1 (2022, NeurIPS) 的核心创新是 IO-aware tiling 和 SRAM 内 softmax。",
+      "✅ 正确：FA-2 (2023) 优化了 warp-level 调度和 causal mask，A100 上 Tensor Core 利用率约 70%。",
+      "✅ 正确：FA-3 (2024) 专为 Hopper (H100) 设计，利用 TMA 异步加载和 WGMMA。",
+      "❌ 错误：FA-4 (2026) 是针对 Blackwell (B200) 的，不是 Turing。",
+      "❌ 错误：不存在 FA-2.5 这个版本，KV Cache 压缩是 serving 系统（vLLM/llama.cpp）的优化。",
+      "❌ 错误：FA-3 是 Hopper 专用的，旧 GPU 上不可用。"
+    ],
+    followUp: [
+      "面试官追问：为什么 FA-3 不能运行在 A100 上？",
+      "→ 答：FA-3 依赖 Hopper 特有的 TMA (Tensor Memory Accelerator) 和 WGMMA 指令，A100 (Ampere) 没有这些硬件单元。vLLM 的自动选择链会 fallback 到 FA-2。"
+    ]
+  },
+  {
+    q: "以下 Speculative Decoding 变体中，严格保证输出分布与 target model 完全一致（严格无损）的有？（多选）",
+    options: [
+      "A. Leviathan 2023 的独立 draft model + modified rejection sampling",
+      "B. Medusa 的 typical acceptance（T > 0 时）",
+      "C. n-gram / bigram cache 验证",
+      "D. Blockwise Parallel Decoding (Stern et al., 2018)",
+      "E. EAGLE-3 的特征层 draft + 标准接受核",
+      "F. DeepSeek-V3 的 MTP (Multi-Token Prediction)"
+    ],
+    correct: [0, 2, 4, 5],
+    explanations: [
+      "✅ 正确：Leviathan 的 modified rejection sampling 单步精确服从 p，链式法则保证序列精确。",
+      "❌ 错误：Medusa 的 typical acceptance 在 T > 0 时不保证无损，EAGLE-3 论文据此只在 T=0 时与 Medusa 比较。",
+      "✅ 正确：n-gram / prompt lookup 的验证步骤仍是标准接受核，无损。",
+      "❌ 错误：Blockwise Parallel Decoding 仅支持 greedy，需改训练目标，不保证同分布。",
+      "✅ 正确：EAGLE-3 仍使用标准接受核 min(1, p/q)，接受率上限仍是 1 − D_TV。",
+      "✅ 正确：MTP 的 self-draft 同样使用标准接受核验证，DeepSeek-V3 报告第二 token 接受率 85-90%。"
+    ],
+    followUp: [
+      "面试官追问：Medusa 的 typical acceptance 在 T > 0 时为什么有损？",
+      "→ 答：Medusa 的多个 decoding head 独立预测，typical acceptance 放宽了接受条件以提高接受率，但放宽后的接受概率不再精确等于 min(1, p/q)，导致输出分布偏离 target。"
+    ]
+  },
+  {
+    q: "Agent Memory 系统的检索路径优化手段包括哪些？（多选）",
+    options: [
+      "A. 检索链路「去 LLM 化」：用单次 API 的 hybrid search 替代 LLM rerank / 查询重写",
+      "B. 写入路径异步化：将 extraction + update 的 LLM 调用做成后台任务队列",
+      "C. 将全量历史对话直接注入 context（full-context stuffing）",
+      "D. 分层检索：先查高层摘要/主题索引，再 drill-down 到细节",
+      "E. 用更大的 embedding 模型提升检索精度",
+      "F. 每条消息对同步等待 LLM extraction 完成后再返回回答"
+    ],
+    correct: [0, 1, 3],
+    explanations: [
+      "✅ 正确：Zep 的 auto search 用单次 API 调用做 vector + BM25 + graph traversal，中位注入 token 比 multi-scope 手工组合 -53%。",
+      "✅ 正确：MemOS 的 MemScheduler 异步写入 + Redis Streams 队列，避免阻塞在线推理。LightMem 的 sleep-time update 是同一思想。",
+      "❌ 错误：full-context stuffing 是未优化的基线，26K tokens/query，p95 延迟 17s，经济上不可用。",
+      "✅ 正确：HiMem 的两层结构（Episode Memory + Note Memory）通过语义路由减少低层噪声。",
+      "❌ 错误：更大的 embedding 模型可能提升精度，但也会降低延迟；且检索路径的主矛盾是 LLM-in-the-loop 而非 embedding 质量。",
+      "❌ 错误：同步等待 extraction 正是 Mem0 类系统的在线开销来源，应改为异步。"
+    ],
+    followUp: [
+      "面试官追问：SwiftMem 复现显示 Mem0 search 784ms vs 纯索引 11ms，这 70 倍差距主要来自哪里？",
+      "→ 答：差距几乎全部来自检索链路中引入的 LLM 调用（查询处理、结果仲裁），而非向量索引本身的 O(log N) 查询复杂度。"
+    ]
+  },
+  {
+    q: "以下哪些是 KV Cache 优化的有效手段？（多选）",
+    options: [
+      "A. PagedAttention：block-level 按需分配 + copy-on-write 共享",
+      "B. KV Cache 量化：FP8 / INT8 / Q4_0 压缩精度",
+      "C. Prefix Caching：按 block hash 复用共享前缀的 KV",
+      "D. H2O / Heavy-Hitter Eviction：动态驱逐非关键 token",
+      "E. 增大 batch size 以摊薄 KV Cache 的 per-token 开销",
+      "F. 在 decode 阶段重新计算 KV 而非缓存"
+    ],
+    correct: [0, 1, 2, 3],
+    explanations: [
+      "✅ 正确：PagedAttention 将显存浪费从 60-80% 降至 <4%，高并发下吞吐提升 up to 24x。",
+      "✅ 正确：FP8 KV Cache 在 H100+ 上 2x 压缩比且 <0.1% 质量损失；Q4_0 达 4x 压缩。",
+      "✅ 正确：Prefix Caching 通过 per-block hash table + LRU 复用系统 prompt，TTFT p50 可从 480ms 降至 110ms。",
+      "✅ 正确：H2O 保留 heavy hitter tokens，对超长上下文 (>64K) 可实现 2-8x 稀疏压缩。",
+      "❌ 错误：增大 batch size 会线性增加 KV Cache 总量，不是优化手段。",
+      "❌ 错误：decode 阶段重新计算 KV 会引入 O(n²) 的重复计算，是完全错误的方向。"
+    ],
+    followUp: [
+      "面试官追问：Prefix Caching 存在什么安全风险？",
+      "→ 答：GHSA-4qjh-9fv9-r85r 指出存在 timing side-channel 攻击——攻击者可通过 TTFT 差异推断前缀是否命中 cache，从而推断其他用户 prompt 的内容。"
+    ]
+  }
+];
+
+let trueFalseQuestions = [
+  {
+    q: "Speculative Decoding 要求 draft model 的支撑集 (support) 必须覆盖 target model 的支撑集。",
+    correct: false,
+    explanations: [
+      "❌ 错误（常见误解）：Speculative sampling 不要求 supp(q) ⊇ supp(p)。",
+      "✅ 正确理解：q(x)=0 而 p(x)>0 的位置自然全部落入残差分支 (p−q)_+，由重采样精确补上。整个证明只需要离散测度分解 p = min(p,q) + (p−q)_+，不要求支撑集覆盖。"
+    ],
+    followUp: [
+      "面试官追问：这与经典 Rejection Sampling 的包络条件 M·q(x) ≥ p(x) 有什么区别？",
+      "→ 答：经典 RS 需要包络常数 M 且拒绝即废弃；speculative sampling 无 M、拒绝时从残差分布重采样，每轮必有产出。一个是连续/高维空间的包络思路，一个是离散分布的测度分解思路。"
+    ]
+  },
+  {
+    q: "PagedAttention 在 batch=1 时比 FasterTransformer 慢 20-26%，因为 block table 查找有额外开销。",
+    correct: true,
+    explanations: [
+      "✅ 正确：SOSP 2023 论文明确指出此代价。但吞吐场景的收益完全覆盖此代价——高并发下 up to 24x 吞吐提升。",
+      ""
+    ],
+    followUp: [
+      "面试官追问：为什么高并发下 block table 的开销反而可以被忽略？",
+      "→ 答：batch=1 时 block table 查找 + 非连续内存访问的 overhead 占比显著；高并发下这些固定开销被大量请求摊薄，而显存节省带来的更大 batch size 的收益占主导。"
+    ]
+  },
+  {
+    q: "LightMem 的 sleep-time update 将 Agent Memory 系统的总成本降低了约 106 倍。",
+    correct: false,
+    explanations: [
+      "❌ 错误（常见误解）：106× 是纯在线 test-time token 的节省倍数，不含离线整合成本。",
+      "✅ 正确理解：总 token 口径（含离线）为 ↓38× / ↓20.9×。反解可知离线整合成本约为在线剩余成本的 1.8 倍——sleep-time update 是转移成本而非消除成本。"
+    ],
+    followUp: [
+      "面试官追问：如果面试官问你「LightMem 到底省了多少成本」，你该怎么回答？",
+      "→ 答：先问对方要哪个口径：用户感知/延迟 SLO 口径（在线 token ↓106×）还是系统设计预算口径（总 token ↓38×）。后者才是真实资源消耗。"
+    ]
+  },
+  {
+    q: "FlashAttention-3 可以在所有 NVIDIA GPU（包括 A100、V100、RTX 3090）上运行。",
+    correct: false,
+    explanations: [
+      "❌ 错误（常见误解）：FA-3 依赖 Hopper 架构特有的硬件单元。",
+      "✅ 正确理解：FA-3 专为 Hopper (H100/H200) 设计，使用 TMA 异步加载和 WGMMA 指令。A100 (Ampere)、V100 (Volta)、RTX 3090 均不支持这些指令。vLLM 的自动选择链会 fallback 到 FA-2 或更低。"
+    ],
+    followUp: [
+      "面试官追问：FA-4 的目标架构是什么？核心挑战与 FA-3 有什么不同？",
+      "→ 答：FA-4 针对 Blackwell (B200)。核心挑战：Tensor Core 增速 > SRAM/SFU 增速，非 matmul 操作（softmax、elementwise）成为新瓶颈。FA-4 用 CuTeDSL 和 software-emulated exp 重新平衡。"
+    ]
+  },
+  {
+    q: "Mem0 的检索延迟主要来自于向量索引（如 HNSW）本身的 O(log N) 查询复杂度。",
+    correct: false,
+    explanations: [
+      "❌ 错误（常见误解）：HNSW 查询是毫秒级的，不是延迟主因。",
+      "✅ 正确理解：SwiftMem 第三方复现显示同一系统 search 阶段 784ms vs 纯索引 11ms（≈70× 差距），差距几乎全部来自检索链路中引入的 LLM 调用（查询处理/结果仲裁）。A-MEM 也存在重尾延迟。"
+    ],
+    followUp: [
+      "面试官追问：如果要将 Mem0 的检索延迟从 784ms 压到 100ms 以内，优先级最高的改动是什么？",
+      "→ 答：去 LLM 化——用单次 API 的 hybrid search（vector + BM25 + 轻量 rerank）替代检索链路中的 LLM 查询重写和 LLM rerank。Zep auto search 已实现 p50=115ms。"
+    ]
+  }
+];
+
+let currentTab = 'single';
+let currentSingle = 0, currentMulti = 0, currentTF = 0;
+let singleAnswered = [], multiAnswered = [], tfAnswered = [];
+
+function initState() {
+  singleAnswered = singleQuestions.map(() => ({ checked: null, revealed: false, score: 0 }));
+  multiAnswered = multiQuestions.map(() => ({ checked: [], revealed: false, score: 0 }));
+  tfAnswered = trueFalseQuestions.map(() => ({ checked: null, revealed: false, score: 0 }));
+}
+initState();
+
+function renderSingle() {
+  const container = document.getElementById('single-container');
+  const q = singleQuestions[currentSingle], st = singleAnswered[currentSingle];
+  let html = `<div class="question-card active">
+    <div class="q-number">单选题 ${currentSingle + 1} / ${singleQuestions.length}</div>
+    <div class="q-text">${q.q}</div>
+    <div class="options">`;
+  q.options.forEach((opt, i) => {
+    let cls = '';
+    if (st.revealed) {
+      if (i === q.correct) cls = 'correct';
+      else if (i === st.checked) cls = 'wrong';
+    }
+    html += `<label class="${cls}"><input type="radio" name="s${currentSingle}" value="${i}" ${st.checked===i?'checked':''} ${st.revealed?'disabled':''} onchange="singleSelect(${i})"> ${opt}</label>`;
+  });
+  html += `</div>`;
+  if (st.revealed) {
+    html += `<div class="explanation show">`;
+    q.explanations.forEach((e, i) => { if (e) html += `<div style="margin-bottom:.4rem">${e}</div>`; });
+    if (q.followUp) {
+      html += `<div class="follow-up">`;
+      q.followUp.forEach(f => html += `<div>${f.replace(/→/g,'<span style="color:var(--accent)">→</span>')}</div>`);
+      html += `</div>`;
+    }
+    html += `</div>`;
+  }
+  html += `</div>`;
+  container.innerHTML = html;
+  updateProgress();
+}
+
+function renderMulti() {
+  const container = document.getElementById('multi-container');
+  const q = multiQuestions[currentMulti], st = multiAnswered[currentMulti];
+  let html = `<div class="question-card active">
+    <div class="q-number">多选题 ${currentMulti + 1} / ${multiQuestions.length}</div>
+    <div class="q-text">${q.q}</div>
+    <div class="options">`;
+  q.options.forEach((opt, i) => {
+    let cls = '';
+    if (st.revealed) {
+      if (q.correct.includes(i)) cls = 'correct';
+      else if (st.checked.includes(i)) cls = 'wrong';
+    }
+    html += `<label class="${cls}"><input type="checkbox" name="m${currentMulti}" value="${i}" ${st.checked.includes(i)?'checked':''} ${st.revealed?'disabled':''} onchange="multiToggle(${i})"> ${opt}</label>`;
+  });
+  html += `</div>`;
+  if (st.revealed) {
+    html += `<div class="explanation show">`;
+    q.explanations.forEach((e, i) => { if (e) html += `<div style="margin-bottom:.4rem">${e}</div>`; });
+    if (q.followUp) {
+      html += `<div class="follow-up">`;
+      q.followUp.forEach(f => html += `<div>${f.replace(/→/g,'<span style="color:var(--accent)">→</span>')}</div>`);
+      html += `</div>`;
+    }
+    html += `</div>`;
+  }
+  html += `</div>`;
+  container.innerHTML = html;
+  updateProgress();
+}
+
+function renderTF() {
+  const container = document.getElementById('tf-container');
+  const q = trueFalseQuestions[currentTF], st = tfAnswered[currentTF];
+  let html = `<div class="question-card active">
+    <div class="q-number">判断题 ${currentTF + 1} / ${trueFalseQuestions.length}</div>
+    <div class="q-text">${q.q}</div>
+    <div class="truefalse-btns">`;
+  [{ val: true, label: '✓ 正确 (True)' }, { val: false, label: '✗ 错误 (False)' }].forEach(b => {
+    let cls = '';
+    if (st.revealed) {
+      if (b.val === q.correct) cls = 'correct';
+      else if (b.val === st.checked) cls = 'wrong';
+    }
+    html += `<button class="${cls}" ${st.revealed?'disabled':''} onclick="tfSelect(${b.val})">${b.label}</button>`;
+  });
+  html += `</div>`;
+  if (st.revealed) {
+    html += `<div class="explanation show">`;
+    q.explanations.forEach(e => { if (e) html += `<div style="margin-bottom:.4rem">${e}</div>`; });
+    if (q.followUp) {
+      html += `<div class="follow-up">`;
+      q.followUp.forEach(f => html += `<div>${f.replace(/→/g,'<span style="color:var(--accent)">→</span>')}</div>`);
+      html += `</div>`;
+    }
+    html += `</div>`;
+  }
+  html += `</div>`;
+  container.innerHTML = html;
+  updateProgress();
+}
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.nav-tabs button').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
+  const idx = tab==='single'?0:tab==='multi'?1:2;
+  document.querySelectorAll('.nav-tabs button')[idx].classList.add('active');
+  document.getElementById('tab-' + tab).style.display = 'block';
+  document.getElementById('result-page').classList.remove('show');
+  if (tab === 'single') renderSingle();
+  else if (tab === 'multi') renderMulti();
+  else renderTF();
+}
+
+function singleSelect(i) { singleAnswered[currentSingle].checked = i; }
+function multiToggle(i) {
+  const arr = multiAnswered[currentMulti].checked;
+  const pos = arr.indexOf(i);
+  if (pos >= 0) arr.splice(pos, 1); else arr.push(i);
+}
+function tfSelect(val) { tfAnswered[currentTF].checked = val; }
+
+function checkSingle() {
+  const st = singleAnswered[currentSingle];
+  if (st.checked === null) { alert('请先选择一个答案'); return; }
+  st.revealed = true;
+  st.score = st.checked === singleQuestions[currentSingle].correct ? 1 : 0;
+  renderSingle(); updateScore();
+}
+function checkMulti() {
+  const st = multiAnswered[currentMulti];
+  if (st.checked.length === 0) { alert('请至少选择一个答案'); return; }
+  st.revealed = true;
+  const q = multiQuestions[currentMulti];
+  const correct = q.correct.every(c => st.checked.includes(c)) && st.checked.length === q.correct.length;
+  st.score = correct ? 1 : 0;
+  renderMulti(); updateScore();
+}
+function checkTF() {
+  const st = tfAnswered[currentTF];
+  if (st.checked === null) { alert('请先选择「正确」或「错误」'); return; }
+  st.revealed = true;
+  st.score = st.checked === trueFalseQuestions[currentTF].correct ? 1 : 0;
+  renderTF(); updateScore();
+}
+
+function resetCurrentSingle() { singleAnswered[currentSingle] = { checked: null, revealed: false, score: 0 }; renderSingle(); updateScore(); }
+function resetCurrentMulti() { multiAnswered[currentMulti] = { checked: [], revealed: false, score: 0 }; renderMulti(); updateScore(); }
+function resetCurrentTF() { tfAnswered[currentTF] = { checked: null, revealed: false, score: 0 }; renderTF(); updateScore(); }
+
+function prevQuestion() {
+  if (currentTab === 'single' && currentSingle > 0) { currentSingle--; renderSingle(); }
+  else if (currentTab === 'multi' && currentMulti > 0) { currentMulti--; renderMulti(); }
+  else if (currentTab === 'tf' && currentTF > 0) { currentTF--; renderTF(); }
+}
+function nextQuestion() {
+  if (currentTab === 'single' && currentSingle < singleQuestions.length - 1) { currentSingle++; renderSingle(); }
+  else if (currentTab === 'multi' && currentMulti < multiQuestions.length - 1) { currentMulti++; renderMulti(); }
+  else if (currentTab === 'tf' && currentTF < trueFalseQuestions.length - 1) { currentTF++; renderTF(); }
+}
+
+function updateScore() {
+  const s = singleAnswered.reduce((a, b) => a + b.score, 0);
+  const m = multiAnswered.reduce((a, b) => a + b.score, 0);
+  const t = tfAnswered.reduce((a, b) => a + b.score, 0);
+  const totalMax = singleQuestions.length + multiQuestions.length + trueFalseQuestions.length;
+  const total = s + m + t;
+  document.getElementById('score').textContent = total;
+  document.getElementById('total').textContent = totalMax;
+  if (total === totalMax && totalMax > 0) {
+    document.getElementById('big-score').textContent = '100%';
+    document.getElementById('result-msg').textContent = '🎉 全对！你可以去面试了。';
+    document.getElementById('result-page').classList.add('show');
+    document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
+  }
+}
+
+function updateProgress() {
+  let cur = 0, total = 0;
+  if (currentTab === 'single') { cur = currentSingle; total = singleQuestions.length; }
+  else if (currentTab === 'multi') { cur = currentMulti; total = multiQuestions.length; }
+  else { cur = currentTF; total = trueFalseQuestions.length; }
+  document.getElementById('progress-text').textContent = `${cur + 1} / ${total}`;
+  document.getElementById('progress-fill').style.width = `${((cur + 1) / total) * 100}%`;
+}
+
+function openDashboard() {
+  const grid = document.getElementById('dashboard-grid');
+  let html = '';
+  singleQuestions.forEach((q, i) => {
+    const st = singleAnswered[i];
+    let cls = st.revealed ? (st.score ? 'correct' : 'wrong') : 'unchecked';
+    html += `<div class="thumb ${cls}" onclick="jumpTo('single', ${i})">单${i+1}</div>`;
+  });
+  multiQuestions.forEach((q, i) => {
+    const st = multiAnswered[i];
+    let cls = st.revealed ? (st.score ? 'correct' : 'wrong') : 'unchecked';
+    html += `<div class="thumb ${cls}" onclick="jumpTo('multi', ${i})">多${i+1}</div>`;
+  });
+  trueFalseQuestions.forEach((q, i) => {
+    const st = tfAnswered[i];
+    let cls = st.revealed ? (st.score ? 'correct' : 'wrong') : 'unchecked';
+    html += `<div class="thumb ${cls}" onclick="jumpTo('tf', ${i})">判${i+1}</div>`;
+  });
+  grid.innerHTML = html;
+  document.getElementById('dashboard-overlay').classList.add('open');
+}
+function closeDashboard() { document.getElementById('dashboard-overlay').classList.remove('open'); }
+function jumpTo(tab, idx) {
+  closeDashboard();
+  currentTab = tab;
+  if (tab === 'single') currentSingle = idx;
+  else if (tab === 'multi') currentMulti = idx;
+  else currentTF = idx;
+  switchTab(tab);
+}
+
+function shuffleArray(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+
+function shuffleAll() {
+  if (!confirm('重新洗牌将清空所有答题记录，确定继续？')) return;
+  singleQuestions.forEach(q => {
+    const pairs = q.options.map((opt, i) => ({ opt, expl: q.explanations[i], isCorrect: i === q.correct }));
+    shuffleArray(pairs);
+    q.options = pairs.map(p => p.opt);
+    q.explanations = pairs.map(p => p.expl);
+    q.correct = pairs.findIndex(p => p.isCorrect);
+  });
+  multiQuestions.forEach(q => {
+    const pairs = q.options.map((opt, i) => ({ opt, expl: q.explanations[i], isCorrect: q.correct.includes(i) }));
+    shuffleArray(pairs);
+    q.options = pairs.map(p => p.opt);
+    q.explanations = pairs.map(p => p.expl);
+    q.correct = pairs.map((p, i) => p.isCorrect ? i : -1).filter(i => i >= 0);
+  });
+  initState();
+  switchTab('single');
+  updateScore();
+}
+
+function resetAll() {
+  if (!confirm('确定重置所有答题记录？')) return;
+  initState();
+  currentSingle = 0; currentMulti = 0; currentTF = 0;
+  document.getElementById('result-page').classList.remove('show');
+  switchTab('single');
+  updateScore();
+}
+
+renderSingle();
+updateScore();
+</script>
+</body>
+</html>

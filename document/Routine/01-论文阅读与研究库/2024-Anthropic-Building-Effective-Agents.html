@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Anthropic Building Effective Agents · 6 原语面试自测卡牌</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Segoe UI", "Microsoft YaHei", sans-serif; background: #f6f4f0; color: #2c2a26; line-height: 1.6; }
+  header { background: #3e3a34; color: #f6f4f0; padding: 18px 20px; }
+  header h1 { font-size: 1.25rem; }
+  header p { font-size: .85rem; opacity: .8; margin-top: 4px; }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 20px; background: #ece8e1; border-bottom: 1px solid #d8d2c7; }
+  .toolbar button { border: 1px solid #b9b1a3; background: #fff; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: .85rem; }
+  .toolbar button:hover { background: #3e3a34; color: #fff; }
+  .score-bar { padding: 8px 20px; font-size: .9rem; background: #fff; border-bottom: 1px solid #e2ddd4; }
+  .progress-text { padding: 4px 20px; font-size: .8rem; color: #6b655a; background:#fff; }
+  .progress-bar { height: 5px; background: #e2ddd4; }
+  .progress-bar > div { height: 100%; background: #7d8c6f; width: 0%; transition: width .3s; }
+  .container { max-width: 860px; margin: 20px auto; padding: 0 16px; }
+  .q-card { background: #fff; border: 1px solid #ddd6ca; border-radius: 10px; padding: 20px; margin-bottom: 16px; }
+  .q-tag { display: inline-block; font-size: .72rem; padding: 2px 8px; border-radius: 10px; background: #8a7f6a; color: #fff; margin-bottom: 8px; }
+  .q-paper { font-size: .75rem; color: #8a8274; margin-left: 6px; }
+  .q-text { font-weight: 600; margin-bottom: 14px; }
+  .blank { display: inline-block; min-width: 110px; border-bottom: 2px dashed #8a7f6a; text-align: center; padding: 0 6px; margin: 0 2px; color: #5c6b4f; font-weight: 700; cursor: pointer; }
+  .blank.filled { border-bottom-style: solid; background: #f0ede6; }
+  .pool { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+  .chip { border: 1px solid #b9b1a3; background: #faf8f4; padding: 5px 12px; border-radius: 16px; cursor: grab; font-size: .85rem; user-select: none; }
+  .chip.used { opacity: .35; cursor: not-allowed; }
+  .opt { display: block; width: 100%; text-align: left; border: 1px solid #d8d2c7; background: #fbfaf7; padding: 10px 12px; border-radius: 8px; margin-bottom: 8px; cursor: pointer; font-size: .9rem; }
+  .opt.sel { border-color: #5c6b4f; background: #eef2e8; }
+  .opt.correct { border-color: #4f7a3d; background: #e6f0df; }
+  .opt.wrong { border-color: #a34a3a; background: #f6e3df; }
+  .expl { font-size: .82rem; margin: 3px 0 8px; padding: 6px 10px; border-radius: 6px; background: #f4f1ea; display: none; }
+  .btns { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .btns button { border: none; border-radius: 6px; padding: 8px 16px; cursor: pointer; font-size: .85rem; background: #3e3a34; color: #fff; }
+  .btns button.ghost { background: #e2ddd4; color: #2c2a26; }
+  .nav { display: flex; justify-content: space-between; max-width: 860px; margin: 10px auto 40px; padding: 0 16px; }
+  .nav button { border: 1px solid #b9b1a3; background: #fff; padding: 8px 18px; border-radius: 6px; cursor: pointer; }
+  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: none; z-index: 10; }
+  .overlay.open { display: block; }
+  .panel { position: fixed; top: 0; right: -420px; width: 400px; max-width: 92vw; height: 100%; background: #fff; transition: right .25s; z-index: 11; overflow-y: auto; padding: 20px; }
+  .panel.open { right: 0; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 8px; margin-top: 14px; }
+  .cell { border: 1px solid #ccc; border-radius: 6px; text-align: center; padding: 8px 2px; font-size: .75rem; cursor: pointer; background: #f6f4f0; }
+  .cell.ok { background: #e6f0df; border-color: #4f7a3d; }
+  .cell.bad { background: #f6e3df; border-color: #a34a3a; }
+  .filter { margin-top: 12px; display: flex; gap: 6px; flex-wrap: wrap; }
+  .filter button { font-size: .75rem; border: 1px solid #b9b1a3; background: #fff; border-radius: 12px; padding: 3px 10px; cursor: pointer; }
+  #result { display: none; max-width: 860px; margin: 30px auto; padding: 24px; background: #fff; border-radius: 10px; border: 1px solid #ddd6ca; text-align: center; }
+  .hidden { display: none !important; }
+  a.dlink { font-size: .78rem; color: #5c6b4f; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🎯 Anthropic Building Effective Agents · 6 原语面试自测卡牌</h1>
+  <p>配套笔记：2024-Anthropic-Building-Effective-Agents.md ｜ 覆盖 5 workflow + 1 agent = 6 原语 ｜ Anthropic 2024-12-19 ｜ 2026-07-27</p>
+</header>
+<div class="toolbar">
+  <button onclick="openDashboard()">📊 题目总览</button>
+  <button onclick="shuffleAll()">🎲 重新洗牌选项</button>
+  <button onclick="resetAll()">🔄 重置所有分数</button>
+  <button onclick="showResult()">🏁 查看成绩</button>
+</div>
+<div class="score-bar" id="scoreBar">总得分：0 / 0</div>
+<div class="progress-text" id="progressText"></div>
+<div class="progress-bar" id="progressBar"><div id="progressFill"></div></div>
+<div class="container" id="quizArea"></div>
+<div class="nav" id="navBar">
+  <button onclick="prevQ()">← 上一题</button>
+  <button onclick="nextQ()">下一题 →</button>
+</div>
+<div id="result"></div>
+<div class="overlay" id="overlay" onclick="closeDashboard()"></div>
+<div class="panel" id="panel">
+  <h3>📊 题目总览</h3>
+  <div class="filter">
+    <button onclick="renderGrid('all')">全部</button>
+    <button onclick="renderGrid('ok')">✅ 正确</button>
+    <button onclick="renderGrid('bad')">❌ 错误</button>
+    <button onclick="renderGrid('todo')">⬜ 未答</button>
+  </div>
+  <div class="grid" id="grid"></div>
+  <div class="btns"><button class="ghost" onclick="closeDashboard()">关闭</button></div>
+</div>
+
+<script>
+/* ================= 题目数据 ================= */
+const dragQuestions = [
+{ paper:"Workflows", text:"Anthropic 把 5 个 workflow 模式定义为：{0}（顺序 LLM + gate 验证）、{1}（分类输入后派发到专门子任务）、{2}（sectioning 子任务并行 + voting 多视角投票）、{3}（中心 LLM 动态分解 + 委派 worker）、{4}（生成 + LLM-as-judge 评估迭代）。",
+  answers:["Prompt chaining","Routing","Parallelization","Orchestrator-workers","Evaluator-optimizer"],
+  pool:["Prompt chaining","Routing","Parallelization","Orchestrator-workers","Evaluator-optimizer","Autonomous agent","Chain-of-Thought","ReAct"],
+  expl:["Prompt chaining = 串行 LLM call + gate 检查；Autonomous agent 不是 workflow，是顶层第 6 类。",
+        "Routing = 分类后派发；ReAct 是 agent 推理框架，不是 workflow 模式。",
+        "Parallelization 两种变体：sectioning + voting；Chain-of-Thought 是 prompt 工程技巧。",
+        "Orchestrator-workers = 中心 LLM 动态决定子任务；区别于 parallelization 的子任务预定义。",
+        "Evaluator-optimizer = 生成 + 评估循环；要求评估标准可量化。"],
+  link:"2024-Anthropic-Building-Effective-Agents.md#6-原语的实现模板伪代码" },
+{ paper:"Augmented LLM", text:"Anthropic 把 augmented LLM 拆为 4 个 augmentation：{0}（search / RAG）、{1}（function calling）、{2}（短期对话历史 / 长期事实）、{3}（工具集成协议层）。",
+  answers:["retrieval","tools","memory","MCP"],
+  pool:["retrieval","tools","memory","MCP","fine-tuning","RLHF","prompt engineering","context window"],
+  expl:["retrieval = RAG / search；fine-tuning 是训练时技术，不是 inference-time augmentation。",
+        "tools = function calling；prompt engineering 是基础 prompt 写法。",
+        "memory = 短期 + 长期；context window 是 token 上限，不是 augmentation 维度。",
+        "MCP = Model Context Protocol，Anthropic 主导的工具集成标准；RLHF 是训练时技术。"],
+  link:"2024-Anthropic-Building-Effective-Agents.md#3-foundations-the-augmented-llm-作为最小构建块" },
+{ paper:"三层递进", text:"Anthropic 推荐的复杂度递进是：{0} → workflow → {1}。",
+  answers:["单 LLM call + retrieval + in-context examples","autonomous agent"],
+  pool:["单 LLM call + retrieval + in-context examples","autonomous agent","LangChain","AutoGen","ReAct","RAG-only"],
+  expl:["Anthropic 明确说'find the simplest solution possible'，起点是 augmented 单 call；LangChain / AutoGen 是被批评的复杂框架。",
+        "最末才是 autonomous agent；ReAct 是一种推理 pattern，不是 Anthropic 推荐的 6 原语之一。"],
+  link:"2024-Anthropic-Building-Effective-Agents.md#5-when-and-when-not-to-use-agents--何时不用" }
+];
+
+const singleQuestions = [
+{ paper:"分类", q:"Anthropic 把 agentic systems 切成哪两类？架构关键区别是什么？",
+  options:["Workflows vs Agents：workflows 人类设计 control flow，agents LLM 动态决定 control flow","LLM vs LLM+Tools：是否调用外部工具","Short-term vs Long-term：记忆时长","Sequential vs Parallel：是否串行"],
+  correct:0,
+  expl:["✅ 正确：workflows = 预定义代码路径编排，agents = LLM 自主决定流程和工具使用。这是 Anthropic 的核心架构切分。","❌ 错误：LLM+Tools 是 augmented LLM 范畴，不是 agentic system 分类。","❌ 错误：记忆时长与 agent 类型正交。","❌ 错误：sequential vs parallel 是 parallelization 模式内部区分。"],
+  link:"2024-Anthropic-Building-Effective-Agents.md#1-workflows-vs-agents-二元架构切分" },
+{ paper:"Prompt chaining", q:"Prompt chaining 的核心使用场景是？",
+  options:["任务可清晰分解为固定子任务，每个子任务有中间验证点","任务需要并行加速","任务需要多 LLM 投票","任务需要 LLM 自主决策"],
+  correct:0,
+  expl:["✅ 正确：Anthropic 明确说'where the task can be easily and cleanly decomposed into fixed subtasks'，可加 gate 检查中间结果。","❌ 错误：并行加速是 parallelization 模式。","❌ 错误：投票是 parallelization 的 voting 变体。","❌ 错误：自主决策是 autonomous agent 模式。"],
+  link:"2024-Anthropic-Building-Effective-Agents.md#6-原语的实现模板伪代码" },
+{ paper:"Orchestrator-workers", q:"Orchestrator-workers 和 parallelization 的关键区别是？",
+  options:["Orchestrator 的子任务由 LLM 动态决定，parallelization 的子任务预定义","Orchestrator 更快、parallelization 更慢","Orchestrator 用更小的模型、parallelization 用更大的模型","Orchestrator 不需要工具、parallelization 需要工具"],
+  correct:0,
+  expl:["✅ 正确：Anthropic 明确说'key difference from parallelization is its flexibility—subtasks aren't pre-defined, but determined by the orchestrator based on the specific input'。","❌ 错误：速度不是主要区别。","❌ 错误：模型选择与模式无关。","❌ 错误：两者都可使用工具。"],
+  link:"2024-Anthropic-Building-Effective-Agents.md#6-原语的实现模板伪代码" },
+{ paper:"MCP", q:"MCP 在 Anthropic 的 agentic system 框架中的角色是？",
+  options:["Augmented LLM 的工具集成协议层","替代 LLM 的新一代模型","全自主 agent 的核心","Anthropic 内部专有 API，不开放"],
+  correct:0,
+  expl:["✅ 正确：Anthropic 明确说 MCP 是'an approach to integrating tools'，属于 augmented LLM 的 tools 维度。","❌ 错误：MCP 是协议，不是模型。","❌ 错误：MCP 用于工具集成，不是 agent 核心决策机制。","❌ 错误：MCP 是 Anthropic 主导的开源协议。"],
+  link:"2024-Anthropic-Building-Effective-Agents.md#3-foundations-the-augmented-llm-作为最小构建块" },
+{ paper:"框架", q:"Anthropic 对 framework（如 LangChain / AutoGen）的官方态度是？",
+  options:["反对过度使用 framework，'simple composable patterns > complex frameworks'，先用 LLM API 直接写","强烈推荐 LangChain","要求必须用 Claude Agent SDK","framework 是 agentic 系统的必备基础"],
+  correct:0,
+  expl:["✅ 正确：Anthropic 明确说'Consistently, the most successful implementations weren't using complex frameworks'，推荐先用 LLM API 直接写。","❌ 错误：没有推荐 LangChain。","❌ 错误：Claude Agent SDK 是推荐实现之一，但不强求。","❌ 错误：明确反对 framework-first。"],
+  link:"2024-Anthropic-Building-Effective-Agents.md#4-simple-composable-patterns--complex-frameworks-反共识判断" }
+];
+
+const multiQuestions = [
+{ paper:"模式选型", q:"5 个 workflow 模式各自的最佳使用场景？（多选）",
+  options:["Prompt chaining 适合 outline → 写文档 → 翻译等可分解任务","Routing 适合客服问题分类（一般 / 退款 / 技术支持）","Parallelization (sectioning) 适合 guardrail + 主响应分离","Parallelization (voting) 适合 code review 多视角投票","Orchestrator-workers 适合不可预测任务（coding：改几个文件 depends on bug）","Evaluator-optimizer 适合有明确评估标准的翻译 / 检索质量"],
+  correct:[0,1,2,3,4,5],
+  expl:["✅ 正确：Anthropic 明确把 outline→写文档作为 prompt chaining 案例。","✅ 正确：客户服务 routing 是博客附录 1 的核心案例。","✅ 正确：guardrail 与主响应分离是 sectioning 的标志例子。","✅ 正确：多 prompt code review 是 voting 的标志例子。","✅ 正确：coding 是 orchestrator-workers 的核心用例（子任务 depends on 输入）。","✅ 正确：评估标准可量化是 evaluator-optimizer 的前提条件。"],
+  link:"2024-Anthropic-Building-Effective-Agents.md#8-5-个-workflow-模式--autonomous-agent-的工程边界" },
+{ paper:"GDC 对位", q:"GameDevVault AI Harness 6 篇论文在 Anthropic 6 原语中的正确对位是？（多选）",
+  options:["Microsoft Copilot Agent Mode → Orchestrator-workers + Augmented LLM","DeepMind SIMA 2 → Autonomous agent + self-improvement loop","Anthropic Computer Use → Autonomous agent 特殊化（GUI-tool 版）","Tencent 天美 98% 自动化 → Orchestrator-workers（中心 LLM 委派 8 agent）","Glass Bead 4 人 + 8 agents → Orchestrator-workers + Evaluator-optimizer","Bitmagic AI-Native 引擎 → Autonomous agent（prompt-玩-迭代闭环）"],
+  correct:[0,1,2,3,4,5],
+  expl:["✅ 正确：Copilot Agent Mode = 中心 LLM 委派 sub-agent + MCP 工具集成。","✅ 正确：SIMA 2 是 self-improvement loop 的 autonomous agent 范式。","✅ 正确：Computer Use 是 GUI-tool 版的 autonomous agent（截图 + 鼠标 + 键盘）。","✅ 正确：天美 98% 自动化是 orchestrator-workers 的工业实现。","✅ 正确：Glass Bead 8 agent 协作 + 4 人评估 = orchestrator + evaluator。","✅ 正确：Bitmagic 的 prompt-玩-迭代 闭环是 autonomous agent 范式。"],
+  link:"2024-Anthropic-Building-Effective-Agents.md#配合-gamedevvault-ai-harness-主题的-6-篇-gdc--1-arxiv-对位" }
+];
+
+const trueFalseQuestions = [
+{ paper:"反共识", q:"Anthropic 推荐用 LangChain / AutoGen 这类 complex frameworks 来实现 agent。", correct:false,
+  expl:{ ok:"✅ 正确理解：Anthropic 明确反对'complex frameworks'，主张'simple composable patterns'。'Incorrect assumptions about what's under the hood are a common source of customer error.'",
+         bad:"❌ 常见误解：以为大厂背书就一定要用 framework。Anthropic 主张先用 LLM API 直接写。Anthropic 自家推 Claude Agent SDK 而不是 LangChain。"},
+  follow:"追问：'什么时候才用 framework？' → 答：当 simple pattern 写不出来时（极少见），且要完全理解 framework 底层代码。",
+  link:"2024-Anthropic-Building-Effective-Agents.md#4-simple-composable-patterns--complex-frameworks-反共识判断" },
+{ paper:"Autonomous agent", q:"Autonomous agent 适合所有任务，应当优先使用。", correct:false,
+  expl:{ ok:"✅ 正确理解：Anthropic 明确说'95% 任务应该用 workflow 而非 autonomous agent'。'Agentic systems often trade latency and cost for better task performance'。",
+         bad:"❌ 常见误解：以为'agent' = 'autonomous' = 高级。Anthropic 明确说绝大多数应用应优先 augmented LLM + workflow。"},
+  follow:"追问：'autonomous agent 模式有什么风险？' → 答：成本高、慢、必须 sandbox + budget cap + human-in-loop；不能无限循环。",
+  link:"2024-Anthropic-Building-Effective-Agents.md#5-when-and-when-not-to-use-agents--何时不用" }
+];
+
+
+/* ================= 引擎 ================= */
+const allQuestions = [];
+dragQuestions.forEach((q,i)=>allQuestions.push({type:'drag',data:q,id:'d'+i}));
+singleQuestions.forEach((q,i)=>allQuestions.push({type:'single',data:q,id:'s'+i}));
+multiQuestions.forEach((q,i)=>allQuestions.push({type:'multi',data:q,id:'m'+i}));
+trueFalseQuestions.forEach((q,i)=>allQuestions.push({type:'tf',data:q,id:'t'+i}));
+
+const state = {}; // id -> {answered, correct, sel}
+let cur = 0;
+const typeName = {drag:'拖拽填空', single:'单选', multi:'多选', tf:'判断'};
+const maxScore = () => allQuestions.length;
+
+function render() {
+  const area = document.getElementById('quizArea');
+  area.innerHTML = '';
+  const item = allQuestions[cur];
+  const st = state[item.id] || (state[item.id] = {answered:false, correct:false, sel:null});
+  const card = document.createElement('div');
+  card.className = 'q-card';
+  let html = `<span class="q-tag">${typeName[item.type]}</span><span class="q-paper">${item.data.paper}</span>`;
+  if (item.type === 'drag') {
+    let txt = item.data.text;
+    for (let i=0;i<item.data.answers.length;i++) {
+      const filled = st.sel && st.sel[i] ? st.sel[i] : '';
+      txt = txt.replace('{'+i+'}', `<span class="blank ${filled?'filled':''}" data-bi="${i}" onclick="clearBlank(${i})">${filled||'　点选填入　'}</span>`);
+    }
+    html += `<div class="q-text">${txt}</div><div class="pool">` +
+      item.data.pool.map((p,pi)=>`<span class="chip ${st.sel&&st.sel.includes(p)?'used':''}" onclick="fillBlank(${pi})">${p}</span>`).join('') + `</div>`;
+  } else if (item.type === 'tf') {
+    html += `<div class="q-text">${item.data.q}</div>` +
+      ['正确','错误'].map((o,i)=>`<button class="opt ${st.sel===i?'sel':''}" onclick="pick(${i})">${o==='正确'?'✔ 正确':'✘ 错误'}</button>`).join('');
+  } else {
+    html += `<div class="q-text">${item.data.q}</div>` +
+      item.data.options.map((o,i)=>{
+        const isSel = item.type==='multi' ? (st.sel||[]).includes(i) : st.sel===i;
+        let cls = isSel?'sel':'';
+        if (st.answered) {
+          const good = item.type==='multi' ? item.data.correct.includes(i) : item.data.correct===i;
+          if (good) cls='correct'; else if (isSel) cls='wrong';
+        }
+        return `<button class="opt ${cls}" onclick="pick(${i})">${o}</button>` +
+               (st.answered?`<div class="expl" style="display:block">${item.data.expl[i]}</div>`:'');
+      }).join('');
+  }
+  html += `<div class="btns"><button onclick="check()">检查答案</button><button class="ghost" onclick="resetQ()">重置本题</button>`;
+  if (st.answered) {
+    html += `<a class="dlink" href="${item.data.link}">📖 查看笔记详解</a>`;
+    if (item.type==='tf' && item.data.follow) html += `<div class="expl" style="display:block">${item.data.follow}</div>`;
+  }
+  html += `</div>`;
+  card.innerHTML = html;
+  area.appendChild(card);
+  document.getElementById('progressText').textContent = `第 ${cur+1} / ${allQuestions.length} 题`;
+  document.getElementById('progressFill').style.width = ((cur+1)/allQuestions.length*100)+'%';
+  updateScore();
+}
+
+let blankCursor = 0;
+function fillBlank(pi) {
+  const item = allQuestions[cur]; if (item.type!=='drag') return;
+  const st = state[item.id]; if (st.answered) return;
+  const word = item.data.pool[pi];
+  st.sel = st.sel || [];
+  if (st.sel.includes(word)) return;
+  if (st.sel.length >= item.data.answers.length) return;
+  st.sel[blankCursor] = word;
+  blankCursor = Math.min(blankCursor+1, item.data.answers.length-1);
+  render();
+}
+function clearBlank(bi) {
+  const item = allQuestions[cur]; if (item.type!=='drag') return;
+  const st = state[item.id]; if (st.answered || !st.sel) return;
+  st.sel.splice(bi,1); blankCursor = bi; render();
+}
+function pick(i) {
+  const item = allQuestions[cur]; const st = state[item.id];
+  if (st.answered) return;
+  if (item.type==='multi') {
+    st.sel = st.sel || [];
+    const k = st.sel.indexOf(i);
+    k>=0 ? st.sel.splice(k,1) : st.sel.push(i);
+  } else st.sel = i;
+  render();
+}
+function check() {
+  const item = allQuestions[cur]; const st = state[item.id];
+  if (st.answered) return;
+  if (item.type==='drag') {
+    if (!st.sel || st.sel.length < item.data.answers.length) { alert('请先填满所有空'); return; }
+    st.correct = item.data.answers.every((a,i)=>st.sel[i]===a);
+  } else if (item.type==='single') {
+    if (st.sel===null||st.sel===undefined) { alert('请先选择'); return; }
+    st.correct = st.sel===item.data.correct;
+  } else if (item.type==='multi') {
+    if (!st.sel || !st.sel.length) { alert('请先选择'); return; }
+    st.correct = st.sel.length===item.data.correct.length && st.sel.every(s=>item.data.correct.includes(s));
+  } else {
+    if (st.sel===null||st.sel===undefined) { alert('请先判断'); return; }
+    st.correct = (st.sel===0)===item.data.correct;
+  }
+  st.answered = true;
+  render();
+}
+function resetQ() { const item=allQuestions[cur]; state[item.id]={answered:false,correct:false,sel:null}; blankCursor=0; render(); }
+function prevQ() { if(cur>0){cur--; blankCursor=0; render();} }
+function nextQ() { if(cur<allQuestions.length-1){cur++; blankCursor=0; render();} }
+function score() { return allQuestions.reduce((s,q)=>s+((state[q.id]&&state[q.id].answered&&state[q.id].correct)?1:0),0); }
+function updateScore() { document.getElementById('scoreBar').textContent = `总得分：${score()} / ${maxScore()}`; }
+function resetAll() {
+  if(!confirm('清空所有答题记录？')) return;
+  Object.keys(state).forEach(k=>delete state[k]);
+  document.getElementById('result').style.display='none';
+  document.getElementById('quizArea').classList.remove('hidden');
+  document.getElementById('navBar').classList.remove('hidden');
+  document.getElementById('scoreBar').classList.remove('hidden');
+  document.getElementById('progressText').classList.remove('hidden');
+  document.getElementById('progressBar').classList.remove('hidden');
+  cur=0; blankCursor=0; render();
+}
+function showResult() {
+  const r = document.getElementById('result');
+  const s = score(), m = maxScore();
+  const wrong = allQuestions.filter(q=>state[q.id]&&state[q.id].answered&&!state[q.id].correct).length;
+  const todo = allQuestions.filter(q=>!(state[q.id]&&state[q.id].answered)).length;
+  r.innerHTML = `<h2>🏁 成绩：${s} / ${m}</h2><p>✅ 正确 ${s} ｜ ❌ 错误 ${wrong} ｜ ⬜ 未答 ${todo}</p>
+  <div class="btns" style="justify-content:center"><button onclick="openDashboard()">返回查看（总览）</button>
+  <button class="ghost" onclick="continueQuiz()">继续做题</button></div>`;
+  r.style.display='block';
+  document.getElementById('quizArea').classList.add('hidden');
+  document.getElementById('navBar').classList.add('hidden');
+  document.getElementById('scoreBar').classList.add('hidden');
+  document.getElementById('progressText').classList.add('hidden');
+  document.getElementById('progressBar').classList.add('hidden');
+}
+function continueQuiz() {
+  document.getElementById('result').style.display='none';
+  document.getElementById('quizArea').classList.remove('hidden');
+  document.getElementById('navBar').classList.remove('hidden');
+  document.getElementById('scoreBar').classList.remove('hidden');
+  document.getElementById('progressText').classList.remove('hidden');
+  document.getElementById('progressBar').classList.remove('hidden');
+  render();
+}
+function openDashboard() { document.getElementById('overlay').classList.add('open'); document.getElementById('panel').classList.add('open'); renderGrid('all'); }
+function closeDashboard() { document.getElementById('overlay').classList.remove('open'); document.getElementById('panel').classList.remove('open'); }
+function renderGrid(filter) {
+  const g = document.getElementById('grid'); g.innerHTML='';
+  allQuestions.forEach((q,idx)=>{
+    const st = state[q.id];
+    const status = st&&st.answered ? (st.correct?'ok':'bad') : 'todo';
+    if (filter!=='all' && status!==filter) return;
+    const label = q.type==='drag'?'填':q.type==='single'?'单':q.type==='multi'?'多':'判';
+    const c = document.createElement('div');
+    c.className='cell '+(status==='ok'?'ok':status==='bad'?'bad':'');
+    c.textContent = `${idx+1}·${label}`;
+    c.onclick = ()=>{ cur=idx; blankCursor=0; closeDashboard(); continueQuiz(); };
+    g.appendChild(c);
+  });
+}
+function shuffleQuestionData(questions, isMulti) {
+  questions.forEach(q=>{
+    const pairs = q.options.map((opt,i)=>({opt, expl:q.expl[i], wasCorrect: isMulti ? q.correct.includes(i) : q.correct===i}));
+    for (let i=pairs.length-1;i>0;i--) { const j=Math.floor(Math.random()*(i+1)); [pairs[i],pairs[j]]=[pairs[j],pairs[i]]; }
+    q.options = pairs.map(p=>p.opt); q.expl = pairs.map(p=>p.expl);
+    q.correct = isMulti ? pairs.map((p,i)=>p.wasCorrect?i:-1).filter(i=>i>=0) : pairs.findIndex(p=>p.wasCorrect);
+  });
+}
+function shuffleAll() {
+  if(!confirm('洗牌选项位置将清空当前答题记录，继续？')) return;
+  shuffleQuestionData(singleQuestions,false);
+  shuffleQuestionData(multiQuestions,true);
+  Object.keys(state).forEach(k=>delete state[k]);
+  cur=0; blankCursor=0; continueQuiz(); render();
+}
+render();
+</script>
+</body>
+</html>

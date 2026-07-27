@@ -8,7 +8,7 @@ created: 2026-07-20
 
 > **核心问题**：模型固定后，Agent 的性能从哪里来？如何系统化地优化 inference-time context、设计 agent 脚手架（scaffolding）、诊断多 agent 失败、自动化 workflow 编排，并构建可控可扩展的执行环境？
 > **技术栈**：Context Engineering + Agent Scaffolding + Workflow Search (MCTS) + Memory Versioning + Sandbox Execution
-> **关联**：[[01d-sandbox-latest]], [[01a-LLM-Agent-in-Games]], [[01-Game-AI-研究库总览]]
+> **关联**：[[01d-sandbox-latest]], [[01a-LLM-Agent-in-Games]], [[01-Game-AI-研究库总览]], [[2024-Anthropic-Building-Effective-Agents]]
 
 ---
 
@@ -291,6 +291,7 @@ Agent Harness 的核心矛盾：
 | Confucius Code Agent | 论文 | https://arxiv.org/abs/2512.10398 | 生产级 agent SDK |
 | Git Context Controller | 论文 | https://arxiv.org/abs/2508.00031 | git 式上下文版本化 |
 | RepoST | 论文 | https://arxiv.org/abs/2503.07358 | COLM 2025，sandbox testing |
+| **Anthropic Building Effective Agents** (2024-12) | **单篇深度** | [[2024-Anthropic-Building-Effective-Agents]] | **本综述第 8 篇补完**：5 workflow + 1 agent = 6 原语，**Anthropic 官方对 agentic systems 的工业分类法**；MCP 作为 augmented LLM 工具集成协议层；"simple composable patterns > complex frameworks" 反共识；与 GameDevVault AI Harness 6 篇对位 |
 | SWE-rebench | 候选 | https://arxiv.org/abs/2505.20411 | 简报标注的后续补充候选 |
 | Agent Interoperability Protocols Survey (MCP/ACP/A2A/ANP) | 候选 | https://arxiv.org/abs/2505.02279 | 简报标注的后续补充候选 |
 

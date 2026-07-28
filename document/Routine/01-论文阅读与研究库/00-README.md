@@ -125,13 +125,14 @@ created: YYYY-MM-DD
 |----------|---------|------|------|
 | [[01e-agent-verification-eval-latest]] | [🎯 自测](01e-agent-verification-eval-latest.html) | 四维指标体系（结果/过程/安全/开放）、评测协议（pass@k、Wilson CI、dev/test split、ablation）、agent_harness_game v2 落地映射，约 58 条引用 | 验证与评估 |
 
-## AI Harness 单篇深度笔记（2026-07-27 新建）
+## AI Harness 单篇深度笔记 · 工业派双壁（2026-07-27 起）
 
-聚焦 **Anthropic 官方对 agentic systems 的工业级分类法**，作为 [[01e-agent-harness-latest]]（综述 7 篇）的工业补完，与 GameDevVault AI Harness 6 篇（5 GDC + 1 arxiv）形成 cross-ref。
+聚焦 **Anthropic + OpenAI 两大头部厂商对 agentic systems 的工业级分类法**，作为 [[01e-agent-harness-latest]]（综述 7 篇）的工业补完，与 GameDevVault AI Harness 6 篇（5 GDC + 1 arxiv）形成 cross-ref。**两套分类法 80% 重叠 20% 互补**——任务类型用 Anthropic 6 原语（控制流视角），实现细节用 OpenAI 3+2+2+1+2（组件视角），安全层用 OpenAI 7 类 Guardrails，兜底层用 OpenAI 2 个 Human-in-Loop 触发点。
 
 | Markdown | QA HTML | 内容 | 方向 |
 |----------|---------|------|------|
-| [[2024-Anthropic-Building-Effective-Agents]] | [🎯 自测](2024-Anthropic-Building-Effective-Agents.html) | 5 workflow 模式（prompt chaining / routing / parallelization / orchestrator-workers / evaluator-optimizer）+ 1 autonomous agent 模式 = 6 原语；MCP 作为 augmented LLM 工具集成协议层；"simple composable patterns > complex frameworks" 反共识判断；8 核心创新点 + 6 局限 + GameDevVault 6 篇对位 | AI Harness 工业框架 |
+| [[2024-Anthropic-Building-Effective-Agents]] | [🎯 自测](2024-Anthropic-Building-Effective-Agents.html) | 5 workflow 模式（prompt chaining / routing / parallelization / orchestrator-workers / evaluator-optimizer）+ 1 autonomous agent 模式 = 6 原语；MCP 作为 augmented LLM 工具集成协议层；"simple composable patterns > complex frameworks" 反共识判断；8 核心创新点 + 6 局限 + GameDevVault 6 篇对位 | AI Harness 工业框架（Anthropic 视角）|
+| [[2025-OpenAI-A-Practical-Guide-to-Building-Agents]] | [🎯 自测](2025-OpenAI-A-Practical-Guide-to-Building-Agents.html) | 3 组件（Model / Tools / Instructions）+ 2 类编排（Single / Multi-agent）+ 2 种多 agent 拓扑（Manager / Decentralized handoff）+ 7 类 Guardrails + 2 个人工干预触发点；"code-first > declarative graphs" 反共识；8 核心创新点 + 7 局限 + Anthropic / GameDevVault 6 篇三方对位 | AI Harness 工业框架（OpenAI 视角）|
 
 ---
 

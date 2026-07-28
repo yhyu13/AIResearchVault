@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpenAI Practical Guide to Building Agents · 3+2+2+1+2 面试自测卡牌</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Segoe UI", "Microsoft YaHei", sans-serif; background: #f6f4f0; color: #2c2a26; line-height: 1.6; }
+  header { background: #3e3a34; color: #f6f4f0; padding: 18px 20px; }
+  header h1 { font-size: 1.25rem; }
+  header p { font-size: .85rem; opacity: .8; margin-top: 4px; }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 20px; background: #ece8e1; border-bottom: 1px solid #d8d2c7; }
+  .toolbar button { border: 1px solid #b9b1a3; background: #fff; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: .85rem; }
+  .toolbar button:hover { background: #3e3a34; color: #fff; }
+  .score-bar { padding: 8px 20px; font-size: .9rem; background: #fff; border-bottom: 1px solid #e2ddd4; }
+  .progress-text { padding: 4px 20px; font-size: .8rem; color: #6b655a; background:#fff; }
+  .progress-bar { height: 5px; background: #e2ddd4; }
+  .progress-bar > div { height: 100%; background: #5c6b4f; width: 0%; transition: width .3s; }
+  .container { max-width: 860px; margin: 20px auto; padding: 0 16px; }
+  .q-card { background: #fff; border: 1px solid #ddd6ca; border-radius: 10px; padding: 20px; margin-bottom: 16px; }
+  .q-tag { display: inline-block; font-size: .72rem; padding: 2px 8px; border-radius: 10px; background: #5c6b4f; color: #fff; margin-bottom: 8px; }
+  .q-paper { font-size: .75rem; color: #8a8274; margin-left: 6px; }
+  .q-text { font-weight: 600; margin-bottom: 14px; }
+  .blank { display: inline-block; min-width: 110px; border-bottom: 2px dashed #5c6b4f; text-align: center; padding: 0 6px; margin: 0 2px; color: #5c6b4f; font-weight: 700; cursor: pointer; }
+  .blank.filled { border-bottom-style: solid; background: #f0ede6; }
+  .pool { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+  .chip { border: 1px solid #b9b1a3; background: #faf8f4; padding: 5px 12px; border-radius: 16px; cursor: grab; font-size: .85rem; user-select: none; }
+  .chip.used { opacity: .35; cursor: not-allowed; }
+  .opt { display: block; width: 100%; text-align: left; border: 1px solid #d8d2c7; background: #fbfaf7; padding: 10px 12px; border-radius: 8px; margin-bottom: 8px; cursor: pointer; font-size: .9rem; }
+  .opt.sel { border-color: #5c6b4f; background: #eef2e8; }
+  .opt.correct { border-color: #4f7a3d; background: #e6f0df; }
+  .opt.wrong { border-color: #a34a3a; background: #f6e3df; }
+  .expl { font-size: .82rem; margin: 3px 0 8px; padding: 6px 10px; border-radius: 6px; background: #f4f1ea; display: none; }
+  .btns { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .btns button { border: none; border-radius: 6px; padding: 8px 16px; cursor: pointer; font-size: .85rem; background: #3e3a34; color: #fff; }
+  .btns button.ghost { background: #e2ddd4; color: #2c2a26; }
+  .nav { display: flex; justify-content: space-between; max-width: 860px; margin: 10px auto 40px; padding: 0 16px; }
+  .nav button { border: 1px solid #b9b1a3; background: #fff; padding: 8px 18px; border-radius: 6px; cursor: pointer; }
+  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: none; z-index: 10; }
+  .overlay.open { display: block; }
+  .panel { position: fixed; top: 0; right: -420px; width: 400px; max-width: 92vw; height: 100%; background: #fff; transition: right .25s; z-index: 11; overflow-y: auto; padding: 20px; }
+  .panel.open { right: 0; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 8px; margin-top: 14px; }
+  .cell { border: 1px solid #ccc; border-radius: 6px; text-align: center; padding: 8px 2px; font-size: .75rem; cursor: pointer; background: #f6f4f0; }
+  .cell.ok { background: #e6f0df; border-color: #4f7a3d; }
+  .cell.bad { background: #f6e3df; border-color: #a34a3a; }
+  .filter { margin-top: 12px; display: flex; gap: 6px; flex-wrap: wrap; }
+  .filter button { font-size: .75rem; border: 1px solid #b9b1a3; background: #fff; border-radius: 12px; padding: 3px 10px; cursor: pointer; }
+  #result { display: none; max-width: 860px; margin: 30px auto; padding: 24px; background: #fff; border-radius: 10px; border: 1px solid #ddd6ca; text-align: center; }
+  .hidden { display: none !important; }
+  a.dlink { font-size: .78rem; color: #5c6b4f; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🎯 OpenAI Practical Guide to Building Agents · 3+2+2+1+2 面试自测卡牌</h1>
+  <p>配套笔记：2025-OpenAI-A-Practical-Guide-to-Building-Agents.md ｜ 对位 7/27 Anthropic 工业派双壁 ｜ OpenAI 2025-04 ｜ 2026-07-29</p>
+</header>
+<div class="toolbar">
+  <button onclick="openDashboard()">📊 题目总览</button>
+  <button onclick="shuffleAll()">🎲 重新洗牌选项</button>
+  <button onclick="resetAll()">🔄 重置所有分数</button>
+  <button onclick="showResult()">🏁 查看成绩</button>
+</div>
+<div class="score-bar" id="scoreBar">总得分：0 / 0</div>
+<div class="progress-text" id="progressText"></div>
+<div class="progress-bar" id="progressBar"><div id="progressFill"></div></div>
+<div class="container" id="quizArea"></div>
+<div class="nav" id="navBar">
+  <button onclick="prevQ()">← 上一题</button>
+  <button onclick="nextQ()">下一题 →</button>
+</div>
+<div id="result"></div>
+<div class="overlay" id="overlay" onclick="closeDashboard()"></div>
+<div class="panel" id="panel">
+  <h3>📊 题目总览</h3>
+  <div class="filter">
+    <button onclick="renderGrid('all')">全部</button>
+    <button onclick="renderGrid('ok')">✅ 正确</button>
+    <button onclick="renderGrid('bad')">❌ 错误</button>
+    <button onclick="renderGrid('todo')">⬜ 未答</button>
+  </div>
+  <div class="grid" id="grid"></div>
+  <div class="btns"><button class="ghost" onclick="closeDashboard()">关闭</button></div>
+</div>
+
+<script>
+/* ================= 题目数据 ================= */
+const dragQuestions = [
+{ paper:"3 组件", text:"OpenAI 把 agent 拆为 3 个最小可执行组件：{0}（推理和决策的 LLM）、{1}（外部函数 / API / GUI）、{2}（显式行为准则和 guardrails）。",
+  answers:["Model","Tools","Instructions"],
+  pool:["Model","Tools","Instructions","Memory","Planning","Reflection","Retrieval","Function calling"],
+  expl:["Model = 推理和决策的 LLM；Memory 是 OpenAI Sessions 抽象，但不在 3 组件中。",
+        "Tools = 外部函数 / API / GUI（含 computer use）；Function calling 是 tool 的实现机制。",
+        "Instructions = 行为准则 + guardrails 描述；Planning/Reflection 是 agent 推理技巧，不是 3 组件之一。"],
+  link:"2025-OpenAI-A-Practical-Guide-to-Building-Agents.md#1-3-个原子组件的最小化设计model--tools--instructions" },
+{ paper:"2 编排模式", text:"OpenAI 把 agent 编排分成 2 大类：{0}（一个 model + 多 tools + while-loop 到退出条件）、{1}（workflow 执行分布到多个协同 agent）。",
+  answers:["Single-agent systems","Multi-agent systems"],
+  pool:["Single-agent systems","Multi-agent systems","Linear workflow","Graph workflow","Hierarchical agents","Peer-to-peer agents"],
+  expl:["Single-agent = 一个 model + 多 tools + while-loop；Linear workflow 是 Anthropic 的 prompt chaining，不在 OpenAI 分类中。",
+        "Multi-agent = workflow 分布到多协同 agent；Graph workflow 是 LangGraph 的声明式图，OpenAI 反对。"],
+  link:"2025-OpenAI-A-Practical-Guide-to-Building-Agents.md#2-2-类编排模式single-vs-multi-agent--incremental-approach-反过度工程" },
+{ paper:"2 多 agent 拓扑", text:"OpenAI 把多 agent 拓扑分成 2 种：{0}（中心 LLM 通过 tool_call 协调多个 worker agent，agent 本身是 tool）和 {1}（多个 agent 平等对等，通过 handoff 单向转移控制权并携带对话状态）。",
+  answers:["Manager pattern (agents as tools)","Decentralized pattern (agents handing off)"],
+  pool:["Manager pattern (agents as tools)","Decentralized pattern (agents handing off)","Hub-and-spoke topology","Pipeline pattern","Star topology","Ring pattern"],
+  expl:["Manager = 中心 LLM + agent-as-tool；Hub-and-spoke 是同义词但不是 OpenAI 术语。",
+        "Decentralized = peer + handoff 单向控制权转移；Pipeline / Ring 是其他图模式，OpenAI 没列。"],
+  link:"2025-OpenAI-A-Practical-Guide-to-Building-Agents.md#3-2-种多-agent-拓扑manager-pattern-vs-decentralized-handoff" },
+{ paper:"7 类 Guardrails", text:"OpenAI 给出 harness 安全层的 7 类 guardrails 标准分类：{0}（检测离题查询）、{1}（jailbreak / prompt injection）、{2}（敏感信息过滤）、{3}（仇恨/骚扰/暴力审核）、{4}（按风险等级分工具）、{5}（黑名单 / 长度限制 / regex）、{6}（输出内容验证）。",
+  answers:["Relevance classifier","Safety classifier","PII filter","Moderation","Tool safeguards","Rules-based protections","Output validation"],
+  pool:["Relevance classifier","Safety classifier","PII filter","Moderation","Tool safeguards","Rules-based protections","Output validation","Rate limiting","Token budget cap"],
+  expl:["Relevance classifier 标记离题查询；Rate limiting 是 OpenAI 没列的兜底层。",
+        "Safety classifier 检 jailbreak；Token budget cap 是 Anthropic 提到的兜底，不是 OpenAI 7 类之一。",
+        "PII filter 过滤 SSN 等；其他过滤如 GDPR 范围更广，OpenAI 只列 PII。",
+        "Moderation = 仇恨/骚扰/暴力；内容安全审核是它的一部分。",
+        "Tool safeguards = 按风险分（只读 vs 写入、可逆 vs 不可逆）；Access control 是补充。",
+        "Rules-based = 黑名单 + 长度 + regex；Audit log 不在 7 类里。",
+        "Output validation = 输出内容验证；Truthfulness 评估是 eval 范畴，不是 guardrail。"],
+  link:"2025-OpenAI-A-Practical-Guide-to-Building-Agents.md#5-7-类-guardrailsharness-安全层的标准分类法" }
+];
+
+const singleQuestions = [
+{ paper:"3+2+2+1+2", q:"OpenAI 整个 agent 分类法的核心结构是？",
+  options:["3 组件 + 2 编排 + 2 多 agent 拓扑 + 7 guardrails + 2 人工干预触发点","5 workflow + 1 autonomous agent = 6 原语","4 个 augmentation + Augmented LLM 基础","PDP-11 CPU 模拟 + 内存分层 + IO 调度"],
+  correct:0,
+  expl:["✅ 正确：OpenAI 整篇指南就是 3 组件 + 2 编排 + 2 多 agent 拓扑 + 7 guardrails + 2 人工干预触发点 = '3+2+2+1+2' 框架。","❌ 错误：6 原语是 Anthropic 的分类法（7/27 那篇），不是 OpenAI 的。","❌ 错误：4 个 augmentation（retrieval/tools/memory/MCP）是 Anthropic 的 Augmented LLM 拆分。","❌ 错误：这是计算机体系结构的分类，跟 agent 无关。"],
+  link:"2025-OpenAI-A-Practical-Guide-to-Building-Agents.md#一句话总结" },
+{ paper:"Multi-agent 拆分", q:"OpenAI 给出 single-agent 升级到 multi-agent 的判断标准，**最关键**的是？",
+  options:["工具的相似度 / 重叠度（不是数量）","prompt 里有没有 emoji","模型参数量超过 70B","LSP 类型注解覆盖率"],
+  correct:0,
+  expl:["✅ 正确：OpenAI 明确说'The issue isn't solely the number of tools, but their similarity or overlap'——>15 个清晰工具可管理，<10 个重叠工具就翻车。","❌ 错误：emoji 与 agent 架构无关。","❌ 错误：模型规模与是否 multi-agent 无关（GPT-4o-mini 也可做 multi-agent）。","❌ 错误：LSP 注解与 agent 拆分判断无关。"],
+  link:"2025-OpenAI-A-Practical-Guide-to-Building-Agents.md#2-2-类编排模式single-vs-multi-agent--incremental-approach-反过度工程" },
+{ paper:"Manager pattern", q:"Manager pattern 的核心特征是？",
+  options:["中心 LLM 维持 context + 协调 worker，worker 作为 tool 被调用","worker 之间 handoff 转移控制权","每个 agent 完全独立、互不通信","所有 agent 共享同一个 prompt"],
+  correct:0,
+  expl:["✅ 正确：Manager pattern = 中心 LLM 维持 context + worker as tool；这是 OpenAI 的明确定义。","❌ 错误：handoff 是 Decentralized 模式，不是 Manager。","❌ 错误：完全独立的多 agent 模式 OpenAI 没列；Decentralized 是 handoff 不是完全独立。","❌ 错误：共享 prompt 是 LangChain 早期实验模式，OpenAI 不推荐。"],
+  link:"2025-OpenAI-A-Practical-Guide-to-Building-Agents.md#3-a-manager-pattern-agents-as-tools" },
+{ paper:"Decentralized handoff", q:"Decentralized handoff 模式的核心特征是？",
+  options:["agent 之间单向 handoff 转移控制权 + 携带对话状态","中心 agent 调度所有 worker","所有 agent 共享同一个 memory","prompt 必须是 few-shot 格式"],
+  correct:0,
+  expl:["✅ 正确：Decentralized = peer 关系 + handoff 单向转移 + 携带对话状态。OpenAI 明确说'a handoff is a one-way transfer that allows an agent to delegate to another agent'。","❌ 错误：中心调度是 Manager pattern，不是 Decentralized。","❌ 错误：shared memory 是 Anthropic 的 augmented LLM 维度，OpenAI 没列此模式。","❌ 错误：few-shot 与 multi-agent 拓扑无关。"],
+  link:"2025-OpenAI-A-Practical-Guide-to-Building-Agents.md#3-b-decentralized-pattern-agents-handing-off-to-agents" },
+{ paper:"Code-first 反共识", q:"OpenAI 反对的'敌人'是谁？",
+  options:["LangGraph / CrewAI / AutoGen 的声明式图 DSL（declarative graphs）","所有 LLM 框架包括 LangChain 整体","任何写 Python 代码的方式","GPU 加速的向量检索"],
+  correct:0,
+  expl:["✅ 正确：OpenAI 明确说'code-first approach'反的是'declarative graphs consisting of nodes and edges'——特指 LangGraph / CrewAI / AutoGen 的 DSL。","❌ 错误：Anthropic 反的是 LangChain 整体框架；OpenAI 攻击面更精准，只反 DSL。","❌ 错误：OpenAI 自己也用 Python code。","❌ 错误：与 GPU 检索无关。"],
+  link:"2025-OpenAI-A-Practical-Guide-to-Building-Agents.md#4-code-first--declarative-graphs-反共识判断" }
+];
+
+const multiQuestions = [
+{ paper:"工具 3 类", q:"OpenAI 把 agent 工具分成哪 3 类？（多选）",
+  options:["Data 类（取上下文：DB / PDF / web search）","Action 类（改系统状态：发邮件 / 更新 CRM / 提交订单）","Orchestration 类（调其他 agent：Refund / Research agent 作为 tool）","Inference 类（额外 LLM call）","Cache 类（持久化 KV）","Effect 类（git-aware 状态变更）"],
+  correct:[0,1,2],
+  expl:["✅ 正确：Data 类 = 取上下文。","✅ 正确：Action 类 = 改系统状态。","✅ 正确：Orchestration 类 = agent-as-tool。","❌ 错误：OpenAI 没列 Inference 类；额外 LLM call 通常通过 model 选型解决，不在 tool 分类。","❌ 错误：Cache 不在 OpenAI 3 类工具中（属于 memory 维度）。","❌ 错误：Effect 类是笔记里 day-job 加的（git-aware 状态变更），OpenAI 原文没这一类。"],
+  link:"2025-OpenAI-A-Practical-Guide-to-Building-Agents.md#7-3-类工具的标准化设计data--action--orchestration" },
+{ paper:"OpenAI vs Anthropic", q:"OpenAI 模式与 Anthropic 6 原语（7/27 那篇）的正确对位是？（多选）",
+  options:["OpenAI Single-agent ≈ Anthropic Prompt chaining + Autonomous agent","OpenAI Manager pattern ≈ Anthropic Orchestrator-workers","OpenAI Decentralized handoff ≈ Anthropic Routing（部分）","OpenAI 7 类 Guardrails ≈ Anthropic 附录 1 轻提","OpenAI Human intervention ≈ Anthropic 显式分类","OpenAI Code-first ≈ Anthropic Simple > Complex"],
+  correct:[0,1,2,3,5],
+  expl:["✅ 正确：OpenAI Single-agent（含 while loop）≈ Anthropic Prompt chaining + Autonomous agent 的合集。","✅ 正确：Manager pattern 是 Orchestrator-workers 的 OpenAI 版本。","✅ 正确：Decentralized handoff 部分对位 Anthropic Routing（都是分类后派发）。","✅ 正确：OpenAI Guardrails 7 类 ≈ Anthropic 在附录 1 末尾轻提的 guardrail 思路。","❌ 错误：Anthropic 没显式分类 human intervention，是 OpenAI 强项。","✅ 正确：OpenAI Code-first（反 DSL）和 Anthropic Simple > Complex（反 framework）是同方向但攻击面不同。"],
+  link:"2025-OpenAI-A-Practical-Guide-to-Building-Agents.md#openai-模式-vs-anthropic-模式-cross-ref-表" },
+{ paper:"GDC 对位", q:"GameDevVault AI Harness 工业案例在 OpenAI 框架中的正确对位是？（多选）",
+  options:["Microsoft Copilot Agent Mode → Manager pattern + Code-first SDK","Tencent 天美 98% 自动化 → Manager pattern + 8 worker agents","Glass Bead 4 人 + 8 agents → Decentralized handoff + Multi-agent 协作","DeepMind SIMA 2 → Single-agent + Computer Use tool","Bitmagic AI-Native 引擎 → Manager + Evaluator-optimizer 显式分离","GDC 2026 Anthropic Computer Use → Manager pattern（GUI tool 中心调度）"],
+  correct:[0,1,2,3],
+  expl:["✅ 正确：Copilot Agent Mode = Manager + Code-first SDK。","✅ 正确：天美 98% = Manager pattern + 8 个 worker。","✅ 正确：Glass Bead 4 人 + 8 agents = Decentralized handoff 协作。","✅ 正确：SIMA 2 = Single-agent + Computer Use tool（对未见过环境自主决策）。","❌ 错误：Bitmagic = Single-agent + while loop with prompt-玩-迭代，不是 Manager + Evaluator-optimizer。","❌ 错误：Anthropic Computer Use 是 Single-agent 特殊化（GUI tool 版），不是 Manager。"],
+  link:"2025-OpenAI-A-Practical-Guide-to-Building-Agents.md#与-gamedevvault-ai-harness-7-篇论文的-cross-ref" }
+];
+
+const trueFalseQuestions = [
+{ paper:"反共识", q:"OpenAI 反对所有 framework，包括 LangChain / LlamaIndex 这种纯工具集框架。", correct:false,
+  expl:{ ok:"✅ 正确理解：OpenAI 只反 declarative graph DSL（LangGraph / CrewAI / AutoGen 的图模式），不是反所有 framework。'In contrast, the Agents SDK adopts a more flexible, code-first approach'——攻击面是 DSL，不是 framework 整体。",
+         bad:"❌ 常见误解：把 OpenAI 的反 DSL 等同于反所有 framework。Anthropic 才是反 LangChain 整体；OpenAI 攻击面更精准。"},
+  follow:"追问：'那 OpenAI 自家推什么？' → 答：Agents SDK + Responses API（code-first）；但 vendor-neutral 的 harness 应该跨 SDK 兜底。",
+  link:"2025-OpenAI-A-Practical-Guide-to-Building-Agents.md#4-code-first--declarative-graphs-反共识判断" },
+{ paper:"工具数量", q:"OpenAI 主张工具数 < 10 比 > 15 更好管理。", correct:false,
+  expl:{ ok:"✅ 正确理解：OpenAI 明确说'The issue isn't solely the number of tools, but their similarity or overlap'。>15 个定义良好的工具可管理，<10 个重叠工具就翻车——关键在重叠度，不是数量。",
+         bad:"❌ 常见误解：以为工具越少越好。实际是'清晰工具 < 重叠工具'——这是反直觉判断。"},
+  follow:"追问：'那工具设计原则是什么？' → 答：(a) 标准化定义（JSON schema / type hints）；(b) 文档充分、可复用；(c) 避免重复定义；(d) 边界清晰，不做'通用 run_ue_command()'。",
+  link:"2025-OpenAI-A-Practical-Guide-to-Building-Agents.md#8-工具过载的反直觉判断10-个重叠工具比-15-个清晰工具更糟" },
+{ paper:"Manager = Orchestrator", q:"OpenAI Manager pattern 完全等价于 Anthropic Orchestrator-workers 原语。", correct:false,
+  expl:{ ok:"✅ 正确理解：Manager pattern ≈ Orchestrator-workers 但不完全等价。OpenAI 强调'agent itself as a tool'——worker 是被调用的工具；而 Anthropic Orchestrator-workers 更宽泛，worker 可以是 tool 也可以是 handoff。",
+         bad:"❌ 常见误解：以为'manager pattern'和'orchestrator-workers'只是名字不同。实际有微妙的'agent-as-tool' vs 'agent-as-worker'差别。"},
+  follow:"追问：'那对位是 1:1 还是约等于？' → 答：约等于（≈），80% 重叠。Manager 更强调 tool-as-agent 抽象；Orchestrator-workers 强调中心 LLM 动态分解。",
+  link:"2025-OpenAI-A-Practical-Guide-to-Building-Agents.md#openai-模式-vs-anthropic-模式-cross-ref-表" },
+{ paper:"Guardrails 量化", q:"OpenAI 7 类 guardrails 都给出了量化误报率 / 召回率的权衡。", correct:false,
+  expl:{ ok:"✅ 正确理解：OpenAI 列出 7 类 guardrails 的设计模式和应用场景，但**没量化**每类的误报率 / 召回率。原文只说'think of guardrails as a layered defense mechanism'，没说具体阈值。",
+         bad:"❌ 常见误解：以为 7 类分类法自带 eval 协议。实际还需要参考 [[01e-agent-verification-eval-latest]]（pass@k、Wilson CI、ablation）补全量化。"},
+  follow:"追问：'那 7 类 guardrails 怎么量化？' → 答：(a) relevance/safety classifier 用 labelled eval set + F1；(b) PII filter 用 regex precision/recall；(c) tool safeguards 用 ablation（去掉后失败率提升多少）。",
+  link:"2025-OpenAI-A-Practical-Guide-to-Building-Agents.md#局限性与思考" }
+];
+
+
+/* ================= 引擎 ================= */
+const allQuestions = [];
+dragQuestions.forEach((q,i)=>allQuestions.push({type:'drag',data:q,id:'d'+i}));
+singleQuestions.forEach((q,i)=>allQuestions.push({type:'single',data:q,id:'s'+i}));
+multiQuestions.forEach((q,i)=>allQuestions.push({type:'multi',data:q,id:'m'+i}));
+trueFalseQuestions.forEach((q,i)=>allQuestions.push({type:'tf',data:q,id:'t'+i}));
+
+const state = {};
+let cur = 0;
+const typeName = {drag:'拖拽填空', single:'单选', multi:'多选', tf:'判断'};
+const maxScore = () => allQuestions.length;
+
+function render() {
+  const area = document.getElementById('quizArea');
+  area.innerHTML = '';
+  const item = allQuestions[cur];
+  const st = state[item.id] || (state[item.id] = {answered:false, correct:false, sel:null});
+  const card = document.createElement('div');
+  card.className = 'q-card';
+  let html = `<span class="q-tag">${typeName[item.type]}</span><span class="q-paper">${item.data.paper}</span>`;
+  if (item.type === 'drag') {
+    let txt = item.data.text;
+    for (let i=0;i<item.data.answers.length;i++) {
+      const filled = st.sel && st.sel[i] ? st.sel[i] : '';
+      txt = txt.replace('{'+i+'}', `<span class="blank ${filled?'filled':''}" data-bi="${i}" onclick="clearBlank(${i})">${filled||'　点选填入　'}</span>`);
+    }
+    html += `<div class="q-text">${txt}</div><div class="pool">` +
+      item.data.pool.map((p,pi)=>`<span class="chip ${st.sel&&st.sel.includes(p)?'used':''}" onclick="fillBlank(${pi})">${p}</span>`).join('') + `</div>`;
+  } else if (item.type === 'tf') {
+    html += `<div class="q-text">${item.data.q}</div>` +
+      ['正确','错误'].map((o,i)=>`<button class="opt ${st.sel===i?'sel':''}" onclick="pick(${i})">${o==='正确'?'✔ 正确':'✘ 错误'}</button>`).join('');
+  } else {
+    html += `<div class="q-text">${item.data.q}</div>` +
+      item.data.options.map((o,i)=>{
+        const isSel = item.type==='multi' ? (st.sel||[]).includes(i) : st.sel===i;
+        let cls = isSel?'sel':'';
+        if (st.answered) {
+          const good = item.type==='multi' ? item.data.correct.includes(i) : item.data.correct===i;
+          if (good) cls='correct'; else if (isSel) cls='wrong';
+        }
+        return `<button class="opt ${cls}" onclick="pick(${i})">${o}</button>` +
+               (st.answered?`<div class="expl" style="display:block">${item.data.expl[i]}</div>`:'');
+      }).join('');
+  }
+  html += `<div class="btns"><button onclick="check()">检查答案</button><button class="ghost" onclick="resetQ()">重置本题</button>`;
+  if (st.answered) {
+    html += `<a class="dlink" href="${item.data.link}">📖 查看笔记详解</a>`;
+    if (item.type==='tf' && item.data.follow) html += `<div class="expl" style="display:block">${item.data.follow}</div>`;
+  }
+  html += `</div>`;
+  card.innerHTML = html;
+  area.appendChild(card);
+  document.getElementById('progressText').textContent = `第 ${cur+1} / ${allQuestions.length} 题`;
+  document.getElementById('progressFill').style.width = ((cur+1)/allQuestions.length*100)+'%';
+  updateScore();
+}
+
+let blankCursor = 0;
+function fillBlank(pi) {
+  const item = allQuestions[cur]; if (item.type!=='drag') return;
+  const st = state[item.id]; if (st.answered) return;
+  const word = item.data.pool[pi];
+  st.sel = st.sel || [];
+  if (st.sel.includes(word)) return;
+  if (st.sel.length >= item.data.answers.length) return;
+  st.sel[blankCursor] = word;
+  blankCursor = Math.min(blankCursor+1, item.data.answers.length-1);
+  render();
+}
+function clearBlank(bi) {
+  const item = allQuestions[cur]; if (item.type!=='drag') return;
+  const st = state[item.id]; if (st.answered || !st.sel) return;
+  st.sel.splice(bi,1); blankCursor = bi; render();
+}
+function pick(i) {
+  const item = allQuestions[cur]; const st = state[item.id];
+  if (st.answered) return;
+  if (item.type==='multi') {
+    st.sel = st.sel || [];
+    const idx = st.sel.indexOf(i);
+    if (idx>=0) st.sel.splice(idx,1); else st.sel.push(i);
+  } else {
+    st.sel = i;
+  }
+  render();
+}
+function check() {
+  const item = allQuestions[cur]; const st = state[item.id];
+  if (!st.sel && st.sel !== 0) return;
+  if (item.type==='drag') {
+    const correct = item.data.answers.every((a,i)=>st.sel[i]===a);
+    st.correct = correct;
+  } else if (item.type==='multi') {
+    const c = item.data.correct.slice().sort().join(',');
+    const s = (st.sel||[]).slice().sort().join(',');
+    st.correct = c===s;
+  } else if (item.type==='tf') {
+    st.correct = (st.sel === (item.data.correct?0:1));
+  } else {
+    st.correct = (st.sel === item.data.correct);
+  }
+  st.answered = true;
+  if (item.type==='drag') blankCursor = 0;
+  render();
+}
+function resetQ() {
+  const item = allQuestions[cur]; state[item.id] = {answered:false, correct:false, sel:null};
+  if (item.type==='drag') blankCursor = 0;
+  render();
+}
+function updateScore() {
+  let s=0,a=0;
+  allQuestions.forEach(it=>{ const st=state[it.id]; if (st.answered) { a++; if (st.correct) s++; } });
+  document.getElementById('scoreBar').textContent = `总得分：${s} / ${a}（共 ${allQuestions.length} 题）`;
+}
+function prevQ() { if (cur>0) { cur--; render(); } }
+function nextQ() { if (cur<allQuestions.length-1) { cur++; render(); } }
+function openDashboard() { document.getElementById('panel').classList.add('open'); document.getElementById('overlay').classList.add('open'); renderGrid('all'); }
+function closeDashboard() { document.getElementById('panel').classList.remove('open'); document.getElementById('overlay').classList.remove('open'); }
+function renderGrid(filter) {
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  allQuestions.forEach((it,i)=>{
+    const st = state[it.id];
+    let cls = 'cell';
+    if (st && st.answered) cls += st.correct ? ' ok' : ' bad';
+    if (filter==='ok' && !(st && st.answered && st.correct)) return;
+    if (filter==='bad' && !(st && st.answered && !st.correct)) return;
+    if (filter==='todo' && (st && st.answered)) return;
+    const cell = document.createElement('div');
+    cell.className = cls;
+    cell.textContent = `${i+1} (${typeName[it.type].slice(0,2)})`;
+    cell.onclick = ()=>{ cur=i; closeDashboard(); render(); };
+    grid.appendChild(cell);
+  });
+}
+function resetAll() {
+  if (!confirm('重置所有答题记录？')) return;
+  allQuestions.forEach(it=>state[it.id]={answered:false,correct:false,sel:null});
+  cur=0; render();
+}
+function showResult() {
+  let s=0,a=0;
+  allQuestions.forEach(it=>{ const st=state[it.id]; if (st.answered) { a++; if (st.correct) s++; } });
+  const total = allQuestions.length;
+  const pct = total? Math.round(s/total*100):0;
+  const r = document.getElementById('result');
+  r.style.display='block';
+  r.innerHTML = `<h2>🏁 你的成绩</h2>
+    <p style="font-size:2.2rem;margin:12px 0;color:#5c6b4f">${s} / ${total}</p>
+    <p>正确率：${pct}% ｜ 已答：${a} / ${total}</p>
+    <p style="margin-top:10px;font-size:.85rem;color:#8a8274">${pct>=90?'🏆 工业派双壁之一完全掌握':pct>=75?'👍 基础到位，建议复盘错题':'📖 建议重读 .md 笔记后重做'}</p>
+    <div class="btns" style="justify-content:center;margin-top:14px"><button class="ghost" onclick="document.getElementById('result').style.display='none'">关闭</button></div>`;
+}
+function shuffleAll() {
+  singleQuestions.forEach(q=>{ const arr=q.options.map((_,i)=>i); for (let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; } const newOpt=arr.map(i=>q.options[i]); const map=arr.map((o,i)=>[o,i]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]); q.options=newOpt; if (Array.isArray(q.correct)) q.correct=q.correct.map(i=>map[i]); else q.correct=map[q.correct]; });
+  multiQuestions.forEach(q=>{ const arr=q.options.map((_,i)=>i); for (let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; } const newOpt=arr.map(i=>q.options[i]); const map=arr.map((o,i)=>[o,i]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]); q.options=newOpt; q.correct=q.correct.map(i=>map[i]); });
+  trueFalseQuestions.forEach(q=>{ q.correct=Math.random()<0.5; });
+  alert('已重新洗牌选项顺序（不影响正确性），刷新页面查看');
+}
+
+document.addEventListener('keydown', e=>{
+  if (e.key==='ArrowLeft') prevQ();
+  if (e.key==='ArrowRight') nextQ();
+});
+
+render();
+</script>
+</body>
+</html>

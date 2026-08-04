@@ -136,6 +136,16 @@ created: YYYY-MM-DD
 
 ---
 
+## MCP 生态 2025–2026 Deep Dive（2026-08-04 起）
+
+**直接服务 day-job「Mac Game Harness 工具层」**：把 LLM 对 UE 工具的访问从 ad-hoc function calling 升级为**协议层抽象**。MCP（Model Context Protocol，Anthropic 2024-11 开源）已被定位为"agent 的 USB-C / TCP/IP"——5 个原语（Resources / Prompts / Tools / Roots / Sampling）+ JSON-RPC 2.0 + Stdio/SSE transport + capability negotiation。**核心结论**：fork 现有 UE 5.7 MCP 实现（[DandyDay/UnrealMCP](https://github.com/DandyDay/UnrealMCP)，100+ 命令 / 11 类别）+ 补 Mac-specific 工具（xcodebuild / xcrun simctl / metal / instruments / vulkaninfo），vendor-neutral Stdio-only 即可被 Claude Code / Cursor / Zed 任何 client 复用。**8 核心创新点 + 5 来源 + 3 个 day-job 关键设计决策**（工具层 fork vs 自研 / harness 模式选型 6+3+2+1+2+7+2 / vendor-neutral 多 client 兼容）。
+
+| Markdown | QA HTML | 内容 | 方向 |
+|----------|---------|------|------|
+| [[01f-mcp-ecosystem-2025-2026]] | （QA 卡牌待补，下次 session） | 5 来源：Anthropic 2024-11 blog + MCP 2025-06 spec + modelcontextprotocol/servers 官方仓 + DandyDay/UnrealMCP（UE 5.7 / 100+ 命令 / 11 类别）+ Hou et al. 2025 安全综述（10 类风险 / arxiv ID 待验证）；覆盖 8 创新点 / MCP vs Function Calling vs OpenAPI / 生态时间线 2024-11→2026-07 | AI Harness 工具协议层（day-job 直用） |
+
+---
+
 ## QA 面试卡牌使用说明
 
 每个 `.html` 文件都是**完全自包含**的互动式面试自测页面，可直接在浏览器打开：
